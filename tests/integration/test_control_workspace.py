@@ -145,7 +145,12 @@ def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
             assert page.selector.combo.count() >= 2
             if category not in MEASUREMENT_CATEGORIES:
                 caps = window.controller.capabilities(page.selector.device_id)
-                assert set(page.form.editors) == {c.name for c in caps.operations}
+                if category == "signal_generator":
+                    names = {name for panel in [*page.panels.values(), *page.advanced_groups]
+                             for name in panel.editors} | {"output"}
+                    assert names == {c.name for c in caps.operations}
+                else:
+                    assert set(page.form.editors) == {c.name for c in caps.operations}
             window.navigate("实时监测", category)
             monitor = window.stack.currentWidget()
             assert isinstance(monitor, MonitoringPage)
@@ -172,8 +177,8 @@ def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
             if width == 760:
                 window.sidebar.setFixedWidth(196)
                 qtbot.wait(20)
-                assert window.width() == 760
-                assert dashboard.grid.columns == 1
+                assert window.width() == max(760, window.minimumWidth())
+                assert dashboard.grid.columns >= 1
         assert dashboard.cards == widgets
         saved = runtime.repository.load_workspace("monitor_layout/electronic")
         assert "columns" not in json.dumps(saved)

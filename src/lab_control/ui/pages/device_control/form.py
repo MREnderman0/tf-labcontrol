@@ -1,16 +1,21 @@
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import shiboken6
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QComboBox,
     QFormLayout,
     QFrame,
     QHBoxLayout,
     QLabel,
+    QLayout,
     QMessageBox,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
     QTabWidget,
     QVBoxLayout,
     QWidget,
@@ -20,7 +25,7 @@ from lab_control.application.catalog import mode_applicable
 from lab_control.application.controls import COMMON, OPERATION_LABELS, PARAMETER_LABELS
 from lab_control.domain.instruments import Capability, DeviceCommand, ParameterReading
 from lab_control.ui.controller import WorkspaceController
-from lab_control.ui.pages.device_control.editors import ArrayEditor, ParameterEditor
+from lab_control.ui.pages.device_control.editors import ArrayEditor, FeedbackLabel, ParameterEditor
 
 DATA_OPERATIONS = {"block", "streaming", "phase_noise", "am_noise", "stability", "data_stream", "power"}
 SOURCE_LABELS = {
@@ -43,26 +48,43 @@ def concise(value: Any) -> str:
 
 class OperationEditor(QFrame):
     def __init__(
-        self, controller: WorkspaceController, device_id: str, cap: Capability, channel: int, parent=None
+        self,
+        controller: WorkspaceController,
+        device_id: str,
+        cap: Capability,
+        channel: int,
+        parent=None,
+        *,
+        compact: bool = False,
+        actions: bool = True,
     ) -> None:
         super().__init__(parent)
-        self.setObjectName("operationCard")
+        self.compact = compact
+        self.setObjectName("compactOperation" if compact else "operationCard")
         self.controller, self.device_id, self.cap = controller, device_id, cap
         self.channel = channel if cap.channel_scoped else 1
         self.mode = controller.mode
         self.dirty = False
         self.busy = False
+        self.current_value: Any = None
         self.data_only = not cap.writable and cap.name in DATA_OPERATIONS
         self.editors: dict[str, ParameterEditor] = {}
         self.array_editor: ArrayEditor | None = None
         self.key = f"draft/{self.mode}/{device_id}/{self.channel}/{cap.name}"
         layout = QVBoxLayout(self)
+        if compact:
+            layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.setSpacing(3)
+            self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+            layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         heading = QHBoxLayout()
-        title = QLabel(OPERATION_LABELS.get(cap.name, cap.name))
+        title = QLabel(OPERATION_LABELS.get(cap.name, cap.name) + (" · 只读" if not cap.writable else ""))
         title.setObjectName("controlTitle")
         heading.addWidget(title)
         heading.addStretch()
-        heading.addWidget(QLabel(f"CH {self.channel}" if cap.channel_scoped else "整机"))
+        if not compact:
+            heading.addWidget(QLabel(f"CH {self.channel}" if cap.channel_scoped else "整机"))
         layout.addLayout(heading)
         form = QFormLayout()
         for name, parameter in cap.parameters.items():
@@ -70,8 +92,36 @@ class OperationEditor(QFrame):
                 editor = ParameterEditor(parameter)
                 self.editors[name] = editor
                 editor.changed.connect(self.save_draft)
-                form.addRow(PARAMETER_LABELS.get(name, name), editor)
-        layout.addLayout(form)
+                if compact and name == "value":
+                    layout.addWidget(editor)
+                    editor.unit.setFixedWidth(90)
+                    if isinstance(editor.input, QComboBox):
+                        labels = {
+                            "SIN": "正弦波",
+                            "SINE": "正弦波",
+                            "SQU": "方波",
+                            "SQUARE": "方波",
+                            "PULS": "脉冲",
+                            "PULSE": "脉冲",
+                            "RAMP": "斜坡",
+                            "NOIS": "噪声",
+                            "NOISE": "噪声",
+                            "DC": "直流",
+                            "INT": "内部参考",
+                            "EXT": "外部参考",
+                        }
+                        if cap.name in {"waveform", "reference_clock"}:
+                            for index in range(editor.input.count()):
+                                value = editor.input.itemData(index)
+                                editor.input.setItemText(index, labels.get(value, value))
+                    if parameter.kind in {"number", "integer"}:
+                        editor.input.setObjectName("sourceValue")
+                else:
+                    form.addRow(PARAMETER_LABELS.get(name, name), editor)
+        if compact:
+            form.setContentsMargins(0, 0, 0, 0)
+        if form.rowCount():
+            layout.addLayout(form)
         arrays = {k: v for k, v in cap.parameters.items() if v.kind == "array"}
         if arrays:
             self.array_editor = ArrayEditor(arrays)
@@ -81,15 +131,18 @@ class OperationEditor(QFrame):
             self.readback.setText("在上方选择对应数据项目，使用“单次读取”或“开始监测”获取数据。")
         self.readback.setWordWrap(True)
         self.readback.setObjectName("readback")
+        self.readback.setVisible(not compact or controller.runtime.hardware)
         layout.addWidget(self.readback)
         self.range_note = QLabel()
         self.range_note.setObjectName("rangeHint")
         self.range_note.setWordWrap(True)
         layout.addWidget(self.range_note)
-        actions = QHBoxLayout()
-        self.status = QLabel("" if cap.available else cap.reason)
+        actions_row = QHBoxLayout()
+        self.status = FeedbackLabel()
+        self.status.setText("" if cap.available else cap.reason)
         self.status.setWordWrap(True)
-        actions.addWidget(self.status, 1)
+        self.status.setObjectName("operationStatus")
+        actions_row.addWidget(self.status, 1)
         self.read_button = QPushButton("读取")
         self.read_button.setVisible(not self.data_only)
         self.read_button.clicked.connect(self.read)
@@ -97,9 +150,12 @@ class OperationEditor(QFrame):
         self.apply_button.setObjectName("primaryButton")
         self.apply_button.clicked.connect(self.apply)
         self.apply_button.setVisible(cap.writable)
-        actions.addWidget(self.read_button)
-        actions.addWidget(self.apply_button)
-        layout.addLayout(actions)
+        if compact:
+            self.read_button.setVisible(actions and cap.readable)
+            self.apply_button.setVisible(actions and cap.writable)
+        actions_row.addWidget(self.read_button)
+        actions_row.addWidget(self.apply_button)
+        layout.addLayout(actions_row)
         draft = controller.runtime.repository.load_workspace(self.key)
         if draft:
             for name, value in draft.get("fields", {}).items():
@@ -121,8 +177,13 @@ class OperationEditor(QFrame):
         self.refresh_enabled()
 
     def save_draft(self) -> None:
-        self.dirty = True
-        self.status.setText("待应用")
+        if any(not editor.input_is_valid() for editor in self.editors.values()):
+            return
+        self.dirty = not self.matches_current()
+        self.status.setText("待应用" if self.dirty else "")
+        if not self.dirty:
+            self.controller.runtime.repository.save_workspace(self.key, None)
+            return
         self.controller.runtime.repository.save_workspace(
             self.key,
             {
@@ -131,6 +192,29 @@ class OperationEditor(QFrame):
                 "array_path": self.array_editor.path if self.array_editor else "",
             },
         )
+
+    def matches_current(self) -> bool:
+        """Compare in base units without validation/clamping while the user is typing."""
+        if self.current_value is None or self.array_editor or not self.editors:
+            return False
+        values = self.current_value if isinstance(self.current_value, dict) else {"value": self.current_value}
+        for name, editor in self.editors.items():
+            draft = editor.draft()
+            if name not in values:
+                return False
+            if editor.spec.kind in {"number", "integer"}:
+                try:
+                    value = float(draft["value"]) * draft["factor"]
+                    # Readback is displayed to 12 significant digits; unit-only changes are not writes.
+                    if not math.isfinite(value) or not math.isclose(
+                        value, float(values[name]), rel_tol=1e-12
+                    ):
+                        return False
+                except (TypeError, ValueError, OverflowError):
+                    return False
+            elif draft["value"] != values[name]:
+                return False
+        return True
 
     def refresh_enabled(self) -> None:
         if self.device_id in self.controller.records:
@@ -147,7 +231,7 @@ class OperationEditor(QFrame):
         state = self.controller.states.get(self.device_id, {})
         details = state.get("capabilityDetails", {})
         self.range_note.setText(
-            f"RF 输出限幅：{details['rf_output_limit_dbm']:g} dBm · 功率偏移：{details.get('power_offset_db', 0):g} dB\n"
+            f"RF 输出限幅：{details['rf_output_limit_dbm']:+g} dBm · 功率偏移：{details.get('power_offset_db', 0):g} dB\n"
             "可设范围不代表保证输出功率；此操作不修改 RF 限幅。"
             if self.cap.name == "power" and "rf_output_limit_dbm" in details
             else ""
@@ -165,6 +249,7 @@ class OperationEditor(QFrame):
                 and self.controller.mode == self.mode
                 and not state.get("controlPending")
                 and not state.get("capabilityStale", True)
+                and self.device_id not in self.controller.group_devices
             )
         )
         for editor in self.editors.values():
@@ -188,17 +273,38 @@ class OperationEditor(QFrame):
         if not shiboken6.isValid(self):
             return
         self.busy = False
+        display = concise(reading.value)
+        self.current_value = reading.value
+        raw = reading.value.get("value") if isinstance(reading.value, dict) else reading.value
+        spec = self.cap.parameters.get("value")
+        if self.compact and spec and isinstance(raw, (int, float)) and not isinstance(raw, bool):
+            factor, unit = 1.0, spec.unit
+            if spec.unit == "Hz":
+                factor, unit = next(
+                    ((f, u) for f, u in ((1e9, "GHz"), (1e6, "MHz"), (1e3, "kHz")) if abs(raw) >= f),
+                    (1, "Hz"),
+                )
+            display = f"{raw / factor:.12g} {unit}"
         self.readback.setText(
-            f"{SOURCE_LABELS.get(reading.source, reading.source)}：{concise(reading.value)}\n{reading.timestamp}"
+            f"{SOURCE_LABELS.get(reading.source, reading.source)}：{display}"
+            + ("" if self.compact else "\n" + reading.timestamp)
         )
+        self.readback.setToolTip(reading.timestamp)
+        self.readback.setVisible(not self.compact or reading.source != "simulated")
         if not self.dirty and reading.value is not None:
             values = reading.value if isinstance(reading.value, dict) else {"value": reading.value}
             for name, value in values.items():
                 if name in self.editors:
                     self.editors[name].set_value(value)
+                    editor = self.editors[name]
+                    if self.compact and isinstance(value, (int, float)) and editor.spec.unit == "Hz":
+                        factor = next((scale for scale in (1e9, 1e6, 1e3) if abs(value) >= scale), 1)
+                        editor.restore({"value": f"{value / factor:.12g}", "factor": factor})
         self.refresh_enabled()
 
     def parameters(self) -> dict[str, Any]:
+        for editor in self.editors.values():
+            editor.finish_editing(force=True)
         values = {name: editor.value() for name, editor in self.editors.items()}
         if self.array_editor:
             values.update(self.array_editor.values())
@@ -249,7 +355,14 @@ class OperationEditor(QFrame):
             labels.get(result.outcome, result.outcome) + (" · " + result.error if result.error else "")
         )
         if result.readback is not None:
-            self.readback.setText("本次操作返回值：" + concise(result.readback) + "\n" + result.timestamp)
+            if result.outcome == "success":
+                self.current_value = result.readback
+            self.readback.setText(
+                "本次操作返回值："
+                + concise(result.readback)
+                + ("" if self.compact else "\n" + result.timestamp)
+            )
+            self.readback.setToolTip(result.timestamp)
         elif result.outcome == "success":
             self.readback.setText("本会话设置已受理；设备未提供该操作的即时读回\n" + result.timestamp)
         if result.outcome == "success":

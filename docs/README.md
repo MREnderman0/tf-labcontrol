@@ -13,6 +13,7 @@
 | [设备发现与总览](requirements/device-discovery-and-overview.md) | 扫描与总览的唯一详细设计来源 |
 | [设备管理](requirements/device-management.md) | 总览行为与操作边界 |
 | [控制与监测指南](control-and-monitoring.md) | A/B 演示、分类调参、监测卡片、记录与导出 |
+| [信号源界面验收](ui-signal-source-review.md) | 紧凑面板、低分辨率适配、功能验证与独立视觉审查 |
 | [实时监测设计](requirements/realtime-monitoring.md) | 布局、调度、配置版本、共享采集与记录边界的当前依据 |
 | [兼容层](protocols/device-compatibility.md) | 领域接口、型号注册、校验、采集和扩展规范 |
 | [传输协议](protocols/visa-scpi.md) | VISA 生命周期、串口/TCP/VICP/SDK 和分帧 |

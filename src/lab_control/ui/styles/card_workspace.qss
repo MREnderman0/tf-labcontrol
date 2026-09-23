@@ -87,3 +87,17 @@ QLabel#inputFeedback { color: #e3a252; font-size: 12px; }
 QDialog, QMessageBox, QInputDialog, QFileDialog { background: #101315; }
 QMenu { background: #1a1e20; border: 1px solid #485054; }
 QMenu::item:selected { background: #57452f; }
+
+/* Signal source: compact instrument panels, using the approved amber palette. */
+QFrame#channelPanel { background: #15191b; border: 1px solid #343b3e; border-radius: 5px; }
+QLabel#channelTitle { color: #e3a252; background: #1d2123; padding: 9px 12px; font-size: 14px; font-weight: 600; }
+QFrame#sourceGroup, QFrame#compactOperation { background: transparent; border: 0; }
+QWidget#parameterEditor { background: transparent; }
+QFrame#compactOperation QLabel#controlTitle { font-size: 12px; color: #b5bfbd; }
+QFrame#compactOperation QLabel#readback { font-size: 11px; color: #91a29c; }
+QFrame#compactOperation QLabel#rangeHint { font-size: 11px; }
+QFrame#compactOperation QLabel#operationStatus { font-size: 11px; color: #e3a252; }
+QFrame#compactOperation QLineEdit#sourceValue { font-size: 20px; font-weight: 600; padding: 3px 9px; min-height: 25px; }
+QFrame#compactOperation QComboBox { padding: 3px 7px; padding-right: 23px; min-height: 25px; }
+QLabel#outputState { font-size: 14px; font-weight: 600; color: #e3a252; padding: 3px 5px; }
+QFrame#sourceGroup QPushButton#primaryButton:disabled { background: #15191b; color: #788286; border-color: #303739; font-weight: 400; }

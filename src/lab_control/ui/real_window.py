@@ -4,8 +4,8 @@ import json
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any
 
-from PySide6.QtCore import QDateTime, QObject, QSize, Qt, QTimer, Signal
-from PySide6.QtGui import QColor
+from PySide6.QtCore import QDateTime, QObject, QRect, QSize, Qt, QTimer, Signal
+from PySide6.QtGui import QColor, QScreen
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -42,6 +42,7 @@ from lab_control.domain.instruments import DeviceError, jsonable
 from lab_control.instruments.registry import PROFILES, SDK_ADAPTERS, describe
 from lab_control.ui.controller import WorkspaceController
 from lab_control.ui.pages.device_control.page import DeviceControlPage
+from lab_control.ui.pages.device_control.signal_source import SignalSourcePage
 from lab_control.ui.pages.monitoring.dashboard import MonitoringDashboard
 from lab_control.ui.pages.monitoring.page import MonitoringPage
 from lab_control.ui.widgets.category_cards import CategoryCard, CategoryCardGrid
@@ -126,9 +127,13 @@ class RealWindow(QMainWindow):
         self.states: dict[str, dict[str, Any]] = {}
         self.last_details = ""
         self.closing = False
+        self._manual_sidebar_collapsed = False
+        self._watched_screen: QScreen | None = None
+        self._screen_connected = False
         self.setWindowTitle("TF LabControl · 分类卡片 · " + ("真实设备" if runtime.hardware else "模拟演示"))
         self.resize(1440, 900)
         self._build()
+        self.fit_to_screen()
         self.controller.message.connect(self._failed)
         self.controller.navigate.connect(self.navigate)
         self.timer = QTimer(self)
@@ -243,8 +248,14 @@ class RealWindow(QMainWindow):
         self.navigate("设备管理", "", "")
 
     def toggle_sidebar(self) -> None:
-        collapsed = self.sidebar.width() > 100
+        self._manual_sidebar_collapsed = not self._manual_sidebar_collapsed
+        self.update_sidebar()
+
+    def update_sidebar(self) -> None:
+        collapsed = self._manual_sidebar_collapsed
         self.sidebar.setFixedWidth(76 if collapsed else 232)
+        if layout := self.sidebar.layout():
+            layout.setContentsMargins(8 if collapsed else 18, 22, 8 if collapsed else 18, 18)
         self.brand.setText("TF" if collapsed else "TF LABCONTROL")
         self.brand_subline.setVisible(not collapsed)
         self.sidebar_section.setVisible(not collapsed)
@@ -253,6 +264,36 @@ class RealWindow(QMainWindow):
         for label, button in self.nav_buttons.items():
             button.setText(label[:2] if collapsed else label)
             button.setToolTip(label)
+
+    def fit_to_screen(self, available: QRect | None = None) -> None:
+        """Use Qt logical screen coordinates, including work area and native window decoration."""
+        if available is None:
+            available = self.screen().availableGeometry()
+        border = self.frameGeometry().size() - self.size()
+        width = max(1, available.width() - max(0, border.width()))
+        height = max(1, available.height() - max(0, border.height()))
+        self.setMinimumSize(min(960, width), min(600, height))
+        if not self.isMaximized() and not self.isFullScreen():
+            self.resize(min(self.width(), width), min(self.height(), height))
+            frame = self.frameGeometry()
+            x = min(max(frame.x(), available.x()), available.right() - frame.width() + 1)
+            y = min(max(frame.y(), available.y()), available.bottom() - frame.height() + 1)
+            self.move(self.pos().x() + x - frame.x(), self.pos().y() + y - frame.y())
+        self.update_sidebar()
+
+    def watch_screen(self, screen: QScreen) -> None:
+        if self._watched_screen is not None:
+            self._watched_screen.availableGeometryChanged.disconnect(self.fit_to_screen)
+        self._watched_screen = screen
+        screen.availableGeometryChanged.connect(self.fit_to_screen)
+        QTimer.singleShot(0, self.fit_to_screen)
+
+    def showEvent(self, event) -> None:  # noqa: N802
+        super().showEvent(event)
+        if not self._screen_connected and (handle := self.windowHandle()):
+            self._screen_connected = True
+            handle.screenChanged.connect(self.watch_screen)
+            self.watch_screen(handle.screen())
 
     def focus_card(self, spec: dict) -> None:
         page = self.stack.currentWidget()
@@ -284,7 +325,7 @@ class RealWindow(QMainWindow):
         self.submenu.blockSignals(False)
         self.show_page()
         page = self.stack.currentWidget()
-        if device_id and isinstance(page, (DeviceControlPage, MonitoringPage)):
+        if device_id and isinstance(page, (DeviceControlPage, MonitoringPage, SignalSourcePage)):
             page.selector.select(device_id)
 
     def show_page(self, *_args) -> None:
@@ -301,7 +342,11 @@ class RealWindow(QMainWindow):
             page = self.page_map.get(key)
             if page is None:
                 if module == "设备管理":
-                    page = DeviceControlPage(self.controller, category)
+                    page = (
+                        SignalSourcePage(self.controller)
+                        if category == "signal_generator"
+                        else DeviceControlPage(self.controller, category)
+                    )
                 elif module == "实时监测":
                     page = MonitoringPage(self.controller, category, self.dashboard.add)
                 else:
@@ -526,6 +571,8 @@ class RealWindow(QMainWindow):
 
     def resizeEvent(self, event) -> None:  # noqa: N802
         super().resizeEvent(event)
+        if hasattr(self, "nav_buttons"):
+            self.update_sidebar()
         if hasattr(self, "device_pool") and not self.device_pool.isHidden():
             self.show_device_pool()
 

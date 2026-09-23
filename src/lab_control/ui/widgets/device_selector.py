@@ -12,7 +12,7 @@ class DeviceSelector(QWidget):
     selected = Signal(str)
     channel_changed = Signal(int)
 
-    def __init__(self, controller: WorkspaceController, category: str, parent=None) -> None:
+    def __init__(self, controller: WorkspaceController, category: str, parent=None, *, compact=False) -> None:
         super().__init__(parent)
         self.controller, self.category = controller, category
         self.device_id = ""
@@ -27,7 +27,8 @@ class DeviceSelector(QWidget):
             lambda: self.channel_changed.emit(self.channel.currentData() or 1)
         )
         row.addWidget(self.combo, 1)
-        row.addWidget(QLabel("通道"))
+        channel_label = QLabel("通道")
+        row.addWidget(channel_label)
         row.addWidget(self.channel)
         self.connect_button = QPushButton("连接")
         self.connect_button.clicked.connect(self._connect)
@@ -37,6 +38,10 @@ class DeviceSelector(QWidget):
         self.info.setWordWrap(True)
         self.info.setObjectName("mutedText")
         layout.addWidget(self.info)
+        if compact:
+            channel_label.hide()
+            self.channel.hide()
+            self.info.hide()
         controller.refreshed.connect(self.refresh)
         self.refresh()
 

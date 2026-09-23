@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 import pyqtgraph as pg
+import shiboken6
 from PySide6.QtCore import QAbstractTableModel, QEvent, QModelIndex, Qt, QTimer, Signal
 from PySide6.QtWidgets import (
     QApplication,
@@ -15,6 +16,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
     QLabel,
+    QLayout,
     QLineEdit,
     QPushButton,
     QTableView,
@@ -36,16 +38,56 @@ UNIT_CHOICES = {
 }
 
 
+class FeedbackLabel(QLabel):
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.hide()
+
+    def setText(self, text: str) -> None:  # noqa: N802
+        if self.text() == text and self.isHidden() == (not text):
+            return
+        super().setText(text)
+        self.setVisible(bool(text))
+        self.relayout()
+        QTimer.singleShot(0, self.relayout)
+
+    def relayout(self) -> None:
+        if not shiboken6.isValid(self):
+            return
+
+        def invalidate(layout: QLayout) -> None:
+            # QGridLayout caches child heights; invalidating only its outer VBox is insufficient.
+            for index in range(layout.count()):
+                item = layout.itemAt(index)
+                if item is not None and (nested := item.layout()) is not None:
+                    invalidate(nested)
+            layout.invalidate()
+
+        parent = self.parentWidget()
+        while parent is not None:
+            if layout := parent.layout():
+                invalidate(layout)
+                layout.activate()
+            parent.updateGeometry()
+            parent = parent.parentWidget()
+
+    def clear(self) -> None:
+        self.setText("")
+
+
 class ParameterEditor(QWidget):
     changed = Signal()
 
     def __init__(self, spec: Parameter, parent=None) -> None:
         super().__init__(parent)
+        self.setObjectName("parameterEditor")
         self.spec = spec
         self.feedback: QLabel
         self._editing_number = False
         self._last_factor = 1.0
+        self._last_valid_draft: dict[str, Any] | None = None
         outer = QVBoxLayout(self)
+        outer.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(3)
         layout = QHBoxLayout()
@@ -65,6 +107,7 @@ class ParameterEditor(QWidget):
             self.input.currentIndexChanged.connect(self.changed)
         else:
             self.input = QLineEdit()
+            self.input.installEventFilter(self)
             self.input.setPlaceholderText("输入目标值" if spec.kind == "text" else "例如 1e3")
             self.input.textEdited.connect(self.changed)
             self.input.textEdited.connect(lambda: self.feedback.clear())
@@ -80,7 +123,8 @@ class ParameterEditor(QWidget):
         self.range_label = QLabel()
         self.range_label.setObjectName("rangeHint")
         self.range_label.setWordWrap(True)
-        self.feedback = QLabel()
+        self.feedback = FeedbackLabel()
+        self.feedback.hide()
         self.feedback.setObjectName("inputFeedback")
         self.feedback.setWordWrap(True)
         outer.addWidget(self.range_label)
@@ -132,7 +176,7 @@ class ParameterEditor(QWidget):
             self.finish_editing()
 
     def eventFilter(self, watched, event) -> bool:  # noqa: N802
-        if watched is self.unit and event.type() == QEvent.Type.FocusOut:
+        if watched in (self.unit, getattr(self, "input", None)) and event.type() == QEvent.Type.FocusOut:
             QTimer.singleShot(0, self.finish_editing)
         return super().eventFilter(watched, event)
 
@@ -154,17 +198,37 @@ class ParameterEditor(QWidget):
     def number_edited(self) -> None:
         self._editing_number = True
 
+    def input_is_valid(self) -> bool:
+        if self.spec.kind not in {"number", "integer"}:
+            return True
+        try:
+            value = float(self.draft()["value"]) * (self.unit.currentData() or 1)
+            return math.isfinite(value) and (self.spec.kind != "integer" or value.is_integer())
+        except (TypeError, ValueError, OverflowError):
+            return False
+
     def finish_editing(self, *, force: bool = False) -> None:
+        if not shiboken6.isValid(self) or not shiboken6.isValid(self.unit):
+            return
         if self.spec.kind not in {"number", "integer"}:
             return
         focused = QApplication.focusWidget()
         if not force and (focused is self.unit or self.unit.view().isVisible()):
             return
-        if isinstance(self.input, QLineEdit) and not self.input.text().strip():
-            self.feedback.setText("请输入有效数值")
+        if not self.input_is_valid():
+            if self._last_valid_draft is not None:
+                factor = self.unit.currentData() or 1
+                previous = self._last_valid_draft
+                value = float(previous["value"]) * previous["factor"] / factor
+                self.restore({"value": f"{value:.12g}", "factor": factor})
+            elif isinstance(self.input, QLineEdit):
+                self.input.clear()
+            self.feedback.clear()
+            self.changed.emit()
             return
         try:
             self.value()
+            self._last_valid_draft = self.draft()
         except DeviceError as exc:
             self.feedback.setText(str(exc))
 
@@ -228,6 +292,9 @@ class ParameterEditor(QWidget):
         self._last_factor = self.unit.currentData() or 1
         self._editing_number = False
         self.update_range_label()
+
+        if self.input_is_valid():
+            self._last_valid_draft = self.draft()
 
     def set_value(self, value: Any) -> None:
         if self.spec.kind == "boolean":

@@ -139,15 +139,17 @@ def test_frontend_bounds_and_scientific_notation(qtbot, text, expected):
         ("integer", "1.5"),
     ],
 )
-def test_invalid_input_is_not_replaced(qtbot, kind, text):
+def test_invalid_input_restores_previous_value_without_error(qtbot, kind, text):
     editor = ParameterEditor(Parameter(kind, minimum=0, maximum=100))
     qtbot.addWidget(editor)
+    editor.set_value(7)
     editor.input.setText(text)
-    editor.finish_editing()
-    assert editor.input.text() == text
-    assert editor.feedback.text()
     with pytest.raises(DeviceError):
         editor.value()
+    editor.finish_editing()
+    assert editor.input.text() == "7"
+    assert not editor.feedback.text()
+    assert editor.value() == 7
 
 
 def test_final_unit_focus_enter_and_dynamic_edit(qtbot):

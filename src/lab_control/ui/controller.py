@@ -25,6 +25,7 @@ class WorkspaceController(QObject):
         self.mode = runtime.repository.load_workspace("current_mode", "electronic")
         self.records: dict[str, dict[str, Any]] = {}
         self.states: dict[str, dict[str, Any]] = {}
+        self.group_devices: set[str] = set()
         self.jobs: list[
             tuple[Future[Any], Callable[[Any], None] | None, Callable[[Exception], None] | None]
         ] = []
@@ -61,6 +62,8 @@ class WorkspaceController(QObject):
         self.refreshed.emit()
 
     def set_mode(self, mode: str) -> None:
+        if self.group_devices:
+            raise DeviceError("参数正在分组应用，请完成后切换模式", "task_busy")
         if any(
             s.get("recording") or s.get("controlPending") or s.get("activeTask") == "continuous_acquisition"
             for s in self.runtime.sessions.snapshots()
@@ -86,7 +89,11 @@ class WorkspaceController(QObject):
         command: DeviceCommand,
         callback: Callable[[Any], None],
         on_error: Callable[[Exception], None] | None = None,
+        *,
+        group_member: bool = False,
     ) -> None:
+        if device_id in self.group_devices and not group_member:
+            raise DeviceError("当前设备正在应用一组参数", "task_busy")
         self.ensure_applicable(device_id)
         cap = self.capabilities(device_id, command.channel).get(command.operation)
         cap.validate(command.parameters)
