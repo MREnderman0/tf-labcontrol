@@ -89,7 +89,7 @@ class OperationEditor(QFrame):
         form = QFormLayout()
         for name, parameter in cap.parameters.items():
             if parameter.kind != "array":
-                editor = ParameterEditor(parameter)
+                editor = ParameterEditor(parameter, self)
                 self.editors[name] = editor
                 editor.changed.connect(self.save_draft)
                 if compact and name == "value":
@@ -126,27 +126,27 @@ class OperationEditor(QFrame):
         if arrays:
             self.array_editor = ArrayEditor(arrays)
             layout.addWidget(self.array_editor)
-        self.readback = QLabel("当前值：尚未读取")
+        self.readback = QLabel("当前值：尚未读取", self)
         if self.data_only:
             self.readback.setText("在上方选择对应数据项目，使用“单次读取”或“开始监测”获取数据。")
         self.readback.setWordWrap(True)
         self.readback.setObjectName("readback")
         self.readback.setVisible(not compact or controller.runtime.hardware)
         layout.addWidget(self.readback)
-        self.range_note = QLabel()
+        self.range_note = QLabel(self)
         self.range_note.setObjectName("rangeHint")
         self.range_note.setWordWrap(True)
         layout.addWidget(self.range_note)
         actions_row = QHBoxLayout()
-        self.status = FeedbackLabel()
+        self.status = FeedbackLabel(self)
         self.status.setText("" if cap.available else cap.reason)
         self.status.setWordWrap(True)
         self.status.setObjectName("operationStatus")
         actions_row.addWidget(self.status, 1)
-        self.read_button = QPushButton("读取")
+        self.read_button = QPushButton("读取", self)
         self.read_button.setVisible(not self.data_only)
         self.read_button.clicked.connect(self.read)
-        self.apply_button = QPushButton("应用" if cap.parameters else "执行")
+        self.apply_button = QPushButton("应用" if cap.parameters else "执行", self)
         self.apply_button.setObjectName("primaryButton")
         self.apply_button.clicked.connect(self.apply)
         self.apply_button.setVisible(cap.writable)

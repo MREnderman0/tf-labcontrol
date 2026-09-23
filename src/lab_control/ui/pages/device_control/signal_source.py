@@ -94,7 +94,7 @@ class ParameterGroup(QFrame):
         for index, cap in enumerate(caps):
             standalone = not cap.parameters or any(p.kind == "array" for p in cap.parameters.values())
             editor = OperationEditor(
-                controller, device_id, cap, channel, compact=not standalone, actions=standalone
+                controller, device_id, cap, channel, parent=self, compact=not standalone, actions=standalone
             )
             self.editors[cap.name] = editor
             self.fields.addWidget(editor, index // columns, index % columns)

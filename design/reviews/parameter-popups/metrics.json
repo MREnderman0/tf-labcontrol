@@ -1,0 +1,722 @@
+[
+  {
+    "file": "amplitude-1440.png",
+    "window": [
+      1440,
+      900
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "mVpp",
+      "Vpp"
+    ],
+    "row_heights": [
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      56
+    ],
+    "popup": [
+      724,
+      465,
+      90,
+      64
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "frequency-1440.png",
+    "window": [
+      1440,
+      900
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "Hz",
+      "kHz",
+      "MHz",
+      "GHz"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      112
+    ],
+    "popup": [
+      724,
+      387,
+      90,
+      120
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "waveform-1440.png",
+    "window": [
+      1440,
+      900
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "正弦波",
+      "方波",
+      "斜坡",
+      "脉冲",
+      "噪声",
+      "直流"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      553,
+      168
+    ],
+    "popup": [
+      259,
+      327,
+      555,
+      176
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "time-1440.png",
+    "window": [
+      1440,
+      900
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "ns",
+      "µs",
+      "ms",
+      "s"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      112
+    ],
+    "popup": [
+      739,
+      729,
+      90,
+      120
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "rf-frequency-1440.png",
+    "window": [
+      1440,
+      900
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "Hz",
+      "kHz",
+      "MHz",
+      "GHz"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      112
+    ],
+    "popup": [
+      744,
+      327,
+      90,
+      120
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "amplitude-1100.png",
+    "window": [
+      1100,
+      760
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "mVpp",
+      "Vpp"
+    ],
+    "row_heights": [
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      56
+    ],
+    "popup": [
+      554,
+      465,
+      90,
+      64
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "frequency-1100.png",
+    "window": [
+      1100,
+      760
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "Hz",
+      "kHz",
+      "MHz",
+      "GHz"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      112
+    ],
+    "popup": [
+      554,
+      387,
+      90,
+      120
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "waveform-1100.png",
+    "window": [
+      1100,
+      760
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "正弦波",
+      "方波",
+      "斜坡",
+      "脉冲",
+      "噪声",
+      "直流"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      383,
+      168
+    ],
+    "popup": [
+      259,
+      327,
+      385,
+      176
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "time-1100.png",
+    "window": [
+      1100,
+      760
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "ns",
+      "µs",
+      "ms",
+      "s"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      112
+    ],
+    "popup": [
+      569,
+      654,
+      90,
+      120
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "rf-frequency-1100.png",
+    "window": [
+      1100,
+      760
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "Hz",
+      "kHz",
+      "MHz",
+      "GHz"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      112
+    ],
+    "popup": [
+      569,
+      327,
+      90,
+      120
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "amplitude-1024.png",
+    "window": [
+      1020,
+      596
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "mVpp",
+      "Vpp"
+    ],
+    "row_heights": [
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      56
+    ],
+    "popup": [
+      514,
+      465,
+      90,
+      64
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "frequency-1024.png",
+    "window": [
+      1020,
+      596
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "Hz",
+      "kHz",
+      "MHz",
+      "GHz"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      112
+    ],
+    "popup": [
+      514,
+      387,
+      90,
+      120
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "waveform-1024.png",
+    "window": [
+      1020,
+      596
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "正弦波",
+      "方波",
+      "斜坡",
+      "脉冲",
+      "噪声",
+      "直流"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      343,
+      168
+    ],
+    "popup": [
+      259,
+      327,
+      345,
+      176
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "time-1024.png",
+    "window": [
+      1020,
+      596
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "ns",
+      "µs",
+      "ms",
+      "s"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      112
+    ],
+    "popup": [
+      529,
+      490,
+      90,
+      120
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "rf-frequency-1024.png",
+    "window": [
+      1020,
+      596
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "Hz",
+      "kHz",
+      "MHz",
+      "GHz"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      112
+    ],
+    "popup": [
+      529,
+      327,
+      90,
+      120
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "amplitude-800.png",
+    "window": [
+      796,
+      556
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "mVpp",
+      "Vpp"
+    ],
+    "row_heights": [
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      56
+    ],
+    "popup": [
+      402,
+      465,
+      90,
+      64
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "frequency-800.png",
+    "window": [
+      796,
+      556
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "Hz",
+      "kHz",
+      "MHz",
+      "GHz"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      112
+    ],
+    "popup": [
+      402,
+      387,
+      90,
+      120
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "waveform-800.png",
+    "window": [
+      796,
+      556
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "正弦波",
+      "方波",
+      "斜坡",
+      "脉冲",
+      "噪声",
+      "直流"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      231,
+      168
+    ],
+    "popup": [
+      259,
+      327,
+      233,
+      176
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "time-800.png",
+    "window": [
+      796,
+      556
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "ns",
+      "µs",
+      "ms",
+      "s"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      112
+    ],
+    "popup": [
+      672,
+      450,
+      90,
+      120
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "rf-frequency-800.png",
+    "window": [
+      796,
+      556
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "Hz",
+      "kHz",
+      "MHz",
+      "GHz"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      112
+    ],
+    "popup": [
+      672,
+      327,
+      90,
+      120
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  }
+]

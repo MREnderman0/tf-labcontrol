@@ -11,23 +11,22 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-dev.ps1
 .venv-dev\Scripts\lab-control.exe
 ```
 
-使用独立开发环境，避免覆盖正在运行的旧演示程序环境。也可以双击 `run_real.bat`。真实入口未安装 VISA/SDK 时仍可打开，环境诊断会显示缺失项；扫描不会加入演示设备。厂商驱动与 DLL 的安装见[实机指南](docs/hardware-testing.md)。
+日常启动只需双击根目录 `run.bat`，使用项目 `.venv-dev`。`python -m lab_control` 和 `lab-control` 调用同一正式启动函数，持续开发同一套软件。未安装 VISA/SDK 时仍可打开，环境诊断会显示缺失项；空库存不会填入模拟设备。厂商驱动与 DLL 的安装见[实机指南](docs/hardware-testing.md)。
 
 **项目下载约定：优先国内镜像，默认禁用安装进程代理，不消耗 VPN 流量，不自动回退国外 PyPI。** 默认清华、可显式指定阿里云；详见[开发环境与下载策略](docs/development-environment.md)。支持 VISA 的设备优先通过 PyVISA 接入；同一设备多地址须核实身份，避免重复连接。
 
 ```powershell
 .venv-dev\Scripts\lab-control.exe --config config/examples/visa.toml
 .venv-dev\Scripts\python.exe -m lab_control
-.venv-dev\Scripts\lab-control-demo.exe
 .venv-dev\Scripts\lab-control-cli.exe models
 .venv-dev\Scripts\lab-control-cli.exe doctor
 ```
 
-`visa.toml` 中的地址为示例，使用前复制到自己的配置目录并替换。演示入口 `lab-control-demo` 不访问仪器；CLI 的 `--mock` 使用隔离模拟库存。
+`visa.toml` 中的地址为示例，使用前复制到自己的配置目录并替换。`run.bat --config "配置文件路径"` 同样支持参数透传。Mock 仅用于内部测试和开发预览，共用正式界面组件；CLI 的 `--mock` 使用隔离模拟库存。
 
-前端固定为用户确认的[历史深色琥珀分类卡片版](direction-approved.md)：左侧导航、顶部分类、三列分类卡片，点击卡片展开该类设备池。真实和模拟入口共用这套界面与唯一主题。数值输入下方显示范围和来源，在失焦、回车或应用时自动修正到最近边界，修正不发送设备命令。仪器读回保留原值；后端拒绝超界请求。SMA100B 连接后读取实机可设范围，RF 输出限幅单列显示，实验限制可进一步收紧。详见[输入范围规则](docs/input-ranges.md)。
+前端固定为用户确认的[历史深色琥珀分类卡片版](direction-approved.md)：左侧导航、顶部分类、三列分类卡片，点击卡片展开该类设备池。正式界面与内部预览共用唯一主题。数值输入下方显示范围和来源，在失焦、回车或应用时自动修正到最近边界，修正不发送设备命令。仪器读回保留原值；后端拒绝超界请求。SMA100B 连接后读取实机可设范围，RF 输出限幅单列显示，实验限制可进一步收紧。详见[输入范围规则](docs/input-ranges.md)。
 
-双击 `run_demo.bat` 可查看 12 类、24 台 A/B 模拟设备。信号源/电源在设备管理调节，示波器/频谱及测量类参数放在实时监测。设备与监测总览卡片随窗口排版，电子学/光学分别保存布局。仅监测不写实验数据，显式开始记录后才保存原始批次。完整操作见[分类控制与监测指南](docs/control-and-monitoring.md)。
+信号源/电源在设备管理调节，示波器/频谱及测量类参数放在实时监测。设备与监测总览卡片随窗口排版，电子学/光学分别保存布局。仅监测不写实验数据，显式开始记录后才保存原始批次。完整操作见[分类控制与监测指南](docs/control-and-monitoring.md)。
 
 ## 首次接设备
 

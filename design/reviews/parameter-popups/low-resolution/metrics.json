@@ -1,0 +1,182 @@
+[
+  {
+    "file": "amplitude-800.png",
+    "window": [
+      796,
+      556
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "mVpp",
+      "Vpp"
+    ],
+    "row_heights": [
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      56
+    ],
+    "popup": [
+      402,
+      465,
+      90,
+      64
+    ],
+    "screen": [
+      0,
+      0,
+      800,
+      560
+    ]
+  },
+  {
+    "file": "frequency-800.png",
+    "window": [
+      796,
+      556
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "Hz",
+      "kHz",
+      "MHz",
+      "GHz"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      112
+    ],
+    "popup": [
+      402,
+      387,
+      90,
+      120
+    ],
+    "screen": [
+      0,
+      0,
+      800,
+      560
+    ]
+  },
+  {
+    "file": "waveform-800.png",
+    "window": [
+      796,
+      556
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "正弦波",
+      "方波",
+      "斜坡",
+      "脉冲",
+      "噪声",
+      "直流"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      231,
+      168
+    ],
+    "popup": [
+      259,
+      327,
+      233,
+      176
+    ],
+    "screen": [
+      0,
+      0,
+      800,
+      560
+    ]
+  },
+  {
+    "file": "time-800.png",
+    "window": [
+      796,
+      556
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "ns",
+      "µs",
+      "ms",
+      "s"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      112
+    ],
+    "popup": [
+      672,
+      297,
+      90,
+      120
+    ],
+    "screen": [
+      0,
+      0,
+      800,
+      560
+    ]
+  },
+  {
+    "file": "rf-frequency-800.png",
+    "window": [
+      796,
+      556
+    ],
+    "device_pixel_ratio": 1.0,
+    "items": [
+      "Hz",
+      "kHz",
+      "MHz",
+      "GHz"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      112
+    ],
+    "popup": [
+      672,
+      327,
+      90,
+      120
+    ],
+    "screen": [
+      0,
+      0,
+      800,
+      560
+    ]
+  }
+]

@@ -1,4 +1,4 @@
-from .app import real_main
+from .app import main
 
 if __name__ == "__main__":
-    raise SystemExit(real_main())
+    raise SystemExit(main())

@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 
 from lab_control.application.controls import PARAMETER_LABELS
 from lab_control.domain.instruments import DeviceError, Parameter, ValidationError
+from lab_control.ui.widgets.parameter_combo import ParameterComboBox
 
 UNIT_CHOICES = {
     "Hz": (("Hz", 1), ("kHz", 1e3), ("MHz", 1e6), ("GHz", 1e9)),
@@ -93,20 +94,20 @@ class ParameterEditor(QWidget):
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         outer.addLayout(layout)
-        self.unit = QComboBox()
+        self.unit = ParameterComboBox(self)
         self.unit.setFixedWidth(100)
         self.unit.installEventFilter(self)
         self.input: QCheckBox | QComboBox | QLineEdit
         if spec.kind == "boolean":
-            self.input = QCheckBox("开启")
+            self.input = QCheckBox("开启", self)
             self.input.stateChanged.connect(self.changed)
         elif spec.kind == "enum":
-            self.input = QComboBox()
+            self.input = ParameterComboBox(self)
             for value in spec.choices:
                 self.input.addItem(value, value)
             self.input.currentIndexChanged.connect(self.changed)
         else:
-            self.input = QLineEdit()
+            self.input = QLineEdit(self)
             self.input.installEventFilter(self)
             self.input.setPlaceholderText("输入目标值" if spec.kind == "text" else "例如 1e3")
             self.input.textEdited.connect(self.changed)
@@ -120,10 +121,12 @@ class ParameterEditor(QWidget):
             self.unit.setCurrentIndex(max(0, self.unit.findData(1)))
             self.unit.currentIndexChanged.connect(self.unit_changed)
             layout.addWidget(self.unit)
-        self.range_label = QLabel()
+        else:
+            self.unit.hide()
+        self.range_label = QLabel(self)
         self.range_label.setObjectName("rangeHint")
         self.range_label.setWordWrap(True)
-        self.feedback = FeedbackLabel()
+        self.feedback = FeedbackLabel(self)
         self.feedback.hide()
         self.feedback.setObjectName("inputFeedback")
         self.feedback.setWordWrap(True)

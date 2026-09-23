@@ -1,6 +1,6 @@
 # Python 前端结构（0.3.0）
 
-当前 `lab-control` 和 `lab-control-demo` 共用应用窗口、分类控制和监测组件，分别注入真实与 Mock ApplicationRuntime。扫描细节见[设备发现与总览](../requirements/device-discovery-and-overview.md)，参数和任务细节见[设备管理](../requirements/device-management.md)与[实时监测](../requirements/realtime-monitoring.md)。数据处理、完整实验编排和阈值告警尚未实现。
+`run.bat`、`python -m lab_control` 和 `lab-control` 调用同一正式启动函数。内部测试和预览注入隔离的 Mock ApplicationRuntime，共用应用窗口、分类控制和监测组件，不注册演示启动器。扫描细节见[设备发现与总览](../requirements/device-discovery-and-overview.md)，参数和任务细节见[设备管理](../requirements/device-management.md)与[实时监测](../requirements/realtime-monitoring.md)。数据处理、完整实验编排和阈值告警尚未实现。
 
 ## 1. 目标形态
 

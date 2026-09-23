@@ -3,7 +3,7 @@
 ## 前端固定基线
 
 - 用户已明确确认历史提交 `0ae6721` 中的深色琥珀**分类卡片版**，以 `direction-approved.md` 和其中 `design/approved/card-overview.png` 截图为准。
-- 正式与 Mock 入口共用 `ui/real_window.py`、`ui/widgets/category_cards.py` 和唯一主题 `ui/styles/card_workspace.qss`。首页使用分类卡片，点击卡片打开设备池；保留真实服务与范围校验。
+- 唯一正式启动脚本为 `run.bat`；模块入口与 `lab-control` 调用同一正式启动函数。Mock 仅用于内部测试和开发预览，共用 `ui/real_window.py`、`ui/widgets/category_cards.py` 和唯一主题 `ui/styles/card_workspace.qss`。首页使用分类卡片，点击卡片打开设备池；保留真实服务与范围校验。
 - 后续功能沿用此结构和配色；除非用户明确调整方向，不改成整页设备表或另选视觉方案。旧表格方向 HTML 不是当前确认基线。
 
 ## 真实设备测试必须留档

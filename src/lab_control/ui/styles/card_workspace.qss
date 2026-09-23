@@ -60,6 +60,8 @@ QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox { background: #171c1e; border: 1p
 QComboBox { padding-right: 24px; }
 QComboBox::drop-down { border-left: 1px solid #485054; width: 20px; }
 QComboBox QAbstractItemView { background: #1d2325; selection-background-color: #675138; selection-color: #fff4e2; border: 1px solid #545e61; }
+QComboBox[parameterCombo="true"] { combobox-popup: 0; }
+QComboBox[parameterCombo="true"] QAbstractItemView::item { min-height: 28px; max-height: 28px; padding: 0 8px; }
 QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus { border-color: #d99342; }
 QCheckBox { spacing: 8px; padding: 5px 0; }
 QCheckBox::indicator { width: 15px; height: 15px; background: #171c1e; border: 1px solid #61736a; }

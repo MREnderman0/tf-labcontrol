@@ -30,23 +30,6 @@ def load_ui_font() -> str:
 
 
 def main() -> int:
-    from lab_control.demo.workspace import create_demo_runtime
-    from lab_control.ui.real_window import RealWindow
-
-    app = QApplication(sys.argv)
-    app.setApplicationName("TF LabControl Demo")
-    app.setFont(QFont(load_ui_font(), 10))
-    app.setStyle("Fusion")
-    app.setStyleSheet(load_stylesheet())
-    runtime = create_demo_runtime()
-    window = RealWindow(runtime)
-    window.show()
-    result = app.exec()
-    runtime.close()
-    return result
-
-
-def real_main() -> int:
     import argparse
 
     from PySide6.QtWidgets import QMessageBox
@@ -77,4 +60,4 @@ def real_main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(real_main())
+    raise SystemExit(main())

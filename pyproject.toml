@@ -13,8 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-lab-control-demo = "lab_control.app:main"
-lab-control = "lab_control.app:real_main"
+lab-control = "lab_control.app:main"
 lab-control-cli = "lab_control.cli.main:main"
 
 [build-system]

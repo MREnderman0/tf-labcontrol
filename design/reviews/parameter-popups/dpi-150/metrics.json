@@ -1,0 +1,182 @@
+[
+  {
+    "file": "amplitude-1100.png",
+    "window": [
+      1100,
+      760
+    ],
+    "device_pixel_ratio": 1.5,
+    "items": [
+      "mVpp",
+      "Vpp"
+    ],
+    "row_heights": [
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      56
+    ],
+    "popup": [
+      553,
+      464,
+      90,
+      64
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "frequency-1100.png",
+    "window": [
+      1100,
+      760
+    ],
+    "device_pixel_ratio": 1.5,
+    "items": [
+      "Hz",
+      "kHz",
+      "MHz",
+      "GHz"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      112
+    ],
+    "popup": [
+      553,
+      386,
+      90,
+      120
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "waveform-1100.png",
+    "window": [
+      1100,
+      760
+    ],
+    "device_pixel_ratio": 1.5,
+    "items": [
+      "正弦波",
+      "方波",
+      "斜坡",
+      "脉冲",
+      "噪声",
+      "直流"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      383,
+      168
+    ],
+    "popup": [
+      258,
+      326,
+      385,
+      176
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "time-1100.png",
+    "window": [
+      1100,
+      760
+    ],
+    "device_pixel_ratio": 1.5,
+    "items": [
+      "ns",
+      "µs",
+      "ms",
+      "s"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      112
+    ],
+    "popup": [
+      568,
+      653,
+      90,
+      120
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "rf-frequency-1100.png",
+    "window": [
+      1100,
+      760
+    ],
+    "device_pixel_ratio": 1.5,
+    "items": [
+      "Hz",
+      "kHz",
+      "MHz",
+      "GHz"
+    ],
+    "row_heights": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "viewport": [
+      88,
+      112
+    ],
+    "popup": [
+      568,
+      326,
+      90,
+      120
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  }
+]

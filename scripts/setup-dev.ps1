@@ -43,6 +43,10 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Lock failed; no foreign fallback.' }
     & $uv sync --locked --default-index $index --python $envPython
     if ($LASTEXITCODE -ne 0) { throw 'Dependency installation failed; no foreign fallback.' }
+    $legacyLauncher = Join-Path $projectRoot '.venv-dev\Scripts\lab-control-demo.exe'
+    if (Test-Path -LiteralPath $legacyLauncher) {
+        Remove-Item -LiteralPath $legacyLauncher -ErrorAction Stop
+    }
     & $uv pip check --python $envPython
     if ($LASTEXITCODE -ne 0) { throw 'Dependency consistency check failed.' }
 } finally {

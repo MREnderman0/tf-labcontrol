@@ -1,7 +1,7 @@
-include README.md pyproject.toml uv.lock .python-version run_demo.bat run_real.bat
+include README.md pyproject.toml uv.lock .python-version run.bat
 include direction-approved.md
 recursive-include design/approved *.png
-recursive-include design/reviews *.png
+recursive-include design/reviews *.png *.json
 recursive-include docs *.md *.json
 recursive-include config/examples *.toml *.json *.md
 recursive-include examples *.py *.md

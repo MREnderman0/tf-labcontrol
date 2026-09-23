@@ -146,8 +146,11 @@ def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
             if category not in MEASUREMENT_CATEGORIES:
                 caps = window.controller.capabilities(page.selector.device_id)
                 if category == "signal_generator":
-                    names = {name for panel in [*page.panels.values(), *page.advanced_groups]
-                             for name in panel.editors} | {"output"}
+                    names = {
+                        name
+                        for panel in [*page.panels.values(), *page.advanced_groups]
+                        for name in panel.editors
+                    } | {"output"}
                     assert names == {c.name for c in caps.operations}
                 else:
                     assert set(page.form.editors) == {c.name for c in caps.operations}
