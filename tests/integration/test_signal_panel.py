@@ -29,7 +29,9 @@ def source(qtbot, qapp, tmp_path):
     window.show()
     window.navigate("设备管理", "signal_generator", ids["awg"])
     page = window.stack.currentWidget()
-    qtbot.waitUntil(lambda: not window.controller.jobs)
+    qtbot.waitUntil(
+        lambda: all(p.editors["frequency"].current_value is not None for p in page.panels.values())
+    )
     try:
         yield window, page, runtime, ids
     finally:
@@ -189,7 +191,8 @@ def test_clamp_feedback_never_overlaps_value_or_range(source, qtbot):
         assert field.range_label.y() > field.input.geometry().bottom()
         assert field.feedback.y() > field.range_label.geometry().bottom()
         editor = page.panels[1].editors["amplitude"]
-        assert not editor.readback.isVisible()
+        assert editor.readback.isVisible()
+        assert editor.readback.y() > field.geometry().bottom()
         assert editor.status.y() > field.geometry().bottom()
         assert page.panels[1].editors["offset"].y() > editor.geometry().bottom()
 
@@ -228,7 +231,8 @@ def test_dirty_button_matches_changes_and_mock_has_no_duplicate_readback(source,
     original = adapter.apply
     monkeypatch.setattr(adapter, "apply", lambda cmd: (writes.append(cmd), original(cmd))[1])
     assert not panel.apply_button.isEnabled()
-    assert panel.read_button.size() == panel.apply_button.size()
+    assert not hasattr(panel, "read_button")
+    assert panel.apply_button.width() == 110
     field = edit(qtbot, panel, "amplitude", "2")
     qtbot.waitUntil(panel.apply_button.isEnabled)
     edit(qtbot, panel, "amplitude", "1.0")

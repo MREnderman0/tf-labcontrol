@@ -1,0 +1,144 @@
+{
+  "performance": {
+    "environment": "Windows / Python 3.12 / Qt offscreen / Mock only",
+    "devices": 20,
+    "foreground_interval_s": 1,
+    "background_interval_s": 10,
+    "duration_s": 4.344,
+    "max_automatic_devices_in_flight": 4,
+    "max_same_device_read_concurrency": 1,
+    "max_pending_per_device": 1,
+    "max_operations_per_read": 4,
+    "gui_timer_interval_ms": 20,
+    "gui_timer_samples": 216,
+    "gui_max_tick_gap_ms": 32.0,
+    "read_batches_per_device": [
+      25,
+      1,
+      8,
+      1,
+      8,
+      27,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8
+    ],
+    "timeout_device_read_attempts": 1,
+    "monitor_frames": 18,
+    "group_pause_respected": true,
+    "automatic_writes": 0
+  },
+  "screenshots": [
+    {
+      "file": "awg-1440.png",
+      "window": [
+        1440,
+        900
+      ],
+      "columns": 2,
+      "sidebar_width": 232,
+      "status": [
+        "CH 1 关闭 · 正常",
+        "CH 2 开启 · 正常"
+      ]
+    },
+    {
+      "file": "rf-1440.png",
+      "window": [
+        1440,
+        900
+      ],
+      "columns": 1,
+      "sidebar_width": 232,
+      "status": [
+        "RF 关闭 · 正常"
+      ]
+    },
+    {
+      "file": "awg-1100.png",
+      "window": [
+        1100,
+        760
+      ],
+      "columns": 2,
+      "sidebar_width": 232,
+      "status": [
+        "CH 1 关闭 · 正常",
+        "CH 2 开启 · 正常"
+      ]
+    },
+    {
+      "file": "rf-1100.png",
+      "window": [
+        1100,
+        760
+      ],
+      "columns": 1,
+      "sidebar_width": 232,
+      "status": [
+        "RF 关闭 · 正常"
+      ]
+    },
+    {
+      "file": "awg-1024.png",
+      "window": [
+        1024,
+        600
+      ],
+      "columns": 2,
+      "sidebar_width": 232,
+      "status": [
+        "CH 1 关闭 · 正常",
+        "CH 2 开启 · 正常"
+      ]
+    },
+    {
+      "file": "rf-1024.png",
+      "window": [
+        1024,
+        600
+      ],
+      "columns": 1,
+      "sidebar_width": 232,
+      "status": [
+        "RF 关闭 · 正常"
+      ]
+    },
+    {
+      "file": "awg-800.png",
+      "window": [
+        800,
+        560
+      ],
+      "columns": 2,
+      "sidebar_width": 232,
+      "status": [
+        "CH 1 关闭 · 正常",
+        "CH 2 开启 · 正常"
+      ]
+    },
+    {
+      "file": "rf-800.png",
+      "window": [
+        800,
+        560
+      ],
+      "columns": 1,
+      "sidebar_width": 232,
+      "status": [
+        "RF 关闭 · 正常"
+      ]
+    }
+  ]
+}

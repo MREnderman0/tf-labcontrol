@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import threading
+import time
 from concurrent.futures import Future, ThreadPoolExecutor
+from copy import deepcopy
 from dataclasses import dataclass, field, replace
 from typing import Any, Callable
 from uuid import uuid4
@@ -25,6 +27,15 @@ from lab_control.domain.instruments import (
 from lab_control.storage.repository import Repository
 
 
+@dataclass(frozen=True)
+class SettingsFrame:
+    session_id: str
+    configuration_version: int
+    sequence: int
+    received_at: float
+    reading: ParameterReading
+
+
 @dataclass
 class DeviceSession:
     device_id: str
@@ -46,6 +57,9 @@ class DeviceSession:
     configuration_version: int = 0
     control_pending: int = 0
     settings: dict[tuple[int, str], ParameterReading] = field(default_factory=dict)
+    frames: dict[tuple[int, str], SettingsFrame] = field(default_factory=dict)
+    read_sequence: int = 0
+    control_group: bool = False
     capability_snapshot: CapabilitySnapshot | None = None
 
 
@@ -100,6 +114,8 @@ class SessionManager:
                     "recording": item.recording,
                     "configurationVersion": item.configuration_version,
                     "controlPending": item.control_pending,
+                    "controlGroup": item.control_group,
+                    "readSequence": item.read_sequence,
                     "capabilityVersion": item.capability_snapshot.version if item.capability_snapshot else 0,
                     "capabilityStale": item.capability_snapshot.stale if item.capability_snapshot else True,
                     "capabilityDetails": item.capability_snapshot.details if item.capability_snapshot else {},
@@ -111,6 +127,53 @@ class SessionManager:
         with self.lock:
             session = self.sessions.get(device_id)
             return session.capability_snapshot if session else None
+
+    def readback_frames(self, device_id: str) -> dict[tuple[int, str], SettingsFrame]:
+        """Frames are immutable snapshots; callers must not mutate their reading values."""
+        with self.lock:
+            session = self.sessions.get(device_id)
+            return dict(session.frames) if session else {}
+
+    def _cache_readings(self, session: DeviceSession, readings: tuple[ParameterReading, ...]) -> None:
+        with self.lock:
+            for reading in readings:
+                reading = replace(reading, value=deepcopy(reading.value))
+                key = (reading.channel, reading.operation)
+                session.settings[key] = reading
+                session.read_sequence += 1
+                session.frames[key] = SettingsFrame(
+                    session.session_id,
+                    session.configuration_version,
+                    session.read_sequence,
+                    time.monotonic(),
+                    reading,
+                )
+
+    def set_control_group(self, device_id: str, active: bool) -> None:
+        with self.lock:
+            session = self.sessions.get(device_id)
+            if session:
+                session.control_group = active
+
+    def try_submit_idle(
+        self, device_id: str, operation: str, argument: Any = None, *, quiet: bool = False
+    ) -> Future[Any] | None:
+        """Atomically reserve an idle worker; background jobs never form a queue."""
+        if operation not in {"read_settings", "observe", "acquire"}:
+            raise ValueError("Idle submissions must be reads")
+        with self.lock:
+            session = self.sessions.get(device_id)
+            if (
+                session is None
+                or session.closing
+                or session.pending
+                or session.control_group
+                or session.state not in {"connected", "busy"}
+                or (session.stream_future and not session.stream_future.done())
+            ):
+                return None
+            session.pending += 1
+            return session.worker.submit(self._execute, session, operation, argument, quiet=quiet)
 
     def _refresh_capabilities(self, session: DeviceSession, *, query: bool = True) -> CapabilitySnapshot:
         from lab_control.application.controls import control_capabilities
@@ -247,7 +310,7 @@ class SessionManager:
                 session.state = "busy" if enabled else "connected"
                 session.active_task = "monitoring" if enabled else ""
 
-    def _execute(self, session: DeviceSession, operation: str, argument: Any) -> Any:
+    def _execute(self, session: DeviceSession, operation: str, argument: Any, *, quiet: bool = False) -> Any:
         device_id = session.device_id
         with self.lock:
             if session.state in {"error", "degraded"}:
@@ -256,20 +319,22 @@ class SessionManager:
                     session.control_pending -= 1
                 raise DeviceError("Previous I/O failed; queued command was not sent", "disconnected")
             session.state, session.active_task = "busy", operation
-        self.emit("task_started", device_id, operation=operation)
+        if not quiet:
+            self.emit("task_started", device_id, operation=operation)
         try:
             adapter = session.adapter
             if adapter is None:
                 raise DeviceError("No adapter", "disconnected")
-            self.repository.audit(
-                "operation_requested",
-                device_id=device_id,
-                operation=operation,
-                argument=argument,
-                before=session.settings.get((argument.channel, argument.operation))
-                if isinstance(argument, DeviceCommand)
-                else None,
-            )
+            if not quiet:
+                self.repository.audit(
+                    "operation_requested",
+                    device_id=device_id,
+                    operation=operation,
+                    argument=argument,
+                    before=session.settings.get((argument.channel, argument.operation))
+                    if isinstance(argument, DeviceCommand)
+                    else None,
+                )
             result: Any
             if operation == "identify":
                 result = adapter.identify()
@@ -287,8 +352,7 @@ class SessionManager:
             elif operation == "read_settings":
                 operations, channel = argument
                 result = adapter.read_settings(tuple(operations), channel)
-                for reading in result:
-                    session.settings[(reading.channel, reading.operation)] = reading
+                self._cache_readings(session, result)
             elif operation == "apply":
                 if not isinstance(argument, DeviceCommand):
                     raise TypeError("Expected DeviceCommand")
@@ -298,6 +362,10 @@ class SessionManager:
                 if argument.channel not in snapshot.channels:
                     raise DeviceError("Invalid channel", "invalid_parameter")
                 snapshot.channels[argument.channel].get(argument.operation).validate(argument.parameters)
+                # Even an interrupted write can change hardware. Invalidate older reads
+                # before I/O, including paths where the adapter raises instead of returning.
+                with self.lock:
+                    session.configuration_version += 1
                 try:
                     result = adapter.apply(argument)
                 finally:
@@ -309,7 +377,6 @@ class SessionManager:
                         # Do not replay an already completed write when the subsequent refresh fails.
                         session.last_error = "设置已执行，能力刷新失败：" + str(exc)
                         session.state = "degraded"
-                session.configuration_version += 1
                 if result.outcome != "success":
                     session.last_error = result.error or result.outcome
                 else:
@@ -329,6 +396,7 @@ class SessionManager:
                     raise TypeError("Expected AcquisitionRequest")
                 argument.validate()
                 readings = adapter.read_settings((argument.quantity,), argument.channels[0])
+                self._cache_readings(session, readings)
                 reading = readings[0]
                 value = reading.value
                 if isinstance(value, dict):
@@ -361,23 +429,29 @@ class SessionManager:
                         "_session_configuration_version": session.configuration_version,
                     },
                 )
-            self.repository.audit(
-                "operation_completed",
-                device_id=device_id,
-                operation=operation,
-                result=result if operation not in {"acquire", "observe"} else {"timestamp": result.timestamp},
-            )
-            self.emit("result", device_id, operation=operation, result=result)
+            if not quiet:
+                self.repository.audit(
+                    "operation_completed",
+                    device_id=device_id,
+                    operation=operation,
+                    result=result
+                    if operation not in {"acquire", "observe"}
+                    else {"timestamp": result.timestamp},
+                )
+            if not quiet:
+                self.emit("result", device_id, operation=operation, result=result)
             return result
         except Exception as exc:
             code = getattr(exc, "code", "device_error")
             if code not in {"unsupported", "invalid_parameter", "confirmation_required", "missing_option"}:
                 session.state = "degraded"
             session.last_error = str(exc)
-            self.repository.audit(
-                "operation_failed", device_id=device_id, operation=operation, code=code, error=str(exc)
-            )
-            self.emit("error", device_id, error=str(exc), code=code)
+            if not quiet:
+                self.repository.audit(
+                    "operation_failed", device_id=device_id, operation=operation, code=code, error=str(exc)
+                )
+            if not quiet:
+                self.emit("error", device_id, error=str(exc), code=code)
             if (
                 operation == "acquire"
                 and isinstance(exc, DeviceError)
@@ -398,7 +472,8 @@ class SessionManager:
                 session.active_task = "monitoring" if session.monitoring else ""
                 if session.state == "busy":
                     session.state = "busy" if session.monitoring else "connected"
-            self.emit("task_finished", device_id)
+            if not quiet:
+                self.emit("task_finished", device_id)
 
     def start_acquisition(
         self,

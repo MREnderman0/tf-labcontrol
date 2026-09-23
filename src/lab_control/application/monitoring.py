@@ -9,6 +9,7 @@ from dataclasses import dataclass, field, replace
 from typing import Any
 
 from lab_control.application.sessions import SessionManager
+from lab_control.application.settings_sync import SettingsSync
 from lab_control.domain.instruments import (
     AcquisitionRequest,
     DeviceCommand,
@@ -75,10 +76,30 @@ class MonitoringService:
         self.tasks: dict[str, MonitorTask] = {}
         self.wake = threading.Event()
         self.closing = False
+        self.settings_sync = SettingsSync(sessions)
         self.writer = ThreadPoolExecutor(max_workers=2, thread_name_prefix="monitor-export")
         self.unsubscribe = sessions.subscribe(self._event)
         self.thread = threading.Thread(target=self._loop, name="monitor-scheduler", daemon=True)
         self.thread.start()
+
+    def enable_settings_sync(self, enabled: bool = True) -> None:
+        with self.lock:
+            self.settings_sync.enabled = enabled and not self.closing
+        self.wake.set()
+
+    def focus_settings(self, device_id: str, advanced: tuple[tuple[int, str], ...] = ()) -> None:
+        with self.lock:
+            self.settings_sync.set_focus(device_id, advanced)
+        self.wake.set()
+
+    def refresh_settings(self, device_id: str) -> None:
+        with self.lock:
+            self.settings_sync.request(device_id)
+        self.wake.set()
+
+    def settings_status(self, device_id: str, keys: tuple[tuple[int, str], ...]) -> tuple[str, str]:
+        with self.lock:
+            return self.settings_sync.status(device_id, keys)
 
     def start(
         self,
@@ -280,15 +301,20 @@ class MonitoringService:
                 ):
                     continue
                 request = task.requests[task.index % len(task.requests)]
-                task.index += 1
-                task.pending_request = request
-                task.pending_record_session = task.record_session if task.recording else ""
-                task.pending_record_mode = task.mode
-                task.pending = self.sessions.submit(
+                future = self.sessions.try_submit_idle(
                     device_id, "observe" if request.kind == "status" else "acquire", request
                 )
+                if future is not None:
+                    task.index += 1
+                    task.pending_request = request
+                    task.pending_record_session = task.record_session if task.recording else ""
+                    task.pending_record_mode = task.mode
+                    task.pending = future
             except Exception as exc:
                 self._pause(device_id, str(exc))
+        # Monitoring gets first refusal on idle workers; settings polling never queues behind it.
+        if not self.closing:
+            self.settings_sync.tick({s["stableDeviceId"]: s for s in self.sessions.snapshots()})
 
     def _loop(self) -> None:
         while True:
@@ -302,6 +328,7 @@ class MonitoringService:
     def close(self) -> None:
         with self.lock:
             self.closing = True
+            self.settings_sync.stop()
             for task in self.tasks.values():
                 task.running = False
         self.wake.set()

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import platform
 import sys
+import threading
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -46,6 +47,7 @@ class ApplicationRuntime:
         self.repository = Repository(root if hardware else (root or application_home()) / "simulation")
         self.process_lease: ProcessLease | None = None
         self.closed = False
+        self._close_lock = threading.Lock()
         try:
             if hardware:
                 # Fixed per-user lock even when LAB_CONTROL_HOME/config changes.
@@ -185,6 +187,12 @@ class ApplicationRuntime:
         return result
 
     def close(self) -> None:
+        # GUI shutdown and owner cleanup can overlap while slow reads drain.
+        # The second caller must await the same cleanup, not close workers twice.
+        with self._close_lock:
+            self._close_once()
+
+    def _close_once(self) -> None:
         if self.closed:
             return
         errors = []

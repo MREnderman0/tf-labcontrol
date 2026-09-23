@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLayout,
+    QLineEdit,
     QMessageBox,
     QPushButton,
     QScrollArea,
@@ -24,6 +25,7 @@ from PySide6.QtWidgets import (
 from lab_control.application.catalog import mode_applicable
 from lab_control.application.controls import COMMON, OPERATION_LABELS, PARAMETER_LABELS
 from lab_control.domain.instruments import Capability, DeviceCommand, ParameterReading
+from lab_control.domain.readback import normalized_value, usable_reading
 from lab_control.ui.controller import WorkspaceController
 from lab_control.ui.pages.device_control.editors import ArrayEditor, FeedbackLabel, ParameterEditor
 
@@ -67,6 +69,13 @@ class OperationEditor(QFrame):
         self.dirty = False
         self.busy = False
         self.current_value: Any = None
+        self.auto_sync = False
+        self.last_reading: ParameterReading | None = None
+        self._reading_valid = False
+        self._edit_revision = 0
+        self._submitted_revision = 0
+        self._apply_error = False
+        self.sync_token: tuple[str, int, int] | None = None
         self.data_only = not cap.writable and cap.name in DATA_OPERATIONS
         self.editors: dict[str, ParameterEditor] = {}
         self.array_editor: ArrayEditor | None = None
@@ -177,10 +186,13 @@ class OperationEditor(QFrame):
         self.refresh_enabled()
 
     def save_draft(self) -> None:
+        self._edit_revision += 1
         if any(not editor.input_is_valid() for editor in self.editors.values()):
             return
         self.dirty = not self.matches_current()
         self.status.setText("待应用" if self.dirty else "")
+        if self.auto_sync:
+            self.render_auto_reading()
         if not self.dirty:
             self.controller.runtime.repository.save_workspace(self.key, None)
             return
@@ -254,6 +266,77 @@ class OperationEditor(QFrame):
         )
         for editor in self.editors.values():
             editor.setEnabled(self.cap.available)
+        if self.auto_sync:
+            if self.sync_token and self.sync_token[:2] != (
+                state.get("sessionId"),
+                state.get("configurationVersion"),
+            ):
+                self._reading_valid = False
+            self.reconcile_reading()
+
+    def enable_auto_sync(self) -> None:
+        self.auto_sync = True
+        self.read_button.hide()
+        self.readback.hide()
+
+    def editing(self) -> bool:
+        return any(
+            (isinstance(e.input, QLineEdit) and e.input.hasFocus())
+            or (isinstance(e.input, QComboBox) and e.input.view().isVisible())
+            or e.unit.hasFocus()
+            or e.unit.view().isVisible()
+            for e in self.editors.values()
+        )
+
+    def reconcile_reading(self) -> None:
+        if not self._reading_valid or self.last_reading is None or self.busy:
+            return
+        if not self.editing():
+            if self.dirty and self.matches_current():
+                self.dirty = False
+                self.controller.runtime.repository.save_workspace(self.key, None)
+            if not self.dirty and not self.matches_current():
+                values = (
+                    self.current_value
+                    if isinstance(self.current_value, dict)
+                    else {"value": self.current_value}
+                )
+                for name, value in values.items():
+                    field = self.editors.get(name)
+                    if field is None:
+                        continue
+                    if field.spec.kind in {"number", "integer"}:
+                        factor = field.unit.currentData() or 1
+                        if (
+                            isinstance(field.input, QLineEdit)
+                            and not field.input.text()
+                            and field.spec.unit == "Hz"
+                        ):
+                            factor = next((f for f in (1e9, 1e6, 1e3) if abs(value) >= f), 1)
+                        field.restore({"value": f"{value / factor:.12g}", "factor": factor})
+                    else:
+                        field.set_value(value)
+            if not self._apply_error:
+                self.status.setText("待应用" if self.dirty else "")
+        self.render_auto_reading()
+
+    def render_auto_reading(self) -> None:
+        if self.last_reading is None:
+            return
+        reading = self.last_reading
+        display = concise(reading.value)
+        field = self.editors.get("value")
+        raw = reading.value.get("value") if isinstance(reading.value, dict) else reading.value
+        if field and self._reading_valid:
+            value = normalized_value(raw, field.spec)
+            if field.spec.kind in {"number", "integer"}:
+                display = f"{value / (field.unit.currentData() or 1):.12g} {field.unit.currentText()}"
+            elif isinstance(field.input, QComboBox):
+                index = field.input.findData(value)
+                display = field.input.itemText(index) if index >= 0 else str(raw)
+        self.readback.setText(("仪器当前值：" if self._reading_valid else "读回待核实：") + display)
+        self.readback.setToolTip(f"原始读回：{concise(reading.value)}\n{reading.timestamp}\n{reading.error}")
+        self.readback.setVisible(self.dirty or not self._reading_valid or not self.matches_current())
 
     def read(self) -> None:
         try:
@@ -273,6 +356,17 @@ class OperationEditor(QFrame):
         if not shiboken6.isValid(self):
             return
         self.busy = False
+        if self.auto_sync:
+            self.last_reading = reading
+            self._reading_valid = usable_reading(reading, self.cap.parameters)
+            if self._reading_valid:
+                values = reading.value if isinstance(reading.value, dict) else {"value": reading.value}
+                self.current_value = {
+                    name: normalized_value(values[name], spec) for name, spec in self.cap.parameters.items()
+                }
+            self.reconcile_reading()
+            self.render_auto_reading()
+            return
         display = concise(reading.value)
         self.current_value = reading.value
         raw = reading.value.get("value") if isinstance(reading.value, dict) else reading.value
@@ -330,6 +424,7 @@ class OperationEditor(QFrame):
                     return
                 confirmed = True
             self.busy = True
+            self._submitted_revision = self._edit_revision
             self.status.setText("等待当前读取完成 / 正在应用…")
             self.refresh_enabled()
             self.controller.apply(
@@ -345,6 +440,7 @@ class OperationEditor(QFrame):
         if not shiboken6.isValid(self):
             return
         self.busy = False
+        self._apply_error = result.outcome != "success"
         labels = {
             "success": "已应用",
             "partial": "部分执行",
@@ -366,14 +462,21 @@ class OperationEditor(QFrame):
         elif result.outcome == "success":
             self.readback.setText("本会话设置已受理；设备未提供该操作的即时读回\n" + result.timestamp)
         if result.outcome == "success":
-            self.dirty = False
-            self.controller.runtime.repository.save_workspace(self.key, None)
+            if not self.auto_sync or self._submitted_revision == self._edit_revision:
+                self.dirty = False
+                self.controller.runtime.repository.save_workspace(self.key, None)
+        if self.auto_sync:
+            self._reading_valid = False
+            self.last_reading = None
+            self.readback.hide()
+            self.controller.runtime.monitoring.refresh_settings(self.device_id)
         self.refresh_enabled()
 
     def failed(self, error: Exception) -> None:
         if not shiboken6.isValid(self):
             return
         self.busy = False
+        self._apply_error = True
         self.status.setText(str(error))
         self.refresh_enabled()
 

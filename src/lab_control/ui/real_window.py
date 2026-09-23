@@ -127,6 +127,7 @@ class RealWindow(QMainWindow):
         self.states: dict[str, dict[str, Any]] = {}
         self.last_details = ""
         self.closing = False
+        self._shutdown_started = False
         self._manual_sidebar_collapsed = False
         self._watched_screen: QScreen | None = None
         self._screen_connected = False
@@ -923,6 +924,9 @@ class RealWindow(QMainWindow):
             event.accept()
             return
         event.ignore()
+        if self._shutdown_started:
+            return
+        self._shutdown_started = True
         self.timer.stop()
         self.controller.close()
         self.message.setText("正在停止扫描和采集并释放本软件会话…")

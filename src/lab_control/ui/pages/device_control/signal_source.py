@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
 
 from lab_control.application.controls import OPERATION_LABELS
 from lab_control.domain.instruments import Capability, DeviceCommand, DeviceError
+from lab_control.domain.readback import boolean_value
 from lab_control.ui.controller import WorkspaceController
 from lab_control.ui.pages.device_control.form import OperationEditor, concise
 from lab_control.ui.widgets.device_selector import DeviceSelector
@@ -31,6 +32,10 @@ from lab_control.ui.widgets.device_selector import DeviceSelector
 MAIN = ("waveform", "frequency", "power", "amplitude", "offset")
 EXTRA = ("phase", "load", "pulse_duty", "pulse_width", "ramp_symmetry", "amplitude_unit")
 ORDER = ("waveform", "load", "amplitude_unit", "frequency", "power", "amplitude", "offset", "phase")
+
+
+def newer_token(token: tuple[str, int, int], previous: tuple[str, int, int] | None) -> bool:
+    return previous is None or token[:2] != previous[:2] or token[2] > previous[2]
 
 
 class TaskTabs(QTabWidget):
@@ -82,6 +87,7 @@ class ParameterGroup(QFrame):
         self.columns = columns
         self.visible_columns = 0
         self.context_hidden: set[str] = set()
+        self.success_report = False
         self.setObjectName("sourceGroup")
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 10, 12, 10)
@@ -96,6 +102,7 @@ class ParameterGroup(QFrame):
             editor = OperationEditor(
                 controller, device_id, cap, channel, parent=self, compact=not standalone, actions=standalone
             )
+            editor.enable_auto_sync()
             self.editors[cap.name] = editor
             self.fields.addWidget(editor, index // columns, index % columns)
         self.status = QLabel()
@@ -104,18 +111,14 @@ class ParameterGroup(QFrame):
         self.status.hide()
         layout.addWidget(self.status)
         self.footer_layout = QGridLayout()
-        self.read_button = QPushButton("读取当前值")
         self.apply_button = QPushButton("应用修改")
         self.apply_button.setObjectName("primaryButton")
-        for button in (self.read_button, self.apply_button):
-            button.setFixedSize(110, 38)
-        self.read_button.clicked.connect(self.read)
+        self.apply_button.setFixedSize(110, 38)
         self.apply_button.clicked.connect(self.apply)
         self.count = QLabel()
         self.count.setObjectName("mutedText")
         self.footer_layout.addWidget(self.count, 0, 0)
-        self.footer_layout.addWidget(self.read_button, 0, 1)
-        self.footer_layout.addWidget(self.apply_button, 0, 2)
+        self.footer_layout.addWidget(self.apply_button, 0, 1)
         self.footer_layout.setColumnStretch(0, 1)
         self.compact_actions = False
         layout.addLayout(self.footer_layout)
@@ -192,11 +195,10 @@ class ParameterGroup(QFrame):
         compact = self.width() < 350
         if compact != self.compact_actions:
             self.compact_actions = compact
-            for widget in (self.count, self.read_button, self.apply_button):
+            for widget in (self.count, self.apply_button):
                 self.footer_layout.removeWidget(widget)
             self.footer_layout.addWidget(self.count, 0, 0, 1, 2 if compact else 1)
-            self.footer_layout.addWidget(self.read_button, 1 if compact else 0, 0 if compact else 1)
-            self.footer_layout.addWidget(self.apply_button, 1 if compact else 0, 1 if compact else 2)
+            self.footer_layout.addWidget(self.apply_button, 1 if compact else 0, 1)
             self.footer_layout.setColumnStretch(0, 1 if not compact else 0)
 
     def refresh(self) -> None:
@@ -210,40 +212,29 @@ class ParameterGroup(QFrame):
             for name, e in self.editors.items()
             if name not in self.context_hidden
         )
-        self.count.setText(
-            f"{dirty} 项待应用"
-            if dirty
-            else "已读取当前设置"
-            if any(e.current_value is not None for e in self.editors.values())
-            else "尚未读取当前设置"
-        )
+        health, reason = self.controller.runtime.monitoring.settings_status(self.device_id, self.sync_keys())
+        self.count.setText(f"{dirty} 项待应用" if dirty else health)
+        self.count.setToolTip(reason)
+        if self.success_report and health == "正常" and not dirty:
+            self.message("")
+            self.success_report = False
         self.apply_button.setEnabled(bool(allowed and dirty and not state.get("capabilityStale", True)))
-        self.read_button.setEnabled(bool(allowed and not self.reading))
         for editor in self.editors.values():
             for field in editor.editors.values():
                 field.setEnabled(editor.cap.available and editor.cap.writable and not busy)
 
-    def read(self) -> None:
-        if self.reading:
-            return
-        names = tuple(
-            name
+    def sync_keys(self) -> tuple[tuple[int, str], ...]:
+        return tuple(
+            (editor.channel, name)
             for name, editor in self.editors.items()
-            if editor.cap.available and editor.cap.readable and name not in self.context_hidden
+            if editor.cap.available
+            and editor.cap.readable
+            and not editor.array_editor
+            and name not in self.context_hidden
         )
-        if not names:
-            return
-        try:
-            self.reading = True
-            self.controller.watch(
-                self.controller.runtime.sessions.submit(
-                    self.device_id, "read_settings", (names, self.channel)
-                ),
-                self.show_readings,
-                self.failed_read,
-            )
-        except Exception as exc:
-            self.failed_read(exc)
+
+    def read(self) -> None:
+        self.controller.runtime.monitoring.refresh_settings(self.device_id)
 
     def show_readings(self, readings) -> None:
         if not shiboken6.isValid(self):
@@ -306,7 +297,7 @@ class ParameterGroup(QFrame):
             prepared.sort(key=lambda item: ORDER.index(item[0]) if item[0] in ORDER else len(ORDER))
             self.pending, self.completed = prepared, []
             self.running = True
-            self.controller.group_devices.add(self.device_id)
+            self.controller.begin_group(self.device_id)
             self.controller.refreshed.emit()
             self.next_command()
         except Exception as exc:
@@ -327,6 +318,8 @@ class ParameterGroup(QFrame):
                     self.finish("范围或可用性已更新；请核对修正后的草稿，再次应用剩余参数")
                     return
             editor = self.editors[name]
+            editor._submitted_revision = editor._edit_revision
+            editor.busy = True
             self.message("正在应用：" + OPERATION_LABELS.get(name, name))
             self.controller.apply(
                 self.device_id,
@@ -350,7 +343,10 @@ class ParameterGroup(QFrame):
 
     def finish(self, reason: str, *, failed: str | None = None) -> None:
         self.running = False
-        self.controller.group_devices.discard(self.device_id)
+        for editor in self.editors.values():
+            editor.busy = False
+        self.success_report = not failed and not self.pending
+        self.controller.end_group(self.device_id)
         done = "、".join(OPERATION_LABELS.get(name, name) for name in self.completed)
         waiting = "、".join(OPERATION_LABELS.get(name, name) for name, _ in self.pending if name != failed)
         self.message(
@@ -367,13 +363,15 @@ class OutputControl(QWidget):
         super().__init__()
         self.controller, self.device_id, self.channel, self.rf = controller, device_id, channel, rf
         self.value: bool | None = None
+        self.sync_token: tuple[str, int, int] | None = None
+        self.channel_status: tuple[str, str] = ("同步中", "等待通道参数与输出状态")
         self.busy = False
         row = QHBoxLayout(self)
         row.setContentsMargins(0, 0, 0, 0)
         self.state = QLabel()
         self.state.setObjectName("outputState")
         self.state.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
-        self.button = QPushButton("读取输出状态")
+        self.button = QPushButton("输出控制")
         self.button.clicked.connect(self.toggle)
         self.button.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         row.addWidget(self.state)
@@ -385,12 +383,7 @@ class OutputControl(QWidget):
     def set_value(self, value: Any) -> None:
         if not shiboken6.isValid(self):
             return
-        if isinstance(value, dict):
-            value = value.get("value")
-        token = str(value).upper()
-        self.value = (
-            True if token in {"TRUE", "ON", "1"} else False if token in {"FALSE", "OFF", "0"} else None
-        )
+        self.value = boolean_value(value)
         self.refresh()
 
     def refresh(self) -> None:
@@ -407,17 +400,26 @@ class OutputControl(QWidget):
             ),
             None,
         )
+        output_health = self.controller.runtime.monitoring.settings_status(
+            self.device_id, ((self.channel, "output"),)
+        )
+        health, reason = self.channel_status or output_health
         self.state.setText(
             ("RF " if self.rf else f"CH {self.channel} ")
-            + ("ON" if self.value is True else "OFF" if self.value is False else "未读取")
+            + ("开启" if self.value is True else "关闭" if self.value is False else "输出未知")
+            + " · "
+            + health
         )
+        self.state.setToolTip(reason)
         self.button.setText(
-            "关闭输出" if self.value is True else "开启输出" if self.value is False else "读取状态"
+            "关闭输出" if self.value is True else "开启输出" if self.value is False else "输出控制"
         )
         self.button.setEnabled(
             capability is not None
             and capability.available
-            and (capability.readable if self.value is None else capability.writable)
+            and capability.writable
+            and self.value is not None
+            and output_health[0] == "正常"
             and state.get("connectionState") in {"connected", "busy"}
             and not self.busy
             and not state.get("controlPending")
@@ -427,23 +429,7 @@ class OutputControl(QWidget):
         self.button.setToolTip(capability.reason if capability else "此型号没有可用的输出控制")
 
     def read(self) -> None:
-        if self.busy:
-            return
-        try:
-            self.busy = True
-            self.controller.watch(
-                self.controller.runtime.sessions.submit(
-                    self.device_id, "read_settings", (("output",), self.channel)
-                ),
-                self.read_completed,
-                self.failed,
-            )
-        except Exception as exc:
-            self.failed(exc)
-
-    def read_completed(self, readings) -> None:
-        self.busy = False
-        self.set_value(readings[0].value)
+        self.controller.runtime.monitoring.refresh_settings(self.device_id)
 
     def toggle(self) -> None:
         if self.busy or self.device_id in self.controller.group_devices or not self.button.isEnabled():
@@ -485,8 +471,7 @@ class OutputControl(QWidget):
         self.set_value(result.readback)
         if result.outcome != "success":
             self.state.setText("输出待核实 · " + (result.error or result.outcome))
-        elif result.readback is None:
-            self.read()
+        self.read()
 
     def failed(self, error: Exception) -> None:
         if not shiboken6.isValid(self):
@@ -556,6 +541,7 @@ class SignalSourcePage(QWidget):
         self.scroll_area.setWidget(self.body)
         self.selector.selected.connect(self.select_device)
         controller.refreshed.connect(self.refresh)
+        controller.settings_changed.connect(self.update_readings)
         self.select_device(self.selector.device_id)
 
     def select_device(self, device_id: str) -> None:
@@ -658,22 +644,67 @@ class SignalSourcePage(QWidget):
             self.read_advanced()
 
     def read_main(self) -> None:
-        state = self.controller.states.get(self.device_id, {})
-        if state.get("connectionState") not in {"connected", "busy"}:
-            return
-        for panel in self.panels.values():
-            panel.read()
-        for output in self.outputs.values():
-            output.read()
         self.read_advanced()
+        self.update_readings(self.device_id)
 
     def read_advanced(self, *_args) -> None:
         self.tabs.updateGeometry()
         panel = self.tabs.currentWidget()
-        if self.isVisible() and isinstance(panel, ParameterGroup):
-            state = self.controller.states.get(self.device_id, {})
-            if state.get("connectionState") in {"connected", "busy"}:
-                panel.read()
+        if self.isVisible():
+            keys = panel.sync_keys() if isinstance(panel, ParameterGroup) else ()
+            self.controller.focus_settings(self.device_id, keys)
+            self.update_readings(self.device_id)
+
+    def update_readings(self, device_id: str) -> None:
+        if device_id != self.device_id or not self.isVisible():
+            return
+        state = self.controller.states.get(device_id, {})
+        if state.get("controlPending") or state.get("controlGroup"):
+            return
+        frames = self.controller.runtime.sessions.readback_frames(device_id)
+        editors = [editor for panel in self.panels.values() for editor in panel.editors.values()]
+        advanced = self.tabs.currentWidget()
+        if isinstance(advanced, ParameterGroup):
+            editors += list(advanced.editors.values())
+        for editor in editors:
+            frame = frames.get((editor.channel, editor.cap.name))
+            if not frame or (frame.session_id, frame.configuration_version) != (
+                state.get("sessionId"),
+                state.get("configurationVersion"),
+            ):
+                editor._reading_valid = False
+                continue
+            token = (frame.session_id, frame.configuration_version, frame.sequence)
+            if newer_token(token, editor.sync_token):
+                old = editor.last_reading
+                unchanged = (
+                    editor._reading_valid
+                    and editor.sync_token is not None
+                    and token[:2] == editor.sync_token[:2]
+                    and old is not None
+                    and (old.value, old.source, old.quality, old.error)
+                    == (frame.reading.value, frame.reading.source, frame.reading.quality, frame.reading.error)
+                )
+                editor.sync_token = token
+                if unchanged:
+                    # Keep freshness/raw timestamps without redisplaying identical values.
+                    editor.last_reading = frame.reading
+                else:
+                    editor.show_reading(frame.reading)
+        for channel, output in self.outputs.items():
+            frame = frames.get((channel, "output"))
+            if frame and (frame.session_id, frame.configuration_version) == (
+                state.get("sessionId"),
+                state.get("configurationVersion"),
+            ):
+                token = (frame.session_id, frame.configuration_version, frame.sequence)
+                if newer_token(token, output.sync_token):
+                    output.sync_token = token
+                    value = boolean_value(frame.reading.value)
+                    if value != output.value:
+                        output.set_value(value)
+            elif state.get("sessionId") != (output.sync_token or (None,))[0]:
+                output.set_value(None)
 
     def refresh_ranges(self) -> None:
         if self.device_id:
@@ -688,6 +719,8 @@ class SignalSourcePage(QWidget):
         if self.mode != self.controller.mode:
             self.select_device(self.selector.device_id)
             return
+        if self.isVisible():
+            self.update_readings(self.device_id)
         busy = self.device_id in self.controller.group_devices
         self.selector.combo.setEnabled(not busy)
         if hasattr(self, "advanced_channel"):
@@ -699,6 +732,25 @@ class SignalSourcePage(QWidget):
                 value = value.get("value", "") if isinstance(value, dict) else str(value)
                 for panel in self.advanced_groups:
                     panel.set_waveform(value)
+        if self.isVisible():
+            selected = self.tabs.currentWidget()
+            self.controller.focus_settings(
+                self.device_id, selected.sync_keys() if isinstance(selected, ParameterGroup) else ()
+            )
+        if self.isVisible():
+            advanced = self.tabs.currentWidget()
+            for channel, output in self.outputs.items():
+                panel = self.panels[channel]
+                keys = panel.sync_keys() + ((channel, "output"),)
+                groups = [panel]
+                if isinstance(advanced, ParameterGroup) and advanced.channel == channel:
+                    keys += advanced.sync_keys()
+                    groups.append(advanced)
+                health = self.controller.runtime.monitoring.settings_status(self.device_id, keys)
+                if health[0] == "正常" and any(e.dirty for group in groups for e in group.editors.values()):
+                    health = ("待应用", "保留未提交草稿；其他参数继续自动同步")
+                output.channel_status = health
+                output.refresh()
         snapshot = self.controller.runtime.sessions.capability_snapshot(self.device_id)
         self.range_status.setText(
             "范围已过期 · 写入前需重新核实"
@@ -707,7 +759,7 @@ class SignalSourcePage(QWidget):
             if snapshot
             else "未连接 · 显示型号文档范围，实机范围待确认"
         )
-        if hasattr(self, "details"):
+        if hasattr(self, "details") and self.tabs.currentWidget() is self.details and self.isVisible():
             record = self.controller.records.get(self.device_id, {})
             identity = record.get("identity", {})
             text = (
@@ -720,6 +772,11 @@ class SignalSourcePage(QWidget):
                     if snapshot
                     else "尚无实机会话快照"
                 )
+            )
+            frames = self.controller.runtime.sessions.readback_frames(self.device_id)
+            text += "\n原始读回（含最后一次读取时间）：\n" + "\n".join(
+                f"CH {channel} {name}：{concise(frame.reading.value)} · {frame.reading.timestamp}"
+                for (channel, name), frame in sorted(frames.items())
             )
             if self.details.toPlainText() != text:
                 self.details.setPlainText(text)
@@ -757,3 +814,8 @@ class SignalSourcePage(QWidget):
     def showEvent(self, event) -> None:  # noqa: N802
         super().showEvent(event)
         self.read_main()
+
+    def hideEvent(self, event) -> None:  # noqa: N802
+        if self.controller.sync_device == self.device_id:
+            self.controller.focus_settings("")
+        super().hideEvent(event)

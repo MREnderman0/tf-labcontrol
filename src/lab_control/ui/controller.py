@@ -18,6 +18,7 @@ class WorkspaceController(QObject):
     refreshed = Signal()
     message = Signal(str)
     navigate = Signal(str, str, str)
+    settings_changed = Signal(str)
 
     def __init__(self, runtime: ApplicationRuntime, parent: QObject) -> None:
         super().__init__(parent)
@@ -26,6 +27,9 @@ class WorkspaceController(QObject):
         self.records: dict[str, dict[str, Any]] = {}
         self.states: dict[str, dict[str, Any]] = {}
         self.group_devices: set[str] = set()
+        self.sync_device = ""
+        self._sync_signature: tuple[Any, ...] = ()
+        self.runtime.monitoring.enable_settings_sync()
         self.jobs: list[
             tuple[Future[Any], Callable[[Any], None] | None, Callable[[Exception], None] | None]
         ] = []
@@ -60,6 +64,29 @@ class WorkspaceController(QObject):
                     on_error(exc)
                 self.message.emit(str(exc))
         self.refreshed.emit()
+        state = self.states.get(self.sync_device, {})
+        signature = (
+            self.sync_device,
+            state.get("sessionId"),
+            state.get("configurationVersion"),
+            state.get("readSequence"),
+        )
+        if signature != self._sync_signature:
+            self._sync_signature = signature
+            self.settings_changed.emit(self.sync_device)
+
+    def focus_settings(self, device_id: str, advanced: tuple[tuple[int, str], ...] = ()) -> None:
+        self.sync_device = device_id
+        self.runtime.monitoring.focus_settings(device_id, advanced)
+
+    def begin_group(self, device_id: str) -> None:
+        self.runtime.sessions.set_control_group(device_id, True)
+        self.group_devices.add(device_id)
+
+    def end_group(self, device_id: str) -> None:
+        self.group_devices.discard(device_id)
+        self.runtime.sessions.set_control_group(device_id, False)
+        self.runtime.monitoring.refresh_settings(device_id)
 
     def set_mode(self, mode: str) -> None:
         if self.group_devices:
@@ -101,6 +128,7 @@ class WorkspaceController(QObject):
 
     def close(self) -> None:
         self.timer.stop()
+        self.runtime.monitoring.enable_settings_sync(False)
 
 
 def state_label(state: str) -> str:
