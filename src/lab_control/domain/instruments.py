@@ -66,6 +66,7 @@ class Parameter:
     maximum: float | None = None
     choices: tuple[str, ...] = ()
     required: bool = True
+    range_source: str = "model"
 
     def validate(self, name: str, value: Any) -> Any:
         if self.kind in {"number", "integer"}:
@@ -147,6 +148,18 @@ class CapabilitySet:
                     raise Unsupported(f"{name}: {item.reason or 'option not available'}")
                 return item
         raise Unsupported(f"{self.category}: {name} is not implemented for this model")
+
+
+@dataclass(frozen=True)
+class CapabilitySnapshot:
+    identity: DeviceIdentity
+    channels: dict[int, CapabilitySet]
+    options: tuple[str, ...] = ()
+    details: dict[str, Any] = field(default_factory=dict)
+    timestamp: str = field(default_factory=utc_now)
+    version: int = 1
+    stale: bool = False
+    error: str = ""
 
 
 @dataclass(frozen=True)

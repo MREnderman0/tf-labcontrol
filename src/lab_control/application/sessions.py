@@ -10,6 +10,7 @@ from lab_control.application.config import ConnectionConfig
 from lab_control.application.leases import ResourceLeases
 from lab_control.domain.instruments import (
     AcquisitionRequest,
+    CapabilitySnapshot,
     DeviceCommand,
     DeviceError,
     DeviceIdentity,
@@ -45,6 +46,7 @@ class DeviceSession:
     configuration_version: int = 0
     control_pending: int = 0
     settings: dict[tuple[int, str], ParameterReading] = field(default_factory=dict)
+    capability_snapshot: CapabilitySnapshot | None = None
 
 
 class SessionManager:
@@ -98,9 +100,54 @@ class SessionManager:
                     "recording": item.recording,
                     "configurationVersion": item.configuration_version,
                     "controlPending": item.control_pending,
+                    "capabilityVersion": item.capability_snapshot.version if item.capability_snapshot else 0,
+                    "capabilityStale": item.capability_snapshot.stale if item.capability_snapshot else True,
+                    "capabilityDetails": item.capability_snapshot.details if item.capability_snapshot else {},
                 }
                 for item in self.sessions.values()
             )
+
+    def capability_snapshot(self, device_id: str) -> CapabilitySnapshot | None:
+        with self.lock:
+            session = self.sessions.get(device_id)
+            return session.capability_snapshot if session else None
+
+    def _refresh_capabilities(self, session: DeviceSession, *, query: bool = True) -> CapabilitySnapshot:
+        from lab_control.application.controls import control_capabilities
+
+        adapter = session.adapter
+        if adapter is None or session.identity is None:
+            raise DeviceError("No connected adapter", "disconnected")
+        previous = session.capability_snapshot
+        error = ""
+        failure = None
+        if query:
+            try:
+                refresh = getattr(adapter, "refresh_capabilities", None)
+                if refresh:
+                    refresh()
+            except Exception as exc:
+                error, failure = str(exc), exc
+        error = error or getattr(adapter, "capability_error", "")
+        schema = adapter.capabilities()
+        snapshot = CapabilitySnapshot(
+            session.identity,
+            {channel: control_capabilities(session.config, channel, schema) for channel in schema.channels},
+            tuple(getattr(adapter, "detected_options", ()) or session.config.options),
+            {
+                **getattr(adapter, "capability_details", {}),
+                "configured_options": list(session.config.options),
+            },
+            version=previous.version + 1 if previous else 1,
+            stale=bool(error),
+            error=error,
+        )
+        with self.lock:
+            session.capability_snapshot = snapshot
+        self.repository.audit("capabilities_refreshed", device_id=session.device_id, snapshot=snapshot)
+        if failure:
+            raise failure
+        return snapshot
 
     def connect(self, device_id: str, config: ConnectionConfig) -> Future[DeviceIdentity]:
         with self.lock:
@@ -137,6 +184,12 @@ class SessionManager:
                     self.leases.acquire(device_id, (f"identity:{identity.key}",))
                 with self.lock:
                     session.identity, session.state = identity, "connected"
+                try:
+                    self._refresh_capabilities(session)
+                except Exception as exc:
+                    session.last_error = "能力读取失败：" + str(exc)
+                    if getattr(exc, "code", "") in {"timeout", "disconnected"}:
+                        session.state = "degraded"
                 self.repository.audit("connected", device_id=device_id, identity=identity, config=config)
                 self.emit("connected", device_id, identity=jsonable(identity))
                 return identity
@@ -168,6 +221,7 @@ class SessionManager:
                 "identify",
                 "status",
                 "capabilities",
+                "refresh_capabilities",
                 "read_settings",
                 "apply",
                 "acquire",
@@ -226,7 +280,10 @@ class SessionManager:
                 result = adapter.read_status()
                 session.last_status = jsonable(result)
             elif operation == "capabilities":
-                result = adapter.capabilities()
+                snapshot = session.capability_snapshot or self._refresh_capabilities(session)
+                result = snapshot.channels[next(iter(snapshot.channels))]
+            elif operation == "refresh_capabilities":
+                result = self._refresh_capabilities(session)
             elif operation == "read_settings":
                 operations, channel = argument
                 result = adapter.read_settings(tuple(operations), channel)
@@ -235,12 +292,29 @@ class SessionManager:
             elif operation == "apply":
                 if not isinstance(argument, DeviceCommand):
                     raise TypeError("Expected DeviceCommand")
-                result = adapter.apply(argument)
+                snapshot = self._refresh_capabilities(session)
+                if snapshot.stale:
+                    raise DeviceError("Refresh instrument ranges before writing", "invalid_parameter")
+                if argument.channel not in snapshot.channels:
+                    raise DeviceError("Invalid channel", "invalid_parameter")
+                snapshot.channels[argument.channel].get(argument.operation).validate(argument.parameters)
+                try:
+                    result = adapter.apply(argument)
+                finally:
+                    self._refresh_capabilities(session, query=False)
+                if result.outcome == "success":
+                    try:
+                        self._refresh_capabilities(session)
+                    except Exception as exc:
+                        # Do not replay an already completed write when the subsequent refresh fails.
+                        session.last_error = "设置已执行，能力刷新失败：" + str(exc)
+                        session.state = "degraded"
                 session.configuration_version += 1
                 if result.outcome != "success":
                     session.last_error = result.error or result.outcome
                 else:
-                    session.last_error = ""
+                    if session.state != "degraded":
+                        session.last_error = ""
                     session.settings[(argument.channel, argument.operation)] = ParameterReading(
                         argument.operation,
                         argument.channel,

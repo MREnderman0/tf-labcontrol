@@ -50,13 +50,12 @@ class ConnectionConfig:
         if self.stream_format not in {"", "P", "F"} or not 1e-6 <= self.stream_interval <= 1000:
             raise ValidationError("Invalid TSERVE stream format or interval")
         if not isinstance(self.limits, dict) or any(
-            isinstance(value, bool)
-            or not isinstance(value, (float, int))
-            or not math.isfinite(value)
-            or value < 0
+            isinstance(value, bool) or not isinstance(value, (float, int)) or not math.isfinite(value)
             for value in self.limits.values()
         ):
-            raise ValidationError("Limits must be finite non-negative numeric maxima")
+            raise ValidationError(
+                "Limits must be finite numeric maxima (signed units such as dBm are allowed)"
+            )
 
 
 def load_config(path: Path) -> tuple[ConnectionConfig, ...]:

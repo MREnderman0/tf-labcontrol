@@ -1,5 +1,8 @@
 import json
 
+import pytest
+from PySide6.QtCore import Qt
+
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.runtime import ApplicationRuntime
 from lab_control.cli.main import main
@@ -58,7 +61,7 @@ def test_scan_stress_reports_live_sessions_and_exported_capture(tmp_path, capsys
     capsys.readouterr()
 
 
-def test_real_overview_incremental_mode_and_scan(qtbot, tmp_path):
+def test_real_overview_incremental_mode_and_scan(qtbot, tmp_path, monkeypatch):
     config = ConnectionConfig("mock://one", "rigol.dg5504pro", "mock")
     runtime = ApplicationRuntime((config,), root=tmp_path, hardware=False)
     device_id = runtime.add(config)
@@ -67,7 +70,19 @@ def test_real_overview_incremental_mode_and_scan(qtbot, tmp_path):
     qtbot.addWidget(window)
     window.show()
     window.refresh()
-    assert len(window.cards) == len(CATEGORIES) == 8
+    assert window.category_filter.count() == len(CATEGORIES) + 1
+    assert len(window.card_grid.cards) == 5
+    card = window.cards["signal_generator"]
+    assert card.online_count.text() == "01"
+    assert card.visible_count.text() == "可见 1 台"
+    assert window.device_pool.isHidden()
+    with monkeypatch.context() as context:
+        context.setattr(
+            runtime.sessions, "submit", lambda *_a, **_kw: pytest.fail("Opening cards must not send I/O")
+        )
+        qtbot.mouseClick(card, Qt.MouseButton.LeftButton)
+    assert not window.device_pool.isHidden()
+    assert window.selected_id == device_id
     row = window.rows[device_id]
     window.tree.setCurrentItem(row)
     session_id = runtime.sessions.snapshots()[0]["sessionId"]
@@ -78,6 +93,8 @@ def test_real_overview_incremental_mode_and_scan(qtbot, tmp_path):
     assert window.rows[device_id] is row
     assert window.selected_id == device_id
     assert runtime.sessions.snapshots()[0]["sessionId"] == session_id
+    assert window.cards["signal_generator"] is card
+    assert any(c.category == "optical_power_meter" for c in window.card_grid.cards)
     assert window.action_buttons["disconnect"].isEnabled()
     window.timer.stop()
     runtime.close()

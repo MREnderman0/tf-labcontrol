@@ -73,6 +73,10 @@ def test_tlpmx_initialization_never_resets_and_checks_sensor_bounds():
     device = PowerMeterAdapter(ConnectionConfig("USB::pm", "thorlabs.pm100d", "tlpmx"), fake)
     assert calls[0] == (b"USB::pm", 1, 0)
     assert device.identify().model == "PM100D"
+    device.refresh_capabilities()
+    bounds = device.capabilities().get("wavelength").parameters["value"]
+    assert (bounds.minimum, bounds.maximum, bounds.range_source) == (800, 1700, "instrument")
+    assert device.capability_details["sensor"]["model"] == "S154C"
     wavelength_reading, sensor_reading, range_reading = device.read_settings(
         ("wavelength", "sensor", "range")
     )
@@ -83,6 +87,12 @@ def test_tlpmx_initialization_never_resets_and_checks_sensor_bounds():
         device.apply(DeviceCommand("wavelength", {"value": 700}))
     batch = device.acquire(AcquisitionRequest())
     assert batch.measurements[0].values == [0.001] and batch.measurements[0].unit == "W"
+    fake.TLPMX_getWavelength.callback = lambda *args: -123
+    with pytest.raises(DeviceError):
+        device.refresh_capabilities()
+    stale = next(c for c in device.capabilities().operations if c.name == "wavelength")
+    assert not stale.available and stale.parameters["value"].maximum == 1700
+    assert stale.parameters["value"].range_source == "unavailable"
     device.close()
     device.close()
     assert calls.count("closed") == 1

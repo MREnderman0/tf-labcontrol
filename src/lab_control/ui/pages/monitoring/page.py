@@ -59,6 +59,10 @@ class MonitoringPage(QWidget):
         options.addWidget(QLabel("轮询"))
         options.addWidget(self.interval)
         main_layout.addLayout(options)
+        numeric_ranges = QLabel("可输入范围：点数 1 ～ 4000000（整数） · 轮询 0.05 ～ 60 s · 软件采集限制")
+        numeric_ranges.setObjectName("rangeHint")
+        numeric_ranges.setWordWrap(True)
+        main_layout.addWidget(numeric_ranges)
         self.channel_row = QHBoxLayout()
         self.channel_checks: dict[int, QCheckBox] = {}
         main_layout.addLayout(self.channel_row)

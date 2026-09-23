@@ -1,6 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-set UV_PROJECT_ENVIRONMENT=.venv-dev
-uv run --locked lab-control %*
+if not exist ".venv-dev\Scripts\lab-control.exe" powershell -NoProfile -ExecutionPolicy Bypass -File scripts\setup-dev.ps1
+if errorlevel 1 exit /b 1
+".venv-dev\Scripts\lab-control.exe" %*
 if errorlevel 1 pause

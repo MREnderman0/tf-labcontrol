@@ -27,3 +27,4 @@ build/
 *.user
 *.suo
 .DS_Store
+.tools/

@@ -6,8 +6,8 @@ from typing import Any
 
 import numpy as np
 
-from lab_control.domain.instruments import Capability, DeviceCommand, Parameter, ValidationError
-from lab_control.instruments.base import CommandSpec, Profile, ScpiAdapter, command, enum, parameter
+from lab_control.domain.instruments import Capability, DeviceCommand, Parameter, ValidationError, utc_now
+from lab_control.instruments.base import CommandSpec, Profile, ScpiAdapter, command, enum, number, parameter
 from lab_control.transport.base import ieee_block
 
 AFG_SOURCE = "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf"
@@ -355,7 +355,49 @@ def sma100b() -> Profile:
 
 
 class SignalGeneratorAdapter(ScpiAdapter):
+    def refresh_capabilities(self) -> None:
+        """Only verified, query-only model commands. Publish complete snapshots atomically."""
+        if self.adapter_id != "rs.sma100b":
+            return
+        names = ("frequency", "sweep_start", "sweep_stop", "power")
+        try:
+            options = tuple(
+                s.strip() for s in self.transport.query("*OPT?").decode("ascii").split(",") if s.strip()
+            )
+            updated = {}
+            for name in names:
+                spec = self.profile.commands[name]
+                low = number(self.transport.query(spec.query + " MIN"))
+                high = number(self.transport.query(spec.query + " MAX"))
+                if low > high:
+                    raise ValidationError(f"{name}: instrument minimum exceeds maximum")
+                updated[name] = replace(
+                    spec.capability.parameters["value"], minimum=low, maximum=high, range_source="instrument"
+                )
+            details = {
+                "power_offset_db": number(self.transport.query("SOUR:POW:OFFS?")),
+                "rf_output_limit_dbm": number(self.transport.query("SOUR:POW:LIM?")),
+                "scope": "Settable levels; not guaranteed RF power. RF limit is unchanged.",
+                "read_at": utc_now(),
+            }
+        except Exception as exc:
+            self.capability_error = str(exc)
+            # Even a failed first refresh must not expose the fallback as verified/writable.
+            if not self.dynamic_parameters:
+                self.dynamic_parameters = {
+                    name: replace(
+                        self.profile.commands[name].capability.parameters["value"], range_source="unavailable"
+                    )
+                    for name in names
+                }
+            raise
+        self.dynamic_parameters, self.detected_options = updated, options
+        self.capability_details, self.capability_error = details, ""
+
     def validate_command(self, cmd: DeviceCommand) -> tuple[CommandSpec, dict[str, Any]]:
+        if self.adapter_id == "rs.sma100b" and self.identity is not None:
+            # Direct Python adapter users receive the same pre-write check as application users.
+            self.refresh_capabilities()
         spec, values = super().validate_command(cmd)
         if cmd.operation == "upload_waveform":
             samples = values["samples"]
@@ -418,7 +460,7 @@ class SignalGeneratorAdapter(ScpiAdapter):
                         raise ValidationError("Internal modulation source required")
         if cmd.operation == "fm_deviation":
             carrier = float(self.read("frequency", cmd.channel))
-            maximum = self.profile.commands["frequency"].capability.parameters["value"].maximum or carrier
+            maximum = self.capabilities().get("frequency").parameters["value"].maximum or carrier
             if parameters["value"] > min(carrier, maximum - carrier):
                 raise ValidationError("FM deviation exceeds carrier/bandwidth margins")
 

@@ -4,7 +4,7 @@ import hashlib
 import threading
 import time
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from typing import Any, Callable, Protocol
 from uuid import uuid4
 
@@ -96,6 +96,10 @@ class VendorSdkDiscoveryProvider:
         result = []
         seen = set()
         for config in self.configurations:
+            if not config.sdk_path:
+                from lab_control.application.environment import find_sdk
+
+                config = replace(config, sdk_path=find_sdk(config.transport))
             key = config.transport, config.sdk_path
             if key in seen:
                 continue
@@ -228,12 +232,26 @@ class Inventory:
                 "probeReason": reason,
                 "config": asdict(candidate.config),
             }
+            prefer_visa = bool(
+                identity is not None
+                and not conflict
+                and scan_id != "connected"
+                and candidate.config.transport == "visa"
+                and record.get("config", {}).get("transport") != "visa"
+                and not record.get("primaryResourceExplicit")
+                and "config" in record
+            )
             if (
                 "config" not in record
                 or (candidate.config.adapter and not record["config"].get("adapter"))
                 or scan_id == "manual"
+                or prefer_visa
             ):
-                record["config"] = asdict(candidate.config)
+                record["config"] = (
+                    {**record["config"], "resource": resource, "transport": "visa", "sdk_path": ""}
+                    if prefer_visa
+                    else asdict(candidate.config)
+                )
             if identity and not conflict:
                 record["identity"], record["identityKey"] = jsonable(identity), identity.key
                 record["lastProbeAt"] = utc_now()
@@ -287,6 +305,7 @@ class Inventory:
             config = dict(record["candidates"][resource]["config"])
             config["adapter"] = record["adapterId"]
             record["config"] = config
+            record["primaryResourceExplicit"] = True
             self.repository.save(record)
 
     def stale(self, scan_id: str, successful_sources: set[str]) -> None:

@@ -71,6 +71,9 @@ class WorkspaceController(QObject):
         self.refreshed.emit()
 
     def capabilities(self, device_id: str, channel: int = 1):
+        snapshot = self.runtime.sessions.capability_snapshot(device_id)
+        if snapshot and channel in snapshot.channels:
+            return snapshot.channels[channel]
         return control_capabilities(config_from_record(self.records[device_id]), channel)
 
     def ensure_applicable(self, device_id: str) -> None:

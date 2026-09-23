@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ctypes as ct
 import math
+from dataclasses import replace
 from typing import Any
 
 from lab_control.application.config import ConnectionConfig
@@ -37,6 +38,9 @@ class PowerMeterAdapter:
         self.opened = False
         self.configuration: dict[str, Any] = {}
         self.identity: DeviceIdentity | None = None
+        self.wavelength_range: Parameter | None = None
+        self.capability_error = ""
+        self.capability_details: dict[str, Any] = {}
         try:
             self.call(
                 "init",
@@ -99,7 +103,41 @@ class PowerMeterAdapter:
         return value.value
 
     def capabilities(self) -> CapabilitySet:
-        return self.capability_schema(self.config)
+        schema = self.capability_schema(self.config)
+        if self.wavelength_range is None:
+            return schema
+        return replace(
+            schema,
+            operations=tuple(
+                replace(
+                    cap,
+                    parameters={"value": self.wavelength_range},
+                    available=not bool(self.capability_error),
+                    reason=self.capability_error,
+                )
+                if cap.name == "wavelength"
+                else cap
+                for cap in schema.operations
+            ),
+        )
+
+    def refresh_capabilities(self) -> None:
+        try:
+            sensor = self.sensor()
+            low, high = self._get_double("getWavelength", True, 1), self._get_double("getWavelength", True, 2)
+            if not math.isfinite(low) or not math.isfinite(high) or low > high:
+                raise ValidationError("Invalid sensor wavelength range")
+        except Exception as exc:
+            self.capability_error = str(exc)
+            old = (
+                self.wavelength_range
+                or self.capability_schema(self.config).get("wavelength").parameters["value"]
+            )
+            self.wavelength_range = replace(old, range_source="unavailable")
+            raise
+        self.wavelength_range = Parameter(unit="nm", minimum=low, maximum=high, range_source="instrument")
+        self.capability_details = {"sensor": sensor}
+        self.capability_error = ""
 
     @staticmethod
     def capability_schema(config: ConnectionConfig) -> CapabilitySet:

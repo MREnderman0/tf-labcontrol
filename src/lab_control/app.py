@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QApplication
 
 
 def load_stylesheet() -> str:
-    stylesheet_path = Path(__file__).parent / "ui" / "styles" / "dark.qss"
+    stylesheet_path = Path(__file__).parent / "ui" / "styles" / "card_workspace.qss"
     return stylesheet_path.read_text(encoding="utf-8")
 
 
@@ -77,4 +77,4 @@ def real_main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(real_main())

@@ -129,6 +129,10 @@ class ScpiAdapter:
         self.adapter_id = profile.adapter_id
         self.identity: DeviceIdentity | None = None
         self.configuration: dict[str, Any] = {}
+        self.dynamic_parameters: dict[str, Parameter] = {}
+        self.detected_options: tuple[str, ...] = ()
+        self.capability_details: dict[str, Any] = {}
+        self.capability_error = ""
 
     def identify(self) -> DeviceIdentity:
         raw = self.transport.query(self.profile.identity_query)
@@ -158,7 +162,19 @@ class ScpiAdapter:
         operations = []
         for spec in self.profile.commands.values():
             cap = spec.capability
-            missing = bool(cap.option and cap.option not in self.config.options)
+            if cap.name in self.dynamic_parameters:
+                cap = replace(cap, parameters={**cap.parameters, "value": self.dynamic_parameters[cap.name]})
+                if self.capability_error:
+                    cap = replace(
+                        cap,
+                        available=False,
+                        reason="实机范围已过期：" + self.capability_error,
+                        parameters={
+                            **cap.parameters,
+                            "value": replace(cap.parameters["value"], range_source="unavailable"),
+                        },
+                    )
+            missing = bool(cap.option and cap.option not in (*self.config.options, *self.detected_options))
             operations.append(
                 replace(
                     cap,

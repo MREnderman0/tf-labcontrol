@@ -284,8 +284,10 @@ def slot_label(slot: str) -> str:
     return f"{CATEGORY_LABELS.get(category, category)} {'A' if index == '1' else 'B'}" if index else "未绑定"
 
 
-def control_capabilities(config: ConnectionConfig, channel: int = 1) -> CapabilitySet:
-    schema = describe(config)
+def control_capabilities(
+    config: ConnectionConfig, channel: int = 1, schema: CapabilitySet | None = None
+) -> CapabilitySet:
+    schema = schema or describe(config)
     limits = (
         dict(PROFILES[config.adapter].channel_limits.get(channel, {})) if config.adapter in PROFILES else {}
     )
@@ -296,7 +298,11 @@ def control_capabilities(config: ConnectionConfig, channel: int = 1) -> Capabili
         value = cap.parameters.get("value")
         if cap.name in limits and value:
             maximum = min(limits[cap.name], value.maximum) if value.maximum is not None else limits[cap.name]
-            cap = replace(cap, parameters={**cap.parameters, "value": replace(value, maximum=maximum)})
+            source = "experiment" if cap.name in config.limits else "model_channel"
+            cap = replace(
+                cap,
+                parameters={**cap.parameters, "value": replace(value, maximum=maximum, range_source=source)},
+            )
         operations.append(cap)
     return replace(schema, operations=tuple(operations))
 

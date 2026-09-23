@@ -4,26 +4,30 @@ PySide6 实验室设备软件，包含真实通信兼容层、设备扫描总览
 
 ## 安装和启动
 
-需要 Windows x64、Python 3.12 和 uv。在项目目录执行：
+需要 Windows x64 和 Python 3.12 x64。在项目目录执行（无需全局 uv）：
 
 ```powershell
-$env:UV_PROJECT_ENVIRONMENT = ".venv-dev"
-uv sync --locked
-uv run lab-control
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-dev.ps1
+.venv-dev\Scripts\lab-control.exe
 ```
 
 使用独立开发环境，避免覆盖正在运行的旧演示程序环境。也可以双击 `run_real.bat`。真实入口未安装 VISA/SDK 时仍可打开，环境诊断会显示缺失项；扫描不会加入演示设备。厂商驱动与 DLL 的安装见[实机指南](docs/hardware-testing.md)。
 
+**项目下载约定：优先国内镜像，默认禁用安装进程代理，不消耗 VPN 流量，不自动回退国外 PyPI。** 默认清华、可显式指定阿里云；详见[开发环境与下载策略](docs/development-environment.md)。支持 VISA 的设备优先通过 PyVISA 接入；同一设备多地址须核实身份，避免重复连接。
+
 ```powershell
-uv run lab-control --config config/examples/visa.toml
-uv run lab-control-demo
-uv run lab-control-cli models
-uv run lab-control-cli doctor
+.venv-dev\Scripts\lab-control.exe --config config/examples/visa.toml
+.venv-dev\Scripts\python.exe -m lab_control
+.venv-dev\Scripts\lab-control-demo.exe
+.venv-dev\Scripts\lab-control-cli.exe models
+.venv-dev\Scripts\lab-control-cli.exe doctor
 ```
 
 `visa.toml` 中的地址为示例，使用前复制到自己的配置目录并替换。演示入口 `lab-control-demo` 不访问仪器；CLI 的 `--mock` 使用隔离模拟库存。
 
-双击 `run_demo.bat` 可查看 12 类、24 台 A/B 模拟设备。信号源/电源在设备管理调节，示波器/频谱及测量类参数放在实时监测。总览卡片自动排版，电子学/光学分别保存布局；仅监测不写实验数据，显式开始记录后才保存原始批次。完整操作见[分类控制与监测指南](docs/control-and-monitoring.md)。
+前端固定为用户确认的[历史深色琥珀分类卡片版](direction-approved.md)：左侧导航、顶部分类、三列分类卡片，点击卡片展开该类设备池。真实和模拟入口共用这套界面与唯一主题。数值输入下方显示范围和来源，在失焦、回车或应用时自动修正到最近边界，修正不发送设备命令。仪器读回保留原值；后端拒绝超界请求。SMA100B 连接后读取实机可设范围，RF 输出限幅单列显示，实验限制可进一步收紧。详见[输入范围规则](docs/input-ranges.md)。
+
+双击 `run_demo.bat` 可查看 12 类、24 台 A/B 模拟设备。信号源/电源在设备管理调节，示波器/频谱及测量类参数放在实时监测。设备与监测总览卡片随窗口排版，电子学/光学分别保存布局。仅监测不写实验数据，显式开始记录后才保存原始批次。完整操作见[分类控制与监测指南](docs/control-and-monitoring.md)。
 
 ## 首次接设备
 
@@ -50,6 +54,8 @@ uv run lab-control-cli doctor
 库存 SQLite、日志、报告和采集文件默认放在 `%LOCALAPPDATA%\TF-LabControl`；通过 `LAB_CONTROL_HOME` 可改数据根目录。数据按 `data/electronic`、`data/optical` 分开。模拟数据另存 `simulation`。SDK DLL、临时下载和实测文件不进入源码目录。
 
 ## 开发检查
+
+真实设备测试必须遵循[实机测试记录规范](docs/hardware-test-records.md)：每台、每次均留档，失败和受阻也记录；更新运行目录 `hardware-tests/index.md`，分别记录连接、参数控制、恢复和物理输出验收。
 
 ```powershell
 uv run ruff check src tests scripts examples

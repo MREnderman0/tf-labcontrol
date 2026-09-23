@@ -164,11 +164,24 @@ class ApplicationRuntime:
         }
         try:
             result["visa"] = str(self.visa.manager.visalib)
+            library_path = str(self.visa.manager.visalib.library_path)
+            result["visa_checks"] = {"path": library_path, "hardware_accepted": False}
+            if sys.platform == "win32" and Path(library_path).is_file():
+                from lab_control.application.environment import pe_bits
+
+                result["visa_checks"]["bits"] = pe_bits(Path(library_path))
+            result["visa_checks"]["functions"] = {
+                name: hasattr(self.visa.manager.visalib, name)
+                for name in ("viOpenDefaultRM", "viOpen", "viRead", "viWrite", "viClose")
+            }
         except Exception as exc:
             result["visa"] = {"error": str(exc), "action": "Install a matching 64-bit VISA runtime"}
         import serial
 
         result["serial"] = serial.VERSION
+        from lab_control.application.environment import dependency_diagnostics
+
+        result["dependencies"] = dependency_diagnostics(self.configurations)
         return result
 
     def close(self) -> None:

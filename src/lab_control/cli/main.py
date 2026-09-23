@@ -29,7 +29,16 @@ def parser() -> argparse.ArgumentParser:
         "--mock", action="store_true", help="Isolated simulation; never opens physical transports"
     )
     sub = root.add_subparsers(dest="action", required=True)
-    for name in ("doctor", "scan", "models", "identity", "capabilities", "status", "test"):
+    for name in (
+        "doctor",
+        "scan",
+        "models",
+        "identity",
+        "capabilities",
+        "refresh-capabilities",
+        "status",
+        "test",
+    ):
         sub.add_parser(name)
     stress = sub.add_parser("scan-stress", help="Explicit multi-device scan/session preservation report")
     stress.add_argument("--resources", nargs="+", required=True)
@@ -129,6 +138,8 @@ def main(argv: list[str] | None = None) -> int:
                 output(identity)
             elif args.action in {"capabilities", "status"}:
                 output(sessions.submit(device_id, args.action).result())
+            elif args.action == "refresh-capabilities":
+                output(sessions.submit(device_id, "refresh_capabilities").result())
             elif args.action == "set":
                 parameters = json.loads(args.parameters.read_text(encoding="utf-8-sig"))
                 output(
@@ -228,6 +239,7 @@ def main(argv: list[str] | None = None) -> int:
                     "identity": identity,
                     "resource": args.resource,
                     "capabilities": sessions.submit(device_id, "capabilities").result(),
+                    "capability_snapshot": sessions.capability_snapshot(device_id),
                     "status": sessions.submit(device_id, "status").result(),
                     "test_scope": "identity/capabilities/status only; no writes or output changes",
                     "hardware_accepted": False,

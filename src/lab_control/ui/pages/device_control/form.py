@@ -82,6 +82,10 @@ class OperationEditor(QFrame):
         self.readback.setWordWrap(True)
         self.readback.setObjectName("readback")
         layout.addWidget(self.readback)
+        self.range_note = QLabel()
+        self.range_note.setObjectName("rangeHint")
+        self.range_note.setWordWrap(True)
+        layout.addWidget(self.range_note)
         actions = QHBoxLayout()
         self.status = QLabel("" if cap.available else cap.reason)
         self.status.setWordWrap(True)
@@ -102,11 +106,17 @@ class OperationEditor(QFrame):
                 if name in self.editors:
                     self.editors[name].restore(value)
             if self.array_editor and draft.get("rows"):
+                self.array_editor.path = draft.get("array_path", "")
                 self.array_editor.model.replace_rows(draft["rows"])
             self.dirty = True
             self.status.setText("已恢复未提交草稿")
         if self.array_editor:
             self.array_editor.changed.connect(self.save_draft)
+        if draft:
+            for editor in self.editors.values():
+                editor.finish_editing(force=True)
+            if self.array_editor:
+                self.array_editor.finish_manual_rows()
         controller.refreshed.connect(self.refresh_enabled)
         self.refresh_enabled()
 
@@ -118,11 +128,31 @@ class OperationEditor(QFrame):
             {
                 "fields": {name: editor.draft() for name, editor in self.editors.items()},
                 "rows": self.array_editor.model.rows if self.array_editor else [],
+                "array_path": self.array_editor.path if self.array_editor else "",
             },
         )
 
     def refresh_enabled(self) -> None:
+        if self.device_id in self.controller.records:
+            schema = self.controller.capabilities(self.device_id, self.channel)
+            current = next((cap for cap in schema.operations if cap.name == self.cap.name), self.cap)
+            if current != self.cap:
+                self.cap = current
+                for name, editor in self.editors.items():
+                    editor.set_spec(current.parameters[name])
+                if self.array_editor:
+                    self.array_editor.set_parameters(
+                        {name: spec for name, spec in current.parameters.items() if spec.kind == "array"}
+                    )
         state = self.controller.states.get(self.device_id, {})
+        details = state.get("capabilityDetails", {})
+        self.range_note.setText(
+            f"RF 输出限幅：{details['rf_output_limit_dbm']:g} dBm · 功率偏移：{details.get('power_offset_db', 0):g} dB\n"
+            "可设范围不代表保证输出功率；此操作不修改 RF 限幅。"
+            if self.cap.name == "power" and "rf_output_limit_dbm" in details
+            else ""
+        )
+        self.range_note.setVisible(bool(self.range_note.text()))
         available = self.cap.available and state.get("connectionState") in {"connected", "busy"}
         available &= state.get("activeTask") != "continuous_acquisition" and not self.busy
         self.read_button.setEnabled(available)
@@ -134,6 +164,7 @@ class OperationEditor(QFrame):
                 and mode_applicable(record, self.controller.mode)
                 and self.controller.mode == self.mode
                 and not state.get("controlPending")
+                and not state.get("capabilityStale", True)
             )
         )
         for editor in self.editors.values():
@@ -243,10 +274,37 @@ class ControlForm(QWidget):
         self.editors: dict[str, OperationEditor] = {}
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        refresh = QPushButton("刷新实机范围与选件")
+        refresh.clicked.connect(self.refresh_capabilities)
+        layout.addWidget(refresh)
+        self.snapshot_status = QLabel()
+        self.snapshot_status.setObjectName("rangeHint")
+        self.snapshot_status.setWordWrap(True)
+        layout.addWidget(self.snapshot_status)
+        controller.refreshed.connect(self.show_snapshot_status)
         self.tabs = QTabWidget()
         self.tabs.currentChanged.connect(self.read_visible)
         layout.addWidget(self.tabs)
         self.groups: list[list[str]] = []
+
+    def show_snapshot_status(self) -> None:
+        snapshot = self.controller.runtime.sessions.capability_snapshot(self.device_id)
+        self.snapshot_status.setText(
+            f"范围快照 v{snapshot.version} · {snapshot.timestamp} · "
+            + ("已过期：" + snapshot.error if snapshot.stale else "已更新")
+            if snapshot
+            else "尚未连接 · 使用型号文档范围，实机动态范围未确认"
+        )
+
+    def refresh_capabilities(self) -> None:
+        if not self.device_id:
+            return
+        try:
+            self.controller.watch(
+                self.controller.runtime.sessions.submit(self.device_id, "refresh_capabilities")
+            )
+        except Exception as exc:
+            self.controller.message.emit(str(exc))
 
     def set_device(self, device_id: str, channel: int = 1) -> None:
         if (device_id, channel, self.controller.mode) == (
@@ -285,6 +343,7 @@ class ControlForm(QWidget):
             for group_layout in layouts:
                 group_layout.addStretch()
         self.tabs.blockSignals(False)
+        self.show_snapshot_status()
         self.read_visible()
 
     def read_visible(self, *_args) -> None:

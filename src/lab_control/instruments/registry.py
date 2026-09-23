@@ -105,6 +105,12 @@ def create_adapter(config: ConnectionConfig, runtime: VisaRuntime) -> Instrument
         from lab_control.demo.instrument import SimulatedInstrument
 
         return SimulatedInstrument(config)
+    if config.transport in {"pico", "tlpmx", "pm100d"} and not config.sdk_path:
+        from dataclasses import replace
+
+        from lab_control.application.environment import find_sdk
+
+        config = replace(config, sdk_path=find_sdk(config.transport))
     if config.adapter == "thorlabs.pm100d" and config.transport in {"tlpmx", "pm100d"}:
         from lab_control.instruments.optical import PowerMeterAdapter
 

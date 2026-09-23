@@ -7,6 +7,9 @@
 | [设备索引](device-research-index.md) | 附件每个条目的唯一归档入口 |
 | [实际能力矩阵](generated/capability-matrix.md) / [JSON](generated/capability-matrix.json) | 从真实注册表生成，区分实现、协议夹具、选件与实机状态 |
 | [实机测试指南](hardware-testing.md) | 驱动、安装、配置、CLI、采集、故障及验收记录 |
+| [实机测试记录规范](hardware-test-records.md) | 每台、每次必须留档；逐项结果、恢复、输出状态与资产台账 |
+| [开发环境与下载策略](development-environment.md) | 国内镜像、禁用代理、项目 uv 与 PyVISA 优先接入约定 |
+| [输入范围规则](input-ranges.md) | 实机会话快照、范围来源、前端限幅和后端严格校验 |
 | [设备发现与总览](requirements/device-discovery-and-overview.md) | 扫描与总览的唯一详细设计来源 |
 | [设备管理](requirements/device-management.md) | 总览行为与操作边界 |
 | [控制与监测指南](control-and-monitoring.md) | A/B 演示、分类调参、监测卡片、记录与导出 |
