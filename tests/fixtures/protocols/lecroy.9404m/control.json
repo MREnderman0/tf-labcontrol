@@ -1,0 +1,19 @@
+{
+  "fixture_origin": "authored from the linked manufacturer command reference; not a hardware recording",
+  "adapter": "lecroy.9404m",
+  "operation": "timebase",
+  "channel": 1,
+  "parameters": {
+    "value": 0.001
+  },
+  "exchanges": [
+    [
+      "TDIV 0.001",
+      ""
+    ],
+    [
+      "TDIV?",
+      "TDIV 1.000000E-03 S"
+    ]
+  ]
+}

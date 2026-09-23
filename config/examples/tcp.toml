@@ -1,0 +1,7 @@
+[[devices]]
+resource = "tcp://192.0.2.11:5025"
+adapter = "siglent.sdg6032x"
+transport = "tcp"
+timeout = 5.0
+terminator = "\n"
+# Confirm Socket support and port in the instrument's network settings.

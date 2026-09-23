@@ -1,0 +1,15 @@
+{
+  "fixture_origin": "authored from the linked manufacturer command reference; not a hardware recording",
+  "adapter": "keysight.3458a",
+  "operation": "integration",
+  "channel": 1,
+  "parameters": {
+    "value": 10
+  },
+  "exchanges": [
+    [
+      "NPLC 10",
+      ""
+    ]
+  ]
+}

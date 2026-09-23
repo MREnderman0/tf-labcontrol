@@ -1,0 +1,19 @@
+{
+  "fixture_origin": "authored from the linked manufacturer command reference; not a hardware recording",
+  "adapter": "siglent.sdg6032x",
+  "operation": "frequency",
+  "channel": 2,
+  "parameters": {
+    "value": 1000
+  },
+  "exchanges": [
+    [
+      "C2:BSWV FRQ,1000",
+      ""
+    ],
+    [
+      "C2:BSWV?",
+      "C2:BSWV WVTP,SINE,FRQ,1000HZ,AMP,2V,OFST,0V"
+    ]
+  ]
+}

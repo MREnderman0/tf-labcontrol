@@ -1,0 +1,14 @@
+# Replace with an actual resource returned by VISA enumeration.
+[[devices]]
+resource = "TCPIP0::192.0.2.10::inst0::INSTR"
+adapter = "rigol.dg5504pro"
+transport = "visa"
+timeout = 5.0
+terminator = "\n"
+expected_serial = ""
+aliases = []
+options = []
+
+# USB example: USB0::0x1AB1::<product>::<serial>::INSTR
+# 3458A example: resource="GPIB0::22::INSTR", adapter="keysight.3458a"
+# Choose exact adapters with: lab-control-cli models

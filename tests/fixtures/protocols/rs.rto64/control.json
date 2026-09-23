@@ -1,0 +1,23 @@
+{
+  "fixture_origin": "authored from the linked manufacturer command reference; not a hardware recording",
+  "adapter": "rs.rto64",
+  "operation": "time_position",
+  "channel": 1,
+  "parameters": {
+    "value": 0
+  },
+  "exchanges": [
+    [
+      "TIM:HOR:POS 0",
+      ""
+    ],
+    [
+      "TIM:HOR:POS?",
+      "0"
+    ],
+    [
+      "SYST:ERR?",
+      "0,No error"
+    ]
+  ]
+}

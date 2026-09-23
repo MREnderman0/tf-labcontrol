@@ -1,0 +1,8 @@
+include README.md pyproject.toml uv.lock .python-version run_demo.bat run_real.bat
+recursive-include docs *.md *.json
+recursive-include config/examples *.toml *.json *.md
+recursive-include examples *.py *.md
+recursive-include scripts *.py
+recursive-include tests *.py *.json
+recursive-include src/lab_control/ui/styles *.qss
+include src/lab_control/py.typed

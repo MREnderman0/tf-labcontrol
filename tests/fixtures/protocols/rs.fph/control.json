@@ -1,0 +1,23 @@
+{
+  "fixture_origin": "authored from the linked manufacturer command reference; not a hardware recording",
+  "adapter": "rs.fph",
+  "operation": "rbw",
+  "channel": 1,
+  "parameters": {
+    "value": 1000
+  },
+  "exchanges": [
+    [
+      "SENS:BAND:RES 1000",
+      ""
+    ],
+    [
+      "SENS:BAND:RES?",
+      "1000"
+    ],
+    [
+      "SYST:ERR?",
+      "0,No error"
+    ]
+  ]
+}

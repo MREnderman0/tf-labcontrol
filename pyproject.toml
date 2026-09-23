@@ -1,0 +1,55 @@
+[project]
+name = "tf-labcontrol-shell"
+version = "0.3.0"
+description = "Laboratory instrument compatibility layer and desktop workstation"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "PySide6>=6.8,<7",
+    "PyVISA>=1.14,<2",
+    "pyserial>=3.5,<4",
+    "numpy>=2,<3",
+    "pyqtgraph>=0.14,<0.15",
+]
+
+[project.scripts]
+lab-control-demo = "lab_control.app:main"
+lab-control = "lab_control.app:real_main"
+lab-control-cli = "lab_control.cli.main:main"
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+lab_control = ["ui/styles/*.qss", "py.typed"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-qt>=4.4",
+    "ruff>=0.11",
+    "mypy>=1.15",
+    "types-pyserial>=3.5",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+markers = ["hardware: opt-in tests requiring an explicitly configured physical instrument"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.mypy]
+python_version = "3.12"
+check_untyped_defs = true
+ignore_missing_imports = true
+files = ["src/lab_control"]

@@ -1,0 +1,23 @@
+{
+  "fixture_origin": "authored from the linked manufacturer command reference; not a hardware recording",
+  "adapter": "rs.sma100b",
+  "operation": "power",
+  "channel": 1,
+  "parameters": {
+    "value": -30
+  },
+  "exchanges": [
+    [
+      "SOUR:POW -30",
+      ""
+    ],
+    [
+      "SOUR:POW?",
+      "-30"
+    ],
+    [
+      "SYST:ERR?",
+      "0,No error"
+    ]
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "fixture_origin": "authored from the linked manufacturer command reference; not a hardware recording",
+  "adapter": "lecroy.9254",
+  "operation": "scale",
+  "channel": 1,
+  "parameters": {
+    "value": 0.1
+  },
+  "exchanges": [
+    [
+      "C1:VDIV 0.1",
+      ""
+    ],
+    [
+      "C1:VDIV?",
+      "C1:VDIV 1.000000E-01 V"
+    ]
+  ]
+}

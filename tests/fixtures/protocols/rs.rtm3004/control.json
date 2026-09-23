@@ -1,0 +1,23 @@
+{
+  "fixture_origin": "authored from the linked manufacturer command reference; not a hardware recording",
+  "adapter": "rs.rtm3004",
+  "operation": "probe_attenuation",
+  "channel": 1,
+  "parameters": {
+    "value": 10
+  },
+  "exchanges": [
+    [
+      "PROB1:SET:ATT:MAN 10",
+      ""
+    ],
+    [
+      "PROB1:SET:ATT:MAN?",
+      "10"
+    ],
+    [
+      "SYST:ERR?",
+      "0,No error"
+    ]
+  ]
+}

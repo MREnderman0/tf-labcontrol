@@ -1,0 +1,14 @@
+[[devices]]
+resource = "mock://signal"
+adapter = "rigol.dg5504pro"
+transport = "mock"
+
+[[devices]]
+resource = "mock://scope"
+adapter = "rigol.ds1202ze"
+transport = "mock"
+
+[[devices]]
+resource = "mock://temperature"
+adapter = "sim.temperature_controller"
+transport = "mock"

@@ -1,0 +1,116 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body { font-family: "Microsoft YaHei UI", "Microsoft YaHei", sans-serif; }
+button { font: inherit; }
+.shell { width: 1440px; min-height: 900px; display: grid; grid-template-columns: 232px 1fr; overflow: hidden; }
+.side { padding: 28px 18px; display: flex; flex-direction: column; gap: 34px; }
+.brand { display: flex; flex-direction: column; gap: 7px; }
+.brand strong { font-size: 19px; letter-spacing: .13em; }
+.brand small { font-size: 10px; letter-spacing: .18em; opacity: .58; }
+.section-label { margin: 0 10px 8px; font-size: 10px; letter-spacing: .14em; opacity: .48; text-transform: uppercase; }
+.nav { display: grid; gap: 5px; }
+.nav-item { padding: 11px 12px; border: 0; text-align: left; cursor: default; }
+.nav-item.active { font-weight: 700; }
+.side-note { margin-top: auto; padding: 14px; }
+.side-note strong { display: block; font-size: 12px; margin-bottom: 5px; }
+.side-note span { font-size: 11px; line-height: 1.6; opacity: .66; }
+.main { min-width: 0; display: flex; flex-direction: column; }
+.topbar { height: 92px; padding: 24px 30px 16px; display: flex; align-items: flex-start; justify-content: space-between; }
+.crumb { font-size: 11px; opacity: .56; margin-top: 2px; }
+.title { margin: 7px 0 0; font-size: 26px; letter-spacing: -.03em; }
+.top-actions { display: flex; align-items: center; gap: 10px; }
+.mode { padding: 9px 12px; font-size: 12px; font-weight: 700; }
+.scan { padding: 9px 13px; border: 0; font-weight: 700; }
+.clock { font-size: 12px; opacity: .6; padding-left: 8px; }
+.tabs { height: 46px; padding: 0 30px; display: flex; align-items: end; gap: 26px; }
+.tab { padding: 0 0 12px; font-size: 12px; opacity: .66; }
+.tab.active { opacity: 1; font-weight: 700; }
+.content { padding: 30px; display: flex; flex-direction: column; gap: 20px; }
+.eyebrow { font-size: 11px; opacity: .6; }
+.page-title { margin: 3px 0 0; font-size: 31px; letter-spacing: -.04em; }
+.intro { margin: 4px 0 0; font-size: 12px; opacity: .66; }
+.banner { padding: 14px 16px; }
+.banner strong { display: block; font-size: 13px; margin-bottom: 4px; }
+.banner span { font-size: 11px; opacity: .7; }
+.card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.card { min-height: 156px; padding: 15px; position: relative; }
+.card-head { display: flex; justify-content: space-between; align-items: center; }
+.card-title { font-size: 14px; font-weight: 700; }
+.card-visibility { font-size: 10px; opacity: .56; }
+.card-desc { margin-top: 7px; font-size: 10px; opacity: .57; }
+.card-main { display: flex; align-items: baseline; gap: 10px; margin-top: 15px; }
+.card-value { font-size: 30px; line-height: 1; font-weight: 700; }
+.card-caption { font-size: 11px; opacity: .66; }
+.metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+.metric span { display: block; font-size: 10px; opacity: .52; }
+.metric b { display: block; font-size: 13px; margin-top: 3px; }
+.trend { min-height: 70px; padding: 15px 17px; display: flex; justify-content: space-between; align-items: center; }
+.trend strong { font-size: 13px; }
+.trend span { font-size: 11px; opacity: .62; }
+.footer { margin-top: auto; padding: 10px 30px 13px; font-size: 10px; opacity: .52; }
+
+/* 01 · Midnight Instrument */
+.midnight { background: #0f1519; color: #e9eeeb; }
+.midnight .side { background: #121b20; border-right: 1px solid #2a363a; }
+.midnight .brand strong { color: #f7f2e7; }
+.midnight .nav-item { color: #b9c7c5; background: transparent; border-left: 2px solid transparent; }
+.midnight .nav-item.active { color: #f2c66d; background: #202b2c; border-left-color: #f2c66d; }
+.midnight .side-note { border: 1px solid #374541; background: #17211f; }
+.midnight .topbar { border-bottom: 1px solid #2a363a; }
+.midnight .mode { color: #f2c66d; border: 1px solid #6d5b34; background: #22231d; }
+.midnight .scan { color: #101515; background: #f2c66d; }
+.midnight .tabs { border-bottom: 1px solid #2a363a; }
+.midnight .tab.active { color: #f2c66d; border-bottom: 2px solid #f2c66d; }
+.midnight .banner, .midnight .card, .midnight .trend { background: #172126; border: 1px solid #304348; }
+.midnight .banner { border-left: 3px solid #f2c66d; }
+.midnight .card { border-top: 2px solid #2b8e99; }
+.midnight .card-value { color: #83d9d1; }
+.midnight .metric b { color: #f2c66d; }
+.midnight .trend { border-left: 3px solid #2b8e99; }
+
+/* 02 · Lab Notebook */
+.notebook { background: #f1f0eb; color: #20252a; }
+.notebook .side { background: #e6e5df; border-right: 1px solid #c9cbc6; }
+.notebook .brand strong { color: #17293f; }
+.notebook .nav-item { color: #4b5963; background: transparent; border-radius: 3px; }
+.notebook .nav-item.active { color: #173e79; background: #fff; box-shadow: inset 3px 0 #2458ad; }
+.notebook .side-note { border: 1px solid #c2c4bf; background: #eeeee8; }
+.notebook .topbar { border-bottom: 1px solid #c9cbc6; }
+.notebook .mode { color: #194a92; border: 1px solid #9fb3d0; background: #e6edf8; }
+.notebook .scan { color: #fff; background: #2458ad; border-radius: 3px; }
+.notebook .tabs { border-bottom: 1px solid #c9cbc6; }
+.notebook .tab.active { color: #194a92; border-bottom: 3px solid #2458ad; }
+.notebook .banner, .notebook .card, .notebook .trend { background: #fff; border: 1px solid #d3d5cf; border-radius: 3px; }
+.notebook .banner { border-left: 4px solid #d46a3a; }
+.notebook .card { box-shadow: 0 2px 8px rgba(24, 36, 43, .05); }
+.notebook .card-value { color: #194a92; }
+.notebook .metric b { color: #d46a3a; }
+.notebook .trend { border-top: 3px solid #2458ad; }
+
+/* 03 · Signal Observatory */
+.observatory { background: #101521; color: #edf5f2; }
+.observatory .shell { background: radial-gradient(circle at 75% 5%, #1e2a40 0, #101521 38%); }
+.observatory .side { background: rgba(11, 16, 28, .76); border-right: 1px solid #2a3850; }
+.observatory .brand strong { color: #f2f7ee; letter-spacing: .09em; }
+.observatory .nav-item { color: #9da9bd; background: transparent; border-radius: 8px; }
+.observatory .nav-item.active { color: #c7f36e; background: #203036; box-shadow: 0 0 0 1px rgba(199,243,110,.22); }
+.observatory .side-note { border: 1px solid #314461; background: rgba(24, 35, 55, .74); border-radius: 10px; }
+.observatory .topbar { border-bottom: 1px solid #28364d; }
+.observatory .mode { color: #c7f36e; border: 1px solid #536a45; background: rgba(49, 72, 53, .56); border-radius: 8px; }
+.observatory .scan { color: #101521; background: #c7f36e; border-radius: 8px; }
+.observatory .tabs { border-bottom: 1px solid #28364d; gap: 20px; }
+.observatory .tab.active { color: #c7f36e; border-bottom: 2px solid #c7f36e; }
+.observatory .banner, .observatory .card, .observatory .trend { background: rgba(20, 29, 46, .86); border: 1px solid #314461; border-radius: 10px; box-shadow: 0 14px 36px rgba(0,0,0,.14); }
+.observatory .banner { border-left: 3px solid #c7f36e; }
+.observatory .card:nth-child(2) { border-top-color: #f28bb1; }
+.observatory .card:nth-child(3) { border-top-color: #7fd7f2; }
+.observatory .card-value { color: #c7f36e; }
+.observatory .metric b { color: #f28bb1; }
+.observatory .trend { border-left: 3px solid #7fd7f2; }
+.wave { width: 210px; height: 42px; }
+.wave polyline { fill: none; stroke: #c7f36e; stroke-width: 2; vector-effect: non-scaling-stroke; }
+
+@media (max-width: 1000px) {
+  .shell { width: 100%; grid-template-columns: 188px 1fr; }
+  .card-grid { grid-template-columns: repeat(2, 1fr); }
+}

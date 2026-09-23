@@ -1,0 +1,19 @@
+{
+  "fixture_origin": "authored from the linked manufacturer command reference; not a hardware recording",
+  "adapter": "gwinstek.gpd4303s",
+  "operation": "voltage",
+  "channel": 2,
+  "parameters": {
+    "value": 2.5
+  },
+  "exchanges": [
+    [
+      "VSET2:2.5",
+      ""
+    ],
+    [
+      "VSET2?",
+      "2.500"
+    ]
+  ]
+}

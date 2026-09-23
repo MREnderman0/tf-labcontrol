@@ -1,0 +1,27 @@
+{
+  "fixture_origin": "authored from the linked manufacturer command reference; not a hardware recording",
+  "adapter": "itech.it6322",
+  "operation": "voltage",
+  "channel": 3,
+  "parameters": {
+    "value": 3.3
+  },
+  "exchanges": [
+    [
+      "INST:NSEL 3",
+      ""
+    ],
+    [
+      "VOLT 3.3",
+      ""
+    ],
+    [
+      "VOLT?",
+      "3.300"
+    ],
+    [
+      "SYST:ERR?",
+      "0,No error"
+    ]
+  ]
+}

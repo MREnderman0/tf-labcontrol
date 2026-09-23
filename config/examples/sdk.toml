@@ -1,0 +1,16 @@
+[[devices]]
+resource = "USB0::REPLACE_WITH_SDK_RESOURCE::INSTR"
+adapter = "thorlabs.pm100d"
+transport = "tlpmx"
+sdk_path = 'C:\Program Files\IVI Foundation\VISA\Win64\Bin\TLPMX_64.dll'
+timeout = 5.0
+# Use the actual DLL path installed by OPM. For the legacy driver, select
+# transport="pm100d" and the matching PM100D_64.dll instead.
+
+[[devices]]
+resource = "PICO::REPLACE_WITH_SERIAL"
+adapter = "pico.6404e"
+transport = "pico"
+expected_serial = "REPLACE_WITH_SERIAL"
+sdk_path = 'C:\Program Files\Pico Technology\SDK\lib\ps6000a.dll'
+timeout = 10.0

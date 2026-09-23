@@ -1,0 +1,12 @@
+[[devices]]
+resource = "COM7"
+adapter = "keithley.2231a"
+transport = "serial"
+baud_rate = 9600
+timeout = 5.0
+terminator = "\n"
+expected_serial = ""
+aliases = ["ASRL7::INSTR"]
+limits = { voltage = 5.0, current = 0.1 }
+# Confirm the device's configured baud rate and 8N1 settings first.
+# GPD-4303S uses adapter="gwinstek.gpd4303s" and its own configured baud rate.

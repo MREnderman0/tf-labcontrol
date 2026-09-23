@@ -1,0 +1,23 @@
+{
+  "fixture_origin": "authored from the linked manufacturer command reference; not a hardware recording",
+  "adapter": "rigol.ds1202ze",
+  "operation": "scale",
+  "channel": 2,
+  "parameters": {
+    "value": 0.1
+  },
+  "exchanges": [
+    [
+      "CHAN2:SCAL 0.1",
+      ""
+    ],
+    [
+      "CHAN2:SCAL?",
+      "0.1"
+    ],
+    [
+      "SYST:ERR?",
+      "0,No error"
+    ]
+  ]
+}

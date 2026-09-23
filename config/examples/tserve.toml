@@ -1,0 +1,14 @@
+[[devices]]
+resource = "tcp://192.0.2.20:1299"
+adapter = "microchip.53100a"
+transport = "tserve"
+timeout = 10.0
+expected_serial = ""
+identity_confirmed = false
+# Set true only after checking the actual 53100A and control authority.
+# The server must already be configured and running; scanning never starts it.
+data_resource = "tcp://192.0.2.20:1298"
+stream_format = "P"
+stream_interval = 0.01
+# Match server /format:P (phase seconds) or /format:F (frequency Hz).
+# This implementation requires /timestamp:0; interval is the actual final cadence.

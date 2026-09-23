@@ -1,0 +1,6 @@
+[[devices]]
+resource = "vicp://192.0.2.12:1861"
+adapter = "lecroy.9404m"
+transport = "vicp"
+timeout = 10.0
+# VICP is framed protocol, not an unframed SCPI socket.

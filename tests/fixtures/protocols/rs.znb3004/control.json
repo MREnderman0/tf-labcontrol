@@ -1,0 +1,23 @@
+{
+  "fixture_origin": "authored from the linked manufacturer command reference; not a hardware recording",
+  "adapter": "rs.znb3004",
+  "operation": "points",
+  "channel": 1,
+  "parameters": {
+    "value": 201
+  },
+  "exchanges": [
+    [
+      "SENS1:SWE:POIN 201",
+      ""
+    ],
+    [
+      "SENS1:SWE:POIN?",
+      "201"
+    ],
+    [
+      "SYST:ERR?",
+      "0,No error"
+    ]
+  ]
+}

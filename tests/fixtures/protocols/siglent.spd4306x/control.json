@@ -1,0 +1,19 @@
+{
+  "fixture_origin": "authored from the linked manufacturer command reference; not a hardware recording",
+  "adapter": "siglent.spd4306x",
+  "operation": "sense_mode",
+  "channel": 2,
+  "parameters": {
+    "value": "4W"
+  },
+  "exchanges": [
+    [
+      "MODE CH2,4W",
+      ""
+    ],
+    [
+      "MODE? CH2",
+      "1"
+    ]
+  ]
+}

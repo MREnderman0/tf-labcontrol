@@ -1,0 +1,22 @@
+{
+  "model": "",
+  "manufacturer": "",
+  "serial": "",
+  "firmware": "",
+  "interface_options": [],
+  "driver_versions": {},
+  "resource": "",
+  "adapter_id": "",
+  "operation": "",
+  "requested_parameters": {},
+  "expected_result": "",
+  "actual_result": "",
+  "physical_observation": "",
+  "quality": "pending",
+  "report_path": "",
+  "data_paths": [],
+  "recovery_result": "",
+  "tested_by": "",
+  "tested_at": "",
+  "hardware_accepted": false
+}
