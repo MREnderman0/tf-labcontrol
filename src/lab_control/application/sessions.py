@@ -46,6 +46,7 @@ class DeviceSession:
     identity: DeviceIdentity | None = None
     adapter: InstrumentAdapter | None = None
     active_task: str = ""
+    background_read: bool = False
     pending: int = 0
     last_status: dict[str, Any] = field(default_factory=dict)
     last_error: str = ""
@@ -106,6 +107,7 @@ class SessionManager:
                     "adapterId": item.config.adapter,
                     "connectionState": item.state,
                     "activeTask": item.active_task,
+                    "backgroundRead": item.background_read,
                     "pending": item.pending,
                     "lastStatus": dict(item.last_status),
                     "lastError": item.last_error,
@@ -173,9 +175,12 @@ class SessionManager:
             ):
                 return None
             session.pending += 1
+            session.background_read = quiet and operation == "read_settings"
             return session.worker.submit(self._execute, session, operation, argument, quiet=quiet)
 
-    def _refresh_capabilities(self, session: DeviceSession, *, query: bool = True) -> CapabilitySnapshot:
+    def _refresh_capabilities(
+        self, session: DeviceSession, *, query: bool = True, changed_only: bool = False
+    ) -> CapabilitySnapshot:
         from lab_control.application.controls import control_capabilities
 
         adapter = session.adapter
@@ -211,6 +216,13 @@ class SessionManager:
             stale=bool(error),
             error=error,
         )
+        if (
+            changed_only
+            and previous
+            and (snapshot.channels, snapshot.options, snapshot.details, snapshot.stale, snapshot.error)
+            == (previous.channels, previous.options, previous.details, previous.stale, previous.error)
+        ):
+            return previous
         with self.lock:
             session.capability_snapshot = snapshot
         self.repository.audit("capabilities_refreshed", device_id=session.device_id, snapshot=snapshot)
@@ -319,12 +331,14 @@ class SessionManager:
     def _execute(self, session: DeviceSession, operation: str, argument: Any, *, quiet: bool = False) -> Any:
         device_id = session.device_id
         with self.lock:
+            session.background_read = False
             if session.state in {"error", "degraded"}:
                 session.pending -= 1
                 if operation == "apply":
                     session.control_pending -= 1
                 raise DeviceError("Previous I/O failed; queued command was not sent", "disconnected")
             session.state, session.active_task = "busy", operation
+            session.background_read = quiet and operation == "read_settings"
         if not quiet:
             self.emit("task_started", device_id, operation=operation)
         try:
@@ -358,6 +372,10 @@ class SessionManager:
             elif operation == "read_settings":
                 operations, channel = argument
                 result = adapter.read_settings(tuple(operations), channel)
+                # Model-owned caches may now imply different channel ranges/permissions.
+                # Publish only actual changes, without extra I/O or identical audit snapshots.
+                if callable(getattr(adapter, "capabilities_for_channel", None)):
+                    self._refresh_capabilities(session, query=False, changed_only=True)
                 self._cache_readings(session, result)
             elif operation == "apply":
                 if not isinstance(argument, DeviceCommand):
@@ -472,6 +490,7 @@ class SessionManager:
             raise
         finally:
             with self.lock:
+                session.background_read = False
                 session.pending -= 1
                 if operation == "apply":
                     session.control_pending -= 1
@@ -559,15 +578,48 @@ class SessionManager:
         with self.lock:
             self.sessions[device_id].stop.set()
 
-    def disconnect(self, device_id: str) -> None:
+    def disconnect(self, device_id: str, *, drain_reads: bool = False) -> None:
         with self.lock:
             session = self.sessions[device_id]
-            if session.pending or session.monitoring or session.state in {"connecting", "busy"}:
+            background_only = drain_reads and session.pending == 1 and session.background_read
+            if (
+                session.closing
+                or session.control_pending
+                or session.control_group
+                or (session.pending and not background_only)
+                or session.monitoring
+                or session.state == "connecting"
+            ):
                 raise DeviceError("Stop and await active tasks before disconnecting", "task_busy")
+            # Reserve teardown atomically: no poll may race the idle check and queue after LOCAL.
             session.closing = True
+
+        def teardown() -> None:
+            adapter = session.adapter
+            if adapter is None:
+                return
+            try:
+                release = getattr(adapter, "release_control", None)
+                if release and session.identity is not None:
+                    if session.state in {"error", "degraded"}:
+                        raise DeviceError("返回本地控制未确认：通信异常，未发送释放命令", "disconnected")
+                    try:
+                        release()
+                    except Exception as exc:
+                        raise DeviceError(f"返回本地控制未确认：{exc}", "disconnected") from exc
+                    self.repository.audit(
+                        "control_released",
+                        device_id=device_id,
+                        note="Release command sent; physical panel state is not independently verified",
+                    )
+            except Exception as exc:
+                self.repository.audit("control_release_failed", device_id=device_id, error=str(exc))
+                raise
+            finally:
+                adapter.close()
+
         try:
-            if session.adapter:
-                session.worker.submit(session.adapter.close).result()
+            session.worker.submit(teardown).result()
         finally:
             session.worker.shutdown(wait=True)
             self.leases.release(device_id)
@@ -585,7 +637,7 @@ class SessionManager:
         for device_id, session in tuple(self.sessions.items()):
             try:
                 session.worker.submit(lambda: None).result()
-                self.disconnect(device_id)
+                self.disconnect(device_id, drain_reads=True)
             except Exception as exc:
                 errors.append(exc)
         if errors:

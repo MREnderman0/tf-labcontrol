@@ -42,6 +42,7 @@ from lab_control.domain.instruments import DeviceError, jsonable
 from lab_control.instruments.registry import PROFILES, SDK_ADAPTERS, describe
 from lab_control.ui.controller import WorkspaceController
 from lab_control.ui.pages.device_control.page import DeviceControlPage
+from lab_control.ui.pages.device_control.power_supply import PowerSupplyPage
 from lab_control.ui.pages.device_control.signal_source import SignalSourcePage
 from lab_control.ui.pages.monitoring.dashboard import MonitoringDashboard
 from lab_control.ui.pages.monitoring.page import MonitoringPage
@@ -273,7 +274,7 @@ class RealWindow(QMainWindow):
         border = self.frameGeometry().size() - self.size()
         width = max(1, available.width() - max(0, border.width()))
         height = max(1, available.height() - max(0, border.height()))
-        self.setMinimumSize(min(960, width), min(600, height))
+        self.setMinimumSize(min(1280, width), min(760, height))
         if not self.isMaximized() and not self.isFullScreen():
             self.resize(min(self.width(), width), min(self.height(), height))
             frame = self.frameGeometry()
@@ -326,7 +327,7 @@ class RealWindow(QMainWindow):
         self.submenu.blockSignals(False)
         self.show_page()
         page = self.stack.currentWidget()
-        if device_id and isinstance(page, (DeviceControlPage, MonitoringPage, SignalSourcePage)):
+        if device_id and isinstance(page, (DeviceControlPage, MonitoringPage, SignalSourcePage, PowerSupplyPage)):
             page.selector.select(device_id)
 
     def show_page(self, *_args) -> None:
@@ -346,6 +347,8 @@ class RealWindow(QMainWindow):
                     page = (
                         SignalSourcePage(self.controller)
                         if category == "signal_generator"
+                        else PowerSupplyPage(self.controller)
+                        if category == "power_supply"
                         else DeviceControlPage(self.controller, category)
                     )
                 elif module == "实时监测":
@@ -783,7 +786,7 @@ class RealWindow(QMainWindow):
             elif key in {"disconnect", "reconnect"}:
 
                 def change():
-                    self.runtime.sessions.disconnect(device_id)
+                    self.runtime.sessions.disconnect(device_id, drain_reads=True)
                     if key == "reconnect":
                         return self.runtime.connect(device_id).result()
 

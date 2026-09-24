@@ -152,6 +152,9 @@ def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
                         for name in panel.editors
                     } | {"output"}
                     assert names == {c.name for c in caps.operations}
+                elif category == "power_supply":
+                    assert set(page.panels) == set(caps.channels)
+                    assert all(set(panel.editors) == {"voltage", "current"} for panel in page.panels.values())
                 else:
                     assert set(page.form.editors) == {c.name for c in caps.operations}
             window.navigate("实时监测", category)

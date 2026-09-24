@@ -1,0 +1,272 @@
+[
+  {
+    "model": "gwinstek.gpd4303s",
+    "work_area": [
+      1440,
+      900
+    ],
+    "window": [
+      1440,
+      900
+    ],
+    "sidebar": 232,
+    "screenshot": "gwinstek.gpd4303s-1440x900.png",
+    "horizontal_scroll": 0,
+    "vertical_scroll": 0,
+    "cards": {
+      "1": {
+        "size": [
+          583,
+          211
+        ],
+        "apply_on_screen": true,
+        "two_fields": true
+      },
+      "2": {
+        "size": [
+          582,
+          211
+        ],
+        "apply_on_screen": true,
+        "two_fields": true
+      },
+      "3": {
+        "size": [
+          583,
+          211
+        ],
+        "apply_on_screen": true,
+        "two_fields": true
+      },
+      "4": {
+        "size": [
+          582,
+          211
+        ],
+        "apply_on_screen": true,
+        "two_fields": true
+      }
+    }
+  },
+  {
+    "model": "gwinstek.gpd4303s",
+    "work_area": [
+      1280,
+      760
+    ],
+    "window": [
+      1280,
+      760
+    ],
+    "sidebar": 232,
+    "screenshot": "gwinstek.gpd4303s-1280x760.png",
+    "horizontal_scroll": 0,
+    "vertical_scroll": 0,
+    "cards": {
+      "1": {
+        "size": [
+          503,
+          211
+        ],
+        "apply_on_screen": true,
+        "two_fields": true
+      },
+      "2": {
+        "size": [
+          502,
+          211
+        ],
+        "apply_on_screen": true,
+        "two_fields": true
+      },
+      "3": {
+        "size": [
+          503,
+          211
+        ],
+        "apply_on_screen": true,
+        "two_fields": true
+      },
+      "4": {
+        "size": [
+          502,
+          211
+        ],
+        "apply_on_screen": true,
+        "two_fields": true
+      }
+    }
+  },
+  {
+    "model": "gwinstek.gpd4303s",
+    "work_area": [
+      1024,
+      600
+    ],
+    "window": [
+      1024,
+      600
+    ],
+    "sidebar": 232,
+    "screenshot": "gwinstek.gpd4303s-1024x600.png",
+    "horizontal_scroll": 0,
+    "vertical_scroll": 60,
+    "cards": {
+      "1": {
+        "size": [
+          369,
+          211
+        ],
+        "apply_on_screen": true,
+        "two_fields": true
+      },
+      "2": {
+        "size": [
+          369,
+          211
+        ],
+        "apply_on_screen": true,
+        "two_fields": true
+      },
+      "3": {
+        "size": [
+          369,
+          211
+        ],
+        "apply_on_screen": false,
+        "two_fields": true
+      },
+      "4": {
+        "size": [
+          369,
+          211
+        ],
+        "apply_on_screen": false,
+        "two_fields": true
+      }
+    }
+  },
+  {
+    "model": "itech.it6322",
+    "work_area": [
+      1440,
+      900
+    ],
+    "window": [
+      1440,
+      900
+    ],
+    "sidebar": 232,
+    "screenshot": "itech.it6322-1440x900.png",
+    "horizontal_scroll": 0,
+    "vertical_scroll": 0,
+    "cards": {
+      "1": {
+        "size": [
+          583,
+          211
+        ],
+        "apply_on_screen": true,
+        "two_fields": true
+      },
+      "2": {
+        "size": [
+          582,
+          211
+        ],
+        "apply_on_screen": true,
+        "two_fields": true
+      },
+      "3": {
+        "size": [
+          583,
+          211
+        ],
+        "apply_on_screen": true,
+        "two_fields": true
+      }
+    }
+  },
+  {
+    "model": "itech.it6322",
+    "work_area": [
+      1280,
+      760
+    ],
+    "window": [
+      1280,
+      760
+    ],
+    "sidebar": 232,
+    "screenshot": "itech.it6322-1280x760.png",
+    "horizontal_scroll": 0,
+    "vertical_scroll": 0,
+    "cards": {
+      "1": {
+        "size": [
+          503,
+          211
+        ],
+        "apply_on_screen": true,
+        "two_fields": true
+      },
+      "2": {
+        "size": [
+          502,
+          211
+        ],
+        "apply_on_screen": true,
+        "two_fields": true
+      },
+      "3": {
+        "size": [
+          503,
+          211
+        ],
+        "apply_on_screen": true,
+        "two_fields": true
+      }
+    }
+  },
+  {
+    "model": "itech.it6322",
+    "work_area": [
+      1024,
+      600
+    ],
+    "window": [
+      1024,
+      600
+    ],
+    "sidebar": 232,
+    "screenshot": "itech.it6322-1024x600.png",
+    "horizontal_scroll": 0,
+    "vertical_scroll": 60,
+    "cards": {
+      "1": {
+        "size": [
+          369,
+          211
+        ],
+        "apply_on_screen": true,
+        "two_fields": true
+      },
+      "2": {
+        "size": [
+          369,
+          211
+        ],
+        "apply_on_screen": true,
+        "two_fields": true
+      },
+      "3": {
+        "size": [
+          369,
+          211
+        ],
+        "apply_on_screen": false,
+        "two_fields": true
+      }
+    }
+  }
+]

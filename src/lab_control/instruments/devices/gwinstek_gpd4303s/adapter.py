@@ -109,6 +109,14 @@ class Gpd4303sAdapter(ScpiAdapter):
         self.local_control = False
         return identity
 
+    def release_control(self) -> None:
+        """Normal-session teardown only; LOCAL has no query/ack and preserves outputs."""
+        if not self.local_control:
+            self.transport.write("LOCAL")
+            self.local_control = True
+            self.correlated.clear()
+            self.status.clear()
+
     def read(self, operation: str, channel: int = 1) -> Any:
         if self.local_control:
             raise Unsupported("设备处于本地控制，请先进入远程控制或重新连接")
@@ -119,6 +127,7 @@ class Gpd4303sAdapter(ScpiAdapter):
             self.status = decode_status(
                 transport.query_status(), firmware=self.identity.firmware if self.identity else ""
             )
+            self.capability_details = {**self.capability_details, "status": dict(self.status)}
             if operation == "status_register":
                 return dict(self.status)
             value = self.status["output_enabled" if operation == "all_outputs" else "tracking"]
@@ -128,6 +137,7 @@ class Gpd4303sAdapter(ScpiAdapter):
         value = super().read(operation, channel)
         if channel == 3 and operation in {"voltage", "current"}:
             self.correlated[operation] = float(value)
+            self.capability_details = {**self.capability_details, "ch3_settings": dict(self.correlated)}
         return value
 
     def refresh_capabilities(self) -> None:

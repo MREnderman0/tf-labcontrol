@@ -103,3 +103,19 @@ QFrame#compactOperation QLineEdit#sourceValue { font-size: 20px; font-weight: 60
 QFrame#compactOperation QComboBox { padding: 3px 7px; padding-right: 23px; min-height: 25px; }
 QLabel#outputState { font-size: 14px; font-weight: 600; color: #e3a252; padding: 3px 5px; }
 QFrame#sourceGroup QPushButton#primaryButton:disabled { background: #15191b; color: #788286; border-color: #303739; font-weight: 400; }
+
+/* Power supplies: two columns of compact, all-channel cards. */
+QFrame#powerChannel { background: #151b1d; border: 1px solid #3b4243; border-top: 2px solid #986b38; border-radius: 8px; }
+QFrame#powerChannel QWidget { background: transparent; }
+QLabel#powerChannelTitle { color: #e3a252; font-size: 17px; font-weight: 600; }
+QLabel#powerSyncState { color: #97a6a5; font-size: 12px; }
+QFrame#powerChannel QLineEdit#powerValue { background: #101618; border: 1px solid #485054; font-size: 22px; padding: 4px 8px; min-height: 28px; border-radius: 5px; }
+QFrame#powerChannel QLineEdit#powerValue:focus { border-color: #d99342; }
+QFrame#powerChannel QComboBox { background: #1b2224; padding: 4px 5px; min-height: 28px; }
+QFrame#powerChannel QLabel#powerMeasured { color: #e2c08b; font-size: 12px; }
+QFrame#powerChannel QLabel#rangeHint { color: #8da09c; font-size: 11px; }
+QFrame#powerChannel QPushButton#primaryButton { background: #d99342; border-color: #d99342; color: #14110d; font-weight: 700; border-radius: 5px; }
+QFrame#powerChannel QPushButton#primaryButton:disabled { background: #1a2022; color: #778584; border-color: #354042; font-weight: 400; }
+QLabel#powerOutputState { color: #b2bdba; font-size: 12px; }
+QPushButton#powerOutputButton { border-color: #a87946; color: #efbd84; border-radius: 5px; padding: 0 8px; min-height: 0; }
+QPushButton#powerOutputButton:disabled { color: #788286; border-color: #354042; }

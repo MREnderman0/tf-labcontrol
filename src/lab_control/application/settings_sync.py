@@ -16,6 +16,7 @@ from lab_control.domain.instruments import ParameterReading
 from lab_control.domain.readback import usable_reading
 
 BASE = ("output", "waveform", "frequency", "power", "amplitude", "offset", "reference_clock")
+POWER_BASE = ("all_outputs", "output", "voltage", "current", "measured_voltage", "measured_current")
 Key = tuple[int, str]
 
 
@@ -62,14 +63,16 @@ class SettingsSync:
         snapshot = self.sessions.capability_snapshot(device_id)
         if not snapshot or not snapshot.channels:
             return {}
-        if next(iter(snapshot.channels.values())).category != "signal_generator":
+        category = next(iter(snapshot.channels.values())).category
+        base = {"signal_generator": BASE, "power_supply": POWER_BASE}.get(category)
+        if base is None:
             return {}
         requested = set(self.advanced) if device_id == self.focus else set()
         result = {}
         for channel, schema in snapshot.channels.items():
             for cap in schema.operations:
                 key = (channel if cap.channel_scoped else 1, cap.name)
-                if (cap.name in BASE or key in requested) and cap.available and cap.readable:
+                if (cap.name in base or key in requested) and cap.available and cap.readable:
                     if not any(spec.kind == "array" for spec in cap.parameters.values()):
                         result[key] = cap
         return result
@@ -204,7 +207,7 @@ class SettingsSync:
             due.sort(
                 key=lambda k: (
                     frames[k].received_at if self.current(frames.get(k), state) else 0,
-                    k[1] != "output",
+                    k[1] not in {"output", "all_outputs"},
                     k[0],
                 )
             )

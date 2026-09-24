@@ -329,6 +329,40 @@ def test_restore_failure_preserves_evidence_and_does_not_replay(tmp_path):
         assert "error" in report["operations"][-1]
         assert (tmp_path / "results.json").exists()
     finally:
+        with pytest.raises(DeviceError, match="返回本地控制未确认"):
+            runtime.close()
+        assert "LOCAL" not in wire.history
+
+
+def test_normal_release_once_on_worker_and_identity_failure_does_not_release(tmp_path):
+    from dataclasses import replace
+
+    runtime, key, wire = runtime_fixture(tmp_path)
+    config = runtime.sessions.sessions[key].config
+    runtime.sessions.disconnect(key)
+    assert wire.history.count("LOCAL") == 1 and len(wire.threads) == 1
+    assert wire.history[-1] == "LOCAL"
+    wire.history.clear()
+    with pytest.raises(DeviceError, match="serial differs"):
+        runtime.sessions.connect(key, replace(config, expected_serial="WRONG")).result()
+    runtime.close()
+    assert "LOCAL" not in wire.history
+
+
+def test_cached_settings_publish_changed_ranges_without_extra_queries(tmp_path):
+    runtime, key, wire = runtime_fixture(tmp_path)
+    try:
+        previous = runtime.sessions.capability_snapshot(key)
+        wire.voltage[3] = 6
+        before = len(wire.history)
+        runtime.sessions.submit(key, "read_settings", (("voltage", "current"), 3)).result()
+        snapshot = runtime.sessions.capability_snapshot(key)
+        assert snapshot.channels[3].get("current").parameters["value"].maximum == 1
+        assert snapshot.version > previous.version
+        assert wire.history[before:] == ["VSET3?", "ISET3?"]
+        runtime.sessions.submit(key, "read_settings", (("voltage", "current"), 3)).result()
+        assert runtime.sessions.capability_snapshot(key).version == snapshot.version
+    finally:
         runtime.close()
 
 

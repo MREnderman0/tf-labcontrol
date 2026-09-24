@@ -1,0 +1,13 @@
+{
+  "devices": 20,
+  "foreground_interval_seconds": 1,
+  "background_interval_seconds": 10,
+  "initial_sync_seconds": 0.828,
+  "max_global_auto_reads": 4,
+  "max_per_device_communication": 1,
+  "max_parameters_per_batch": 4,
+  "automatic_parameter_writes": 0,
+  "healthy_devices_starved": 0,
+  "failed_device_attempts": 1,
+  "transport": "isolated Mock only"
+}
