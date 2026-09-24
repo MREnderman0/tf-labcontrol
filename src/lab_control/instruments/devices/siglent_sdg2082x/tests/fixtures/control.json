@@ -1,0 +1,7 @@
+{
+  "adapter": "siglent.sdg2082x",
+  "operation": "output",
+  "parameters": {"value": false},
+  "channel": 2,
+  "exchanges": [["C2:OUTP OFF", ""], ["C2:OUTP?", "C2:OUTP OFF,LOAD,HZ"]]
+}

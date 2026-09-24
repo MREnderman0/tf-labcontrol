@@ -1,32 +1,29 @@
 """Generate capability inventory and model implementation sections without opening hardware.
 
 Run with: uv run python scripts/generate_device_docs.py [--check]
-The authored model notes live here; commands and capabilities always come from the registry.
+Independent model notes live in their packages; legacy notes remain here.
+Commands and capabilities always come from the registry.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
+import re
 from pathlib import Path
 
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.controls import CATEGORY_LABELS, COMMON, MEASUREMENT_CATEGORIES, OPERATION_LABELS
 from lab_control.domain.instruments import jsonable
-from lab_control.instruments.registry import PENDING, PROFILES, describe
+from lab_control.instruments.registry import DEVICE_DEFINITIONS, PENDING, PROFILES, describe
 
 ROOT = Path(__file__).resolve().parents[1]
+MODEL_CARD_MARKER = "<!-- Generated from an independent device package; edit its README.md. -->"
 
 # adapter, card, display name, connection, driver, model-specific acceptance boundary
-MODELS = [
-    (
-        "tek.afg31252",
-        "signal-sources/afg31252",
-        "Tektronix AFG31252",
-        "USB Device / LAN / GPIB（核对实际接口）",
-        "64 位 NI-VISA 或 TekVISA；USBTMC/网卡/GPIB 控制器驱动",
-        "使用 AFG31000 手册。相位为 rad；任意波形写入 EMEM，14 位数据上限 16382、大端；上传后另行选择波形，不自动开启输出。幅度设置前显式选择 VPP。",
-    ),
+LEGACY_MODELS = [
     (
         "siglent.sdg6032x",
         "signal-sources/sdg6032x",
@@ -34,14 +31,6 @@ MODELS = [
         "USB / LAN VXI-11 / 已配置 TCP Socket",
         "VISA Runtime；直接 TCP 不需要 VISA",
         "BSWV/MDWV/SWWV/BTWV 是复合命令。先显式启用调制/扫频/突发，再设置子参数；不会替用户启用。WVDT 使用小端有符号 16 位数据，二进制末尾不追加换行。建议先用 USB/VXI-11 验证上传。",
-    ),
-    (
-        "rs.sma100b",
-        "signal-sources/sma100b",
-        "R&S SMA100B",
-        "LAN / USB / 已安装 GPIB",
-        "64 位 VISA Runtime",
-        "射频功率使用 dBm，不提供函数发生器的偏置或任意波形接口。离线型号范围保守限制为 3 GHz / 18 dBm；连接后通过已验证 MIN/MAX 查询更新频率、扫频起止和功率可设范围，RF 输出限幅与功率偏移单列显示，不自动修改输出限幅。查询失败保留旧范围并标记过期，写入前重新核实。列表范围仍独立约束。脉冲调制需配置 pulse_modulation 选件。列表写入后另行启动。",
     ),
     (
         "rigol.dg5504pro",
@@ -182,11 +171,23 @@ MODELS = [
 ]
 
 
-def render() -> dict[Path, str]:
+def render(definitions=None) -> dict[Path, str]:
+    definitions = DEVICE_DEFINITIONS if definitions is None else definitions
+    models = [
+        (
+            d.adapter_id,
+            d.documentation.card,
+            d.documentation.title,
+            d.documentation.connection,
+            d.documentation.driver,
+            "",
+        )
+        for d in definitions.values()
+    ] + LEGACY_MODELS
     rows = []
     files: dict[Path, str] = {}
     fixtures = ROOT / "tests/fixtures/protocols"
-    for adapter, card, title, connection, driver, note in MODELS:
+    for adapter, card, title, connection, driver, note in models:
         config = ConnectionConfig("metadata://only", adapter)
         caps = describe(config)
         page = (
@@ -195,7 +196,12 @@ def render() -> dict[Path, str]:
             + CATEGORY_LABELS[caps.category]
         )
         profile = PROFILES.get(adapter)
-        fixture = fixtures / adapter / "control.json"
+        definition = definitions.get(adapter)
+        fixture = (
+            definition.root / "tests/fixtures/control.json"
+            if definition
+            else fixtures / adapter / "control.json"
+        )
         fixture_op = json.loads(fixture.read_text(encoding="utf-8"))["operation"] if fixture.exists() else ""
         record = {
             "adapter_id": adapter,
@@ -306,6 +312,31 @@ def render() -> dict[Path, str]:
 
 现场按[统一验收步骤](../../hardware-testing.md)记录完整身份、固件、驱动、资源、每个测试操作、请求、读回、原始错误、数据文件和恢复结果。先运行只读 `test`，再选择本卡片中一项设置和一次基础采集，最后测试断线重连。每项通过后将报告与具体能力关联；本轮所有能力的 `hardware_passed=false`。
 """
+        if definition:
+            card_path = ROOT / f"docs/devices/{card}.md"
+            readme = definition.root / "README.md"
+            body = readme.read_text(encoding="utf-8")
+
+            def rebase_link(match):
+                label, target = match.groups()
+                if "://" in target or target.startswith("#"):
+                    return match.group(0)
+                resolved = readme.parent / target
+                relative = Path(os.path.relpath(resolved, card_path.parent)).as_posix()
+                return f"[{label}]({relative})"
+
+            body = re.sub(r"\[([^\]]+)\]\(([^\s)]+)\)", rebase_link, body)
+            files[card_path] = (
+                MODEL_CARD_MARKER
+                + "\n\n"
+                + body.rstrip()
+                + "\n\n## 注册能力（自动生成）\n\n"
+                + "范围、单位及命令来自当前注册定义；资产级实测结果见运行目录。\n\n"
+                + "| 操作 | 参数 / 单位 / 范围 | 作用域 | 方向 | 额外确认 | 状态 |\n"
+                + "| --- | --- | --- | --- | --- | --- |\n"
+                + "\n".join(operations)
+                + "\n"
+            )
     matrix = {"schema_version": 1, "hardware_tested": False, "models": rows, "pending": PENDING}
     files[ROOT / "docs/generated/capability-matrix.json"] = (
         json.dumps(jsonable(matrix), ensure_ascii=False, indent=2) + "\n"
@@ -313,14 +344,14 @@ def render() -> dict[Path, str]:
     lines = [
         "# 实际能力矩阵（自动生成）",
         "",
-        "由 `scripts/generate_device_docs.py` 从实际注册表生成。下面的操作均有实现；单项参数、命令定位与测试标记见 [JSON](capability-matrix.json)。未列出的功能返回 `unsupported`；选件或 TSERVE 配置缺失会禁用相应能力。所有实机状态仍为待验收。",
+        "由 `scripts/generate_device_docs.py` 从实际注册表生成。下面的操作均有实现；单项参数、命令定位与软件测试标记见 [JSON](capability-matrix.json)。未列出的功能返回 `unsupported`；选件或 TSERVE 配置缺失会禁用相应能力。具体资产的实机证据保存在运行目录，不将个别资产的验证结果推广到整个型号。",
         "",
         "软件测试分为通用参数约束、特定协议夹具、SDK 生命周期和应用集成；协议夹具通过不代表目标固件通过，也不代表所有高级组合已经验证。",
         "",
         "| 型号 | 注册 ID | 操作数 | 采集 | 详情 |",
         "| --- | --- | --- | --- | --- |",
     ]
-    for record, meta in zip(rows, MODELS, strict=True):
+    for record, meta in zip(rows, models, strict=True):
         lines.append(
             f"| {record['model']} | `{record['adapter_id']}` | {len(record['operations'])} | {record['acquisition'] or '外部仪器测量输出'} | [型号卡片](../devices/{meta[1]}.md) |"
         )
@@ -343,15 +374,83 @@ def render() -> dict[Path, str]:
     ]
     lines += [f"| {name} | 待补信息：{reason} |" for name, reason in PENDING.items()]
     files[ROOT / "docs/generated/capability-matrix.md"] = "\n".join(lines) + "\n"
+    cards = {
+        f"docs/devices/{d.documentation.card}.md": hashlib.sha256(
+            files[ROOT / f"docs/devices/{d.documentation.card}.md"].encode("utf-8")
+        ).hexdigest()
+        for d in definitions.values()
+    }
+    files[ROOT / "docs/generated/device-module-docs.json"] = json.dumps(cards, indent=2) + "\n"
+    navigation = [
+        "# 信号源",
+        "",
+        "型号卡片和能力来自注册目录；现场验证结果以运行目录逐台记录为准。",
+        "",
+        "| 型号 | 接入路线 | 文档 |",
+        "| --- | --- | --- |",
+    ]
+    navigation.extend(
+        f"| {title} | {connection} | [型号说明]({Path(card).name}.md) |"
+        for adapter, card, title, connection, _driver, _note in models
+        if adapter in PROFILES and PROFILES[adapter].category == "signal_generator"
+    )
+    files[ROOT / "docs/devices/signal-sources/README.md"] = "\n".join(navigation) + "\n"
+    index_path = ROOT / "docs/device-research-index.md"
+    index = index_path.read_text(encoding="utf-8")
+    index_rows = [
+        "| 型号 | 注册 ID | 连接路线 | 归档 |",
+        "| --- | --- | --- | --- |",
+        *(
+            f"| {d.documentation.title} | `{d.adapter_id}` | {d.documentation.connection} | "
+            f"[卡片](devices/{d.documentation.card}.md) |"
+            for d in definitions.values()
+        ),
+    ]
+    index, count = re.subn(
+        r"<!-- device-modules:start -->.*?<!-- device-modules:end -->",
+        "<!-- device-modules:start -->\n" + "\n".join(index_rows) + "\n<!-- device-modules:end -->",
+        index,
+        flags=re.DOTALL,
+    )
+    if count != 1:
+        raise ValueError("Device research index requires one generated module section")
+    files[index_path] = index
     return files
+
+
+def obsolete_cards(files: dict[Path, str]) -> list[Path]:
+    """Only remove our recorded, unmodified generated cards under docs/devices."""
+    manifest = ROOT / "docs/generated/device-module-docs.json"
+    previous = json.loads(manifest.read_text(encoding="utf-8")) if manifest.exists() else {}
+    current = json.loads(files[manifest])
+    stale = []
+    for name in previous.keys() - current.keys():
+        path = (ROOT / name).resolve()
+        if not path.is_relative_to((ROOT / "docs/devices").resolve()) or path.suffix != ".md":
+            raise ValueError(f"Unsafe generated document path: {name}")
+        if path.exists():
+            contents = path.read_text(encoding="utf-8")
+            if (
+                not contents.startswith(MODEL_CARD_MARKER)
+                or hashlib.sha256(contents.encode("utf-8")).hexdigest() != previous[name]
+            ):
+                raise ValueError(f"Removed model card was manually modified; preserve it: {name}")
+            stale.append(path)
+    return stale
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
+    files = render()
+    stale = obsolete_cards(files)
     changed = []
-    for path, content in render().items():
+    for path in stale:
+        changed.append(str(path.relative_to(ROOT)))
+        if not args.check:
+            path.unlink()
+    for path, content in files.items():
         if not path.exists() or path.read_text(encoding="utf-8") != content:
             changed.append(str(path.relative_to(ROOT)))
             if not args.check:

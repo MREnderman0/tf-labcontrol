@@ -12,30 +12,24 @@ from lab_control.domain.instruments import (
     Measurement,
     ValidationError,
 )
-from lab_control.instruments.base import ScpiAdapter
 from lab_control.instruments.phase_noise import PhaseNoiseAdapter
-from lab_control.instruments.power_supplies import PowerAdapter
-from lab_control.instruments.registry import PROFILES, describe
-from lab_control.instruments.signal_sources import SignalGeneratorAdapter
+from lab_control.instruments.registry import DEVICE_DEFINITIONS, PROFILES, build_scpi_adapter, describe
 from lab_control.storage.touchstone import export_touchstone
 from lab_control.transport.base import MockTransport
 
 
 def device_for(adapter_id, exchanges):
+    if adapter_id not in PROFILES:
+        pytest.skip("Device package is not registered")
     transport = MockTransport(exchanges)
     transport.open()
-    profile = PROFILES[adapter_id]
-    cls = (
-        SignalGeneratorAdapter
-        if profile.category == "signal_generator"
-        else PowerAdapter
-        if profile.category == "power_supply"
-        else ScpiAdapter
-    )
-    return cls(transport, profile, ConnectionConfig("mock://fixture", adapter_id)), transport
+    return build_scpi_adapter(ConnectionConfig("mock://fixture", adapter_id), transport), transport
 
 
-FIXTURES = sorted((Path(__file__).parents[1] / "fixtures/protocols").glob("*/control.json"))
+FIXTURES = sorted((Path(__file__).parents[1] / "fixtures/protocols").glob("*/control.json")) + [
+    d.root / "tests/fixtures/control.json" for d in DEVICE_DEFINITIONS.values()
+    if (d.root / "tests/fixtures/control.json").exists()
+]
 
 
 @pytest.mark.parametrize("path", FIXTURES, ids=lambda p: p.parent.name)
@@ -69,28 +63,8 @@ def test_sdg_disabled_modulation_does_not_implicitly_enable_output():
     assert transport.history == ["C1:MDWV?"]
 
 
-def test_amplitude_units_and_envelope_are_checked_before_any_write():
-    device, transport = device_for("tek.afg31252", [("SOUR1:VOLT:UNIT?", b"VPP"), ("SOUR1:VOLT:OFFS?", b"4")])
-    with pytest.raises(ValidationError):
-        device.apply(DeviceCommand("amplitude", {"value": 4}))
-    assert len(transport.history) == 2 and all(str(cmd).endswith("?") for cmd in transport.history)
 
 
-def test_sma_list_upload_is_three_ordered_writes_and_never_starts_output():
-    exchanges = [
-        ("SOUR:LIST:SEL 'trial'", b""),
-        ("SOUR:LIST:FREQ 1000000,2000000", b""),
-        ("SOUR:LIST:POW -40,-30", b""),
-        ("SYST:ERR?", b"0,No error"),
-    ]
-    device, transport = device_for("rs.sma100b", exchanges)
-    result = device.apply(
-        DeviceCommand(
-            "upload_list", {"name": "trial", "frequencies": [1e6, 2e6], "powers": [-40, -30]}, confirmed=True
-        )
-    )
-    assert result.outcome == "success" and result.completed_steps == 3
-    assert not transport.exchanges
 
 
 def test_gpd_binary_status_is_not_ascii_or_a_scpi_error_queue():

@@ -1,12 +1,11 @@
 # 信号源
 
-信号源统一实现 `SignalSource` 能力：波形、频率、幅度、偏置、调制、输出状态和状态读回。连接后只读身份和状态，输出启停必须经过应用层确认。
+型号卡片和能力来自注册目录；现场验证结果以运行目录逐台记录为准。
 
-| 型号 | 接入路线 | 状态 | 文档 |
-| --- | --- | --- | --- |
-| AFG31252 | VISA/SCPI，接口选件待确认 | 待实机验证 | [AFG31252](afg31252.md) |
-| SDG6032X | USB/LAN/VISA/SCPI | 资料确认，待实机验证 | [SDG6032X](sdg6032x.md) |
-| SMA100B | LAN/USB/GPIB/VISA/SCPI | 资料确认，待实机验证 | [SMA100B](sma100b.md) |
-| DG5504 Pro | USB/LAN/VISA/SCPI | 资料确认，待实机验证 | [DG5504 Pro](dg5504-pro.md) |
-
-采集数据以信号源设定、输出状态和错误队列为主。实际波形由示波器或频谱仪采集并关联信号源配置快照。
+| 型号 | 接入路线 | 文档 |
+| --- | --- | --- |
+| Tektronix AFG31252 | USB Device / LAN / GPIB（核对实际接口） | [型号说明](afg31252.md) |
+| Siglent SDG2082X | USB USBTMC / LAN VXI-11，经 PyVISA 接入 | [型号说明](sdg2082x.md) |
+| R&S SMA100B | LAN / USB / 已安装 GPIB；优先 PyVISA | [型号说明](sma100b.md) |
+| Siglent SDG6032X | USB / LAN VXI-11 / 已配置 TCP Socket | [型号说明](sdg6032x.md) |
+| RIGOL DG5504 Pro | USB / LAN VISA / 已配置 TCP Socket | [型号说明](dg5504-pro.md) |

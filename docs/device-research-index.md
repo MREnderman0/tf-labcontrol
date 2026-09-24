@@ -2,15 +2,13 @@
 
 这是附件设备条目的唯一索引；具体能力由[实际矩阵](generated/capability-matrix.md)生成，型号卡片记录连接和验收。附件空白指令/载荷数据表、历史日期和疑似资产号不被当成已确认协议。
 
-“已实现”表示存在真实传输与型号代码；“软件测试”不等于“实机通过”。本轮没有真实设备接线验证，不把任何型号标为“可控”。
+“已实现”表示存在真实传输与型号代码；“软件测试”不等于“实机通过”。具体资产及接口的验证结果以运行目录中的批次记录为准。
 
 0.3.0 分类控制与实时监测已接入上述能力；每张型号卡片说明页面入口，能力 JSON 逐项记录中文标签和分组。使用方法见[控制与监测指南](control-and-monitoring.md)。未知型号仍只有隔离模拟示例。
 
 | 类别 | 附件设备 | 电脑交互方式 | 实际注册 ID / 状态 | 归档 |
 | --- | --- | --- | --- | --- |
-| 信号源 | AFG31252 | USB/LAN/已安装 GPIB + VISA/SCPI | tek.afg31252；待实机 | [卡片](devices/signal-sources/afg31252.md) |
 | 信号源 | SDG6032X | USB/LAN VXI-11/Socket | siglent.sdg6032x；待实机 | [卡片](devices/signal-sources/sdg6032x.md) |
-| 射频信号源 | SMA100B | LAN/USB/已安装 GPIB + VISA | rs.sma100b；待实机/核对频率选件 | [卡片](devices/signal-sources/sma100b.md) |
 | 信号源 | DG5504 Pro | USB/LAN VISA/Socket | rigol.dg5504pro；待实机 | [卡片](devices/signal-sources/dg5504-pro.md) |
 | 电源 | GPD-4303S | USB 虚拟 COM / ASRL，厂家文本协议 | gwinstek.gpd4303s；待实机 | [卡片](devices/power-supplies/gpd-4303s.md) |
 | 电源 | Keithley 2231A | 2231A-001 USB 适配器/COM | keithley.2231a；仅精确匹配 2231A-30-3 | [卡片](devices/power-supplies/keithley-2231a.md) |
@@ -37,6 +35,18 @@
 | 光谱 | 光谱仪 | 待型号与 SDK/SCPI 依据 | 仅类别模拟 | [待补卡片](devices/temperature-load-drivers/optical-spectrum-analyzer.md) |
 | 基础设施 | 交换机、测试台式机 | 网络及运行环境盘点 | 不进入仪器兼容层 | 本索引 |
 | 未确认标识 | MY54410307 | 疑似序列号或资产编号 | 原样保留，不建立型号适配器 | 本索引 |
+
+## 独立型号模块（自动生成）
+
+以下型号已从上述旧型号清单迁入独立目录，由注册元数据生成；附件清单之外新增的型号也在此索引。
+
+<!-- device-modules:start -->
+| 型号 | 注册 ID | 连接路线 | 归档 |
+| --- | --- | --- | --- |
+| Tektronix AFG31252 | `tek.afg31252` | USB Device / LAN / GPIB（核对实际接口） | [卡片](devices/signal-sources/afg31252.md) |
+| Siglent SDG2082X | `siglent.sdg2082x` | USB USBTMC / LAN VXI-11，经 PyVISA 接入 | [卡片](devices/signal-sources/sdg2082x.md) |
+| R&S SMA100B | `rs.sma100b` | LAN / USB / 已安装 GPIB；优先 PyVISA | [卡片](devices/signal-sources/sma100b.md) |
+<!-- device-modules:end -->
 
 ## 现场盘点与状态提升
 

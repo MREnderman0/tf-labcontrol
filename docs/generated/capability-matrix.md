@@ -1,14 +1,15 @@
 # 实际能力矩阵（自动生成）
 
-由 `scripts/generate_device_docs.py` 从实际注册表生成。下面的操作均有实现；单项参数、命令定位与测试标记见 [JSON](capability-matrix.json)。未列出的功能返回 `unsupported`；选件或 TSERVE 配置缺失会禁用相应能力。所有实机状态仍为待验收。
+由 `scripts/generate_device_docs.py` 从实际注册表生成。下面的操作均有实现；单项参数、命令定位与软件测试标记见 [JSON](capability-matrix.json)。未列出的功能返回 `unsupported`；选件或 TSERVE 配置缺失会禁用相应能力。具体资产的实机证据保存在运行目录，不将个别资产的验证结果推广到整个型号。
 
 软件测试分为通用参数约束、特定协议夹具、SDK 生命周期和应用集成；协议夹具通过不代表目标固件通过，也不代表所有高级组合已经验证。
 
 | 型号 | 注册 ID | 操作数 | 采集 | 详情 |
 | --- | --- | --- | --- | --- |
 | Tektronix AFG31252 | `tek.afg31252` | 37 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/afg31252.md) |
+| Siglent SDG2082X | `siglent.sdg2082x` | 10 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/sdg2082x.md) |
+| R&S SMA100B | `rs.sma100b` | 33 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/sma100b.md) |
 | Siglent SDG6032X | `siglent.sdg6032x` | 36 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/sdg6032x.md) |
-| R&S SMA100B | `rs.sma100b` | 24 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/sma100b.md) |
 | RIGOL DG5504 Pro | `rigol.dg5504pro` | 38 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/dg5504-pro.md) |
 | GW Instek GPD-4303S | `gwinstek.gpd4303s` | 10 | power | [型号卡片](../devices/power-supplies/gpd-4303s.md) |
 | Keithley 2231A-30-3 | `keithley.2231a` | 15 | power | [型号卡片](../devices/power-supplies/keithley-2231a.md) |

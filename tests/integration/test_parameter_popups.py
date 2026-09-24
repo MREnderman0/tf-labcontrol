@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 from lab_control.app import load_stylesheet, load_ui_font
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.runtime import ApplicationRuntime
+from lab_control.instruments.registry import PROFILES
 from lab_control.ui.pages.device_control.editors import UNIT_CHOICES
 from lab_control.ui.real_window import RealWindow
 from lab_control.ui.widgets.parameter_combo import ParameterComboBox
@@ -94,6 +95,8 @@ class WindowShows(QObject):
 
 @pytest.fixture
 def cold_source(styled, qtbot, tmp_path, monkeypatch):
+    if not {"tek.afg31252", "rs.sma100b"}.issubset(PROFILES):
+        pytest.skip("This cross-model UI fixture requires the optional RF and AWG packages")
     runtime = ApplicationRuntime((), root=tmp_path / "mock", hardware=False)
     ids = []
     writes = []

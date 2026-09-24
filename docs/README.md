@@ -17,6 +17,7 @@
 | [下拉菜单与启动入口验收](ui-popup-launch-review.md) | 弹出高度、首次显示事件、单一入口与菜单截图 |
 | [实时监测设计](requirements/realtime-monitoring.md) | 布局、调度、配置版本、共享采集与记录边界的当前依据 |
 | [兼容层](protocols/device-compatibility.md) | 领域接口、型号注册、校验、采集和扩展规范 |
+| [设备模块维护规范](architecture/device-modules.md) | 每型号独立包、唯一注册、测试与说明、新增和删除流程 |
 | [传输协议](protocols/visa-scpi.md) | VISA 生命周期、串口/TCP/VICP/SDK 和分帧 |
 | [系统架构](architecture/system-architecture.md) | 路径、服务、worker、应用退出和依赖 |
 | [数据模型](data/data-model.md) | 实际 SQLite/JSONL/CSV/NPZ/Touchstone/报告格式 |
@@ -24,6 +25,6 @@
 | [软件验证](protocols/mock-visa-validation.md) | 测试层级、夹具来源与检查命令 |
 | [原始需求拆分](requirements.md) | 采集、监测、处理等后续工作范围 |
 
-型号卡片和实际矩阵由 scripts/generate_device_docs.py 生成，现包含控制页面、中文标签与分组位置；编辑生成器、展示元数据与注册表后重新生成，不手工更改操作清单。历史产品需求不代表全部处理/自动实验功能已实现；0.3.0 的实际边界以上表为准。
+型号卡片和实际矩阵由 scripts/generate_device_docs.py 生成，现包含控制页面、中文标签与分组位置。独立型号以包内 README 和注册元数据为维护源；更新后重新生成，不手工更改派生卡片或操作清单。历史产品需求不代表全部处理/自动实验功能已实现；0.3.0 的实际边界以上表为准。
 
-附件只作为设备清单和功能需求输入。空白载荷协议表、历史日期和疑似资产编号不作为已确认接口。所有设备实机状态均待现场验收；没有宣称已接线验证。
+附件只作为设备清单和功能需求输入。空白载荷协议表、历史日期和疑似资产编号不作为已确认接口。具体资产的实机状态以运行目录留档为准；软件兼容或只读连接通过不代表整机验收通过。

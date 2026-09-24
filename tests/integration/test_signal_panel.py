@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QApplication, QMessageBox
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.runtime import ApplicationRuntime
 from lab_control.domain.instruments import ApplyResult, ParameterReading
+from lab_control.instruments.registry import PROFILES
 from lab_control.ui.real_window import RealWindow
 
 
@@ -15,6 +16,8 @@ from lab_control.ui.real_window import RealWindow
 def source(qtbot, qapp, tmp_path):
     from lab_control.app import load_stylesheet, load_ui_font
 
+    if not {"rs.sma100b", "tek.afg31252"}.issubset(PROFILES):
+        pytest.skip("This cross-model UI fixture requires the optional RF and AWG packages")
     qapp.setFont(QFont(load_ui_font(), 10))
     qapp.setStyle("Fusion")
     qapp.setStyleSheet(load_stylesheet())
@@ -157,6 +160,8 @@ def test_readback_not_clamped_and_output_requires_separate_action(source, qtbot,
     panel.apply()
     qtbot.waitUntil(lambda: not panel.running)
     assert all(c.operation != "output" for c in writes)
+    # Group release and the output-button refresh arrive in a later Qt event.
+    qtbot.waitUntil(lambda: page.outputs[1].button.isEnabled() and not window.controller.group_devices)
     monkeypatch.setattr(QMessageBox, "question", lambda *_a: QMessageBox.StandardButton.No)
     page.outputs[1].toggle()
     assert all(c.operation != "output" for c in writes)

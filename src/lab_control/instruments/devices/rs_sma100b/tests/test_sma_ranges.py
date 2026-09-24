@@ -11,8 +11,7 @@ from lab_control.application.runtime import ApplicationRuntime
 from lab_control.application.sessions import SessionManager
 from lab_control.discovery.service import DiscoveryCandidate, Inventory
 from lab_control.domain.instruments import DeviceCommand, DeviceError, DeviceIdentity, Parameter
-from lab_control.instruments.registry import PROFILES
-from lab_control.instruments.signal_sources import SignalGeneratorAdapter
+from lab_control.instruments.registry import PROFILES, build_scpi_adapter
 from lab_control.storage.repository import Repository
 from lab_control.ui.controller import WorkspaceController
 from lab_control.ui.pages.device_control.editors import ArrayEditor, ParameterEditor
@@ -61,7 +60,7 @@ def test_worker_snapshot_atomic_refresh_isolation_and_strict_backend(tmp_path):
     sessions = SessionManager(
         ResourceLeases(),
         repo,
-        lambda c: SignalGeneratorAdapter(transports[c.resource], PROFILES[c.adapter], c),
+        lambda c: build_scpi_adapter(c, transports[c.resource]),
     )
     try:
         for resource in transports:
@@ -286,7 +285,7 @@ def test_cli_rejects_out_of_range_without_writing(tmp_path, monkeypatch, capsys)
     transport = ReadonlySma()
     monkeypatch.setattr(
         "lab_control.application.runtime.create_adapter",
-        lambda config, _visa: SignalGeneratorAdapter(transport, PROFILES[config.adapter], config),
+        lambda config, _visa: build_scpi_adapter(config, transport),
     )
     path = tmp_path / "value.json"
     path.write_text('{"value": 13000000000}', encoding="utf8")

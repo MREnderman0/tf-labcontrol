@@ -1,0 +1,99 @@
+{
+  "fixture_origin": "authored from the linked manufacturer command reference; not a hardware recording",
+  "adapter": "tek.afg31252",
+  "operation": "frequency",
+  "channel": 1,
+  "parameters": {
+    "value": 1000
+  },
+  "exchanges": [
+    [
+      "SOUR1:FREQ:CONC?",
+      "0"
+    ],
+    [
+      "SOUR1:VOLT:CONC?",
+      "0"
+    ],
+    [
+      "SOUR2:FREQ:CONC?",
+      "0"
+    ],
+    [
+      "SOUR2:VOLT:CONC?",
+      "0"
+    ],
+    [
+      "SOUR1:FSK:STAT?",
+      "0"
+    ],
+    [
+      "SOUR1:PWM:STAT?",
+      "0"
+    ],
+    [
+      "SOUR1:FUNC?",
+      "SIN"
+    ],
+    [
+      "SOUR1:BURS:STAT?",
+      "0"
+    ],
+    [
+      "SOUR1:FREQ:MODE?",
+      "CW"
+    ],
+    [
+      "SOUR1:AM:STAT?",
+      "0"
+    ],
+    [
+      "SOUR1:FM:STAT?",
+      "0"
+    ],
+    [
+      "SOUR1:PM:STAT?",
+      "0"
+    ],
+    [
+      "SOUR1:VOLT:UNIT?",
+      "VPP"
+    ],
+    [
+      "SOUR1:COMB:FEED?",
+      "\"\""
+    ],
+    [
+      "OUTP1:IMP?",
+      "50"
+    ],
+    [
+      "SOUR1:VOLT?",
+      "0.2"
+    ],
+    [
+      "SOUR1:VOLT:OFFS?",
+      "0"
+    ],
+    [
+      "SOUR1:VOLT:LIM:HIGH?",
+      "2.5"
+    ],
+    [
+      "SOUR1:VOLT:LIM:LOW?",
+      "-2.5"
+    ],
+    [
+      "SOUR1:FREQ 1000",
+      ""
+    ],
+    [
+      "SOUR1:FREQ?",
+      "1000"
+    ],
+    [
+      "SYST:ERR?",
+      "0,No error"
+    ]
+  ]
+}

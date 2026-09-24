@@ -5,6 +5,7 @@ from pathlib import Path
 from lab_control.application.catalog import instrument_category, mode_applicable
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.runtime import ApplicationRuntime
+from lab_control.instruments.registry import PROFILES, SDK_ADAPTERS
 
 DEMO_MODELS = {
     "signal_generator": ("rigol.dg5504pro", "rs.sma100b"),
@@ -27,6 +28,7 @@ def create_demo_runtime(root: Path | None = None) -> ApplicationRuntime:
         ConnectionConfig(f"mock://workspace/{category}/{index}", adapter, "mock", identity_confirmed=True)
         for category, models in DEMO_MODELS.items()
         for index, adapter in enumerate(models, 1)
+        if adapter in PROFILES or adapter in SDK_ADAPTERS or adapter.startswith("sim.")
     )
     runtime = ApplicationRuntime(configs, root=root, hardware=False)
     try:

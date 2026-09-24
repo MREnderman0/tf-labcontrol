@@ -6,39 +6,32 @@ from typing import Any
 
 import numpy as np
 
-from lab_control.domain.instruments import Capability, DeviceCommand, Parameter, ValidationError, utc_now
-from lab_control.instruments.base import CommandSpec, Profile, ScpiAdapter, command, enum, number, parameter
-from lab_control.transport.base import ieee_block
+from lab_control.domain.instruments import Capability, DeviceCommand, Parameter, ValidationError
+from lab_control.instruments.base import CommandSpec, Profile, ScpiAdapter, command, enum, parameter
+from lab_control.instruments.common.siglent import sdg_field
 
-AFG_SOURCE = "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf"
 DG_SOURCE = "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/waveform-generators/DG5000Pro_ProgrammingGuide_EN.pdf"
 SDG_SOURCE = (
     "https://siglentna.com/wp-content/uploads/dlm_uploads/2025/12/SDG6000X_ProgrammingGuide_EN06A.pdf"
 )
-SMA_SOURCE = "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf"
 BOOL = Parameter("boolean")
 
 
 def function_generator(adapter_id: str) -> Profile:
-    tek = adapter_id == "tek.afg31252"
-    maximum = 250e6 if tek else 500e6
+    maximum = 500000000.0
     p = "SOUR{ch}:"
     commands = {
         "waveform": command("waveform", p + "FUNC", enum("SIN", "SQU", "RAMP", "PULS", "NOIS", "DC")),
-        "frequency": command("frequency", p + "FREQ", parameter("Hz", 1e-6, maximum)),
+        "frequency": command("frequency", p + "FREQ", parameter("Hz", 1e-06, maximum)),
         "amplitude": command("amplitude", p + "VOLT", parameter("Vpp", 0.002, 10)),
         "offset": command("offset", p + "VOLT:OFFS", parameter("V", -5, 5)),
         "amplitude_unit": command("amplitude_unit", p + "VOLT:UNIT", enum("VPP", "VRMS", "DBM")),
-        "phase": command(
-            "phase",
-            p + "PHAS",
-            parameter("deg" if not tek else "rad", -3.141592653 if tek else 0, 3.141592653 if tek else 360),
-        ),
+        "phase": command("phase", p + "PHAS", parameter("deg", 0, 360)),
         "pulse_duty": command("pulse_duty", p + "PULS:DCYC", parameter("%", 0.01, 99.99)),
-        "pulse_width": command("pulse_width", p + "PULS:WIDT", parameter("s", 1e-9, 1000)),
+        "pulse_width": command("pulse_width", p + "PULS:WIDT", parameter("s", 1e-09, 1000)),
         "ramp_symmetry": command("ramp_symmetry", p + "FUNC:RAMP:SYMM", parameter("%", 0, 100)),
         "output": command("output", "OUTP{ch}", BOOL, confirm=True),
-        "load": command("load", f"OUTP{{ch}}:{'IMP' if tek else 'LOAD'}", parameter("ohm", 1, 10000)),
+        "load": command("load", f"OUTP{{ch}}:{'LOAD'}", parameter("ohm", 1, 10000)),
         "burst": command("burst", p + "BURS:STAT", BOOL, confirm=True),
         "burst_mode": command("burst_mode", p + "BURS:MODE", enum("TRIG", "GAT")),
         "burst_cycles": command(
@@ -46,12 +39,10 @@ def function_generator(adapter_id: str) -> Profile:
         ),
         "sweep_time": command("sweep_time", p + "SWE:TIME", parameter("s", 0.001, 300)),
         "sweep_spacing": command("sweep_spacing", p + "SWE:SPAC", enum("LIN", "LOG")),
-        "sweep_start": command("sweep_start", p + "FREQ:STAR", parameter("Hz", 1e-6, maximum)),
-        "sweep_stop": command("sweep_stop", p + "FREQ:STOP", parameter("Hz", 1e-6, maximum)),
+        "sweep_start": command("sweep_start", p + "FREQ:STAR", parameter("Hz", 1e-06, maximum)),
+        "sweep_stop": command("sweep_stop", p + "FREQ:STOP", parameter("Hz", 1e-06, maximum)),
         "trigger": command("trigger", "*TRG", read=False, scoped=False, confirm=True),
-        "reference_clock": command(
-            "reference_clock", "SOUR:ROSC:SOUR" if tek else "SYST:ROSC:SOUR", enum("INT", "EXT"), scoped=False
-        ),
+        "reference_clock": command("reference_clock", "SYST:ROSC:SOUR", enum("INT", "EXT"), scoped=False),
     }
     for modulation in ("AM", "FM", "PM"):
         key = modulation.lower()
@@ -63,83 +54,43 @@ def function_generator(adapter_id: str) -> Profile:
     commands["am_depth"] = command("am_depth", p + "AM:DEPT", parameter("%", 0, 100))
     commands["fm_deviation"] = command("fm_deviation", p + "FM:DEV", parameter("Hz", 0, maximum / 2))
     commands["pm_deviation"] = command("pm_deviation", p + "PM:DEV", parameter("deg", 0, 180))
-    if tek:
-        commands["frequency_mode"] = command(
-            "frequency_mode", p + "FREQ:MODE", enum("CW", "SWE"), confirm=True
+    commands["sweep"] = command("sweep", p + "SWE:STAT", BOOL, confirm=True)
+    commands["trigger_source"] = command("trigger_source", p + "BURS:TRIG:SOUR", enum("INT", "EXT", "MAN"))
+    commands["arb_enabled"] = command("arb_enabled", p + "FUNC:ADV:ARB:STAT", BOOL, confirm=True)
+    commands["arb_sample_rate"] = command(
+        "arb_sample_rate", p + "FUNC:ADV:ARB:SRAT", parameter("Sa/s", 1, 2500000000.0)
+    )
+    commands["load_waveform"] = CommandSpec(
+        Capability(
+            "load_waveform",
+            {"name": Parameter("text")},
+            writable=True,
+            channel_scoped=True,
+            requires_confirmation=True,
+            section=":SOURce:FUNCtion:ADVance:ARB:LOAD",
         )
-        commands["trigger_source"] = command("trigger_source", "TRIG:SOUR", enum("TIM", "EXT"), scoped=False)
-        commands["phase_sync"] = command("phase_sync", p + "PHAS:INIT", read=False, confirm=True)
-    else:
-        commands["sweep"] = command("sweep", p + "SWE:STAT", BOOL, confirm=True)
-        commands["trigger_source"] = command(
-            "trigger_source", p + "BURS:TRIG:SOUR", enum("INT", "EXT", "MAN")
-        )
-        commands["arb_enabled"] = command("arb_enabled", p + "FUNC:ADV:ARB:STAT", BOOL, confirm=True)
-        commands["arb_sample_rate"] = command(
-            "arb_sample_rate", p + "FUNC:ADV:ARB:SRAT", parameter("Sa/s", 1, 2.5e9)
-        )
-        commands["load_waveform"] = CommandSpec(
-            Capability(
-                "load_waveform",
-                {"name": Parameter("text")},
-                writable=True,
-                channel_scoped=True,
-                requires_confirmation=True,
-                section=":SOURce:FUNCtion:ADVance:ARB:LOAD",
-            )
-        )
+    )
     commands["upload_waveform"] = CommandSpec(
         Capability(
             "upload_waveform",
-            {
-                "samples": Parameter("array", minimum=-1, maximum=1),
-                "name": Parameter("text", required=not tek),
-            },
+            {"samples": Parameter("array", minimum=-1, maximum=1), "name": Parameter("text", required=True)},
             writable=True,
             channel_scoped=True,
-            section="TRACe|DATA[:DATA]" if tek else ":MMEMory[:TRACe]:ARB:DATA",
+            section=":MMEMory[:TRACe]:ARB:DATA",
             requires_confirmation=True,
         )
     )
-    if tek:
-        commands["select_uploaded_waveform"] = CommandSpec(
-            Capability(
-                "select_uploaded_waveform",
-                writable=True,
-                channel_scoped=True,
-                requires_confirmation=True,
-                section="SOURce:FUNCtion EMEMory",
-            ),
-            ("SOUR{ch}:FUNC EMEM{ch}",),
-        )
     return Profile(
         adapter_id,
-        ("TEKTRONIX",) if tek else ("RIGOL",),
-        ("AFG31252",) if tek else ("DG5504 Pro", "DG5504Pro"),
+        ("RIGOL",),
+        ("DG5504 Pro", "DG5504Pro"),
         "signal_generator",
-        (1, 2) if tek else (1, 2, 3, 4),
-        AFG_SOURCE if tek else DG_SOURCE,
-        "077-1488-00" if tek else "DG5000 Pro Programming Guide",
+        (1, 2, 3, 4),
+        DG_SOURCE,
+        "DG5000 Pro Programming Guide",
         commands,
         ("frequency", "amplitude", "offset", "output"),
     )
-
-
-def sdg_field(raw: bytes, field: str) -> Any:
-    text = raw.decode("ascii").strip()
-    parts = text.split(" ", 1)[-1].split(",")
-    for index, item in enumerate(parts[:-1]):
-        if item.upper() == field:
-            value = parts[index + 1]
-            for suffix in ("HZ", "V", "S", "%"):
-                if value.upper().endswith(suffix):
-                    value = value[: -len(suffix)]
-                    break
-            try:
-                return float(value)
-            except ValueError:
-                return value
-    raise ValidationError(f"Missing {field} in SDG response")
 
 
 def sdg6032x() -> Profile:
@@ -291,113 +242,8 @@ def sdg6032x() -> Profile:
     )
 
 
-def sma100b() -> Profile:
-    commands = {}
-    for name, path, param in (
-        ("frequency", "SOUR:FREQ", parameter("Hz", 8000, 3e9)),
-        ("power", "SOUR:POW", parameter("dBm", -120, 18)),
-        ("frequency_mode", "SOUR:FREQ:MODE", enum("CW", "SWE", "LIST")),
-        ("sweep_start", "SOUR:FREQ:STAR", parameter("Hz", 8000, 3e9)),
-        ("sweep_stop", "SOUR:FREQ:STOP", parameter("Hz", 8000, 3e9)),
-        ("sweep_spacing", "SOUR:SWE:FREQ:SPAC", enum("LIN", "LOG")),
-        ("sweep_dwell", "SOUR:SWE:FREQ:DWEL", parameter("s", 0.001, 100)),
-        ("reference_clock", "SOUR:ROSC:SOUR", enum("INT", "EXT")),
-    ):
-        commands[name] = command(name, path, param, scoped=False)
-    commands["output"] = command("output", "OUTP", BOOL, scoped=False, confirm=True)
-    for modulation in ("AM", "FM", "PM"):
-        key = modulation.lower()
-        commands[key + "_enabled"] = command(
-            key + "_enabled", "SOUR:" + modulation + ":STAT", BOOL, scoped=False, confirm=True
-        )
-        commands[key + "_source"] = command(
-            key + "_source", "SOUR:" + modulation + ":SOUR", enum("INT", "EXT"), scoped=False
-        )
-    commands["am_depth"] = command("am_depth", "SOUR:AM:DEPT", parameter("%", 0, 100), scoped=False)
-    commands["fm_deviation"] = command("fm_deviation", "SOUR:FM:DEV", parameter("Hz", 0, 1e6), scoped=False)
-    commands["pm_deviation"] = command("pm_deviation", "SOUR:PM:DEV", parameter("rad", 0, 20), scoped=False)
-    commands["pulse_enabled"] = command(
-        "pulse_enabled", "SOUR:PULM:STAT", BOOL, scoped=False, confirm=True, option="pulse_modulation"
-    )
-    for name, path, param in (
-        ("list_mode", "SOUR:LIST:MODE", enum("AUTO", "STEP")),
-        ("list_trigger_source", "SOUR:LIST:TRIG:SOUR", enum("AUTO", "SING", "EXT")),
-        ("list_dwell", "SOUR:LIST:DWEL", parameter("s", 0.001, 100)),
-    ):
-        commands[name] = command(name, path, param, scoped=False)
-    commands["list_trigger"] = command(
-        "list_trigger", "SOUR:LIST:TRIG:EXEC", read=False, scoped=False, confirm=True
-    )
-    commands["upload_list"] = CommandSpec(
-        Capability(
-            "upload_list",
-            {
-                "name": Parameter("text"),
-                "frequencies": Parameter("array", minimum=300000, maximum=3e9),
-                "powers": Parameter("array", minimum=-120, maximum=18),
-            },
-            writable=True,
-            requires_confirmation=True,
-            section="15.18.8 LIST subsystem",
-        )
-    )
-    return Profile(
-        "rs.sma100b",
-        ("Rohde&Schwarz", "Rohde-Schwarz"),
-        ("SMA100B",),
-        "signal_generator",
-        (1,),
-        SMA_SOURCE,
-        "1178.3834.01 revision 14",
-        commands,
-        ("frequency", "power", "output"),
-    )
-
-
 class SignalGeneratorAdapter(ScpiAdapter):
-    def refresh_capabilities(self) -> None:
-        """Only verified, query-only model commands. Publish complete snapshots atomically."""
-        if self.adapter_id != "rs.sma100b":
-            return
-        names = ("frequency", "sweep_start", "sweep_stop", "power")
-        try:
-            options = tuple(
-                s.strip() for s in self.transport.query("*OPT?").decode("ascii").split(",") if s.strip()
-            )
-            updated = {}
-            for name in names:
-                spec = self.profile.commands[name]
-                low = number(self.transport.query(spec.query + " MIN"))
-                high = number(self.transport.query(spec.query + " MAX"))
-                if low > high:
-                    raise ValidationError(f"{name}: instrument minimum exceeds maximum")
-                updated[name] = replace(
-                    spec.capability.parameters["value"], minimum=low, maximum=high, range_source="instrument"
-                )
-            details = {
-                "power_offset_db": number(self.transport.query("SOUR:POW:OFFS?")),
-                "rf_output_limit_dbm": number(self.transport.query("SOUR:POW:LIM?")),
-                "scope": "Settable levels; not guaranteed RF power. RF limit is unchanged.",
-                "read_at": utc_now(),
-            }
-        except Exception as exc:
-            self.capability_error = str(exc)
-            # Even a failed first refresh must not expose the fallback as verified/writable.
-            if not self.dynamic_parameters:
-                self.dynamic_parameters = {
-                    name: replace(
-                        self.profile.commands[name].capability.parameters["value"], range_source="unavailable"
-                    )
-                    for name in names
-                }
-            raise
-        self.dynamic_parameters, self.detected_options = updated, options
-        self.capability_details, self.capability_error = details, ""
-
     def validate_command(self, cmd: DeviceCommand) -> tuple[CommandSpec, dict[str, Any]]:
-        if self.adapter_id == "rs.sma100b" and self.identity is not None:
-            # Direct Python adapter users receive the same pre-write check as application users.
-            self.refresh_capabilities()
         spec, values = super().validate_command(cmd)
         if cmd.operation == "upload_waveform":
             samples = values["samples"]
@@ -406,14 +252,9 @@ class SignalGeneratorAdapter(ScpiAdapter):
         if "name" in values:
             import re
 
-            if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,23}", values["name"]):
+            if not re.fullmatch("[A-Za-z][A-Za-z0-9_]{0,23}", values["name"]):
                 raise ValidationError("Name: ASCII letters/digits/underscore, max 24")
-        if (
-            cmd.operation == "upload_list"
-            and not 1 <= len(values["frequencies"]) == len(values["powers"]) <= 10000
-        ):
-            raise ValidationError("Frequency/power lists must have the same 1..10000 length")
-        return spec, values
+        return (spec, values)
 
     def preflight(self, cmd: DeviceCommand, parameters: dict[str, Any]) -> None:
         super().preflight(cmd, parameters)
@@ -467,14 +308,8 @@ class SignalGeneratorAdapter(ScpiAdapter):
     def encode(
         self, operation: str, spec: CommandSpec, context: dict[str, Any], parameters: dict[str, Any]
     ) -> tuple[bytes | str, ...]:
-        if operation == "upload_list":
-            return (
-                f"SOUR:LIST:SEL '{parameters['name']}'",
-                "SOUR:LIST:FREQ " + ",".join(f"{v:.12g}" for v in parameters["frequencies"]),
-                "SOUR:LIST:POW " + ",".join(f"{v:.12g}" for v in parameters["powers"]),
-            )
         if operation == "load_waveform":
-            name, ch = parameters["name"], context["ch"]
+            name, ch = (parameters["name"], context["ch"])
             return (
                 (f"C{ch}:ARWV NAME,{name}",)
                 if self.adapter_id == "siglent.sdg6032x"
@@ -483,21 +318,20 @@ class SignalGeneratorAdapter(ScpiAdapter):
         if operation != "upload_waveform":
             return super().encode(operation, spec, context, parameters)
         samples = np.asarray(parameters["samples"])
-        if self.adapter_id == "tek.afg31252":
-            data = np.rint((samples + 1) * 8191).astype(">u2").tobytes()
-            return (f"DATA:DATA EMEM{context['ch']},".encode() + ieee_block(data) + b"\n",)
         if self.adapter_id == "siglent.sdg6032x":
             data = np.rint(samples * 32767).astype("<i2").tobytes()
             return (f"C{context['ch']}:WVDT WVNM,{parameters['name']},WAVEDATA,".encode() + data,)
         name = parameters["name"]
         chunks = [samples[start : start + 512] for start in range(0, len(samples), 512)]
         return tuple(
-            f"MMEM:TRAC:ARB:DATA INT:\\{name}.arb,"
-            + ("END" if index == len(chunks) - 1 else "HEAD" if index == 0 else "CONT")
-            + ","
-            + ",".join(f"{value:.8g}" for value in chunk)
-            for index, chunk in enumerate(chunks)
+            (
+                f"MMEM:TRAC:ARB:DATA INT:\\{name}.arb,"
+                + ("END" if index == len(chunks) - 1 else "HEAD" if index == 0 else "CONT")
+                + ","
+                + ",".join((f"{value:.8g}" for value in chunk))
+                for index, chunk in enumerate(chunks)
+            )
         )
 
 
-PROFILES = (function_generator("tek.afg31252"), function_generator("rigol.dg5504pro"), sdg6032x(), sma100b())
+PROFILES = (function_generator("rigol.dg5504pro"), sdg6032x())

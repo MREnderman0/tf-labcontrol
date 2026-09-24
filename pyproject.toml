@@ -25,6 +25,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 lab_control = ["ui/styles/*.qss", "py.typed"]
+"lab_control.instruments.devices" = ["*/README.md", "*/hardware/*.md", "*/tests/fixtures/*.json"]
 
 [dependency-groups]
 dev = [
@@ -42,7 +43,8 @@ url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/"
 default = true
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "src/lab_control/instruments/devices"]
+addopts = "--import-mode=importlib"
 pythonpath = ["src"]
 markers = ["hardware: opt-in tests requiring an explicitly configured physical instrument"]
 
@@ -58,3 +60,4 @@ python_version = "3.12"
 check_untyped_defs = true
 ignore_missing_imports = true
 files = ["src/lab_control"]
+exclude = ['(^|/)tests/']

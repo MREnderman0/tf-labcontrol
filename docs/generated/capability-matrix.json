@@ -11,8 +11,8 @@
         1,
         2
       ],
-      "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
-      "revision": "077-1488-00",
+      "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
+      "revision": "077148803",
       "acquisition": "",
       "channel_limits": {},
       "hardware_passed": false,
@@ -41,7 +41,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:FUNC",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -79,7 +79,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:FREQ",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -106,7 +106,7 @@
             "value": {
               "kind": "number",
               "unit": "Vpp",
-              "minimum": 0.002,
+              "minimum": 0.001,
               "maximum": 10,
               "choices": [],
               "required": true,
@@ -117,7 +117,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:VOLT",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -155,7 +155,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:VOLT:OFFS",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -197,7 +197,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:VOLT:UNIT",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -224,8 +224,8 @@
             "value": {
               "kind": "number",
               "unit": "rad",
-              "minimum": -3.141592653,
-              "maximum": 3.141592653,
+              "minimum": -3.141592653589793,
+              "maximum": 3.141592653589793,
               "choices": [],
               "required": true,
               "range_source": "model"
@@ -235,7 +235,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:PHAS",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -273,7 +273,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:PULS:DCYC",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -300,8 +300,8 @@
             "value": {
               "kind": "number",
               "unit": "s",
-              "minimum": 1e-09,
-              "maximum": 1000,
+              "minimum": 4e-09,
+              "maximum": 999.99,
               "choices": [],
               "required": true,
               "range_source": "model"
@@ -311,7 +311,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:PULS:WIDT",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -349,7 +349,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:FUNC:RAMP:SYMM",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -387,7 +387,7 @@
           "writable": true,
           "requires_confirmation": true,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "OUTP{ch}",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -425,7 +425,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "OUTP{ch}:IMP",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -463,7 +463,7 @@
           "writable": true,
           "requires_confirmation": true,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:BURS:STAT",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -504,7 +504,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:BURS:MODE",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -542,7 +542,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:BURS:NCYC",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -580,7 +580,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:SWE:TIME",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -621,7 +621,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:SWE:SPAC",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -659,7 +659,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:FREQ:STAR",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -697,7 +697,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:FREQ:STOP",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -725,7 +725,7 @@
           "writable": true,
           "requires_confirmation": true,
           "channel_scoped": false,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "*TRG",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -766,7 +766,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": false,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR:ROSC:SOUR",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -804,7 +804,7 @@
           "writable": true,
           "requires_confirmation": true,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:AM:STAT",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -845,7 +845,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:AM:SOUR",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -883,7 +883,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:AM:INT:FREQ",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -921,7 +921,7 @@
           "writable": true,
           "requires_confirmation": true,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:FM:STAT",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -962,7 +962,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:FM:SOUR",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -1000,7 +1000,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:FM:INT:FREQ",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -1038,7 +1038,7 @@
           "writable": true,
           "requires_confirmation": true,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:PM:STAT",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -1079,7 +1079,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:PM:SOUR",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -1117,7 +1117,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:PM:INT:FREQ",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -1155,7 +1155,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:AM:DEPT",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -1193,7 +1193,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:FM:DEV",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -1231,7 +1231,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:PM:DEV",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -1246,7 +1246,7 @@
           "wire_templates": {
             "select": [],
             "writes": [
-              "SOUR{ch}:PM:DEV {value}"
+              "SOUR{ch}:PM:DEV {value}DEG"
             ],
             "query": "SOUR{ch}:PM:DEV?",
             "custom_encoder": false
@@ -1272,7 +1272,7 @@
           "writable": true,
           "requires_confirmation": true,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:FREQ:MODE",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -1313,7 +1313,7 @@
           "writable": true,
           "requires_confirmation": false,
           "channel_scoped": false,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "TRIG:SOUR",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -1341,7 +1341,7 @@
           "writable": true,
           "requires_confirmation": true,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOUR{ch}:PHAS:INIT",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -1388,7 +1388,7 @@
           "writable": true,
           "requires_confirmation": true,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "TRACe|DATA[:DATA]",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -1410,11 +1410,11 @@
         {
           "name": "select_uploaded_waveform",
           "parameters": {},
-          "readable": false,
+          "readable": true,
           "writable": true,
           "requires_confirmation": true,
           "channel_scoped": true,
-          "source": "https://download.tek.com/manual/077148800_AFG31000_Programmer_Manual_01.pdf",
+          "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
           "section": "SOURce:FUNCtion EMEMory",
           "verification": "documented_pending_hardware",
           "option": "",
@@ -1431,7 +1431,1683 @@
             "writes": [
               "SOUR{ch}:FUNC EMEM{ch}"
             ],
+            "query": "SOUR{ch}:FUNC?",
+            "custom_encoder": false
+          }
+        }
+      ]
+    },
+    {
+      "adapter_id": "siglent.sdg2082x",
+      "model": "Siglent SDG2082X",
+      "category": "signal_generator",
+      "control_page": "设备管理 / 信号源",
+      "channels": [
+        1,
+        2
+      ],
+      "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+      "revision": "PG02-E05A / SDG2000X EN02H pp. 7-9",
+      "acquisition": "",
+      "channel_limits": {},
+      "hardware_passed": false,
+      "operations": [
+        {
+          "name": "waveform",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "SINE",
+                "SQUARE",
+                "RAMP",
+                "PULSE",
+                "DC"
+              ],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+          "section": "C{ch}:BSWV",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "波形",
+          "ui_location": "设备管理 / 信号源 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "C{ch}:BSWV WVTP,{value}"
+            ],
+            "query": "C{ch}:BSWV?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "frequency",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Hz",
+              "minimum": 1e-06,
+              "maximum": 80000000.0,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+          "section": "C{ch}:BSWV",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "频率",
+          "ui_location": "设备管理 / 信号源 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "C{ch}:BSWV FRQ,{value}"
+            ],
+            "query": "C{ch}:BSWV?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "amplitude",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Vpp",
+              "minimum": 0.001,
+              "maximum": 20,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+          "section": "C{ch}:BSWV",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "幅度",
+          "ui_location": "设备管理 / 信号源 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "C{ch}:BSWV AMP,{value}"
+            ],
+            "query": "C{ch}:BSWV?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "offset",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "V",
+              "minimum": -10,
+              "maximum": 10,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+          "section": "C{ch}:BSWV",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "偏移",
+          "ui_location": "设备管理 / 信号源 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "C{ch}:BSWV OFST,{value}"
+            ],
+            "query": "C{ch}:BSWV?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "output",
+          "parameters": {
+            "value": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": true,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+          "section": "C{ch}:OUTP",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": true,
+          "hardware_passed": false,
+          "ui_label": "通道输出",
+          "ui_location": "设备管理 / 信号源 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "C{ch}:OUTP {value}"
+            ],
+            "query": "C{ch}:OUTP?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "load",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+          "section": "C{ch}:OUTP?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "输出负载",
+          "ui_location": "设备管理 / 信号源 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "C{ch}:OUTP?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "sweep",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+          "section": "C{ch}:SWWV?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "扫频状态",
+          "ui_location": "设备管理 / 信号源 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "C{ch}:SWWV?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "burst",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+          "section": "C{ch}:BTWV?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "突发输出",
+          "ui_location": "设备管理 / 信号源 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "C{ch}:BTWV?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "modulation",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+          "section": "C{ch}:MDWV?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "调制开关",
+          "ui_location": "设备管理 / 信号源 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "C{ch}:MDWV?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "coupling",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+          "section": "COUP?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "耦合方式",
+          "ui_location": "设备管理 / 信号源 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "COUP?",
+            "custom_encoder": false
+          }
+        }
+      ]
+    },
+    {
+      "adapter_id": "rs.sma100b",
+      "model": "R&S SMA100B",
+      "category": "signal_generator",
+      "control_page": "设备管理 / 信号源",
+      "channels": [
+        1
+      ],
+      "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+      "revision": "1178.3834.01 revision 14",
+      "acquisition": "",
+      "channel_limits": {},
+      "hardware_passed": false,
+      "operations": [
+        {
+          "name": "frequency",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Hz",
+              "minimum": 8000,
+              "maximum": 3000000000.0,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:FREQ",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "频率",
+          "ui_location": "设备管理 / 信号源 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:FREQ {value}"
+            ],
+            "query": "SOUR:FREQ?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "power",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "dBm",
+              "minimum": -120,
+              "maximum": 18,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:POW",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": true,
+          "hardware_passed": false,
+          "ui_label": "功率",
+          "ui_location": "设备管理 / 信号源 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:POW {value}"
+            ],
+            "query": "SOUR:POW?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "frequency_mode",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "CW",
+                "SWE",
+                "LIST"
+              ],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:FREQ:MODE",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "频率模式",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:FREQ:MODE {value}"
+            ],
+            "query": "SOUR:FREQ:MODE?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "sweep_start",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Hz",
+              "minimum": 8000,
+              "maximum": 3000000000.0,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:FREQ:STAR",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "扫频起始频率",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:FREQ:STAR {value}"
+            ],
+            "query": "SOUR:FREQ:STAR?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "sweep_stop",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Hz",
+              "minimum": 8000,
+              "maximum": 3000000000.0,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:FREQ:STOP",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "扫频终止频率",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:FREQ:STOP {value}"
+            ],
+            "query": "SOUR:FREQ:STOP?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "sweep_spacing",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "LIN",
+                "LOG"
+              ],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:SWE:FREQ:SPAC",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "扫描间隔方式",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:SWE:FREQ:SPAC {value}"
+            ],
+            "query": "SOUR:SWE:FREQ:SPAC?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "sweep_dwell",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "s",
+              "minimum": 0.001,
+              "maximum": 100,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:SWE:FREQ:DWEL",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "扫描驻留时间",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:SWE:FREQ:DWEL {value}"
+            ],
+            "query": "SOUR:SWE:FREQ:DWEL?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "reference_clock",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "INT",
+                "EXT"
+              ],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:ROSC:SOUR",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "参考时钟",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:ROSC:SOUR {value}"
+            ],
+            "query": "SOUR:ROSC:SOUR?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "output",
+          "parameters": {
+            "value": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "OUTP",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "通道输出",
+          "ui_location": "设备管理 / 信号源 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "OUTP {value}"
+            ],
+            "query": "OUTP?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "am_enabled",
+          "parameters": {
+            "value": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:AM1:STAT",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "AM 调制",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:AM1:STAT {value}"
+            ],
+            "query": "SOUR:AM1:STAT?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "am_source",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "INT",
+                "EXT",
+                "LF2",
+                "EXT2",
+                "NOIS"
+              ],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:AM1:SOUR",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "AM 调制源",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:AM1:SOUR {value}"
+            ],
+            "query": "SOUR:AM1:SOUR?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "am_frequency",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Hz",
+              "minimum": 0.1,
+              "maximum": 1000000.0,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:LFO1:FREQ",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "AM 调制频率",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:LFO1:FREQ {value}"
+            ],
+            "query": "SOUR:LFO1:FREQ?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "am_shape",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "SIN",
+                "SQU",
+                "TRI",
+                "TRAP",
+                "PULS"
+              ],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:LFO1:SHAP",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "AM 调制波形",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:LFO1:SHAP {value}"
+            ],
+            "query": "SOUR:LFO1:SHAP?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "fm_enabled",
+          "parameters": {
+            "value": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:FM1:STAT",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "FM 调制",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:FM1:STAT {value}"
+            ],
+            "query": "SOUR:FM1:STAT?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "fm_source",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "INT",
+                "EXT",
+                "LF2",
+                "EXT2",
+                "NOIS"
+              ],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:FM1:SOUR",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "FM 调制源",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:FM1:SOUR {value}"
+            ],
+            "query": "SOUR:FM1:SOUR?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "fm_frequency",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Hz",
+              "minimum": 0.1,
+              "maximum": 1000000.0,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:LFO1:FREQ",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "FM 调制频率",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:LFO1:FREQ {value}"
+            ],
+            "query": "SOUR:LFO1:FREQ?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "fm_shape",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "SIN",
+                "SQU",
+                "TRI",
+                "TRAP",
+                "PULS"
+              ],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:LFO1:SHAP",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "FM 调制波形",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:LFO1:SHAP {value}"
+            ],
+            "query": "SOUR:LFO1:SHAP?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "pm_enabled",
+          "parameters": {
+            "value": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:PM1:STAT",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "PM 调制",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:PM1:STAT {value}"
+            ],
+            "query": "SOUR:PM1:STAT?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "pm_source",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "INT",
+                "EXT",
+                "LF2",
+                "EXT2",
+                "NOIS"
+              ],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:PM1:SOUR",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "PM 调制源",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:PM1:SOUR {value}"
+            ],
+            "query": "SOUR:PM1:SOUR?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "pm_frequency",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Hz",
+              "minimum": 0.1,
+              "maximum": 1000000.0,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:LFO1:FREQ",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "PM 调制频率",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:LFO1:FREQ {value}"
+            ],
+            "query": "SOUR:LFO1:FREQ?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "pm_shape",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "SIN",
+                "SQU",
+                "TRI",
+                "TRAP",
+                "PULS"
+              ],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:LFO1:SHAP",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "PM 调制波形",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:LFO1:SHAP {value}"
+            ],
+            "query": "SOUR:LFO1:SHAP?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "am_depth",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "%",
+              "minimum": 0,
+              "maximum": 100,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:AM1:DEPT",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "AM 深度",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:AM1:DEPT {value}"
+            ],
+            "query": "SOUR:AM1:DEPT?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "fm_deviation",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Hz",
+              "minimum": 0,
+              "maximum": 1000000.0,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:FM1:DEV",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "FM 频偏",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:FM1:DEV {value}"
+            ],
+            "query": "SOUR:FM1:DEV?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "pm_deviation",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "rad",
+              "minimum": 0,
+              "maximum": 20,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:PM1:DEV",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "PM 相偏",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:PM1:DEV {value}"
+            ],
+            "query": "SOUR:PM1:DEV?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "pulse_enabled",
+          "parameters": {
+            "value": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:PULM:STAT",
+          "verification": "documented_pending_hardware",
+          "option": "pulse_modulation",
+          "available": false,
+          "reason": "missing option pulse_modulation",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "脉冲调制",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:PULM:STAT {value}"
+            ],
+            "query": "SOUR:PULM:STAT?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "list_mode",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "AUTO",
+                "STEP"
+              ],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:LIST:MODE",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "列表模式",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:LIST:MODE {value}"
+            ],
+            "query": "SOUR:LIST:MODE?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "list_trigger_source",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "AUTO",
+                "SING",
+                "EXT"
+              ],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:LIST:TRIG:SOUR",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "列表触发源",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:LIST:TRIG:SOUR {value}"
+            ],
+            "query": "SOUR:LIST:TRIG:SOUR?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "list_dwell",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "s",
+              "minimum": 0.001,
+              "maximum": 100,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:LIST:DWEL",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "列表驻留时间",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:LIST:DWEL {value}"
+            ],
+            "query": "SOUR:LIST:DWEL?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "list_trigger",
+          "parameters": {},
+          "readable": false,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:LIST:TRIG:EXEC",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "触发列表",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:LIST:TRIG:EXEC"
+            ],
             "query": "",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "upload_list",
+          "parameters": {
+            "name": {
+              "kind": "text",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            },
+            "frequencies": {
+              "kind": "array",
+              "unit": "",
+              "minimum": 300000,
+              "maximum": 3000000000.0,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            },
+            "powers": {
+              "kind": "array",
+              "unit": "",
+              "minimum": -120,
+              "maximum": 18,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": false,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "15.18.8 LIST subsystem",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "上传频率 / 功率列表",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "",
+            "custom_encoder": true
+          }
+        },
+        {
+          "name": "sweep_mode",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "AUTO",
+                "MAN",
+                "STEP"
+              ],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:SWE:FREQ:MODE",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "扫描运行方式",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:SWE:FREQ:MODE {value}"
+            ],
+            "query": "SOUR:SWE:FREQ:MODE?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "sweep_step_linear",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Hz",
+              "minimum": 0.01,
+              "maximum": 3000000000.0,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:SWE:FREQ:STEP:LIN",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "线性扫频步进",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:SWE:FREQ:STEP:LIN {value}"
+            ],
+            "query": "SOUR:SWE:FREQ:STEP:LIN?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "sweep_step_log",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "%",
+              "minimum": 0.01,
+              "maximum": 100,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+          "section": "SOUR:SWE:FREQ:STEP:LOG",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "对数扫频步进",
+          "ui_location": "设备管理 / 信号源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SOUR:SWE:FREQ:STEP:LOG {value}"
+            ],
+            "query": "SOUR:SWE:FREQ:STEP:LOG?",
             "custom_encoder": false
           }
         }
@@ -2854,966 +4530,6 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "加载任意波形",
-          "ui_location": "设备管理 / 信号源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [],
-            "query": "",
-            "custom_encoder": true
-          }
-        }
-      ]
-    },
-    {
-      "adapter_id": "rs.sma100b",
-      "model": "R&S SMA100B",
-      "category": "signal_generator",
-      "control_page": "设备管理 / 信号源",
-      "channels": [
-        1
-      ],
-      "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-      "revision": "1178.3834.01 revision 14",
-      "acquisition": "",
-      "channel_limits": {},
-      "hardware_passed": false,
-      "operations": [
-        {
-          "name": "frequency",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "Hz",
-              "minimum": 8000,
-              "maximum": 3000000000.0,
-              "choices": [],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:FREQ",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "频率",
-          "ui_location": "设备管理 / 信号源 / 常用",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:FREQ {value}"
-            ],
-            "query": "SOUR:FREQ?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "power",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "dBm",
-              "minimum": -120,
-              "maximum": 18,
-              "choices": [],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:POW",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": true,
-          "hardware_passed": false,
-          "ui_label": "功率",
-          "ui_location": "设备管理 / 信号源 / 常用",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:POW {value}"
-            ],
-            "query": "SOUR:POW?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "frequency_mode",
-          "parameters": {
-            "value": {
-              "kind": "enum",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [
-                "CW",
-                "SWE",
-                "LIST"
-              ],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:FREQ:MODE",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "频率模式",
-          "ui_location": "设备管理 / 信号源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:FREQ:MODE {value}"
-            ],
-            "query": "SOUR:FREQ:MODE?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "sweep_start",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "Hz",
-              "minimum": 8000,
-              "maximum": 3000000000.0,
-              "choices": [],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:FREQ:STAR",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "扫频起始频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:FREQ:STAR {value}"
-            ],
-            "query": "SOUR:FREQ:STAR?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "sweep_stop",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "Hz",
-              "minimum": 8000,
-              "maximum": 3000000000.0,
-              "choices": [],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:FREQ:STOP",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "扫频终止频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:FREQ:STOP {value}"
-            ],
-            "query": "SOUR:FREQ:STOP?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "sweep_spacing",
-          "parameters": {
-            "value": {
-              "kind": "enum",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [
-                "LIN",
-                "LOG"
-              ],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:SWE:FREQ:SPAC",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "扫描间隔方式",
-          "ui_location": "设备管理 / 信号源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:SWE:FREQ:SPAC {value}"
-            ],
-            "query": "SOUR:SWE:FREQ:SPAC?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "sweep_dwell",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "s",
-              "minimum": 0.001,
-              "maximum": 100,
-              "choices": [],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:SWE:FREQ:DWEL",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "扫描驻留时间",
-          "ui_location": "设备管理 / 信号源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:SWE:FREQ:DWEL {value}"
-            ],
-            "query": "SOUR:SWE:FREQ:DWEL?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "reference_clock",
-          "parameters": {
-            "value": {
-              "kind": "enum",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [
-                "INT",
-                "EXT"
-              ],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:ROSC:SOUR",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "参考时钟",
-          "ui_location": "设备管理 / 信号源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:ROSC:SOUR {value}"
-            ],
-            "query": "SOUR:ROSC:SOUR?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "output",
-          "parameters": {
-            "value": {
-              "kind": "boolean",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": true,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "OUTP",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "通道输出",
-          "ui_location": "设备管理 / 信号源 / 常用",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "OUTP {value}"
-            ],
-            "query": "OUTP?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "am_enabled",
-          "parameters": {
-            "value": {
-              "kind": "boolean",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": true,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:AM:STAT",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "AM 调制",
-          "ui_location": "设备管理 / 信号源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:AM:STAT {value}"
-            ],
-            "query": "SOUR:AM:STAT?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "am_source",
-          "parameters": {
-            "value": {
-              "kind": "enum",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [
-                "INT",
-                "EXT"
-              ],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:AM:SOUR",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "AM 调制源",
-          "ui_location": "设备管理 / 信号源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:AM:SOUR {value}"
-            ],
-            "query": "SOUR:AM:SOUR?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "fm_enabled",
-          "parameters": {
-            "value": {
-              "kind": "boolean",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": true,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:FM:STAT",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "FM 调制",
-          "ui_location": "设备管理 / 信号源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:FM:STAT {value}"
-            ],
-            "query": "SOUR:FM:STAT?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "fm_source",
-          "parameters": {
-            "value": {
-              "kind": "enum",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [
-                "INT",
-                "EXT"
-              ],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:FM:SOUR",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "FM 调制源",
-          "ui_location": "设备管理 / 信号源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:FM:SOUR {value}"
-            ],
-            "query": "SOUR:FM:SOUR?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "pm_enabled",
-          "parameters": {
-            "value": {
-              "kind": "boolean",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": true,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:PM:STAT",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "PM 调制",
-          "ui_location": "设备管理 / 信号源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:PM:STAT {value}"
-            ],
-            "query": "SOUR:PM:STAT?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "pm_source",
-          "parameters": {
-            "value": {
-              "kind": "enum",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [
-                "INT",
-                "EXT"
-              ],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:PM:SOUR",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "PM 调制源",
-          "ui_location": "设备管理 / 信号源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:PM:SOUR {value}"
-            ],
-            "query": "SOUR:PM:SOUR?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "am_depth",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "%",
-              "minimum": 0,
-              "maximum": 100,
-              "choices": [],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:AM:DEPT",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "AM 深度",
-          "ui_location": "设备管理 / 信号源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:AM:DEPT {value}"
-            ],
-            "query": "SOUR:AM:DEPT?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "fm_deviation",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "Hz",
-              "minimum": 0,
-              "maximum": 1000000.0,
-              "choices": [],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:FM:DEV",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "FM 频偏",
-          "ui_location": "设备管理 / 信号源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:FM:DEV {value}"
-            ],
-            "query": "SOUR:FM:DEV?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "pm_deviation",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "rad",
-              "minimum": 0,
-              "maximum": 20,
-              "choices": [],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:PM:DEV",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "PM 相偏",
-          "ui_location": "设备管理 / 信号源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:PM:DEV {value}"
-            ],
-            "query": "SOUR:PM:DEV?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "pulse_enabled",
-          "parameters": {
-            "value": {
-              "kind": "boolean",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": true,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:PULM:STAT",
-          "verification": "documented_pending_hardware",
-          "option": "pulse_modulation",
-          "available": false,
-          "reason": "missing option pulse_modulation",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "脉冲调制",
-          "ui_location": "设备管理 / 信号源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:PULM:STAT {value}"
-            ],
-            "query": "SOUR:PULM:STAT?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "list_mode",
-          "parameters": {
-            "value": {
-              "kind": "enum",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [
-                "AUTO",
-                "STEP"
-              ],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:LIST:MODE",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "列表模式",
-          "ui_location": "设备管理 / 信号源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:LIST:MODE {value}"
-            ],
-            "query": "SOUR:LIST:MODE?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "list_trigger_source",
-          "parameters": {
-            "value": {
-              "kind": "enum",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [
-                "AUTO",
-                "SING",
-                "EXT"
-              ],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:LIST:TRIG:SOUR",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "列表触发源",
-          "ui_location": "设备管理 / 信号源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:LIST:TRIG:SOUR {value}"
-            ],
-            "query": "SOUR:LIST:TRIG:SOUR?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "list_dwell",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "s",
-              "minimum": 0.001,
-              "maximum": 100,
-              "choices": [],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:LIST:DWEL",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "列表驻留时间",
-          "ui_location": "设备管理 / 信号源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:LIST:DWEL {value}"
-            ],
-            "query": "SOUR:LIST:DWEL?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "list_trigger",
-          "parameters": {},
-          "readable": false,
-          "writable": true,
-          "requires_confirmation": true,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "SOUR:LIST:TRIG:EXEC",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "触发列表",
-          "ui_location": "设备管理 / 信号源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SOUR:LIST:TRIG:EXEC"
-            ],
-            "query": "",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "upload_list",
-          "parameters": {
-            "name": {
-              "kind": "text",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [],
-              "required": true,
-              "range_source": "model"
-            },
-            "frequencies": {
-              "kind": "array",
-              "unit": "",
-              "minimum": 300000,
-              "maximum": 3000000000.0,
-              "choices": [],
-              "required": true,
-              "range_source": "model"
-            },
-            "powers": {
-              "kind": "array",
-              "unit": "",
-              "minimum": -120,
-              "maximum": 18,
-              "choices": [],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": false,
-          "writable": true,
-          "requires_confirmation": true,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
-          "section": "15.18.8 LIST subsystem",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "上传频率 / 功率列表",
           "ui_location": "设备管理 / 信号源 / 高级",
           "wire_templates": {
             "select": [],

@@ -1,0 +1,1156 @@
+{
+  "capabilities": {
+    "category": "signal_generator",
+    "channels": [
+      1
+    ],
+    "operations": [
+      {
+        "name": "frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 8000,
+            "maximum": 3000000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:FREQ",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "power",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "dBm",
+            "minimum": -120,
+            "maximum": 18,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:POW",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "frequency_mode",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "CW",
+              "SWE",
+              "LIST"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:FREQ:MODE",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_start",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 8000,
+            "maximum": 3000000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:FREQ:STAR",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_stop",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 8000,
+            "maximum": 3000000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:FREQ:STOP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_spacing",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "LIN",
+              "LOG"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:SWE:FREQ:SPAC",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_dwell",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s",
+            "minimum": 0.001,
+            "maximum": 100,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:SWE:FREQ:DWEL",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "reference_clock",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "INT",
+              "EXT"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:ROSC:SOUR",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "output",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "OUTP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "am_enabled",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:AM1:STAT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "am_source",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "INT",
+              "EXT",
+              "LF2",
+              "EXT2",
+              "NOIS"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:AM1:SOUR",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "am_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0.1,
+            "maximum": 1000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:LFO1:FREQ",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "am_shape",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "SIN",
+              "SQU",
+              "TRI",
+              "TRAP",
+              "PULS"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:LFO1:SHAP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "fm_enabled",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:FM1:STAT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "fm_source",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "INT",
+              "EXT",
+              "LF2",
+              "EXT2",
+              "NOIS"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:FM1:SOUR",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "fm_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0.1,
+            "maximum": 1000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:LFO1:FREQ",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "fm_shape",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "SIN",
+              "SQU",
+              "TRI",
+              "TRAP",
+              "PULS"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:LFO1:SHAP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "pm_enabled",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:PM1:STAT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "pm_source",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "INT",
+              "EXT",
+              "LF2",
+              "EXT2",
+              "NOIS"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:PM1:SOUR",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "pm_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0.1,
+            "maximum": 1000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:LFO1:FREQ",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "pm_shape",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "SIN",
+              "SQU",
+              "TRI",
+              "TRAP",
+              "PULS"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:LFO1:SHAP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "am_depth",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "%",
+            "minimum": 0,
+            "maximum": 100,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:AM1:DEPT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "fm_deviation",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0,
+            "maximum": 1000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:FM1:DEV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "pm_deviation",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "rad",
+            "minimum": 0,
+            "maximum": 20,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:PM1:DEV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "pulse_enabled",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:PULM:STAT",
+        "verification": "documented_pending_hardware",
+        "option": "pulse_modulation",
+        "available": false,
+        "reason": "missing option pulse_modulation"
+      },
+      {
+        "name": "list_mode",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "AUTO",
+              "STEP"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:LIST:MODE",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "list_trigger_source",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "AUTO",
+              "SING",
+              "EXT"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:LIST:TRIG:SOUR",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "list_dwell",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s",
+            "minimum": 0.001,
+            "maximum": 100,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:LIST:DWEL",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "list_trigger",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:LIST:TRIG:EXEC",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "upload_list",
+        "parameters": {
+          "name": {
+            "kind": "text",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          },
+          "frequencies": {
+            "kind": "array",
+            "unit": "",
+            "minimum": 300000,
+            "maximum": 3000000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          },
+          "powers": {
+            "kind": "array",
+            "unit": "",
+            "minimum": -120,
+            "maximum": 18,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "15.18.8 LIST subsystem",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_mode",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "AUTO",
+              "MAN",
+              "STEP"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:SWE:FREQ:MODE",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_step_linear",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0.01,
+            "maximum": 3000000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:SWE:FREQ:STEP:LIN",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_step_log",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "%",
+            "minimum": 0.01,
+            "maximum": 100,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+        "section": "SOUR:SWE:FREQ:STEP:LOG",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      }
+    ]
+  },
+  "profile": {
+    "adapter_id": "rs.sma100b",
+    "manufacturer": [
+      "Rohde&Schwarz",
+      "Rohde-Schwarz"
+    ],
+    "models": [
+      "SMA100B"
+    ],
+    "category": "signal_generator",
+    "channels": [
+      1
+    ],
+    "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
+    "revision": "1178.3834.01 revision 14",
+    "status": [
+      "frequency",
+      "power",
+      "output"
+    ],
+    "identity_query": "*IDN?",
+    "error_query": "SYST:ERR?",
+    "acquisition": "",
+    "channel_limits": {}
+  },
+  "commands": {
+    "frequency": {
+      "writes": [
+        "SOUR:FREQ {value}"
+      ],
+      "query": "SOUR:FREQ?",
+      "select": [],
+      "compare": true
+    },
+    "power": {
+      "writes": [
+        "SOUR:POW {value}"
+      ],
+      "query": "SOUR:POW?",
+      "select": [],
+      "compare": true
+    },
+    "frequency_mode": {
+      "writes": [
+        "SOUR:FREQ:MODE {value}"
+      ],
+      "query": "SOUR:FREQ:MODE?",
+      "select": [],
+      "compare": true
+    },
+    "sweep_start": {
+      "writes": [
+        "SOUR:FREQ:STAR {value}"
+      ],
+      "query": "SOUR:FREQ:STAR?",
+      "select": [],
+      "compare": true
+    },
+    "sweep_stop": {
+      "writes": [
+        "SOUR:FREQ:STOP {value}"
+      ],
+      "query": "SOUR:FREQ:STOP?",
+      "select": [],
+      "compare": true
+    },
+    "sweep_spacing": {
+      "writes": [
+        "SOUR:SWE:FREQ:SPAC {value}"
+      ],
+      "query": "SOUR:SWE:FREQ:SPAC?",
+      "select": [],
+      "compare": true
+    },
+    "sweep_dwell": {
+      "writes": [
+        "SOUR:SWE:FREQ:DWEL {value}"
+      ],
+      "query": "SOUR:SWE:FREQ:DWEL?",
+      "select": [],
+      "compare": true
+    },
+    "reference_clock": {
+      "writes": [
+        "SOUR:ROSC:SOUR {value}"
+      ],
+      "query": "SOUR:ROSC:SOUR?",
+      "select": [],
+      "compare": true
+    },
+    "output": {
+      "writes": [
+        "OUTP {value}"
+      ],
+      "query": "OUTP?",
+      "select": [],
+      "compare": true
+    },
+    "am_enabled": {
+      "writes": [
+        "SOUR:AM1:STAT {value}"
+      ],
+      "query": "SOUR:AM1:STAT?",
+      "select": [],
+      "compare": true
+    },
+    "am_source": {
+      "writes": [
+        "SOUR:AM1:SOUR {value}"
+      ],
+      "query": "SOUR:AM1:SOUR?",
+      "select": [],
+      "compare": true
+    },
+    "am_frequency": {
+      "writes": [
+        "SOUR:LFO1:FREQ {value}"
+      ],
+      "query": "SOUR:LFO1:FREQ?",
+      "select": [],
+      "compare": true
+    },
+    "am_shape": {
+      "writes": [
+        "SOUR:LFO1:SHAP {value}"
+      ],
+      "query": "SOUR:LFO1:SHAP?",
+      "select": [],
+      "compare": true
+    },
+    "fm_enabled": {
+      "writes": [
+        "SOUR:FM1:STAT {value}"
+      ],
+      "query": "SOUR:FM1:STAT?",
+      "select": [],
+      "compare": true
+    },
+    "fm_source": {
+      "writes": [
+        "SOUR:FM1:SOUR {value}"
+      ],
+      "query": "SOUR:FM1:SOUR?",
+      "select": [],
+      "compare": true
+    },
+    "fm_frequency": {
+      "writes": [
+        "SOUR:LFO1:FREQ {value}"
+      ],
+      "query": "SOUR:LFO1:FREQ?",
+      "select": [],
+      "compare": true
+    },
+    "fm_shape": {
+      "writes": [
+        "SOUR:LFO1:SHAP {value}"
+      ],
+      "query": "SOUR:LFO1:SHAP?",
+      "select": [],
+      "compare": true
+    },
+    "pm_enabled": {
+      "writes": [
+        "SOUR:PM1:STAT {value}"
+      ],
+      "query": "SOUR:PM1:STAT?",
+      "select": [],
+      "compare": true
+    },
+    "pm_source": {
+      "writes": [
+        "SOUR:PM1:SOUR {value}"
+      ],
+      "query": "SOUR:PM1:SOUR?",
+      "select": [],
+      "compare": true
+    },
+    "pm_frequency": {
+      "writes": [
+        "SOUR:LFO1:FREQ {value}"
+      ],
+      "query": "SOUR:LFO1:FREQ?",
+      "select": [],
+      "compare": true
+    },
+    "pm_shape": {
+      "writes": [
+        "SOUR:LFO1:SHAP {value}"
+      ],
+      "query": "SOUR:LFO1:SHAP?",
+      "select": [],
+      "compare": true
+    },
+    "am_depth": {
+      "writes": [
+        "SOUR:AM1:DEPT {value}"
+      ],
+      "query": "SOUR:AM1:DEPT?",
+      "select": [],
+      "compare": true
+    },
+    "fm_deviation": {
+      "writes": [
+        "SOUR:FM1:DEV {value}"
+      ],
+      "query": "SOUR:FM1:DEV?",
+      "select": [],
+      "compare": true
+    },
+    "pm_deviation": {
+      "writes": [
+        "SOUR:PM1:DEV {value}"
+      ],
+      "query": "SOUR:PM1:DEV?",
+      "select": [],
+      "compare": true
+    },
+    "pulse_enabled": {
+      "writes": [
+        "SOUR:PULM:STAT {value}"
+      ],
+      "query": "SOUR:PULM:STAT?",
+      "select": [],
+      "compare": true
+    },
+    "list_mode": {
+      "writes": [
+        "SOUR:LIST:MODE {value}"
+      ],
+      "query": "SOUR:LIST:MODE?",
+      "select": [],
+      "compare": true
+    },
+    "list_trigger_source": {
+      "writes": [
+        "SOUR:LIST:TRIG:SOUR {value}"
+      ],
+      "query": "SOUR:LIST:TRIG:SOUR?",
+      "select": [],
+      "compare": true
+    },
+    "list_dwell": {
+      "writes": [
+        "SOUR:LIST:DWEL {value}"
+      ],
+      "query": "SOUR:LIST:DWEL?",
+      "select": [],
+      "compare": true
+    },
+    "list_trigger": {
+      "writes": [
+        "SOUR:LIST:TRIG:EXEC"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "upload_list": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "sweep_mode": {
+      "writes": [
+        "SOUR:SWE:FREQ:MODE {value}"
+      ],
+      "query": "SOUR:SWE:FREQ:MODE?",
+      "select": [],
+      "compare": true
+    },
+    "sweep_step_linear": {
+      "writes": [
+        "SOUR:SWE:FREQ:STEP:LIN {value}"
+      ],
+      "query": "SOUR:SWE:FREQ:STEP:LIN?",
+      "select": [],
+      "compare": true
+    },
+    "sweep_step_log": {
+      "writes": [
+        "SOUR:SWE:FREQ:STEP:LOG {value}"
+      ],
+      "query": "SOUR:SWE:FREQ:STEP:LOG?",
+      "select": [],
+      "compare": true
+    }
+  }
+}

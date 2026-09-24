@@ -13,6 +13,7 @@ from lab_control.domain.instruments import (
 )
 from lab_control.instruments.analyzers import PROFILES as ANALYZERS
 from lab_control.instruments.base import Profile, ScpiAdapter
+from lab_control.instruments.devices.catalog import load_definitions
 from lab_control.instruments.oscilloscopes import PROFILES as SCOPES
 from lab_control.instruments.power_supplies import PROFILES as POWERS
 from lab_control.instruments.power_supplies import PowerAdapter
@@ -22,9 +23,27 @@ from lab_control.transport.base import MockTransport, Transport
 from lab_control.transport.streams import SerialTransport, TcpSocketTransport, VicpTransport
 from lab_control.transport.visa import VisaRuntime, VisaTransport
 
-PROFILES: dict[str, Profile] = {
-    profile.adapter_id: profile for profile in (*SIGNALS, *POWERS, *SCOPES, *ANALYZERS)
-}
+DEVICE_DEFINITIONS = load_definitions()
+
+
+def collect_profiles(profiles: tuple[Profile, ...]) -> dict[str, Profile]:
+    result = {}
+    for profile in profiles:
+        if profile.adapter_id in result:
+            raise ValueError(f"Duplicate adapter ID: {profile.adapter_id}")
+        result[profile.adapter_id] = profile
+    return result
+
+
+PROFILES = collect_profiles(
+    (
+        *(definition.profile for definition in DEVICE_DEFINITIONS.values()),
+        *SIGNALS,
+        *POWERS,
+        *SCOPES,
+        *ANALYZERS,
+    )
+)
 SDK_ADAPTERS = {
     "thorlabs.pm100d": "optical_power_meter",
     "pico.6404e": "oscilloscope",
@@ -60,7 +79,7 @@ def describe(config: ConnectionConfig) -> CapabilitySet:
         "microchip.53100a": PhaseNoiseAdapter.capability_schema,
     }
     if config.adapter not in schemas:
-        raise Unsupported("No capability schema for this model")
+        raise Unsupported(f"设备适配器不可用或已移除：{config.adapter}")
     return schemas[config.adapter](config)
 
 
@@ -100,10 +119,36 @@ def transport_for(config: ConnectionConfig, runtime: VisaRuntime) -> Transport:
     raise Unsupported("No byte transport for this configuration")
 
 
+def build_scpi_adapter(config: ConnectionConfig, transport: Transport) -> ScpiAdapter:
+    """Use the same model factory for real sessions and injected protocol transports.
+
+    The caller owns opening/closing the transport. This function performs no I/O.
+    """
+    if config.adapter not in PROFILES:
+        raise Unsupported(f"设备适配器不可用或已移除：{config.adapter}")
+    profile = PROFILES[config.adapter]
+    if config.adapter in DEVICE_DEFINITIONS:
+        return DEVICE_DEFINITIONS[config.adapter].adapter_type(transport, profile, config)
+    adapter_class = (
+        SignalGeneratorAdapter
+        if profile.category == "signal_generator"
+        else PowerAdapter
+        if profile.category == "power_supply"
+        else ScpiAdapter
+    )
+    return adapter_class(transport, profile, config)
+
+
 def create_adapter(config: ConnectionConfig, runtime: VisaRuntime) -> InstrumentAdapter:
     if config.transport == "mock":
         from lab_control.demo.instrument import SimulatedInstrument
 
+        if (
+            config.adapter not in PROFILES
+            and config.adapter not in SDK_ADAPTERS
+            and not config.adapter.startswith("sim.")
+        ):
+            raise Unsupported(f"设备适配器不可用或已移除：{config.adapter}")
         return SimulatedInstrument(config)
     if config.transport in {"pico", "tlpmx", "pm100d"} and not config.sdk_path:
         from dataclasses import replace
@@ -124,17 +169,11 @@ def create_adapter(config: ConnectionConfig, runtime: VisaRuntime) -> Instrument
 
         return PhaseNoiseAdapter(config)
     if config.adapter not in PROFILES:
-        raise Unsupported("Select an implemented, exact model adapter before connecting")
-    profile = PROFILES[config.adapter]
+        raise Unsupported(f"设备适配器不可用或已移除：{config.adapter}")
     transport = transport_for(config, runtime)
     try:
         transport.open()
-        adapter_class = (
-            SignalGeneratorAdapter
-            if profile.category == "signal_generator"
-            else (PowerAdapter if profile.category == "power_supply" else ScpiAdapter)
-        )
-        return adapter_class(transport, profile, config)
+        return build_scpi_adapter(config, transport)
     except Exception:
         transport.close()
         raise

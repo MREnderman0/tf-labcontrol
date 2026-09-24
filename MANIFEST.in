@@ -9,3 +9,4 @@ recursive-include scripts *.py *.ps1
 recursive-include tests *.py *.json
 recursive-include src/lab_control/ui/styles *.qss
 include src/lab_control/py.typed
+recursive-include src/lab_control/instruments/devices *.md *.json

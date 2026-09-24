@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main() -> int:
     files = [ROOT / "README.md"]
-    for folder in ("docs", "examples", "config/examples"):
+    for folder in ("docs", "examples", "config/examples", "src/lab_control/instruments/devices"):
         files.extend(sorted((ROOT / folder).rglob("*.md")))
     errors = []
     for path in files:
