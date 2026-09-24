@@ -164,6 +164,7 @@ vbw=视频带宽 VBW
 rbw_auto=自动 RBW
 vbw_auto=自动 VBW
 reference_level=参考电平
+auto_setup=自动设置
 attenuation=输入衰减
 attenuation_auto=自动衰减
 continuous=仪器连续扫描

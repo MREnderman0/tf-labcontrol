@@ -446,6 +446,11 @@ class SessionManager:
                     raise TypeError("Expected AcquisitionRequest")
                 result = adapter.acquire(argument)
             if operation in {"acquire", "observe"}:
+                # Optional, model-owned readings tied to this exact acquisition. No inferred
+                # settings from arbitrary configuration dictionaries or extra device queries.
+                acquisition_readings = getattr(adapter, "acquisition_readings", None)
+                if operation == "acquire" and callable(acquisition_readings):
+                    self._cache_readings(session, acquisition_readings(result))
                 result = replace(
                     result,
                     configuration={

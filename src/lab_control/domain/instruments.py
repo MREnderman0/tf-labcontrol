@@ -78,6 +78,8 @@ class Parameter:
                 raise ValidationError(f"{name}: below {self.minimum} {self.unit}")
             if self.maximum is not None and value > self.maximum:
                 raise ValidationError(f"{name}: above {self.maximum} {self.unit}")
+            if self.choices and value not in tuple(float(v) for v in self.choices):
+                raise ValidationError(f"{name}: expected a supported discrete setting")
             return int(value) if self.kind == "integer" else float(value)
         if self.kind == "boolean":
             if type(value) is not bool:

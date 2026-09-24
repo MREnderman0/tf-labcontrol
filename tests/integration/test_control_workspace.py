@@ -159,8 +159,24 @@ def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
                     assert set(page.form.editors) == {c.name for c in caps.operations}
             window.navigate("实时监测", category)
             monitor = window.stack.currentWidget()
-            assert isinstance(monitor, MonitoringPage)
-            if category in MEASUREMENT_CATEGORIES:
+            from lab_control.ui.pages.monitoring.spectrum import SpectrumMonitoringPage
+
+            assert isinstance(monitor, (MonitoringPage, SpectrumMonitoringPage))
+            if category == "spectrum_analyzer":
+                assert set(monitor.controls.editors) == {
+                    "start_frequency",
+                    "stop_frequency",
+                    "center_frequency",
+                    "span",
+                    "reference_level",
+                    "attenuation",
+                    "attenuation_auto",
+                    "rbw",
+                    "vbw",
+                    "rbw_auto",
+                    "vbw_auto",
+                }
+            elif category in MEASUREMENT_CATEGORIES:
                 caps = window.controller.capabilities(monitor.selector.device_id)
                 assert set(monitor.form.editors) == {c.name for c in caps.operations}
         window.navigate("实时监测")

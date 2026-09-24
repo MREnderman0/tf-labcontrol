@@ -1,0 +1,14 @@
+{
+  "devices": 20,
+  "spectrum": 12,
+  "signal_sources": 4,
+  "power_supplies": 4,
+  "elapsed_seconds": 0.594,
+  "max_device_io": 1,
+  "max_auto_concurrency": 4,
+  "max_batch": 4,
+  "auto_writes": 0,
+  "explicit_user_writes": 1,
+  "fault_device_attempts": 1,
+  "all_healthy_devices_served": true
+}

@@ -14,6 +14,7 @@ from typing import Any
 from lab_control.application.sessions import SessionManager, SettingsFrame
 from lab_control.domain.instruments import ParameterReading
 from lab_control.domain.readback import usable_reading
+from lab_control.domain.spectrum import SETTINGS as SPECTRUM_SETTINGS
 
 BASE = ("output", "waveform", "frequency", "power", "amplitude", "offset", "reference_clock")
 POWER_BASE = ("all_outputs", "output", "voltage", "current", "measured_voltage", "measured_current")
@@ -64,7 +65,11 @@ class SettingsSync:
         if not snapshot or not snapshot.channels:
             return {}
         category = next(iter(snapshot.channels.values())).category
-        base = {"signal_generator": BASE, "power_supply": POWER_BASE}.get(category)
+        base = {
+            "signal_generator": BASE,
+            "power_supply": POWER_BASE,
+            "spectrum_analyzer": SPECTRUM_SETTINGS,
+        }.get(category)
         if base is None:
             return {}
         requested = set(self.advanced) if device_id == self.focus else set()

@@ -117,6 +117,8 @@ class SimulatedInstrument:
         }
         if self.adapter_id == "pico.6404e":
             defaults["timebase"] = 10  # Mock timebase index, not a hardware GetTimebase result.
+        if self.caps.category == "spectrum_analyzer":
+            defaults.update(span=2e6, reference_level=-10, attenuation=10)
         for cap in self.caps.operations:
             if not cap.writable or not cap.parameters:
                 continue
@@ -186,12 +188,51 @@ class SimulatedInstrument:
         if cap.requires_confirmation and not command.confirmed:
             raise DeviceError("Confirmation required", "confirmation_required")
         self.values[f"{command.channel}.{command.operation}"] = values
+        if self.caps.category == "spectrum_analyzer":
+            from lab_control.domain.spectrum import FREQUENCY, SETTINGS, frequency_draft
+
+            if command.operation in FREQUENCY:
+                state = {name: self._value(1, name) for name in FREQUENCY}
+                spec = self.caps.get("start_frequency").parameters["value"]
+                linked = frequency_draft(state, command.operation, spec.minimum or 0, spec.maximum or 1e12)
+                self.values.update({f"1.{k}": {"value": v} for k, v in linked.items()})
+            elif command.operation == "auto_setup":
+                result = dict(
+                    start_frequency=0,
+                    stop_frequency=2e6,
+                    center_frequency=1e6,
+                    span=2e6,
+                    reference_level=-10,
+                    attenuation=10,
+                    attenuation_auto=True,
+                    rbw=1000,
+                    vbw=1000,
+                    rbw_auto=True,
+                    vbw_auto=True,
+                )
+                self.values.update({f"1.{k}": {"value": v} for k, v in result.items()})
+                return ApplyResult(
+                    "success", command.operation, {}, {k: self._value(1, k) for k in SETTINGS}, 1
+                )
         if command.operation == "all_outputs":
             for channel in self.caps.channels:
                 key = f"{channel}.output"
                 if key in self.values:
                     self.values[key] = dict(values)
         return ApplyResult("success", command.operation, values, values, 1)
+
+    def acquisition_readings(self, batch: MeasurementBatch) -> tuple[ParameterReading, ...]:
+        from lab_control.domain.spectrum import SETTINGS
+
+        if self.caps.category != "spectrum_analyzer":
+            return ()
+        return tuple(
+            ParameterReading(
+                name, 1, batch.configuration[f"1.{name}"], "simulated", batch.timestamp, Quality.SIMULATED
+            )
+            for name in SETTINGS
+            if f"1.{name}" in batch.configuration
+        )
 
     def acquire(self, request: AcquisitionRequest) -> MeasurementBatch:
         request.validate()

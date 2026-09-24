@@ -1,0 +1,56 @@
+[
+  {
+    "work_area": [
+      1440,
+      900
+    ],
+    "window": [
+      1440,
+      870
+    ],
+    "plot": [
+      759,
+      576
+    ],
+    "controls_width": 392,
+    "scroll_max": 53,
+    "sidebar": 232,
+    "apply_visible": 33
+  },
+  {
+    "work_area": [
+      1280,
+      760
+    ],
+    "window": [
+      1280,
+      730
+    ],
+    "plot": [
+      599,
+      436
+    ],
+    "controls_width": 392,
+    "scroll_max": 193,
+    "sidebar": 232,
+    "apply_visible": 33
+  },
+  {
+    "work_area": [
+      1024,
+      600
+    ],
+    "window": [
+      1024,
+      570
+    ],
+    "plot": [
+      343,
+      276
+    ],
+    "controls_width": 392,
+    "scroll_max": 353,
+    "sidebar": 232,
+    "apply_visible": 33
+  }
+]

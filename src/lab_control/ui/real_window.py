@@ -46,6 +46,7 @@ from lab_control.ui.pages.device_control.power_supply import PowerSupplyPage
 from lab_control.ui.pages.device_control.signal_source import SignalSourcePage
 from lab_control.ui.pages.monitoring.dashboard import MonitoringDashboard
 from lab_control.ui.pages.monitoring.page import MonitoringPage
+from lab_control.ui.pages.monitoring.spectrum import SpectrumMonitoringPage
 from lab_control.ui.widgets.category_cards import CategoryCard, CategoryCardGrid
 
 CATEGORIES = {
@@ -299,10 +300,12 @@ class RealWindow(QMainWindow):
 
     def focus_card(self, spec: dict) -> None:
         page = self.stack.currentWidget()
-        if isinstance(page, MonitoringPage):
+        if isinstance(page, (MonitoringPage, SpectrumMonitoringPage)):
             page.focus_card(spec)
 
     def navigate(self, module: str, category: str = "", device_id: str = "") -> None:
+        if module == "设备管理" and category == "spectrum_analyzer":
+            module = "实时监测"
         if module not in self.nav_buttons:
             return
         self.device_pool.hide()
@@ -317,6 +320,8 @@ class RealWindow(QMainWindow):
             self.submenu.addTab("总览")
             self.submenu.setTabData(0, "")
             for value, label in CATEGORY_LABELS.items():
+                if module == "设备管理" and value == "spectrum_analyzer":
+                    continue
                 index = self.submenu.addTab(label)
                 self.submenu.setTabData(index, value)
                 if value == category:
@@ -327,7 +332,10 @@ class RealWindow(QMainWindow):
         self.submenu.blockSignals(False)
         self.show_page()
         page = self.stack.currentWidget()
-        if device_id and isinstance(page, (DeviceControlPage, MonitoringPage, SignalSourcePage, PowerSupplyPage)):
+        if device_id and isinstance(
+            page,
+            (DeviceControlPage, MonitoringPage, SpectrumMonitoringPage, SignalSourcePage, PowerSupplyPage),
+        ):
             page.selector.select(device_id)
 
     def show_page(self, *_args) -> None:
@@ -352,7 +360,11 @@ class RealWindow(QMainWindow):
                         else DeviceControlPage(self.controller, category)
                     )
                 elif module == "实时监测":
-                    page = MonitoringPage(self.controller, category, self.dashboard.add)
+                    page = (
+                        SpectrumMonitoringPage(self.controller, self.dashboard.add)
+                        if category == "spectrum_analyzer"
+                        else MonitoringPage(self.controller, category, self.dashboard.add)
+                    )
                 else:
                     page = QWidget()
                     layout = QVBoxLayout(page)
@@ -715,6 +727,12 @@ class RealWindow(QMainWindow):
         state = self.states.get(self.selected_id, {})
         busy = bool(state.get("pending")) or state.get("connectionState") in {"busy", "connecting"}
         for key, button in self.action_buttons.items():
+            if key == "manage":
+                button.setText(
+                    "频谱监测"
+                    if record and instrument_category(record) == "spectrum_analyzer"
+                    else "设备控制"
+                )
             enabled = bool(record)
             if key == "connect":
                 enabled &= not bool(state) and bool(

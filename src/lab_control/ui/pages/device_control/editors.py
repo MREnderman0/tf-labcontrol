@@ -101,10 +101,10 @@ class ParameterEditor(QWidget):
         if spec.kind == "boolean":
             self.input = QCheckBox("开启", self)
             self.input.stateChanged.connect(self.changed)
-        elif spec.kind == "enum":
+        elif spec.kind == "enum" or spec.choices:
             self.input = ParameterComboBox(self)
             for value in spec.choices:
-                self.input.addItem(value, value)
+                self.input.addItem(value, value if spec.kind == "enum" else float(value))
             self.input.currentIndexChanged.connect(self.changed)
         else:
             self.input = QLineEdit(self)
@@ -185,6 +185,9 @@ class ParameterEditor(QWidget):
 
     def unit_changed(self) -> None:
         factor = self.unit.currentData() or 1
+        if isinstance(self.input, QComboBox) and self.spec.kind in {"number", "integer"}:
+            for index in range(self.input.count()):
+                self.input.setItemText(index, f"{self.input.itemData(index) / factor:.12g}")
         if not self._editing_number and isinstance(self.input, QLineEdit):
             try:
                 old_value = float(self.input.text())
@@ -275,7 +278,10 @@ class ParameterEditor(QWidget):
             if isinstance(self.input, QComboBox)
             else self.input.text()
         )
-        return {"value": value, "factor": self.unit.currentData() or 1}
+        factor = self.unit.currentData() or 1
+        if isinstance(self.input, QComboBox) and self.spec.kind in {"number", "integer"}:
+            value = float(value) / factor if value is not None else None
+        return {"value": value, "factor": factor}
 
     def restore(self, draft: dict[str, Any]) -> None:
         value = draft.get("value")
@@ -284,6 +290,8 @@ class ParameterEditor(QWidget):
         if isinstance(self.input, QCheckBox):
             self.input.setChecked(bool(value))
         elif isinstance(self.input, QComboBox):
+            if self.spec.kind in {"number", "integer"} and value is not None:
+                value = float(value) * draft.get("factor", 1)
             index = self.input.findData(value)
             if index >= 0:
                 self.input.setCurrentIndex(index)
@@ -293,6 +301,9 @@ class ParameterEditor(QWidget):
         self.input.blockSignals(False)
         self.unit.blockSignals(False)
         self._last_factor = self.unit.currentData() or 1
+        if isinstance(self.input, QComboBox) and self.spec.kind in {"number", "integer"}:
+            for index in range(self.input.count()):
+                self.input.setItemText(index, f"{self.input.itemData(index) / self._last_factor:.12g}")
         self._editing_number = False
         self.update_range_label()
 
