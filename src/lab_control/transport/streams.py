@@ -157,6 +157,9 @@ class SerialTransport:
         self.write(payload)
         return self.reader.exact(count)
 
+    def read_pending(self) -> bytes:
+        return self.reader.exact(len(self.reader.buffer) + self.handle.in_waiting)
+
     def read(self) -> bytes:
         return self.reader.message()
 

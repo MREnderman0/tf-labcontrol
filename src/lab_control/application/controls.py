@@ -290,7 +290,7 @@ def slot_label(slot: str) -> str:
 def control_capabilities(
     config: ConnectionConfig, channel: int = 1, schema: CapabilitySet | None = None
 ) -> CapabilitySet:
-    schema = schema or describe(config)
+    schema = schema or describe(config, channel)
     limits = (
         dict(PROFILES[config.adapter].channel_limits.get(channel, {})) if config.adapter in PROFILES else {}
     )

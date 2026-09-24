@@ -45,10 +45,12 @@ def test_exact_identity_and_capability_sources(profile):
     if profile.identity_query == "ID?":
         raw = b"3458A"
     device, transport = adapter(profile.adapter_id, [(profile.identity_query, raw)])
+    for payload in reversed(device.connection_commands):
+        transport.exchanges.appendleft((payload, b""))
     identity = device.identify()
     assert match(identity) == profile.adapter_id
     assert all(cap.source and cap.section for cap in device.capabilities().operations)
-    assert transport.history == [profile.identity_query]
+    assert transport.history == [*device.connection_commands, profile.identity_query]
     assert not any(command in transport.history for command in ("*RST", "OUTP ON"))
 
 

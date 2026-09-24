@@ -61,14 +61,17 @@ PENDING = {
 }
 
 
-def describe(config: ConnectionConfig) -> CapabilitySet:
+def describe(config: ConnectionConfig, channel: int | None = None) -> CapabilitySet:
     """Inspect declared capabilities without loading a driver or opening an instrument."""
     if config.transport == "mock" and config.adapter.startswith("sim."):
         from lab_control.demo.instrument import SimulatedInstrument
 
         return SimulatedInstrument(config).capabilities()
     if config.adapter in PROFILES:
-        return ScpiAdapter(MockTransport([]), PROFILES[config.adapter], config).capabilities()
+        if channel is None:
+            return ScpiAdapter(MockTransport([]), PROFILES[config.adapter], config).capabilities()
+        adapter = build_scpi_adapter(config, MockTransport([]))
+        return adapter.capabilities_for_channel(channel)
     from lab_control.instruments.optical import PowerMeterAdapter
     from lab_control.instruments.phase_noise import PhaseNoiseAdapter
     from lab_control.instruments.pico import PicoAdapter

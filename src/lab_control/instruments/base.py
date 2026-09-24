@@ -124,6 +124,8 @@ def read_command(name: str, query: str, unit: str = "", scoped: bool = True) -> 
 
 
 class ScpiAdapter:
+    connection_commands: tuple[str, ...] = ()
+
     def __init__(self, transport: Transport, profile: Profile, config: ConnectionConfig) -> None:
         self.transport, self.profile, self.config = transport, profile, config
         self.adapter_id = profile.adapter_id
@@ -135,6 +137,8 @@ class ScpiAdapter:
         self.capability_error = ""
 
     def identify(self) -> DeviceIdentity:
+        for payload in self.connection_commands:
+            self.transport.write(payload)
         raw = self.transport.query(self.profile.identity_query)
         if self.profile.identity_query == "ID?":
             model = raw.decode("ascii").strip().strip('"')
@@ -184,6 +188,11 @@ class ScpiAdapter:
                 )
             )
         return CapabilitySet(self.profile.category, self.profile.channels, tuple(operations))
+
+    def capabilities_for_channel(self, channel: int) -> CapabilitySet:
+        """Cached channel schema; model overrides must not perform I/O here."""
+        self._context(channel, {})
+        return self.capabilities()
 
     def _context(self, channel: int, parameters: dict[str, Any]) -> dict[str, Any]:
         if type(channel) is not int or channel not in self.profile.channels:

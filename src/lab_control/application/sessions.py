@@ -193,9 +193,15 @@ class SessionManager:
                 error, failure = str(exc), exc
         error = error or getattr(adapter, "capability_error", "")
         schema = adapter.capabilities()
+        channel_schema = getattr(adapter, "capabilities_for_channel", None)
         snapshot = CapabilitySnapshot(
             session.identity,
-            {channel: control_capabilities(session.config, channel, schema) for channel in schema.channels},
+            {
+                channel: control_capabilities(
+                    session.config, channel, channel_schema(channel) if channel_schema else schema
+                )
+                for channel in schema.channels
+            },
             tuple(getattr(adapter, "detected_options", ()) or session.config.options),
             {
                 **getattr(adapter, "capability_details", {}),

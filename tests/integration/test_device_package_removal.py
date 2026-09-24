@@ -34,11 +34,12 @@ def test_removed_package_keeps_old_inventory_cli_scan_and_ui_usable(
         assert scan["state"] == "complete"
         records = {record["id"]: record for record in runtime.inventory.all()}
         assert old in records and category_for(records[old]) == "unknown"
-        assert category_for(records[other]) == "signal_generator"
+        category = registry.describe(configs[1]).category
+        assert category_for(records[other]) == category
         window = RealWindow(runtime)
         qtbot.addWidget(window)
         window.show()
-        window.navigate("设备管理", "signal_generator", other)
+        window.navigate("设备管理", category, other)
         qtbot.waitUntil(lambda: not window.controller.jobs)
         assert other in window.controller.records and old in window.controller.records
     finally:

@@ -41,14 +41,6 @@ LEGACY_MODELS = [
         "四通道。任意波形以分块 ASCII 保存到仪器内部 .arb 文件；随后 load_waveform、arb_sample_rate、arb_enabled 分步执行。参考时钟使用 SYST:ROSC:SOUR。当前上传限制 32..131072 点。",
     ),
     (
-        "gwinstek.gpd4303s",
-        "power-supplies/gpd-4303s",
-        "GW Instek GPD-4303S",
-        "USB 虚拟串口 COM / 对应 ASRL",
-        "GW Instek USB 驱动；PySerial 或 VISA ASRL",
-        "按设备当前波特率填写，8N1；不扫描波特率。VSET/ISET 命令不属于通用 SCPI；STATUS? 为单个状态字节。all_outputs 控制整机。必要时显式执行 remote。CH3/CH4 当前保守限制 5 V，CH4 1 A。",
-    ),
-    (
         "keithley.2231a",
         "power-supplies/keithley-2231a",
         "Keithley 2231A-30-3",
@@ -381,20 +373,26 @@ def render(definitions=None) -> dict[Path, str]:
         for d in definitions.values()
     }
     files[ROOT / "docs/generated/device-module-docs.json"] = json.dumps(cards, indent=2) + "\n"
-    navigation = [
-        "# 信号源",
-        "",
-        "型号卡片和能力来自注册目录；现场验证结果以运行目录逐台记录为准。",
-        "",
-        "| 型号 | 接入路线 | 文档 |",
-        "| --- | --- | --- |",
-    ]
-    navigation.extend(
-        f"| {title} | {connection} | [型号说明]({Path(card).name}.md) |"
-        for adapter, card, title, connection, _driver, _note in models
-        if adapter in PROFILES and PROFILES[adapter].category == "signal_generator"
-    )
-    files[ROOT / "docs/devices/signal-sources/README.md"] = "\n".join(navigation) + "\n"
+    for category, category_folder, category_title in (
+        ("signal_generator", "signal-sources", "信号源"),
+        ("power_supply", "power-supplies", "电源"),
+    ):
+        navigation = [
+            f"# {category_title}",
+            "",
+            "型号卡片和能力来自注册目录；现场验证结果以运行目录逐台记录为准。",
+            "",
+            "| 型号 | 接入路线 | 文档 |",
+            "| --- | --- | --- |",
+        ]
+        navigation.extend(
+            f"| {title} | {connection} | [型号说明]({Path(card).name}.md) |"
+            for adapter, card, title, connection, _driver, _note in models
+            if adapter in PROFILES and PROFILES[adapter].category == category
+        )
+        if category == "power_supply":
+            navigation += ["", "待补型号：[PSW160](psw160.md)，厂家和完整型号未确认。"]
+        files[ROOT / f"docs/devices/{category_folder}/README.md"] = "\n".join(navigation) + "\n"
     index_path = ROOT / "docs/device-research-index.md"
     index = index_path.read_text(encoding="utf-8")
     index_rows = [

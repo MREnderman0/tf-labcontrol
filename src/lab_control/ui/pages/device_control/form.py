@@ -62,6 +62,7 @@ class OperationEditor(QFrame):
     ) -> None:
         super().__init__(parent)
         self.compact = compact
+        self.show_actions = actions
         self.setObjectName("compactOperation" if compact else "operationCard")
         self.controller, self.device_id, self.cap = controller, device_id, cap
         self.channel = channel if cap.channel_scoped else 1
@@ -246,7 +247,7 @@ class OperationEditor(QFrame):
             f"RF 输出限幅：{details['rf_output_limit_dbm']:+g} dBm · 功率偏移：{details.get('power_offset_db', 0):g} dB\n"
             "可设范围不代表保证输出功率；此操作不修改 RF 限幅。"
             if self.cap.name == "power" and "rf_output_limit_dbm" in details
-            else ""
+            else self.cap.reason
         )
         self.range_note.setVisible(bool(self.range_note.text()))
         available = self.cap.available and state.get("connectionState") in {"connected", "busy"}
@@ -256,6 +257,7 @@ class OperationEditor(QFrame):
         self.apply_button.setEnabled(
             bool(
                 available
+                and self.cap.writable
                 and record
                 and mode_applicable(record, self.controller.mode)
                 and self.controller.mode == self.mode
@@ -264,8 +266,9 @@ class OperationEditor(QFrame):
                 and self.device_id not in self.controller.group_devices
             )
         )
+        self.apply_button.setVisible(self.cap.writable and (not self.compact or self.show_actions))
         for editor in self.editors.values():
-            editor.setEnabled(self.cap.available)
+            editor.setEnabled(self.cap.available and self.cap.writable)
         if self.auto_sync:
             if self.sync_token and self.sync_token[:2] != (
                 state.get("sessionId"),

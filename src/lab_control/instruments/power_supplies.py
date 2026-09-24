@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import Any
 
-from lab_control.domain.instruments import Capability, DeviceCommand, DeviceError, Parameter, ValidationError
+from lab_control.domain.instruments import Capability, DeviceCommand, Parameter, ValidationError
 from lab_control.instruments.base import (
     CommandSpec,
     Profile,
@@ -17,7 +17,6 @@ from lab_control.instruments.base import (
 BOOL = Parameter("boolean")
 KEITHLEY_SOURCE = "https://download.tek.com/manual/077100401_Referencemanual.pdf"
 SPD_SOURCE = "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e"
-GPD_SOURCE = "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477"
 ITECH_SOURCE = "https://usa.itechate.com/uploadfiles/%E7%94%A8%E6%88%B7%E6%89%8B%E5%86%8C/user%20manual/it6300/IT6300%20Programming%20Guide-EN.pdf"
 
 
@@ -160,86 +159,11 @@ def spd() -> Profile:
     )
 
 
-def gpd() -> Profile:
-    commands = {}
-    for name, path, param in (
-        ("voltage", "VSET", parameter("V", 0, 30)),
-        ("current", "ISET", parameter("A", 0, 3)),
-    ):
-        commands[name] = CommandSpec(
-            Capability(
-                name,
-                {"value": param},
-                readable=True,
-                writable=True,
-                channel_scoped=True,
-                section=path + "<X>",
-            ),
-            (path + "{ch}:{value}",),
-            path + "{ch}?",
-        )
-    for name, path in (("measured_voltage", "VOUT"), ("measured_current", "IOUT")):
-        commands[name] = read_command(name, path + "{ch}?")
-    commands["all_outputs"] = CommandSpec(
-        Capability(
-            "all_outputs", {"value": BOOL}, writable=True, requires_confirmation=True, section="OUT<Boolean>"
-        ),
-        ("OUT{value}",),
-        compare=False,
-    )
-    commands["tracking"] = CommandSpec(
-        Capability(
-            "tracking",
-            {"value": enum("0", "1", "2")},
-            writable=True,
-            requires_confirmation=True,
-            section="TRACK<X>",
-        ),
-        ("TRACK{value}",),
-        compare=False,
-    )
-    commands["status_register"] = read_command("status_register", "STATUS?", scoped=False)
-    commands["remote"] = command("remote", "REMOTE", read=False, scoped=False)
-    commands["local"] = command("local", "LOCAL", read=False, scoped=False)
-    commands["errors"] = read_command("errors", "ERR?", scoped=False)
-    return Profile(
-        "gwinstek.gpd4303s",
-        ("GW INSTEK", "GW", "GOOD WILL"),
-        ("GPD-4303S",),
-        "power_supply",
-        (1, 2, 3, 4),
-        GPD_SOURCE,
-        "GPD-X303S user manual, Remote Control",
-        commands,
-        ("voltage", "current", "status_register"),
-        error_query="",
-        acquisition="power",
-        channel_limits={3: {"voltage": 5}, 4: {"voltage": 5, "current": 1}},
-    )
-
-
 class PowerAdapter(ScpiAdapter):
     def preflight(self, cmd: DeviceCommand, parameters: dict[str, Any]) -> None:
         super().preflight(cmd, parameters)
         if cmd.operation == "list_upload" and self.read("list_run", cmd.channel) not in (0, "0", "OFF"):
             raise ValidationError("Stop the channel list explicitly before replacing its steps")
-
-    def read(self, operation: str, channel: int = 1) -> Any:
-        if self.adapter_id == "gwinstek.gpd4303s" and operation == "status_register":
-            fixed = getattr(self.transport, "query_fixed", None)
-            raw = fixed("STATUS?", 1) if fixed else self.transport.query("STATUS?")
-            if len(raw) != 1:
-                raise DeviceError("GPD STATUS? must return one status byte", "parse_error")
-            value = raw[0]
-            return {
-                "raw": value,
-                "ch1_mode": "CV" if value & 1 else "CC",
-                "ch2_mode": "CV" if value & 2 else "CC",
-                "tracking_bits": (value >> 2) & 3,
-                "output_enabled": bool(value & 32),
-                "baud_bits": (value >> 6) & 3,
-            }
-        return super().read(operation, channel)
 
     def validate_command(self, cmd: DeviceCommand) -> tuple[CommandSpec, dict[str, Any]]:
         spec, values = super().validate_command(cmd)
@@ -263,8 +187,6 @@ class PowerAdapter(ScpiAdapter):
                 f"LIST:{path} CH{context['ch']}," + ",".join(f"{v:.12g}" for v in parameters[key])
                 for key, path in (("voltage", "VOLT"), ("current", "CURR"), ("duration", "TIME"))
             )
-        if self.adapter_id == "gwinstek.gpd4303s" and operation == "all_outputs":
-            return (f"OUT{int(parameters['value'])}",)
         return super().encode(operation, spec, context, parameters)
 
 
@@ -301,4 +223,4 @@ def it6322() -> Profile:
     )
 
 
-PROFILES = (keithley(), spd(), gpd(), it6322())
+PROFILES = (keithley(), spd(), it6322())

@@ -148,6 +148,7 @@ def test_removing_model_updates_every_generated_navigation(removed):
     for relative in (
         "docs/device-research-index.md",
         "docs/devices/signal-sources/README.md",
+        "docs/devices/power-supplies/README.md",
         "docs/generated/capability-matrix.md",
         "docs/generated/capability-matrix.json",
     ):

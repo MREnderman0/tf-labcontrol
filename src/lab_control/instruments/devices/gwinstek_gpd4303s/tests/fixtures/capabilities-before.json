@@ -1,0 +1,308 @@
+{
+  "capabilities": {
+    "category": "power_supply",
+    "channels": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "operations": [
+      {
+        "name": "voltage",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": 0,
+            "maximum": 30,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+        "section": "VSET<X>",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "current",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "A",
+            "minimum": 0,
+            "maximum": 3,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+        "section": "ISET<X>",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "measured_voltage",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+        "section": "VOUT{ch}?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "measured_current",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+        "section": "IOUT{ch}?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "all_outputs",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+        "section": "OUT<Boolean>",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "tracking",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "0",
+              "1",
+              "2"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+        "section": "TRACK<X>",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "status_register",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+        "section": "STATUS?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "remote",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+        "section": "REMOTE",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "local",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+        "section": "LOCAL",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "errors",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+        "section": "ERR?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      }
+    ]
+  },
+  "profile": {
+    "adapter_id": "gwinstek.gpd4303s",
+    "manufacturer": [
+      "GW INSTEK",
+      "GW",
+      "GOOD WILL"
+    ],
+    "models": [
+      "GPD-4303S"
+    ],
+    "category": "power_supply",
+    "channels": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+    "revision": "GPD-X303S user manual, Remote Control",
+    "status": [
+      "voltage",
+      "current",
+      "status_register"
+    ],
+    "identity_query": "*IDN?",
+    "error_query": "",
+    "acquisition": "power",
+    "channel_limits": {
+      "3": {
+        "voltage": 5
+      },
+      "4": {
+        "voltage": 5,
+        "current": 1
+      }
+    }
+  },
+  "commands": {
+    "voltage": {
+      "writes": [
+        "VSET{ch}:{value}"
+      ],
+      "query": "VSET{ch}?",
+      "select": [],
+      "compare": true
+    },
+    "current": {
+      "writes": [
+        "ISET{ch}:{value}"
+      ],
+      "query": "ISET{ch}?",
+      "select": [],
+      "compare": true
+    },
+    "measured_voltage": {
+      "writes": [],
+      "query": "VOUT{ch}?",
+      "select": [],
+      "compare": false
+    },
+    "measured_current": {
+      "writes": [],
+      "query": "IOUT{ch}?",
+      "select": [],
+      "compare": false
+    },
+    "all_outputs": {
+      "writes": [
+        "OUT{value}"
+      ],
+      "query": "",
+      "select": [],
+      "compare": false
+    },
+    "tracking": {
+      "writes": [
+        "TRACK{value}"
+      ],
+      "query": "",
+      "select": [],
+      "compare": false
+    },
+    "status_register": {
+      "writes": [],
+      "query": "STATUS?",
+      "select": [],
+      "compare": false
+    },
+    "remote": {
+      "writes": [
+        "REMOTE"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "local": {
+      "writes": [
+        "LOCAL"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "errors": {
+      "writes": [],
+      "query": "ERR?",
+      "select": [],
+      "compare": false
+    }
+  }
+}

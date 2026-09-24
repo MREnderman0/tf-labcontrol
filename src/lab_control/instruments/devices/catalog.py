@@ -14,6 +14,7 @@ DEVICE_MODULES = (
     "lab_control.instruments.devices.tek_afg31252",
     "lab_control.instruments.devices.siglent_sdg2082x",
     "lab_control.instruments.devices.rs_sma100b",
+    "lab_control.instruments.devices.gwinstek_gpd4303s",
 )
 
 

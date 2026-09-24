@@ -3114,6 +3114,350 @@
       ]
     },
     {
+      "adapter_id": "gwinstek.gpd4303s",
+      "model": "GW Instek GPD-4303S",
+      "category": "power_supply",
+      "control_page": "设备管理 / 电源",
+      "channels": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+      "revision": "82PD-433S0MC1, Remote Control; model rated specifications",
+      "acquisition": "power",
+      "channel_limits": {
+        "3": {
+          "voltage": 10,
+          "current": 3
+        },
+        "4": {
+          "voltage": 5,
+          "current": 1
+        }
+      },
+      "hardware_passed": false,
+      "operations": [
+        {
+          "name": "voltage",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "V",
+              "minimum": 0,
+              "maximum": 30,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+          "section": "VSET<X>",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": true,
+          "hardware_passed": false,
+          "ui_label": "电压设定",
+          "ui_location": "设备管理 / 电源 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "VSET{ch}:{value}"
+            ],
+            "query": "VSET{ch}?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "current",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "A",
+              "minimum": 0,
+              "maximum": 3,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+          "section": "ISET<X>",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "电流设定",
+          "ui_location": "设备管理 / 电源 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "ISET{ch}:{value}"
+            ],
+            "query": "ISET{ch}?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "measured_voltage",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+          "section": "VOUT{ch}?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "实测电压",
+          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "VOUT{ch}?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "measured_current",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+          "section": "IOUT{ch}?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "实测电流",
+          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "IOUT{ch}?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "all_outputs",
+          "parameters": {
+            "value": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": false,
+          "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+          "section": "OUT{value} / STATUS?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "整机输出",
+          "ui_location": "设备管理 / 电源 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "OUT{value}"
+            ],
+            "query": "STATUS?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "tracking",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "0",
+                "1",
+                "2"
+              ],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": false,
+          "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+          "section": "TRACK{value} / STATUS?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "跟踪 / 串并联",
+          "ui_location": "设备管理 / 电源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "TRACK{value}"
+            ],
+            "query": "STATUS?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "status_register",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+          "section": "STATUS?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "状态寄存器",
+          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "STATUS?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "remote",
+          "parameters": {},
+          "readable": false,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+          "section": "REMOTE",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "进入远程控制",
+          "ui_location": "设备管理 / 电源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "REMOTE"
+            ],
+            "query": "",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "local",
+          "parameters": {},
+          "readable": false,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+          "section": "LOCAL",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "返回面板控制",
+          "ui_location": "设备管理 / 电源 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "LOCAL"
+            ],
+            "query": "",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "errors",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
+          "section": "ERR?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "设备错误",
+          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "ERR?",
+            "custom_encoder": false
+          }
+        }
+      ]
+    },
+    {
       "adapter_id": "siglent.sdg6032x",
       "model": "Siglent SDG6032X",
       "category": "signal_generator",
@@ -6027,349 +6371,6 @@
             "writes": [],
             "query": "",
             "custom_encoder": true
-          }
-        }
-      ]
-    },
-    {
-      "adapter_id": "gwinstek.gpd4303s",
-      "model": "GW Instek GPD-4303S",
-      "category": "power_supply",
-      "control_page": "设备管理 / 电源",
-      "channels": [
-        1,
-        2,
-        3,
-        4
-      ],
-      "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
-      "revision": "GPD-X303S user manual, Remote Control",
-      "acquisition": "power",
-      "channel_limits": {
-        "3": {
-          "voltage": 5
-        },
-        "4": {
-          "voltage": 5,
-          "current": 1
-        }
-      },
-      "hardware_passed": false,
-      "operations": [
-        {
-          "name": "voltage",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "V",
-              "minimum": 0,
-              "maximum": 30,
-              "choices": [],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": true,
-          "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
-          "section": "VSET<X>",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": true,
-          "hardware_passed": false,
-          "ui_label": "电压设定",
-          "ui_location": "设备管理 / 电源 / 常用",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "VSET{ch}:{value}"
-            ],
-            "query": "VSET{ch}?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "current",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "A",
-              "minimum": 0,
-              "maximum": 3,
-              "choices": [],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": true,
-          "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
-          "section": "ISET<X>",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "电流设定",
-          "ui_location": "设备管理 / 电源 / 常用",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "ISET{ch}:{value}"
-            ],
-            "query": "ISET{ch}?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "measured_voltage",
-          "parameters": {},
-          "readable": true,
-          "writable": false,
-          "requires_confirmation": false,
-          "channel_scoped": true,
-          "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
-          "section": "VOUT{ch}?",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "实测电压",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
-          "wire_templates": {
-            "select": [],
-            "writes": [],
-            "query": "VOUT{ch}?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "measured_current",
-          "parameters": {},
-          "readable": true,
-          "writable": false,
-          "requires_confirmation": false,
-          "channel_scoped": true,
-          "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
-          "section": "IOUT{ch}?",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "实测电流",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
-          "wire_templates": {
-            "select": [],
-            "writes": [],
-            "query": "IOUT{ch}?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "all_outputs",
-          "parameters": {
-            "value": {
-              "kind": "boolean",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": false,
-          "writable": true,
-          "requires_confirmation": true,
-          "channel_scoped": false,
-          "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
-          "section": "OUT<Boolean>",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "整机输出",
-          "ui_location": "设备管理 / 电源 / 常用",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "OUT{value}"
-            ],
-            "query": "",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "tracking",
-          "parameters": {
-            "value": {
-              "kind": "enum",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [
-                "0",
-                "1",
-                "2"
-              ],
-              "required": true,
-              "range_source": "model"
-            }
-          },
-          "readable": false,
-          "writable": true,
-          "requires_confirmation": true,
-          "channel_scoped": false,
-          "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
-          "section": "TRACK<X>",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "跟踪 / 串并联",
-          "ui_location": "设备管理 / 电源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "TRACK{value}"
-            ],
-            "query": "",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "status_register",
-          "parameters": {},
-          "readable": true,
-          "writable": false,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
-          "section": "STATUS?",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "状态寄存器",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
-          "wire_templates": {
-            "select": [],
-            "writes": [],
-            "query": "STATUS?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "remote",
-          "parameters": {},
-          "readable": false,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
-          "section": "REMOTE",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "进入远程控制",
-          "ui_location": "设备管理 / 电源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "REMOTE"
-            ],
-            "query": "",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "local",
-          "parameters": {},
-          "readable": false,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
-          "section": "LOCAL",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "返回面板控制",
-          "ui_location": "设备管理 / 电源 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "LOCAL"
-            ],
-            "query": "",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "errors",
-          "parameters": {},
-          "readable": true,
-          "writable": false,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
-          "section": "ERR?",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "设备错误",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
-          "wire_templates": {
-            "select": [],
-            "writes": [],
-            "query": "ERR?",
-            "custom_encoder": false
           }
         }
       ]

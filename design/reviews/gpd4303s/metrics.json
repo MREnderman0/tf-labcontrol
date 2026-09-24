@@ -1,0 +1,80 @@
+[
+  {
+    "requested": [
+      1440,
+      900
+    ],
+    "actual": [
+      1436,
+      896
+    ],
+    "sidebar_visible": true,
+    "sidebar_width": 232,
+    "channel": 3,
+    "controls": [
+      "voltage",
+      "current",
+      "measured_voltage",
+      "measured_current",
+      "all_outputs",
+      "tracking",
+      "status_register",
+      "remote",
+      "local",
+      "errors"
+    ],
+    "setting_writes": []
+  },
+  {
+    "requested": [
+      1100,
+      760
+    ],
+    "actual": [
+      1280,
+      760
+    ],
+    "sidebar_visible": true,
+    "sidebar_width": 232,
+    "channel": 3,
+    "controls": [
+      "voltage",
+      "current",
+      "measured_voltage",
+      "measured_current",
+      "all_outputs",
+      "tracking",
+      "status_register",
+      "remote",
+      "local",
+      "errors"
+    ],
+    "setting_writes": []
+  },
+  {
+    "requested": [
+      1024,
+      600
+    ],
+    "actual": [
+      1280,
+      760
+    ],
+    "sidebar_visible": true,
+    "sidebar_width": 232,
+    "channel": 3,
+    "controls": [
+      "voltage",
+      "current",
+      "measured_voltage",
+      "measured_current",
+      "all_outputs",
+      "tracking",
+      "status_register",
+      "remote",
+      "local",
+      "errors"
+    ],
+    "setting_writes": []
+  }
+]

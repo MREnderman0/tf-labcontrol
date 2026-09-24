@@ -129,6 +129,25 @@ class VisaTransport:
     def query_fixed(self, payload: bytes | str, count: int) -> bytes:
         self.write(payload)
         try:
-            return self.reader.exact(count)
+            old = self.handle.read_termination
+            self.handle.read_termination = None
+            try:
+                return self.reader.exact(count)
+            finally:
+                self.handle.read_termination = old
+        except Exception as exc:
+            raise self._error(exc) from exc
+
+    def read_pending(self) -> bytes:
+        """Read already buffered ASRL bytes without waiting for another response."""
+        try:
+            count = int(self.handle.bytes_in_buffer)
+            buffered = len(self.reader.buffer)
+            old = self.handle.read_termination
+            self.handle.read_termination = None
+            try:
+                return self.reader.exact(buffered + count)
+            finally:
+                self.handle.read_termination = old
         except Exception as exc:
             raise self._error(exc) from exc

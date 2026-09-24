@@ -9,9 +9,9 @@
 | Tektronix AFG31252 | `tek.afg31252` | 37 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/afg31252.md) |
 | Siglent SDG2082X | `siglent.sdg2082x` | 10 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/sdg2082x.md) |
 | R&S SMA100B | `rs.sma100b` | 33 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/sma100b.md) |
+| GW Instek GPD-4303S | `gwinstek.gpd4303s` | 10 | power | [型号卡片](../devices/power-supplies/gpd-4303s.md) |
 | Siglent SDG6032X | `siglent.sdg6032x` | 36 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/sdg6032x.md) |
 | RIGOL DG5504 Pro | `rigol.dg5504pro` | 38 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/dg5504-pro.md) |
-| GW Instek GPD-4303S | `gwinstek.gpd4303s` | 10 | power | [型号卡片](../devices/power-supplies/gpd-4303s.md) |
 | Keithley 2231A-30-3 | `keithley.2231a` | 15 | power | [型号卡片](../devices/power-supplies/keithley-2231a.md) |
 | Siglent SPD4306X | `siglent.spd4306x` | 22 | power | [型号卡片](../devices/power-supplies/spd4306x.md) |
 | ITECH IT6322 | `itech.it6322` | 8 | power | [型号卡片](../devices/power-supplies/it6322.md) |

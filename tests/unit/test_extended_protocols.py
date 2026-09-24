@@ -67,10 +67,6 @@ def test_sdg_disabled_modulation_does_not_implicitly_enable_output():
 
 
 
-def test_gpd_binary_status_is_not_ascii_or_a_scpi_error_queue():
-    device, _ = device_for("gwinstek.gpd4303s", [("STATUS?", b"\xa7")])
-    status = device.read("status_register")
-    assert status["output_enabled"] and status["ch1_mode"] == "CV" and status["baud_bits"] == 2
 
 
 def test_tserve_mhz_conversion_and_labelled_allan_deviation():

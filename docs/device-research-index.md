@@ -10,7 +10,6 @@
 | --- | --- | --- | --- | --- |
 | 信号源 | SDG6032X | USB/LAN VXI-11/Socket | siglent.sdg6032x；待实机 | [卡片](devices/signal-sources/sdg6032x.md) |
 | 信号源 | DG5504 Pro | USB/LAN VISA/Socket | rigol.dg5504pro；待实机 | [卡片](devices/signal-sources/dg5504-pro.md) |
-| 电源 | GPD-4303S | USB 虚拟 COM / ASRL，厂家文本协议 | gwinstek.gpd4303s；待实机 | [卡片](devices/power-supplies/gpd-4303s.md) |
 | 电源 | Keithley 2231A | 2231A-001 USB 适配器/COM | keithley.2231a；仅精确匹配 2231A-30-3 | [卡片](devices/power-supplies/keithley-2231a.md) |
 | 电源 | PSW160 | 待确认厂家、完整型号与接口 | 不推定为 EA 或其他厂家；不注册真实协议 | [待补卡片](devices/power-supplies/psw160.md) |
 | 电源 | SPD4306X | USB/LAN VISA/Socket | siglent.spd4306x；待实机 | [卡片](devices/power-supplies/spd4306x.md) |
@@ -46,6 +45,7 @@
 | Tektronix AFG31252 | `tek.afg31252` | USB Device / LAN / GPIB（核对实际接口） | [卡片](devices/signal-sources/afg31252.md) |
 | Siglent SDG2082X | `siglent.sdg2082x` | USB USBTMC / LAN VXI-11，经 PyVISA 接入 | [卡片](devices/signal-sources/sdg2082x.md) |
 | R&S SMA100B | `rs.sma100b` | LAN / USB / 已安装 GPIB；优先 PyVISA | [卡片](devices/signal-sources/sma100b.md) |
+| GW Instek GPD-4303S | `gwinstek.gpd4303s` | USB 虚拟串口；优先 PyVISA ASRL，9600 baud / 8N1 / LF | [卡片](devices/power-supplies/gpd-4303s.md) |
 <!-- device-modules:end -->
 
 ## 现场盘点与状态提升
