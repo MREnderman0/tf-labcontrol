@@ -1,0 +1,570 @@
+[
+  {
+    "file": "amplitude-1440.png",
+    "platform": "offscreen",
+    "window": [
+      1440,
+      900
+    ],
+    "capture_bounds": [
+      1,
+      1,
+      1440,
+      900
+    ],
+    "device_pixel_ratio": 2.0,
+    "closed_text_rect": [
+      8,
+      4,
+      57,
+      25
+    ],
+    "selected_text_width": 37,
+    "items": [
+      "mVpp",
+      "Vpp"
+    ],
+    "row_heights": [
+      34,
+      34
+    ],
+    "viewport": [
+      81,
+      68
+    ],
+    "popup": [
+      713,
+      467,
+      109,
+      96
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "waveform-1440.png",
+    "platform": "offscreen",
+    "window": [
+      1440,
+      900
+    ],
+    "capture_bounds": [
+      1,
+      1,
+      1440,
+      900
+    ],
+    "device_pixel_ratio": 2.0,
+    "closed_text_rect": [
+      8,
+      4,
+      512,
+      25
+    ],
+    "selected_text_width": 39,
+    "items": [
+      "正弦波",
+      "方波",
+      "斜坡",
+      "脉冲",
+      "噪声",
+      "直流"
+    ],
+    "row_heights": [
+      34,
+      34,
+      34,
+      34,
+      34,
+      34
+    ],
+    "viewport": [
+      527,
+      204
+    ],
+    "popup": [
+      258,
+      329,
+      555,
+      232
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "amplitude-1100.png",
+    "platform": "offscreen",
+    "window": [
+      1100,
+      760
+    ],
+    "capture_bounds": [
+      1,
+      1,
+      1100,
+      760
+    ],
+    "device_pixel_ratio": 2.0,
+    "closed_text_rect": [
+      8,
+      4,
+      57,
+      25
+    ],
+    "selected_text_width": 37,
+    "items": [
+      "mVpp",
+      "Vpp"
+    ],
+    "row_heights": [
+      34,
+      34
+    ],
+    "viewport": [
+      81,
+      68
+    ],
+    "popup": [
+      543,
+      467,
+      109,
+      96
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "waveform-1100.png",
+    "platform": "offscreen",
+    "window": [
+      1100,
+      760
+    ],
+    "capture_bounds": [
+      1,
+      1,
+      1100,
+      760
+    ],
+    "device_pixel_ratio": 2.0,
+    "closed_text_rect": [
+      8,
+      4,
+      342,
+      25
+    ],
+    "selected_text_width": 39,
+    "items": [
+      "正弦波",
+      "方波",
+      "斜坡",
+      "脉冲",
+      "噪声",
+      "直流"
+    ],
+    "row_heights": [
+      34,
+      34,
+      34,
+      34,
+      34,
+      34
+    ],
+    "viewport": [
+      357,
+      204
+    ],
+    "popup": [
+      258,
+      329,
+      385,
+      232
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "amplitude-1024.png",
+    "platform": "offscreen",
+    "window": [
+      1022,
+      598
+    ],
+    "capture_bounds": [
+      1,
+      1,
+      1022,
+      598
+    ],
+    "device_pixel_ratio": 2.0,
+    "closed_text_rect": [
+      8,
+      4,
+      57,
+      25
+    ],
+    "selected_text_width": 37,
+    "items": [
+      "mVpp",
+      "Vpp"
+    ],
+    "row_heights": [
+      34,
+      34
+    ],
+    "viewport": [
+      81,
+      68
+    ],
+    "popup": [
+      504,
+      467,
+      109,
+      96
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "waveform-1024.png",
+    "platform": "offscreen",
+    "window": [
+      1022,
+      598
+    ],
+    "capture_bounds": [
+      1,
+      1,
+      1022,
+      598
+    ],
+    "device_pixel_ratio": 2.0,
+    "closed_text_rect": [
+      8,
+      4,
+      303,
+      25
+    ],
+    "selected_text_width": 39,
+    "items": [
+      "正弦波",
+      "方波",
+      "斜坡",
+      "脉冲",
+      "噪声",
+      "直流"
+    ],
+    "row_heights": [
+      34,
+      34,
+      34,
+      34,
+      34,
+      34
+    ],
+    "viewport": [
+      318,
+      204
+    ],
+    "popup": [
+      258,
+      329,
+      346,
+      232
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "amplitude-800.png",
+    "platform": "offscreen",
+    "window": [
+      798,
+      558
+    ],
+    "capture_bounds": [
+      1,
+      1,
+      798,
+      562
+    ],
+    "device_pixel_ratio": 2.0,
+    "closed_text_rect": [
+      8,
+      4,
+      57,
+      25
+    ],
+    "selected_text_width": 37,
+    "items": [
+      "mVpp",
+      "Vpp"
+    ],
+    "row_heights": [
+      34,
+      34
+    ],
+    "viewport": [
+      81,
+      68
+    ],
+    "popup": [
+      392,
+      467,
+      109,
+      96
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "waveform-800.png",
+    "platform": "offscreen",
+    "window": [
+      798,
+      558
+    ],
+    "capture_bounds": [
+      1,
+      1,
+      798,
+      560
+    ],
+    "device_pixel_ratio": 2.0,
+    "closed_text_rect": [
+      8,
+      4,
+      191,
+      25
+    ],
+    "selected_text_width": 39,
+    "items": [
+      "正弦波",
+      "方波",
+      "斜坡",
+      "脉冲",
+      "噪声",
+      "直流"
+    ],
+    "row_heights": [
+      34,
+      34,
+      34,
+      34,
+      34,
+      34
+    ],
+    "viewport": [
+      206,
+      204
+    ],
+    "popup": [
+      258,
+      329,
+      234,
+      232
+    ],
+    "screen": [
+      0,
+      0,
+      1600,
+      1000
+    ]
+  },
+  {
+    "file": "units-520.png",
+    "unit": "mVpp",
+    "device_pixel_ratio": 2.0,
+    "window": [
+      520,
+      500
+    ],
+    "closed_text_rect": [
+      8,
+      4,
+      57,
+      25
+    ],
+    "text_width": 37
+  },
+  {
+    "file": "units-520.png",
+    "unit": "mV/div",
+    "device_pixel_ratio": 2.0,
+    "window": [
+      520,
+      500
+    ],
+    "closed_text_rect": [
+      8,
+      4,
+      57,
+      25
+    ],
+    "text_width": 45
+  },
+  {
+    "file": "units-520.png",
+    "unit": "V/div",
+    "device_pixel_ratio": 2.0,
+    "window": [
+      520,
+      500
+    ],
+    "closed_text_rect": [
+      8,
+      4,
+      57,
+      25
+    ],
+    "text_width": 33
+  },
+  {
+    "file": "units-520.png",
+    "unit": "MHz",
+    "device_pixel_ratio": 2.0,
+    "window": [
+      520,
+      500
+    ],
+    "closed_text_rect": [
+      8,
+      4,
+      57,
+      25
+    ],
+    "text_width": 29
+  },
+  {
+    "file": "units-520.png",
+    "unit": "mV RMS/√Hz",
+    "device_pixel_ratio": 2.0,
+    "window": [
+      520,
+      500
+    ],
+    "closed_text_rect": [
+      8,
+      4,
+      89,
+      25
+    ],
+    "text_width": 85
+  },
+  {
+    "file": "units-300.png",
+    "unit": "mVpp",
+    "device_pixel_ratio": 2.0,
+    "window": [
+      300,
+      500
+    ],
+    "closed_text_rect": [
+      8,
+      4,
+      57,
+      25
+    ],
+    "text_width": 37
+  },
+  {
+    "file": "units-300.png",
+    "unit": "mV/div",
+    "device_pixel_ratio": 2.0,
+    "window": [
+      300,
+      500
+    ],
+    "closed_text_rect": [
+      8,
+      4,
+      57,
+      25
+    ],
+    "text_width": 45
+  },
+  {
+    "file": "units-300.png",
+    "unit": "V/div",
+    "device_pixel_ratio": 2.0,
+    "window": [
+      300,
+      500
+    ],
+    "closed_text_rect": [
+      8,
+      4,
+      57,
+      25
+    ],
+    "text_width": 33
+  },
+  {
+    "file": "units-300.png",
+    "unit": "MHz",
+    "device_pixel_ratio": 2.0,
+    "window": [
+      300,
+      500
+    ],
+    "closed_text_rect": [
+      8,
+      4,
+      57,
+      25
+    ],
+    "text_width": 29
+  },
+  {
+    "file": "units-300.png",
+    "unit": "mV RMS/√Hz",
+    "device_pixel_ratio": 2.0,
+    "window": [
+      300,
+      500
+    ],
+    "closed_text_rect": [
+      8,
+      4,
+      89,
+      25
+    ],
+    "text_width": 85
+  },
+  {
+    "file": "disconnected-empty.png",
+    "window": [
+      798,
+      558
+    ],
+    "device_pixel_ratio": 2.0
+  }
+]

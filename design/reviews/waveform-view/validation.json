@@ -1,0 +1,32 @@
+{
+  "pytest": {
+    "passed": 1484,
+    "skipped": 1,
+    "seconds": 193.47
+  },
+  "targeted": {
+    "passed": 16
+  },
+  "ruff": "passed",
+  "format": {
+    "passed": 304,
+    "reformatted_ast_unchanged": 68
+  },
+  "mypy": {
+    "files": 166
+  },
+  "docs": {
+    "files": 127,
+    "errors": 0
+  },
+  "wheel": {
+    "build": "passed",
+    "isolated_import": "passed",
+    "module_removals": 7
+  },
+  "desktop": {
+    "build": "passed",
+    "frozen_smoke": "passed"
+  },
+  "hardware_access": false
+}

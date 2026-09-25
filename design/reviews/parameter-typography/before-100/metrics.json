@@ -1,0 +1,276 @@
+{
+  "hardware": false,
+  "parameter_writes": 0,
+  "captures": [
+    {
+      "file": "rs.sma100b-disconnected-sweep.png",
+      "model": "rs.sma100b",
+      "state": "disconnected-sweep",
+      "platform": "windows",
+      "device_pixel_ratio": 1.0,
+      "window": [
+        1440,
+        1000
+      ],
+      "fields": [
+        {
+          "placeholder": "例如 1e3",
+          "text": "",
+          "font_px": 20,
+          "weight": 600,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "例如 1e3",
+          "text": "",
+          "font_px": 20,
+          "weight": 600,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "例如 1e3",
+          "text": "",
+          "font_px": 20,
+          "weight": 600,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "例如 1e3",
+          "text": "",
+          "font_px": 20,
+          "weight": 600,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "例如 1e3",
+          "text": "",
+          "font_px": 20,
+          "weight": 600,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "例如 1e3",
+          "text": "",
+          "font_px": 20,
+          "weight": 600,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "例如 1e3",
+          "text": "",
+          "font_px": 20,
+          "weight": 600,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        }
+      ]
+    },
+    {
+      "file": "rs.sma100b-readback-sweep.png",
+      "model": "rs.sma100b",
+      "state": "readback-sweep",
+      "platform": "windows",
+      "device_pixel_ratio": 1.0,
+      "window": [
+        1440,
+        1000
+      ],
+      "fields": [
+        {
+          "placeholder": "例如 1e3",
+          "text": "8",
+          "font_px": 20,
+          "weight": 600,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "例如 1e3",
+          "text": "8",
+          "font_px": 20,
+          "weight": 600,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "例如 1e3",
+          "text": "0.001",
+          "font_px": 20,
+          "weight": 600,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "例如 1e3",
+          "text": "0.01",
+          "font_px": 20,
+          "weight": 600,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "例如 1e3",
+          "text": "0.01",
+          "font_px": 20,
+          "weight": 600,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "例如 1e3",
+          "text": "8",
+          "font_px": 20,
+          "weight": 600,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "例如 1e3",
+          "text": "-20",
+          "font_px": 20,
+          "weight": 600,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        }
+      ]
+    },
+    {
+      "file": "rs.sma100b-editing-sweep.png",
+      "model": "rs.sma100b",
+      "state": "editing-sweep",
+      "platform": "windows",
+      "device_pixel_ratio": 1.0,
+      "window": [
+        1440,
+        1000
+      ],
+      "fields": [
+        {
+          "placeholder": "例如 1e3",
+          "text": "8",
+          "font_px": 20,
+          "weight": 600,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "例如 1e3",
+          "text": "8",
+          "font_px": 20,
+          "weight": 600,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "例如 1e3",
+          "text": "0.001",
+          "font_px": 20,
+          "weight": 600,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "例如 1e3",
+          "text": "0.01",
+          "font_px": 20,
+          "weight": 600,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "例如 1e3",
+          "text": "0.01",
+          "font_px": 20,
+          "weight": 600,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "例如 1e3",
+          "text": "2",
+          "font_px": 20,
+          "weight": 600,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "例如 1e3",
+          "text": "-20",
+          "font_px": 20,
+          "weight": 600,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        }
+      ]
+    }
+  ]
+}

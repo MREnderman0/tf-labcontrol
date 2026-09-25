@@ -151,7 +151,9 @@ def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
                         for panel in [*page.panels.values(), *page.advanced_groups]
                         for name in panel.editors
                     } | {"output"}
-                    assert names == {c.name for c in caps.operations}
+                    common = {"output", "waveform", "frequency", "amplitude", "power", "offset", "phase"}
+                    assert names == {c.name for c in caps.operations if c.name in common}
+                    assert not page.advanced_groups and page.tabs.count() == 0
                 elif category == "power_supply":
                     assert set(page.panels) == set(caps.channels)
                     assert all(set(panel.editors) == {"voltage", "current"} for panel in page.panels.values())

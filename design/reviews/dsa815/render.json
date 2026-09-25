@@ -1,0 +1,15 @@
+{
+  "runtime": "isolated Mock",
+  "sizes": [
+    [
+      1280,
+      760
+    ],
+    [
+      1440,
+      900
+    ]
+  ],
+  "physical_access": false,
+  "screenshots": 4
+}

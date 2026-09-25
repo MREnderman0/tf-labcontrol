@@ -1,0 +1,70 @@
+[
+  {
+    "image": "design\\reviews\\ui-polish\\pool-1\\pool-1440-current.png",
+    "pool": [
+      108,
+      25,
+      960,
+      640
+    ],
+    "overview": [
+      1176,
+      691
+    ],
+    "visibleRows": 3,
+    "summary": "模拟演示 · 发现 3 台 · 在线 1 台 · 异常 0 台 · 已识别 3 台 · 历史与已配置 1 台",
+    "dpr": 1.0,
+    "horizontalScroll": 0
+  },
+  {
+    "image": "design\\reviews\\ui-polish\\pool-1\\pool-1440-history.png",
+    "pool": [
+      108,
+      25,
+      960,
+      640
+    ],
+    "overview": [
+      1176,
+      691
+    ],
+    "visibleRows": 1,
+    "summary": "模拟演示 · 发现 3 台 · 在线 1 台 · 异常 0 台 · 已识别 3 台 · 历史与已配置 1 台",
+    "dpr": 1.0,
+    "horizontalScroll": 0
+  },
+  {
+    "image": "design\\reviews\\ui-polish\\pool-1\\pool-1000-current.png",
+    "pool": [
+      24,
+      24,
+      688,
+      403
+    ],
+    "overview": [
+      736,
+      451
+    ],
+    "visibleRows": 3,
+    "summary": "模拟演示 · 发现 3 台 · 在线 1 台 · 异常 0 台 · 已识别 3 台 · 历史与已配置 1 台",
+    "dpr": 1.0,
+    "horizontalScroll": 0
+  },
+  {
+    "image": "design\\reviews\\ui-polish\\pool-1\\pool-1000-history.png",
+    "pool": [
+      24,
+      24,
+      688,
+      403
+    ],
+    "overview": [
+      736,
+      451
+    ],
+    "visibleRows": 1,
+    "summary": "模拟演示 · 发现 3 台 · 在线 1 台 · 异常 0 台 · 已识别 3 台 · 历史与已配置 1 台",
+    "dpr": 1.0,
+    "horizontalScroll": 0
+  }
+]

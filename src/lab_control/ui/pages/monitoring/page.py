@@ -3,8 +3,6 @@ from __future__ import annotations
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QCheckBox,
-    QComboBox,
-    QDoubleSpinBox,
     QGridLayout,
     QHBoxLayout,
     QLabel,
@@ -23,7 +21,9 @@ from lab_control.application.controls import CATEGORY_LABELS, MEASUREMENT_CATEGO
 from lab_control.ui.controller import WorkspaceController
 from lab_control.ui.pages.device_control.form import ControlForm
 from lab_control.ui.pages.monitoring.plot import LivePlot
+from lab_control.ui.pages.monitoring.timing import MonitoringTiming
 from lab_control.ui.widgets.device_selector import DeviceSelector
+from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
 
 
 class MonitoringPage(QWidget):
@@ -38,28 +38,34 @@ class MonitoringPage(QWidget):
         layout.addWidget(title)
         self.selector = DeviceSelector(controller, category)
         layout.addWidget(self.selector)
+        self.empty = QLabel("暂无选中的已连接设备。请先在设备总览连接设备。")
+        self.empty.setObjectName("mutedText")
+        self.empty.setWordWrap(True)
+        layout.addWidget(self.empty)
         self.splitter = splitter = QSplitter(Qt.Orientation.Horizontal)
         self.main_area = main = QWidget()
         main_layout = QVBoxLayout(main)
         main_layout.setContentsMargins(0, 0, 12, 0)
         options = QHBoxLayout()
-        self.source = QComboBox()
+        self.source = WorkspaceComboBox()
         self.source.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
         self.source.currentIndexChanged.connect(self.source_changed)
         options.addWidget(self.source, 1)
         self.points = QSpinBox()
         self.points.setRange(1, 4_000_000)
         self.points.setValue(2000)
-        options.addWidget(QLabel("点数"))
+        options.addWidget(QLabel("请求点数"))
+        self.points.setToolTip(
+            "请求点数不一定限制仪器传回长度；实际点数见曲线下方。完整波形型号保留全部有效点。"
+        )
         options.addWidget(self.points)
-        self.interval = QDoubleSpinBox()
-        self.interval.setRange(0.05, 60)
-        self.interval.setValue(0.5)
-        self.interval.setSuffix(" s")
-        options.addWidget(QLabel("轮询"))
-        options.addWidget(self.interval)
         main_layout.addLayout(options)
-        numeric_ranges = QLabel("可输入范围：点数 1 ～ 4000000（整数） · 轮询 0.05 ～ 60 s · 软件采集限制")
+        self.timing = MonitoringTiming(controller, self)
+        self.interval = self.timing.interval
+        main_layout.addWidget(self.timing)
+        self.numeric_ranges = numeric_ranges = QLabel(
+            "点数 1 ～ 4000000（整数） · 自定义采集间隔 0.5 ～ 60 s · 新帧到达后尽快显示"
+        )
         numeric_ranges.setObjectName("rangeHint")
         numeric_ranges.setWordWrap(True)
         main_layout.addWidget(numeric_ranges)
@@ -79,7 +85,7 @@ class MonitoringPage(QWidget):
             ("start", "开始监测", self.start),
             ("stop", "停止监测", self.stop),
             ("record", "开始记录", self.record),
-            ("save", "保存当前数据", self.save),
+            ("save", "保存当前帧", self.save),
         ):
             button = QPushButton(label)
             button.clicked.connect(callback)
@@ -92,6 +98,9 @@ class MonitoringPage(QWidget):
         self.status = QLabel("仅查看时不保存实验数据")
         self.status.setWordWrap(True)
         footer.addWidget(self.status, 1)
+        self.fit_button = QPushButton("适应曲线")
+        self.fit_button.clicked.connect(self.plot.fit_current)
+        footer.addWidget(self.fit_button)
         pin = QPushButton("添加此项目到监测总览")
         pin.clicked.connect(self.pin)
         footer.addWidget(pin)
@@ -117,6 +126,7 @@ class MonitoringPage(QWidget):
             )
         )
         controller.refreshed.connect(self.refresh)
+        controller.frame_ready.connect(self.refresh_frame)
         self.select_device(self.selector.device_id)
 
     def resizeEvent(self, event) -> None:  # noqa: N802
@@ -126,6 +136,10 @@ class MonitoringPage(QWidget):
             self.splitter.setOrientation(orientation)
             self.splitter.setSizes([500, 260] if orientation == Qt.Orientation.Vertical else [820, 400])
         QTimer.singleShot(0, self.reflow_buttons)
+
+    def showEvent(self, event) -> None:  # noqa: N802
+        super().showEvent(event)
+        self.refresh_frame(self.selector.device_id)
 
     def reflow_buttons(self) -> None:
         columns = 3 if self.main_area.width() < 620 else 5
@@ -138,6 +152,9 @@ class MonitoringPage(QWidget):
             self.button_layout.addWidget(button, index // columns, index % columns)
 
     def select_device(self, device_id: str) -> None:
+        self.timing.bind(device_id, self.controller.mode)
+        self.splitter.setVisible(bool(device_id))
+        self.empty.setVisible(not device_id)
         self.source.blockSignals(True)
         self.source.clear()
         self.sources = (
@@ -180,8 +197,29 @@ class MonitoringPage(QWidget):
         self.plot.reset()
         source = self.selected_source()
         if source:
+            self.points.setRange(1, 4_000_000)
             self.points.setValue(source.request((1,)).points)
             self.points.setEnabled(source.kind != "status")
+            self.numeric_ranges.setText("请求点数 1 ～ 4000000（整数） · 自定义采集间隔 0.5 ～ 60 s")
+            device_id = self.selector.device_id
+            caps = self.controller.capabilities(device_id) if device_id else None
+            point_cap = (
+                next((cap for cap in caps.operations if cap.name == "sweep_points"), None) if caps else None
+            )
+            point = point_cap.parameters.get("value") if point_cap else None
+            if (
+                source.kind == "spectrum"
+                and point_cap
+                and not point_cap.writable
+                and point
+                and point.minimum is not None
+                and point.minimum == point.maximum
+            ):
+                fixed = int(point.minimum)
+                self.points.setRange(fixed, fixed)
+                self.points.setValue(fixed)
+                self.points.setEnabled(False)
+                self.numeric_ranges.setText(f"点数 {fixed}（型号固定） · 自定义采集间隔 0.5 ～ 60 s")
 
     def focus_card(self, spec: dict) -> None:
         channels = tuple(spec["channels"])
@@ -217,10 +255,11 @@ class MonitoringPage(QWidget):
             request = source.request(
                 self.channels(), self.points.value(), self.initiate.isChecked(), confirmed
             )
+            self.timing.commit()
             self.controller.runtime.monitoring.start(
                 device_id,
                 (request,),
-                interval=self.interval.value(),
+                **self.timing.options(),
                 mode=self.controller.mode,
                 once=bool(once),
             )
@@ -235,6 +274,7 @@ class MonitoringPage(QWidget):
         try:
             self.controller.ensure_applicable(device_id)
             current = self.controller.runtime.monitoring.snapshots().get(device_id, {})
+            self.timing.commit()
             self.controller.runtime.monitoring.set_recording(
                 device_id, not current.get("recording", False), mode=self.controller.mode
             )
@@ -242,19 +282,17 @@ class MonitoringPage(QWidget):
             self.controller.message.emit(str(exc))
 
     def save(self) -> None:
-        source = self.selected_source()
-        if source:
-            frame = self.controller.runtime.monitoring.latest(
-                self.selector.device_id,
-                source.kind,
-                source.quantity,
-                self.channels()[0] if self.channels() else 1,
-            )
-            if frame:
-                future = self.controller.runtime.monitoring.export(frame, self.controller.mode)
+        frame = self.plot.displayed_frame
+        if frame is not None:
+            try:
+                service = self.controller.runtime.monitoring
+                future = service.export_displayed_frame(self.selector.device_id, frame, self.controller.mode)
                 self.controller.watch(
-                    future, lambda path: self.controller.message.emit(f"已保存原始数据：{path}")
+                    future, lambda path: self.controller.message.emit(f"已保存当前帧：{path}")
                 )
+                self.refresh()
+            except Exception as exc:
+                self.controller.message.emit(str(exc))
 
     def pin(self) -> None:
         source = self.selected_source()
@@ -265,6 +303,8 @@ class MonitoringPage(QWidget):
         device_id = self.selector.device_id
         state = self.controller.states.get(device_id, {})
         task = self.controller.runtime.monitoring.snapshots().get(device_id, {})
+        self.timing.bind(device_id, self.controller.mode)
+        self.timing.refresh(task)
         record = self.controller.records.get(device_id)
         available = bool(
             record
@@ -277,25 +317,37 @@ class MonitoringPage(QWidget):
         self.buttons["stop"].setEnabled(bool(task.get("running") or task.get("pending")))
         self.buttons["record"].setEnabled(available and bool(task.get("running")))
         self.buttons["record"].setText("停止记录" if task.get("recording") else "开始记录")
-        source = self.selected_source()
-        frame = (
-            self.controller.runtime.monitoring.latest(
-                device_id, source.kind, source.quantity, self.channels()[0] if self.channels() else 1
-            )
-            if source
-            else None
+        self.buttons["save"].setEnabled(
+            self.plot.displayed_frame is not None
+            and not task.get("display_saving")
+            and not task.get("capture_saving")
         )
-        self.buttons["save"].setEnabled(bool(frame))
-        if frame and source and self.isVisible():
-            self.plot.show_frame(frame, source, self.channels())
-        text = task.get("error") or (
-            "正在记录原始数据"
-            if task.get("recording")
-            else "监测中 · 尚未开启记录"
-            if task.get("running")
-            else "已停止软件读取 · 仪器输出保持原状"
+        text = (
+            task.get("error")
+            or task.get("recording_notice")
+            or task.get("recording_state", {}).get("csv_error")
+            or task.get("notice")
+            or (
+                "正在记录原始数据"
+                if task.get("recording")
+                else "监测中 · 尚未开启记录"
+                if task.get("running")
+                else "已停止软件读取 · 仪器输出保持原状"
+            )
         )
         if text != self.status.text():
             self.status.setText(text)
         if self.isVisible() and self.category in MEASUREMENT_CATEGORIES:
             self.form.set_device(device_id, self.selector.channel.currentData() or 1)
+
+    def refresh_frame(self, device_id: str) -> None:
+        source = self.selected_source()
+        if device_id != self.selector.device_id or not self.isVisible() or not source:
+            return
+        service = self.controller.runtime.monitoring
+        frame = service.latest(
+            device_id, source.kind, source.quantity, self.channels()[0] if self.channels() else 1
+        )
+        if frame:
+            self.plot.show_frame(frame, source, self.channels())
+            service.displayed(device_id, frame)

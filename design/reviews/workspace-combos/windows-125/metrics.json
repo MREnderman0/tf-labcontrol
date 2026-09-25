@@ -1,0 +1,174 @@
+[
+  {
+    "file": "device-1100.png",
+    "platform": "windows",
+    "window": [
+      1100,
+      760
+    ],
+    "capture_bounds": [
+      0,
+      36,
+      1100,
+      760
+    ],
+    "device_pixel_ratio": 1.25,
+    "items": [
+      "信号源 A · 未绑定",
+      "信号源 B · 未绑定",
+      "AFG31252",
+      "SMA100B"
+    ],
+    "row_heights": [
+      32,
+      32,
+      32,
+      32
+    ],
+    "viewport": [
+      574,
+      128
+    ],
+    "popup": [
+      244,
+      206,
+      584,
+      138
+    ],
+    "screen": [
+      0,
+      0,
+      2048,
+      1222
+    ]
+  },
+  {
+    "file": "amplitude-1100.png",
+    "platform": "windows",
+    "window": [
+      1100,
+      760
+    ],
+    "capture_bounds": [
+      0,
+      36,
+      1100,
+      760
+    ],
+    "device_pixel_ratio": 1.25,
+    "items": [
+      "mVpp",
+      "Vpp"
+    ],
+    "row_heights": [
+      32,
+      32
+    ],
+    "viewport": [
+      80,
+      64
+    ],
+    "popup": [
+      552,
+      503,
+      90,
+      74
+    ],
+    "screen": [
+      0,
+      0,
+      2048,
+      1222
+    ]
+  },
+  {
+    "file": "waveform-1100.png",
+    "platform": "windows",
+    "window": [
+      1100,
+      760
+    ],
+    "capture_bounds": [
+      0,
+      36,
+      1100,
+      760
+    ],
+    "device_pixel_ratio": 1.25,
+    "items": [
+      "正弦波",
+      "方波",
+      "斜坡",
+      "脉冲",
+      "噪声",
+      "直流"
+    ],
+    "row_heights": [
+      32,
+      32,
+      32,
+      32,
+      32,
+      32
+    ],
+    "viewport": [
+      375,
+      192
+    ],
+    "popup": [
+      257,
+      365,
+      385,
+      202
+    ],
+    "screen": [
+      0,
+      0,
+      2048,
+      1222
+    ]
+  },
+  {
+    "file": "time-1100.png",
+    "platform": "windows",
+    "window": [
+      1100,
+      760
+    ],
+    "capture_bounds": [
+      0,
+      36,
+      1100,
+      793
+    ],
+    "device_pixel_ratio": 1.25,
+    "items": [
+      "ns",
+      "µs",
+      "ms",
+      "s"
+    ],
+    "row_heights": [
+      32,
+      32,
+      32,
+      32
+    ],
+    "viewport": [
+      80,
+      128
+    ],
+    "popup": [
+      567,
+      691,
+      90,
+      138
+    ],
+    "screen": [
+      0,
+      0,
+      2048,
+      1222
+    ]
+  }
+]

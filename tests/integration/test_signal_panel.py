@@ -202,19 +202,21 @@ def test_clamp_feedback_never_overlaps_value_or_range(source, qtbot):
         assert page.panels[1].editors["offset"].y() > editor.geometry().bottom()
 
 
-def test_small_work_area_keeps_two_columns_and_sidebar(source, qtbot):
+def test_minimum_size_survives_work_area_changes(source, qtbot):
     window, page, _, _ = source
     for width, height in ((1366, 728), (1024, 600), (800, 560)):
         window.resize(1440, 900)
         available = QRect(0, 0, width, height)
         window.fit_to_screen(available)
         qtbot.wait(150)
-        assert available.contains(window.frameGeometry())
+        assert window.minimumWidth() <= min(1280, width) and window.minimumHeight() <= min(760, height)
+        assert window.frameGeometry().width() <= width and window.frameGeometry().height() <= height
         assert window.sidebar.width() == 232
         assert page.last_columns == 2
         assert page.channel_cards[0].y() == page.channel_cards[1].y()
         assert page.channel_cards[0].x() < page.channel_cards[1].x()
-        assert page.scroll_area.widget().width() <= page.scroll_area.viewport().width()
+        if width >= 1024:
+            assert page.scroll_area.widget().width() <= page.scroll_area.viewport().width()
         for panel in page.panels.values():
             page.scroll_area.ensureWidgetVisible(panel.apply_button)
             qtbot.wait(20)

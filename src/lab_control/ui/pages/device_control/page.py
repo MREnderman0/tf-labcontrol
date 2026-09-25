@@ -33,7 +33,8 @@ class DeviceControlPage(QWidget):
 
     def select_device(self, device_id: str) -> None:
         measurement = self.category in MEASUREMENT_CATEGORIES
-        self.form.setVisible(not measurement)
+        self.form.setVisible(not measurement and bool(device_id))
+        self.go_monitor.setVisible(bool(device_id))
         self.go_monitor.setEnabled(bool(device_id))
         if not measurement:
             self.form.set_device(device_id, self.selector.channel.currentData() or 1)
@@ -46,7 +47,7 @@ class DeviceControlPage(QWidget):
                 text += " 此类别仅为演示，真实型号和协议待补。"
             self.note.setText(text)
         else:
-            self.note.setText("槽位尚未绑定。真实版不会自动添加模拟仪器或写入设备。")
+            self.note.setText("暂无选中的已连接设备。请先在设备总览连接设备。")
 
     def refresh(self) -> None:
         if self.isVisible() and hasattr(self.form, "mode"):

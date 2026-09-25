@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
-from lab_control.application.catalog import instrument_category
 from lab_control.application.controls import CATEGORY_LABELS, slot_label
-from lab_control.ui.controller import WorkspaceController, state_label
+from lab_control.ui.controller import WorkspaceController, display_connection_state, state_label
+from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
 
 
 class DeviceSelector(QWidget):
@@ -20,7 +20,7 @@ class DeviceSelector(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         row = QHBoxLayout()
-        self.combo, self.channel = QComboBox(), QComboBox()
+        self.combo, self.channel = WorkspaceComboBox(), WorkspaceComboBox()
         self.combo.setMinimumWidth(180)
         self.combo.currentIndexChanged.connect(self._selected)
         self.channel.currentIndexChanged.connect(
@@ -30,8 +30,8 @@ class DeviceSelector(QWidget):
         channel_label = QLabel("通道")
         row.addWidget(channel_label)
         row.addWidget(self.channel)
-        self.connect_button = QPushButton("连接")
-        self.connect_button.clicked.connect(self._connect)
+        self.connect_button = QPushButton("前往设备总览连接")
+        self.connect_button.clicked.connect(lambda: controller.navigate.emit("设备管理", "", ""))
         row.addWidget(self.connect_button)
         layout.addLayout(row)
         self.info = QLabel()
@@ -46,37 +46,22 @@ class DeviceSelector(QWidget):
         self.refresh()
 
     def refresh(self) -> None:
-        records = [r for r in self.controller.records.values() if instrument_category(r) == self.category]
+        records = self.controller.connected_records(self.category)
         entries = []
-        slots = {r.get("slots", {}).get(self.controller.mode) for r in records}
-        for index in (1, 2):
-            slot = f"{self.category}:{index}"
-            if slot not in slots:
-                entries.append((slot_label(slot) + " · 未绑定", ""))
         for entry in records:
             label = entry["displayName"] or entry["identity"].get("model") or entry["adapterId"]
             slot = entry.get("slots", {}).get(self.controller.mode)
-            entries.append(((slot_label(slot) + " · " if slot else "") + label, entry["id"]))
+            connection = display_connection_state(self.controller.states[entry["id"]])
+            suffix = " · " + state_label(connection) if connection != "connected" else ""
+            entries.append(((slot_label(slot) + " · " if slot else "") + label + suffix, entry["id"]))
         signature = tuple(entries)
         if signature != self.signature:
-            previous = self.device_id
-            self.combo.blockSignals(True)
-            self.combo.clear()
-            for label, device_id in entries:
-                self.combo.addItem(label, device_id)
-            target = self.combo.findData(previous) if previous else -1
-            if target < 0:
-                target = next((i for i, (_, key) in enumerate(entries) if key), 0)
-            self.combo.setCurrentIndex(target)
-            self.combo.blockSignals(False)
+            self.combo.replace_items(entries, select_first=self.signature is None)
             self.signature = signature
-            self._selected()
+        self.combo.setPlaceholderText("选择已连接设备" if entries else "暂无已连接设备")
         record = self.controller.records.get(self.device_id)
-        state = self.controller.states.get(self.device_id, {})
-        self.connect_button.setEnabled(bool(record) and not state)
-        self.connect_button.setText(
-            state_label(state.get("connectionState", "disconnected")) if state else "连接"
-        )
+        self.connect_button.setVisible(not bool(self.device_id))
+        self.channel.setEnabled(bool(self.device_id))
         if record:
             identity = record["identity"]
             self.info.setText(
@@ -85,7 +70,7 @@ class DeviceSelector(QWidget):
                 + ("待实机验收" if self.controller.runtime.hardware else "模拟设备")
             )
         else:
-            self.info.setText(f"{CATEGORY_LABELS[self.category]} A / B 已预留；先在设备总览连接并绑定设备。")
+            self.info.setText(f"请先在设备总览连接{CATEGORY_LABELS[self.category]}，再选择设备。")
 
     def _selected(self) -> None:
         device_id = self.combo.currentData() or ""
@@ -107,10 +92,8 @@ class DeviceSelector(QWidget):
             self.combo.setCurrentIndex(index)
             index = self.channel.findData(channel)
             self.channel.setCurrentIndex(max(0, index))
-
-    def _connect(self) -> None:
-        try:
-            if self.device_id:
-                self.controller.watch(self.controller.runtime.connect(self.device_id))
-        except Exception as exc:
-            self.controller.message.emit(str(exc))
+        else:
+            # A stale navigation target must never leave a different device selected.
+            self.combo.setCurrentIndex(-1)
+            self._selected()
+        self.refresh()

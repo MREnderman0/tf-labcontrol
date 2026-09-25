@@ -5,16 +5,14 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any
 
 from PySide6.QtCore import QDateTime, QObject, QRect, QSize, Qt, QTimer, Signal
-from PySide6.QtGui import QColor, QScreen
+from PySide6.QtGui import QAction, QColor, QScreen
 from PySide6.QtWidgets import (
     QCheckBox,
-    QComboBox,
     QDialog,
     QDialogButtonBox,
     QDoubleSpinBox,
     QFormLayout,
     QFrame,
-    QGridLayout,
     QHBoxLayout,
     QHeaderView,
     QInputDialog,
@@ -38,9 +36,15 @@ from lab_control.application.catalog import instrument_category, mode_applicable
 from lab_control.application.config import ConnectionConfig, config_from_record
 from lab_control.application.controls import CATEGORY_LABELS, slot_label
 from lab_control.application.runtime import ApplicationRuntime
+from lab_control.discovery.presence import is_current, presence_label
 from lab_control.domain.instruments import DeviceError, jsonable
 from lab_control.instruments.registry import PROFILES, SDK_ADAPTERS, describe
-from lab_control.ui.controller import WorkspaceController
+from lab_control.ui.controller import (
+    WorkspaceController,
+    background_read_only,
+    display_connection_state,
+    display_task,
+)
 from lab_control.ui.pages.device_control.page import DeviceControlPage
 from lab_control.ui.pages.device_control.power_supply import PowerSupplyPage
 from lab_control.ui.pages.device_control.signal_source import SignalSourcePage
@@ -48,6 +52,9 @@ from lab_control.ui.pages.monitoring.dashboard import MonitoringDashboard
 from lab_control.ui.pages.monitoring.page import MonitoringPage
 from lab_control.ui.pages.monitoring.spectrum import SpectrumMonitoringPage
 from lab_control.ui.widgets.category_cards import CategoryCard, CategoryCardGrid
+from lab_control.ui.widgets.device_pool import DeviceDetails, DevicePool, DeviceRowDelegate
+from lab_control.ui.widgets.popup_surface import WorkspaceMenu
+from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox, choose_item
 
 CATEGORIES = {
     "signal_generator": "信号源",
@@ -127,7 +134,6 @@ class RealWindow(QMainWindow):
         self.rows: dict[str, QTreeWidgetItem] = {}
         self.records: dict[str, dict[str, Any]] = {}
         self.states: dict[str, dict[str, Any]] = {}
-        self.last_details = ""
         self.closing = False
         self._shutdown_started = False
         self._manual_sidebar_collapsed = False
@@ -135,6 +141,7 @@ class RealWindow(QMainWindow):
         self._screen_connected = False
         self.setWindowTitle("TF LabControl · 分类卡片 · " + ("真实设备" if runtime.hardware else "模拟演示"))
         self.resize(1440, 900)
+        self.setMinimumSize(1280, 760)
         self._build()
         self.fit_to_screen()
         self.controller.message.connect(self._failed)
@@ -279,8 +286,8 @@ class RealWindow(QMainWindow):
         if not self.isMaximized() and not self.isFullScreen():
             self.resize(min(self.width(), width), min(self.height(), height))
             frame = self.frameGeometry()
-            x = min(max(frame.x(), available.x()), available.right() - frame.width() + 1)
-            y = min(max(frame.y(), available.y()), available.bottom() - frame.height() + 1)
+            x = max(available.x(), min(frame.x(), available.right() - frame.width() + 1))
+            y = max(available.y(), min(frame.y(), available.bottom() - frame.height() + 1))
             self.move(self.pos().x() + x - frame.x(), self.pos().y() + y - frame.y())
         self.update_sidebar()
 
@@ -330,15 +337,10 @@ class RealWindow(QMainWindow):
             self.submenu.addTab("软件设置" if module == "系统设置" else module)
             self.submenu.setTabData(0, "")
         self.submenu.blockSignals(False)
-        self.show_page()
-        page = self.stack.currentWidget()
-        if device_id and isinstance(
-            page,
-            (DeviceControlPage, MonitoringPage, SpectrumMonitoringPage, SignalSourcePage, PowerSupplyPage),
-        ):
-            page.selector.select(device_id)
+        self.show_page(device_id=device_id)
 
-    def show_page(self, *_args) -> None:
+    def show_page(self, *_args, device_id: str = "") -> None:
+        self.device_pool.hide()
         module, category = self.current_module, self.submenu.tabData(self.submenu.currentIndex()) or ""
         self.breadcrumb.setText(f"{module} / {self.submenu.tabText(self.submenu.currentIndex())}")
         if module == "设备管理" and not category:
@@ -384,6 +386,12 @@ class RealWindow(QMainWindow):
                 self.page_map[key] = page
                 self.stack.addWidget(page)
         assert page is not None
+        if device_id and isinstance(
+            page,
+            (DeviceControlPage, MonitoringPage, SpectrumMonitoringPage, SignalSourcePage, PowerSupplyPage),
+        ):
+            # Resolve a requested device before showEvent can start readback for the page.
+            page.selector.select(device_id)
         self.stack.setCurrentWidget(page)
 
     def change_mode(self, *_args) -> None:
@@ -410,7 +418,7 @@ class RealWindow(QMainWindow):
         heading.setObjectName("pageTitle")
         toolbar.addWidget(heading)
         toolbar.addStretch()
-        self.mode = QComboBox()
+        self.mode = WorkspaceComboBox()
         self.mode.addItem("电子学模式", "electronic")
         self.mode.addItem("光学模式", "optical")
         self.mode.currentIndexChanged.connect(self.change_mode)
@@ -458,26 +466,35 @@ class RealWindow(QMainWindow):
         monitor.clicked.connect(lambda: self.navigate("实时监测"))
         trend_layout.addWidget(monitor)
         layout.addWidget(trend)
-        self.device_pool = QFrame(self)
-        self.device_pool.setObjectName("categoryDrawer")
-        pool_layout = QVBoxLayout(self.device_pool)
-        pool_layout.setContentsMargins(16, 18, 16, 18)
-        pool_heading = QHBoxLayout()
-        self.pool_title = QLabel("设备详情")
-        self.pool_title.setObjectName("controlTitle")
-        pool_heading.addWidget(self.pool_title, 1)
-        close_pool = QPushButton("收起 ×")
-        close_pool.clicked.connect(self.device_pool.hide)
-        pool_heading.addWidget(close_pool)
-        pool_layout.addLayout(pool_heading)
-        filters = QHBoxLayout()
-        self.category_filter = QComboBox()
+        self.device_pool = DevicePool(root)
+        self.device_pool.cards = tuple(self.cards.values())
+        self.device_pool.categoryRequested.connect(self.open_category)
+        titles = QVBoxLayout()
+        titles.setSpacing(4)
+        self.pool_title = QLabel("设备池")
+        self.pool_title.setObjectName("poolTitle")
+        titles.addWidget(self.pool_title)
+        self.pool_count = QLabel()
+        self.pool_count.setObjectName("poolCaption")
+        titles.addWidget(self.pool_count)
+        self.device_pool.heading.addLayout(titles, 1)
+        self.pool_close = QPushButton("×")
+        self.pool_close.setObjectName("poolClose")
+        self.pool_close.setAccessibleName("关闭设备池")
+        self.pool_close.setToolTip("关闭设备池 · Esc")
+        self.pool_close.setFixedSize(32, 32)
+        self.pool_close.clicked.connect(self.device_pool.hide)
+        self.device_pool.heading.addWidget(self.pool_close, 0, Qt.AlignmentFlag.AlignTop)
+        self.presence_filter = WorkspaceComboBox()
+        for title, value in (("当前设备", "current"), ("历史与已配置", "history"), ("全部设备", "all")):
+            self.presence_filter.addItem(title, value)
+        self.presence_filter.currentIndexChanged.connect(self.select_category)
+        self.category_filter = WorkspaceComboBox()
         self.category_filter.addItem("全部类别", "")
         for category, title in CATEGORIES.items():
             self.category_filter.addItem(title, category)
         self.category_filter.currentIndexChanged.connect(self.select_category)
-        filters.addWidget(self.category_filter)
-        self.filter = QComboBox()
+        self.filter = WorkspaceComboBox()
         for title, value in (
             ("全部状态", "all"),
             ("已连接", "connected"),
@@ -490,10 +507,24 @@ class RealWindow(QMainWindow):
         ):
             self.filter.addItem(title, value)
         self.filter.currentIndexChanged.connect(self.refresh)
-        filters.addWidget(self.filter)
-        pool_layout.addLayout(filters)
+        for combo in (self.presence_filter, self.category_filter, self.filter):
+            combo.setMinimumWidth(0)
+            combo.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        self.presence_filter.setAccessibleName("设备范围")
+        self.category_filter.setAccessibleName("设备类别")
+        self.filter.setAccessibleName("设备状态")
+        self.pool_list = QFrame()
+        self.pool_list.setObjectName("poolListPanel")
+        list_layout = QVBoxLayout(self.pool_list)
+        list_layout.setContentsMargins(0, 0, 0, 0)
+        list_layout.setSpacing(8)
+        list_heading = QLabel("设备列表")
+        list_heading.setObjectName("poolGroupTitle")
+        list_layout.addWidget(list_heading)
         self.tree = QTreeWidget()
-        self.tree.setObjectName("commandDeviceTable")
+        self.tree.setObjectName("poolDeviceList")
+        self.tree.viewport().setObjectName("poolListViewport")
+        self.tree.setAccessibleName("设备列表")
         self.tree.setColumnCount(6)
         self.tree.setHeaderLabels(["设备 / 型号", "类别", "VISA / 连接地址", "状态", "功能槽位", "操作"])
         self.tree.setRootIsDecorated(False)
@@ -504,47 +535,80 @@ class RealWindow(QMainWindow):
             self.tree.header().setSectionResizeMode(column, QHeaderView.ResizeMode.Interactive)
             self.tree.setColumnWidth(column, width)
         self.tree.header().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-        # The category drawer lists devices compactly; full addresses/slots are in the detail pane.
-        for column in (1, 2, 4, 5):
+        # The delegate presents name, model and state in one selectable device card.
+        for column in (1, 2, 3, 4, 5):
             self.tree.setColumnHidden(column, True)
         self.tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        self.tree.setMinimumHeight(120)
-        self.tree.setMaximumHeight(210)
+        self.tree.setHeaderHidden(True)
+        self.tree.setItemDelegate(DeviceRowDelegate(self.tree))
+        self.tree.setMouseTracking(True)
+        self.tree.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.tree.setVerticalScrollMode(QTreeWidget.ScrollMode.ScrollPerPixel)
+        self.tree.setMinimumSize(0, 0)
         self.tree.itemSelectionChanged.connect(self.selection_changed)
-        pool_layout.addWidget(self.tree)
-        self.drawer = QFrame()
-        self.drawer.setObjectName("deviceDrawer")
-        drawer_layout = QVBoxLayout(self.drawer)
-        drawer_layout.setContentsMargins(0, 0, 0, 0)
-        self.details = QTextBrowser()
-        self.details.setOpenExternalLinks(False)
-        drawer_layout.addWidget(self.details, 1)
-        self.action_buttons: dict[str, QPushButton] = {}
-        grid = QGridLayout()
-        for index, (key, title) in enumerate(
-            (
-                ("connect", "连接"),
-                ("disconnect", "断开"),
-                ("reconnect", "重连"),
-                ("identify", "刷新身份"),
-                ("status", "读取状态"),
-                ("capabilities", "查看能力"),
-                ("stop", "停止采集任务"),
-                ("rename", "修改名称"),
-                ("slot", "功能槽位"),
-                ("resource", "选择主资源"),
-                ("diagnostic", "设备诊断"),
-                ("manage", "设备控制页"),
-                ("monitor", "实时监测页"),
-            )
+        list_layout.addWidget(self.tree, 1)
+        self.pool_list.setFocusProxy(self.tree)
+        self.pool_empty = QLabel("暂无符合条件的设备\n可切换范围查看历史记录")
+        self.pool_empty.setObjectName("poolEmpty")
+        self.pool_empty.setWordWrap(True)
+        self.pool_empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        list_layout.addWidget(self.pool_empty, 1)
+        self.details = DeviceDetails()
+        self.action_buttons: dict[str, QPushButton | QAction] = {}
+        self.pool_more = QPushButton("更多  ···")
+        self.pool_more.setObjectName("poolMore")
+        self.pool_more.setProperty("poolAction", True)
+        self.pool_more.setFixedHeight(36)
+        self.pool_menu = WorkspaceMenu(self.pool_more)
+        self.pool_menu.setMinimumWidth(196)
+        self.pool_more.setMenu(self.pool_menu)
+        for key, title in (
+            ("connect", "连接"),
+            ("disconnect", "断开"),
+            ("reconnect", "重连"),
+            ("identify", "刷新身份"),
+            ("status", "读取状态"),
+            ("capabilities", "查看能力"),
+            ("stop", "停止采集任务"),
+            ("rename", "修改名称"),
+            ("slot", "功能槽位"),
+            ("resource", "选择主资源"),
+            ("diagnostic", "设备诊断"),
+            ("manage", "设备控制"),
+            ("monitor", "实时监测"),
         ):
-            button = QPushButton(title)
-            button.clicked.connect(lambda _checked=False, key=key: self.action(key))
-            self.action_buttons[key] = button
-            grid.addWidget(button, index // 3, index % 3)
-        drawer_layout.addLayout(grid)
-        drawer_layout.addWidget(QLabel("断开软件连接不会关闭仪器物理输出。"))
-        pool_layout.addWidget(self.drawer, 1)
+            control: QPushButton | QAction
+            if key in {"connect", "disconnect", "stop", "slot", "manage", "monitor"}:
+                control = QPushButton(title)
+                control.setProperty("poolAction", True)
+                control.setFixedHeight(36)
+                control.clicked.connect(lambda _checked=False, key=key: self.action(key))
+            else:
+                control = self.pool_menu.addAction(title)
+                control.triggered.connect(lambda _checked=False, key=key: self.action(key))
+                if key in {"status", "resource"}:
+                    self.pool_menu.addSeparator()
+            self.action_buttons[key] = control
+        main_actions = []
+        for key in ("connect", "disconnect", "slot", "manage", "monitor"):
+            action_button = self.action_buttons[key]
+            assert isinstance(action_button, QPushButton)
+            main_actions.append(action_button)
+        self.action_buttons["connect"].setObjectName("primaryButton")
+        self.action_buttons["stop"].setObjectName("poolStop")
+        self.device_pool.set_actions((*main_actions, self.pool_more))
+        hint = QLabel("断开软件连接不会关闭仪器物理输出。")
+        hint.setObjectName("poolCaption")
+        hint.setWordWrap(True)
+        hint_row = QHBoxLayout()
+        hint_row.addWidget(hint, 1)
+        stop_button = self.action_buttons["stop"]
+        assert isinstance(stop_button, QPushButton)
+        hint_row.addWidget(stop_button)
+        self.device_pool.footer.addLayout(hint_row)
+        self.device_pool.set_content(
+            self.pool_list, self.details, (self.presence_filter, self.category_filter, self.filter)
+        )
         self.device_pool.hide()
         self.message = QLabel(
             ("真实设备" if self.runtime.hardware else "模拟演示") + " · 扫描不会自动连接或恢复输出"
@@ -576,21 +640,19 @@ class RealWindow(QMainWindow):
         self.category_filter.setCurrentIndex(self.category_filter.findData(category))
         self.filter.setCurrentIndex(0)
         self.select_category()
-        self.pool_title.setText(CATEGORIES[category] + " · 设备池")
-        self.show_device_pool()
+        self.show_device_pool(self.cards.get(category))
 
-    def show_device_pool(self) -> None:
-        width = min(470, self.width())
-        self.device_pool.setGeometry(self.width() - width, 0, width, self.height())
-        self.device_pool.show()
-        self.device_pool.raise_()
+    def show_device_pool(self, trigger: QWidget | None = None) -> None:
+        if self.stack.currentWidget() is not self.overview_page:
+            return
+        self.device_pool.present(trigger)
 
     def resizeEvent(self, event) -> None:  # noqa: N802
         super().resizeEvent(event)
         if hasattr(self, "nav_buttons"):
             self.update_sidebar()
         if hasattr(self, "device_pool") and not self.device_pool.isHidden():
-            self.show_device_pool()
+            self.device_pool.position_in_overview()
 
     def refresh(self) -> None:
         if self.closing:
@@ -600,8 +662,11 @@ class RealWindow(QMainWindow):
             self.clock_label.setText(QDateTime.currentDateTime().toString("HH:mm:ss"))
         self.records = {item["id"]: item for item in self.runtime.inventory.all()}
         self.states = {item["stableDeviceId"]: item for item in self.runtime.sessions.snapshots()}
+        current_records = {
+            key: record for key, record in self.records.items() if is_current(record, self.states.get(key))
+        }
         progress = self.runtime.discovery.progress
-        running = progress.get("state") == "running"
+        running = self.runtime.discovery.is_scanning
         self.scan_button.setEnabled(not running)
         self.scan_button.setText("扫描中…" if running else "扫描设备")
         self.cancel_button.setEnabled(running)
@@ -609,26 +674,31 @@ class RealWindow(QMainWindow):
         connected = sum(
             s["connectionState"] in {"connected", "busy", "degraded"} for s in self.states.values()
         )
-        identified = sum(bool(item["identity"]) for item in self.records.values())
+        identified = sum(bool(item["identity"]) for item in current_records.values())
         errors = sum(
             bool(item.get("lastError") or self.states.get(item["id"], {}).get("lastError"))
             or self.states.get(item["id"], {}).get("connectionState") in {"error", "degraded"}
-            for item in self.records.values()
+            for item in current_records.values()
         )
         self.summary.setText(
             ("真实设备" if self.runtime.hardware else "模拟演示")
-            + f" · 发现 {len(self.records)} 台 · 在线 {connected} 台 · 异常 {errors} 台 · 已识别 {identified} 台"
+            + f" · 发现 {len(current_records)} 台 · 在线 {connected} 台 · 异常 {errors} 台 · 已识别 {identified} 台"
+            + f" · 历史与已配置 {len(self.records) - len(current_records)} 台"
         )
         self.summary.setToolTip(
             f"最近扫描：{progress.get('finishedAt', '尚未扫描')}；本次结果 {len(progress.get('items', []))}"
         )
         current_filter = self.filter.currentData()
+        presence_scope = self.presence_filter.currentData()
         for removed_id in set(self.rows) - self.records.keys():
             item = self.rows.pop(removed_id)
             self.tree.takeTopLevelItem(self.tree.indexOfTopLevelItem(item))
         visible_cards = []
         for category in CATEGORIES:
-            records = [item for item in self.records.values() if category_for(item) == category]
+            records = [item for item in current_records.values() if category_for(item) == category]
+            history_count = sum(category_for(item) == category for item in self.records.values()) - len(
+                records
+            )
             live = sum(
                 self.states.get(item["id"], {}).get("connectionState") in {"connected", "busy", "degraded"}
                 for item in records
@@ -641,16 +711,20 @@ class RealWindow(QMainWindow):
                 for item in records
             )
             index = self.category_filter.findData(category)
-            self.category_filter.setItemText(index, f"{CATEGORIES[category]}  {live}/{len(records)}")
-            self.category_filter.setItemData(
-                index,
-                f"发现 {len(records)} · 识别 {known} · 连接 {live} · 异常 {abnormal} · 绑定 {bound}",
-                Qt.ItemDataRole.ToolTipRole,
+            category_text = f"{CATEGORIES[category]}  {live}/{len(records)}"
+            if self.category_filter.itemText(index) != category_text:
+                self.category_filter.setItemText(index, category_text)
+            tooltip = (
+                f"发现 {len(records)} · 识别 {known} · 连接 {live} · 异常 {abnormal} · 绑定 {bound}"
+                f" · 历史与已配置 {history_count}"
             )
+            if self.category_filter.itemData(index, Qt.ItemDataRole.ToolTipRole) != tooltip:
+                self.category_filter.setItemData(index, tooltip, Qt.ItemDataRole.ToolTipRole)
             self.cards[category].update_counts(len(records), live, abnormal, bound)
             if (
                 category in PRIMARY_CATEGORIES
                 or records
+                or history_count
                 or (category == "optical_power_meter" and self.controller.mode == "optical")
             ):
                 visible_cards.append(self.cards[category])
@@ -662,7 +736,7 @@ class RealWindow(QMainWindow):
                 self.rows[device_id] = row
             row = self.rows[device_id]
             state = self.states.get(device_id, {})
-            connection = state.get("connectionState", "disconnected")
+            connection = display_connection_state(state)
             name = record["displayName"] or record["identity"].get("model") or record["config"]["resource"]
             status_labels = {
                 "connected": "已连接",
@@ -680,20 +754,42 @@ class RealWindow(QMainWindow):
                 "error": "#ee7474",
             }
             texts = [
-                name + "\n" + (record["identity"].get("manufacturer") or "身份待确认"),
+                name
+                + "\n"
+                + " · ".join(
+                    value
+                    for value in (
+                        record["identity"].get("manufacturer") or "身份待确认",
+                        record["identity"].get("model", ""),
+                    )
+                    if value
+                ),
                 CATEGORY_LABELS.get(instrument_category(record), "未分类"),
                 record["config"]["resource"],
-                "● " + status_labels.get(connection, connection),
+                "● "
+                + (
+                    "探测失败"
+                    if connection == "disconnected" and record.get("presenceState") == "unreachable"
+                    else status_labels.get(connection, connection)
+                    if connection != "disconnected" or device_id in current_records
+                    else presence_label(record, state)
+                ),
                 slot_label(record.get("slots", {}).get(self.mode.currentData(), "")),
             ]
             for index, text in enumerate(texts):
                 if row.text(index) != text:
                     row.setText(index, text)
                     row.setToolTip(index, text)
-            row.setForeground(3, QColor(colors.get(connection, "#8da19e")))
-            row.setToolTip(3, texts[3] + (" / " + state["activeTask"] if state.get("activeTask") else ""))
+            fallback_color = "#ee7474" if record.get("presenceState") == "unreachable" else "#8da19e"
+            row.setForeground(3, QColor(colors.get(connection, fallback_color)))
+            task = display_task(state)
+            row.setToolTip(3, texts[3] + (" / " + task if task else ""))
             row.setToolTip(0, texts[0] + "\n" + record["identity"].get("serial", ""))
             show = not self.active_category or category_for(record) == self.active_category
+            if presence_scope == "current":
+                show &= device_id in current_records
+            elif presence_scope == "history":
+                show &= device_id not in current_records
             if current_filter == "connected":
                 show &= connection in {"connected", "busy", "degraded"}
             elif current_filter in {"disconnected", "busy"}:
@@ -707,13 +803,20 @@ class RealWindow(QMainWindow):
             elif current_filter == "identified":
                 show &= bool(record["identity"])
             row.setHidden(not show)
+        visible_count = sum(not row.isHidden() for row in self.rows.values())
+        self.pool_title.setText(CATEGORIES.get(self.active_category, "全部类别") + " · 设备池")
+        self.pool_count.setText(f"{self.presence_filter.currentText()} · {visible_count} 台符合筛选")
+        self.tree.setVisible(bool(visible_count))
+        self.pool_empty.setVisible(not visible_count)
+        if self.selected_id and (self.selected_id not in self.rows or self.rows[self.selected_id].isHidden()):
+            self.tree.clearSelection()
+            self.selected_id = ""
         self.refresh_details()
 
     def selection_changed(self) -> None:
         selected = self.tree.selectedItems()
         if selected:
             self.selected_id = selected[0].data(0, Qt.ItemDataRole.UserRole)
-            self.show_device_pool()
         self.refresh_details()
 
     def open_details(self, device_id: str) -> None:
@@ -726,20 +829,29 @@ class RealWindow(QMainWindow):
         record = self.records.get(self.selected_id)
         state = self.states.get(self.selected_id, {})
         busy = bool(state.get("pending")) or state.get("connectionState") in {"busy", "connecting"}
+        scanning = self.runtime.discovery.is_scanning
         for key, button in self.action_buttons.items():
             if key == "manage":
-                button.setText(
-                    "频谱监测"
-                    if record and instrument_category(record) == "spectrum_analyzer"
-                    else "设备控制"
-                )
+                button.setText("设备控制")
+                button.setVisible(not bool(record and instrument_category(record) == "spectrum_analyzer"))
             enabled = bool(record)
             if key == "connect":
                 enabled &= not bool(state) and bool(
                     record and record["adapterId"] and record["discoveryState"] != "conflict"
                 )
             elif key in {"disconnect", "reconnect"}:
-                enabled &= bool(state) and not busy
+                # Teardown queues behind a single background read. The session
+                # manager reserves closing atomically and still rejects controls.
+                drainable = (
+                    state.get("backgroundRead")
+                    and state.get("pending") == 1
+                    and state.get("connectionState") != "connecting"
+                    and not any(
+                        state.get(flag)
+                        for flag in ("controlPending", "controlGroup", "monitoring", "recording")
+                    )
+                )
+                enabled &= bool(state) and (not busy or bool(drainable))
             elif key in {"identify", "status"}:
                 enabled &= state.get("connectionState") == "connected" and not busy
             elif key == "capabilities":
@@ -755,46 +867,104 @@ class RealWindow(QMainWindow):
                     state.get("monitoring") or state.get("activeTask") == "continuous_acquisition"
                 )
             elif key in {"manage", "monitor"}:
-                enabled &= bool(record and instrument_category(record) in CATEGORY_LABELS)
+                enabled &= bool(
+                    record
+                    and instrument_category(record) in CATEGORY_LABELS
+                    and state.get("connectionState") in {"connected", "busy", "degraded"}
+                )
+            if key in {"connect", "reconnect", "resource"}:
+                enabled &= not scanning
             button.setEnabled(enabled)
-            button.setToolTip("设备忙碌，请先停止任务" if busy else "")
+            button.setToolTip(
+                "正在扫描并核验设备，完成后可连接"
+                if scanning and key in {"connect", "reconnect", "resource"}
+                else "请先连接设备"
+                if key in {"manage", "monitor"} and not enabled
+                else "设备忙碌，请先停止任务"
+                if busy and not background_read_only(state)
+                else ""
+            )
+        self.action_buttons["connect"].setVisible(not bool(state))
+        self.action_buttons["disconnect"].setVisible(bool(state))
+        self.action_buttons["stop"].setVisible(self.action_buttons["stop"].isEnabled())
+        self.device_pool.reflow_actions()
+        self.pool_more.setEnabled(bool(record))
         if record:
             identity, config = record["identity"], record["config"]
-            lines = [
+            connection = display_connection_state(state)
+            if record["discoveryState"] == "conflict":
+                identity_state = "身份冲突"
+            elif identity:
+                identity_state = "已识别" if is_current(record, state) else "历史身份已保留"
+            else:
+                identity_state = "尚未识别"
+            seen = QDateTime.fromString(record.get("lastSeenAt") or "", Qt.DateFormat.ISODateWithMs)
+            probe = record.get("probeReason") or ""
+            driver = record.get("driverStatus") or ""
+            if driver == "error" and record.get("probeErrorCode") != "driver_missing":
+                # Historical records used "error" for every probe failure.
+                driver = "unconfirmed"
+            fields = {
+                **{
+                    key: identity.get(key) or "未提供"
+                    for key in ("manufacturer", "model", "serial", "firmware")
+                },
+                "confidence": "模拟身份"
+                if identity.get("confidence") == "simulated"
+                else identity.get("confidence") or "仅资源描述",
+                "acceptance": "待实机验证",
+                "connection": {
+                    "connected": "已连接",
+                    "disconnected": "未连接",
+                    "busy": "忙碌 / 采集中",
+                    "connecting": "连接中",
+                    "degraded": "连接异常",
+                    "error": "连接错误",
+                }.get(connection, connection),
+                "task": display_task(state) or "空闲",
+                "driver": {
+                    "enumerated": "已枚举",
+                    "error": "运行库不可用",
+                    "unconfirmed": "待核对（探测失败）",
+                }.get(driver, driver or "待检查"),
+                "adapter": record["adapterId"] or "待补协议",
+                "resource": f"{config['transport'].upper()}  ·  {config['resource']}",
+                "aliases": "\n".join(r for r in record["resources"] if r != config["resource"]) or "无",
+                "mode": self.mode.currentText(),
+                "slot": slot_label(record.get("slots", {}).get(self.mode.currentData(), "")),
+                "presence": presence_label(record, state),
+                "identity_state": identity_state,
+                "seen": seen.toLocalTime().toString("yyyy-MM-dd HH:mm:ss")
+                if seen.isValid()
+                else record.get("lastSeenAt") or "尚无发现记录",
+                "probe": {
+                    "identified": "身份探测成功",
+                    "probe_failed": "身份探测失败",
+                    "pending_probe": "等待探测",
+                    "metadata_only": "仅有资源描述",
+                    "cached_active_session": "复用活动会话",
+                    "cached_session_unconfirmed": "会话尚未确认",
+                    "deferred_possible_alias_of_active_device": "可能为活动设备别名，延后探测",
+                    "sdk_identity_requires_explicit_connection": "需手动连接后确认身份",
+                    "not_seen": "本次未发现",
+                    "scan_cancelled": "扫描已取消",
+                    "enumeration_unconfirmed": "枚举尚未确认",
+                    "address_reassigned": "地址已分配给其他设备",
+                }.get(probe, probe or "尚未确认"),
+                "error": str(state.get("lastError") or record.get("lastError") or "无"),
+                "readback": json.dumps(state["lastStatus"], ensure_ascii=False, indent=2)
+                if state.get("lastStatus")
+                else "暂无状态读回",
+            }
+            self.details.set_fields(
                 record["displayName"] or identity.get("model") or "待识别设备",
-                "",
-                f"厂家：{identity.get('manufacturer') or '未识别'}",
-                f"型号：{identity.get('model') or '待确认'}",
-                f"序列号：{identity.get('serial') or '未提供'}",
-                f"固件：{identity.get('firmware') or '未提供'}",
-                f"身份可信度：{identity.get('confidence') or '仅资源描述'}",
-                "",
-                f"发现状态：{record['discoveryState']}",
-                f"连接状态：{state.get('connectionState', 'disconnected')}",
-                f"当前任务：{state.get('activeTask') or '空闲'}",
-                f"驱动状态：{record.get('driverStatus', '待检查')}",
-                f"适配器：{record['adapterId'] or '待补协议'}",
-                "验收状态：待实机验证",
-                "",
-                f"主资源（{config['transport']}）：{config['resource']}",
-                "备用资源：" + ("、".join(r for r in record["resources"] if r != config["resource"]) or "无"),
-                f"当前槽位：{slot_label(record.get('slots', {}).get(self.mode.currentData(), ''))}",
-                f"最近发现：{record.get('lastSeenAt', '')}",
-                f"身份探测：{record.get('probeReason', '')}",
-                "",
-                "最近状态读回：",
-                json.dumps(state.get("lastStatus", {}), ensure_ascii=False, indent=2),
-                "",
-                "最近错误：" + (state.get("lastError") or record.get("lastError") or "无"),
-            ]
-            text = "\n".join(lines)
+                f"{presence_label(record, state)}  ·  {identity.get('manufacturer') or '身份待确认'}",
+                fields,
+            )
         else:
-            text = "选择类别和设备查看资源、身份、适配器、驱动及会话诊断。"
-        if text != self.last_details:
-            scroll = self.details.verticalScrollBar().value()
-            self.details.setPlainText(text)
-            self.details.verticalScrollBar().setValue(scroll)
-            self.last_details = text
+            self.details.set_fields(
+                "选择一台设备", "从列表选择设备；未接入的设备可在“历史与已配置”中查看。", {}
+            )
 
     def action(self, key: str) -> None:
         device_id = self.selected_id
@@ -829,12 +999,11 @@ class RealWindow(QMainWindow):
                     {"device": self.records[device_id], "session": self.states.get(device_id, {})},
                 )
             elif key == "resource":
-                value, accepted = QInputDialog.getItem(
+                value, accepted = choose_item(
                     self,
                     "主连接资源",
                     "选择已发现的资源",
                     self.records[device_id]["resources"],
-                    editable=False,
                 )
                 if accepted:
                     self.runtime.select_resource(device_id, value)
@@ -849,12 +1018,11 @@ class RealWindow(QMainWindow):
                     instrument_category(self.records[device_id]) + ":2",
                 ]
                 labels = ["解除绑定", *(slot_label(slot) for slot in slots[1:])]
-                value, accepted = QInputDialog.getItem(
+                value, accepted = choose_item(
                     self,
                     "功能槽位",
                     "按能力选择槽位（空项解除绑定）",
                     labels,
-                    editable=False,
                 )
                 if accepted:
                     self.runtime.bind_slot(device_id, slots[labels.index(value)], self.mode.currentData())
@@ -902,7 +1070,7 @@ class RealWindow(QMainWindow):
         timeout.setRange(0.1, 60)
         timeout.setValue(3)
         confirmed = QCheckBox("已核对 53100A 身份及 TSERVE 服务独占权")
-        adapter, transport = QComboBox(), QComboBox()
+        adapter, transport = WorkspaceComboBox(), WorkspaceComboBox()
         adapter.addItems(["", *PROFILES, *SDK_ADAPTERS])
         transport.addItems(["visa", "serial", "tcp", "vicp", "tlpmx", "pm100d", "pico", "tserve"])
         resource.setPlaceholderText("优先 PyVISA：TCPIP0::地址::inst0::INSTR / USB… / GPIB… / ASRL…")
@@ -954,6 +1122,7 @@ class RealWindow(QMainWindow):
         central = self.centralWidget()
         if central:
             central.setEnabled(False)
+
         future = self.bridge.worker.submit(self.runtime.close)
 
         def finish(label: str, result: Any):

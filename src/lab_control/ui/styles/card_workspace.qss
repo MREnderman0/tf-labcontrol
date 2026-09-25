@@ -46,8 +46,27 @@ QLabel#metricValue { color: #dce1df; font-size: 12px; font-weight: 700; }
 QFrame#overviewTrend { background: #15191b; border: 1px solid #303739; border-radius: 3px; }
 QLabel#commandStatusBar { color: #7f8a8e; background: #0f1214; font-size: 11px; padding: 7px 30px; border-top: 1px solid #252b2d; }
 
-QFrame#categoryDrawer { background: #141719; border-left: 1px solid #545e61; }
-QFrame#deviceDrawer { background: #141719; border: 0; }
+QFrame#devicePoolOverlay { background: transparent; }
+QFrame#devicePoolDialog { background: #14191b; border: 1px solid #4c4940; border-radius: 14px; }
+QWidget#devicePoolViewport, QWidget#devicePoolWide, QStackedWidget#devicePoolPages, QWidget#poolListViewport { background: #14191b; }
+QWidget#poolInfoCell { background: transparent; }
+QScrollArea#devicePoolScroll, QWidget#devicePoolBody, QFrame#devicePoolDetails { background: #14191b; border: 0; }
+QFrame#poolListPanel { background: transparent; border: 0; }
+QFrame#poolInfoCard { background: #1b2022; border: 1px solid #31383a; border-radius: 8px; }
+QLabel#poolTitle { color: #f3ecdf; font-size: 19px; font-weight: 600; }
+QLabel#poolDeviceName { color: #ece9df; font-size: 17px; font-weight: 600; }
+QLabel#poolGroupTitle { color: #deb47b; font-size: 12px; font-weight: 600; }
+QLabel#poolCaption { color: #939ea2; font-size: 11px; }
+QLabel#poolField { color: #dde2df; font-size: 12px; }
+QLabel#poolEmpty { color: #939ea2; background: #191e20; border: 1px dashed #394144; border-radius: 8px; padding: 14px; }
+QPushButton#poolClose { color: #a9b2b3; background: transparent; border: 1px solid #394144; border-radius: 8px; padding: 0; font-size: 20px; }
+QPushButton#poolClose:hover { color: #f3ecdf; background: #303638; border-color: #9b7850; }
+QPushButton#poolStop { color: #efbd84; border-color: #826242; }
+QPushButton[poolAction="true"] { color: #dfe3e1; background: #1a2022; border: 1px solid #485452; border-radius: 6px; font-size: 13px; padding: 0 12px; min-height: 34px; max-height: 34px; }
+QPushButton[poolAction="true"]:hover, QPushButton[poolAction="true"]:focus { color: #efbd84; background: #30291f; border-color: #b8864e; }
+QPushButton[poolAction="true"]:disabled { color: #788286; background: #15191b; border-color: #303739; }
+QPushButton#poolMore::menu-indicator { image: none; width: 0; }
+QTreeWidget#poolDeviceList { background: transparent; border: 0; padding: 0; outline: 0; }
 QTreeWidget, QTextBrowser { background: #15191b; alternate-background-color: #1b2022; border: 1px solid #343b3e; border-radius: 3px; selection-background-color: #57452f; selection-color: #fff4e2; padding: 6px; }
 QTreeWidget::item { min-height: 28px; padding: 3px 6px; border-bottom: 1px solid #303739; }
 QTreeWidget::item:selected { background: #57452f; color: #fff4e2; }
@@ -57,11 +76,14 @@ QTextBrowser { padding: 12px; }
 QTableView { background: #15191b; gridline-color: #343b3e; alternate-background-color: #1b2022; }
 
 QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox { background: #171c1e; border: 1px solid #485054; border-radius: 3px; padding: 6px 10px; min-height: 23px; selection-background-color: #685035; }
-QComboBox { padding-right: 24px; }
-QComboBox::drop-down { border-left: 1px solid #485054; width: 20px; }
-QComboBox QAbstractItemView { background: #1d2325; selection-background-color: #675138; selection-color: #fff4e2; border: 1px solid #545e61; }
-QComboBox[parameterCombo="true"] { combobox-popup: 0; }
-QComboBox[parameterCombo="true"] QAbstractItemView::item { min-height: 28px; max-height: 28px; padding: 0 8px; }
+QComboBox { padding-right: 6px; border-radius: 6px; }
+QComboBox:hover { background: #22282a; border-color: #788286; }
+QComboBox:disabled { color: #788286; background: #15191b; border-color: #303739; }
+QComboBox::drop-down { border: 0; width: 28px; }
+QComboBox::down-arrow { image: none; width: 0; height: 0; }
+QFrame#workspaceChoicePopup { background: transparent; border: 0; }
+QListView#workspaceChoices { background: #1d2325; border: 0; padding: 0; outline: 0; }
+QWidget#workspaceChoicesViewport { background: #1d2325; font-size: 13px; }
 QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus { border-color: #d99342; }
 QCheckBox { spacing: 8px; padding: 5px 0; }
 QCheckBox::indicator { width: 15px; height: 15px; background: #171c1e; border: 1px solid #61736a; }
@@ -87,22 +109,57 @@ QTabBar::tab:selected { color: #e3a252; border-bottom-color: #e3a252; }
 QLabel#rangeHint { color: #b3c1b9; font-size: 12px; }
 QLabel#inputFeedback { color: #e3a252; font-size: 12px; }
 QDialog, QMessageBox, QInputDialog, QFileDialog { background: #101315; }
-QMenu { background: #1a1e20; border: 1px solid #485054; }
-QMenu::item:selected { background: #57452f; }
+QMenu { background: #1d2325; border: 1px solid #505957; border-radius: 8px; padding: 6px; font-size: 13px; }
+QMenu#workspaceActionMenu { background: transparent; border: 0; margin: 8px; }
+QMenu::item { height: 18px; padding: 8px 12px; border-radius: 5px; color: #e7e9e8; }
+QMenu::item:selected { background: #303638; color: #efbd84; }
+QMenu::item:disabled { color: #788286; }
+QMenu::separator { height: 1px; background: #394244; margin: 5px 8px; }
 
 /* Signal source: compact instrument panels, using the approved amber palette. */
 QFrame#channelPanel { background: #15191b; border: 1px solid #343b3e; border-radius: 5px; }
 QLabel#channelTitle { color: #e3a252; background: #1d2123; padding: 9px 12px; font-size: 14px; font-weight: 600; }
 QFrame#sourceGroup, QFrame#compactOperation { background: transparent; border: 0; }
 QWidget#parameterEditor { background: transparent; }
+QWidget#parameterEditor QLineEdit { placeholder-text-color: #879296; }
 QFrame#compactOperation QLabel#controlTitle { font-size: 12px; color: #b5bfbd; }
 QFrame#compactOperation QLabel#readback { font-size: 11px; color: #91a29c; }
 QFrame#compactOperation QLabel#rangeHint { font-size: 11px; }
 QFrame#compactOperation QLabel#operationStatus { font-size: 11px; color: #e3a252; }
-QFrame#compactOperation QLineEdit#sourceValue { font-size: 20px; font-weight: 600; padding: 3px 9px; min-height: 25px; }
-QFrame#compactOperation QComboBox { padding: 3px 7px; padding-right: 23px; min-height: 25px; }
+QFrame#compactOperation QLineEdit#sourceValue { font-size: 16px; font-weight: 400; padding: 3px 9px; min-height: 25px; }
+QFrame#compactOperation QLineEdit#sourceValue[emptyInput="true"] { font-size: 13px; }
+QFrame#compactOperation QComboBox { padding: 3px 7px; padding-right: 6px; min-height: 25px; }
 QLabel#outputState { font-size: 14px; font-weight: 600; color: #e3a252; padding: 3px 5px; }
 QFrame#sourceGroup QPushButton#primaryButton:disabled { background: #15191b; color: #788286; border-color: #303739; font-weight: 400; }
+
+/* Electronics: restrained two-column controls and device-wide settings. */
+QFrame#channelPanel[simplified="true"] { border-color: #333c3e; border-radius: 10px; }
+QFrame#sourceChannelHeader { background: transparent; border: 0; border-bottom: 1px solid #30383a; }
+QFrame#sourceChannelHeader QLabel#channelTitle { background: transparent; padding: 0; font-size: 17px; }
+QFrame#sourceChannelHeader QWidget { background: transparent; }
+QFrame#sourceChannelHeader QLabel#outputState { color: #9ca9a9; font-size: 12px; font-weight: 400; padding: 0; }
+QFrame#sourceChannelHeader QLabel#outputState[outputActive="true"] { color: #e3a252; }
+QPushButton#sourceOutputButton { border-color: #4d585a; border-radius: 6px; padding: 3px 10px; font-size: 12px; }
+QFrame#sourceGroup[simplified="true"] QLineEdit#sourceValue { font-size: 20px; padding: 7px 10px; min-height: 26px; border-radius: 6px; border-color: #414c4e; }
+QFrame#sourceGroup[simplified="true"] QLineEdit#sourceValue:focus { border-color: #d99342; }
+QFrame#sourceGroup[simplified="true"] QLineEdit#sourceValue[emptyInput="true"] { font-size: 13px; }
+QFrame#sourceGroup[simplified="true"] QComboBox { padding: 7px 9px; min-height: 26px; border-color: #414c4e; }
+QFrame#sourceGroup[simplified="true"] QComboBox:focus { border-color: #d99342; }
+QFrame#sourceGroup[simplified="true"] QLabel#rangeHint { color: #899b9a; font-size: 11px; }
+QFrame#sourceGroup[simplified="true"] QLabel#controlTitle { color: #b7c1bf; font-size: 12px; }
+QFrame#sourceGroup[simplified="true"] QPushButton#primaryButton { border-radius: 6px; }
+QPushButton#sourceSettingsButton { border-radius: 6px; padding: 5px 14px; }
+QLabel#sourceConnectionState { color: #9dabad; font-size: 12px; padding: 0 6px; }
+QDialog#sourceSettingsDialog { background: #151b1d; border: 1px solid #535b58; border-radius: 12px; }
+QLabel#sourceSettingsTitle { font-size: 20px; font-weight: 600; }
+QPushButton#sourceSettingsClose { background: transparent; border: 0; padding: 0; min-height: 0; font-size: 22px; color: #9dabad; }
+QPushButton#sourceSettingsClose:hover { background: #30383a; color: #f3ecdf; }
+QFrame#sourceSettingsSection { background: #1b2224; border: 1px solid #364143; border-radius: 8px; }
+QPushButton#referenceChoice { border-radius: 6px; background: #171d1f; border-color: #455153; }
+QPushButton#referenceChoice:checked { background: #342b20; border-color: #b7854e; color: #efbd84; }
+QPushButton#referenceChoice:disabled { color: #788286; border-color: #303739; }
+QPushButton#referenceChoice:focus, QPushButton#sourceSettingsButton:focus, QPushButton#sourceOutputButton:focus,
+QDialog#sourceSettingsDialog QPushButton:focus { border: 1px solid #e3a252; }
 
 /* Power supplies: two columns of compact, all-channel cards. */
 QFrame#powerChannel { background: #151b1d; border: 1px solid #3b4243; border-top: 2px solid #986b38; border-radius: 8px; }
@@ -119,6 +176,14 @@ QFrame#powerChannel QPushButton#primaryButton:disabled { background: #1a2022; co
 QLabel#powerOutputState { color: #b2bdba; font-size: 12px; }
 QPushButton#powerOutputButton { border-color: #a87946; color: #efbd84; border-radius: 5px; padding: 0 8px; min-height: 0; }
 QPushButton#powerOutputButton:disabled { color: #788286; border-color: #354042; }
+QLabel#poolConnectionError {
+    color: #ee9292;
+    background-color: #302022;
+    border: 1px solid #61373b;
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+
 /* Spectrum: keep plot and compact controls side by side at 100% logical size. */
 QFrame#spectrumChart { background: #111719; border: 1px solid #353f40; border-radius: 8px; }
 QFrame#spectrumChart QLabel { border: 0; background: transparent; }

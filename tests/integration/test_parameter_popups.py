@@ -1,7 +1,7 @@
 import pytest
 from PySide6.QtCore import QEvent, QObject, QPoint, QRect, Qt
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QComboBox, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from lab_control.app import load_stylesheet, load_ui_font
 from lab_control.application.config import ConnectionConfig
@@ -10,6 +10,7 @@ from lab_control.instruments.registry import PROFILES
 from lab_control.ui.pages.device_control.editors import UNIT_CHOICES
 from lab_control.ui.real_window import RealWindow
 from lab_control.ui.widgets.parameter_combo import ParameterComboBox
+from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
 
 
 @pytest.fixture
@@ -46,7 +47,7 @@ def test_every_popup_row_is_complete_and_selectable(styled, qtbot, items, at_bot
         assert screen.contains(view.window().geometry())
         for row in range(combo.count()):
             rect = view.visualRect(combo.model().index(row, 0))
-            assert rect.height() == 28
+            assert rect.height() == 34
             assert view.viewport().rect().contains(rect)
             assert rect.width() >= view.fontMetrics().horizontalAdvance(combo.itemText(row)) + 16
         if at_bottom:
@@ -73,7 +74,7 @@ def test_long_menu_scrolls_and_fits_screen(styled, qtbot):
     qtbot.wait(10)
     view = combo.view()
     assert screen.contains(view.window().geometry())
-    assert view.viewport().height() == 10 * 28
+    assert view.viewport().height() == 8 * 34
     assert view.verticalScrollBar().maximum() > 0
     last = combo.model().index(19, 0)
     view.scrollTo(last)
@@ -119,8 +120,12 @@ def cold_source(styled, qtbot, tmp_path, monkeypatch):
         window.bridge.worker.shutdown()
 
 
-def test_first_source_device_and_tab_switches_never_show_independent_widgets(cold_source, styled, qtbot):
+@pytest.mark.parametrize("mode", ["electronic", "optical"])
+def test_first_source_device_and_tab_switches_never_show_independent_widgets(
+    cold_source, styled, qtbot, mode
+):
     window, _, ids, writes = cold_source
+    window.controller.set_mode(mode)
     shows = WindowShows()
     styled.installEventFilter(shows)
     try:
@@ -155,10 +160,13 @@ def test_unit_selection_keeps_draft_semantics_without_writes(cold_source, qtbot,
     qtbot.wait(20)
     assert field.input.text() == "500"  # Do not clamp in Vpp before choosing mVpp.
     view = field.unit.view()
-    assert view.viewport().height() == 56
+    assert view.isVisible()
+    assert view.viewport().height() == 68
     target = field.unit.model().index(0, 0)
     qtbot.mouseMove(view.viewport(), view.visualRect(target).center())
-    qtbot.wait(600)  # Let Qt's opening-click/double-click guard expire.
+    qtbot.wait(30)  # Selection no longer relies on the native menu's opening-click timer.
+    assert view.isVisible()
+    assert field.input.text() == "500"
     qtbot.mouseClick(view.viewport(), Qt.MouseButton.LeftButton, pos=view.visualRect(target).center())
     qtbot.wait(30)
     assert field.unit.currentIndex() == 0, (field.input.text(), view.visualRect(target), view.isVisible())
@@ -167,4 +175,48 @@ def test_unit_selection_keeps_draft_semantics_without_writes(cold_source, qtbot,
     assert runtime.repository.load_workspace(editor.key)["fields"]["value"]["factor"] == 1e-3
     assert page.last_columns == 2
     assert window.sidebar.width() == 232
+    assert writes == []
+
+
+def test_real_ui_choices_survive_polling_and_inventory_rename(cold_source, qtbot):
+    window, runtime, ids, writes = cold_source
+    window.navigate("设备管理", "signal_generator", ids[0])
+    qtbot.waitUntil(lambda: not window.controller.jobs)
+    page = window.stack.currentWidget()
+    assert all(isinstance(combo, WorkspaceComboBox) for combo in window.findChildren(QComboBox))
+    combo = page.selector.combo
+    combo.showPopup()
+    qtbot.wait(20)
+    rect = combo.view().window().geometry()
+    scroll = page.scroll_area.verticalScrollBar().value()
+    runtime.inventory.edit(ids[0], display_name="Renamed mock generator")
+    for _ in range(5):
+        window.controller.poll()
+        qtbot.wait(30)
+        assert combo.view().isVisible()
+        assert combo.view().window().geometry() == rect
+        assert page.scroll_area.verticalScrollBar().value() == scroll
+        assert "Renamed" not in combo.currentText()
+        assert page.device_id == ids[0]
+    qtbot.keyClick(combo.view(), Qt.Key.Key_Escape)
+    assert "Renamed" in combo.currentText()
+    assert page.device_id == ids[0]
+    assert writes == []
+
+
+def test_inventory_removal_cancels_popup_without_switching_device(cold_source, qtbot):
+    window, _, ids, writes = cold_source
+    window.navigate("设备管理", "signal_generator", ids[0])
+    qtbot.waitUntil(lambda: not window.controller.jobs)
+    window.controller.timer.stop()
+    window.timer.stop()
+    page = window.stack.currentWidget()
+    combo = page.selector.combo
+    combo.showPopup()
+    del window.controller.records[ids[0]]
+    window.controller.refreshed.emit()
+    assert not combo.view().isVisible()
+    assert combo.currentIndex() == -1
+    assert page.device_id == ""
+    assert page.selector.device_id == ""
     assert writes == []

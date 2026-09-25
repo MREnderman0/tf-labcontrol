@@ -1,0 +1,867 @@
+{
+  "hardware": false,
+  "parameter_writes": 0,
+  "captures": [
+    {
+      "file": "rs.sma100b-disconnected.png",
+      "model": "rs.sma100b",
+      "state": "disconnected",
+      "tab": "扫频",
+      "advanced_numeric_fields": 5,
+      "platform": "windows",
+      "device_pixel_ratio": 1.0,
+      "window": [
+        1440,
+        1000
+      ],
+      "fields": [
+        {
+          "placeholder": "请输入扫频起始频率",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入扫频终止频率",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入扫描驻留时间",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入线性扫频步进",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入对数扫频步进",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入频率",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入功率",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        }
+      ]
+    },
+    {
+      "file": "rs.sma100b-readback.png",
+      "model": "rs.sma100b",
+      "state": "readback",
+      "tab": "扫频",
+      "advanced_numeric_fields": 5,
+      "platform": "windows",
+      "device_pixel_ratio": 1.0,
+      "window": [
+        1440,
+        1000
+      ],
+      "fields": [
+        {
+          "placeholder": "请输入扫频起始频率",
+          "text": "8",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入扫频终止频率",
+          "text": "8",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入扫描驻留时间",
+          "text": "0.001",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入线性扫频步进",
+          "text": "0.01",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入对数扫频步进",
+          "text": "0.01",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入频率",
+          "text": "8",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入功率",
+          "text": "-20",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        }
+      ]
+    },
+    {
+      "file": "rs.sma100b-editing.png",
+      "model": "rs.sma100b",
+      "state": "editing",
+      "tab": "扫频",
+      "advanced_numeric_fields": 5,
+      "platform": "windows",
+      "device_pixel_ratio": 1.0,
+      "window": [
+        1440,
+        1000
+      ],
+      "fields": [
+        {
+          "placeholder": "请输入扫频起始频率",
+          "text": "8",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入扫频终止频率",
+          "text": "8",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入扫描驻留时间",
+          "text": "0.001",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入线性扫频步进",
+          "text": "0.01",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入对数扫频步进",
+          "text": "0.01",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入频率",
+          "text": "2",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入功率",
+          "text": "-20",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        }
+      ]
+    },
+    {
+      "file": "tek.afg31252-disconnected.png",
+      "model": "tek.afg31252",
+      "state": "disconnected",
+      "tab": "扫频",
+      "advanced_numeric_fields": 3,
+      "platform": "windows",
+      "device_pixel_ratio": 1.0,
+      "window": [
+        1440,
+        1000
+      ],
+      "fields": [
+        {
+          "placeholder": "请输入扫描时间",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入扫频起始频率",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入扫频终止频率",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入频率",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入幅度",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入偏移",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入频率",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入幅度",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入偏移",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        }
+      ]
+    },
+    {
+      "file": "tek.afg31252-readback.png",
+      "model": "tek.afg31252",
+      "state": "readback",
+      "tab": "扫频",
+      "advanced_numeric_fields": 3,
+      "platform": "windows",
+      "device_pixel_ratio": 1.0,
+      "window": [
+        1440,
+        1000
+      ],
+      "fields": [
+        {
+          "placeholder": "请输入扫描时间",
+          "text": "0.001",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入扫频起始频率",
+          "text": "1e-06",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入扫频终止频率",
+          "text": "1e-06",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入频率",
+          "text": "1",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入幅度",
+          "text": "1",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入偏移",
+          "text": "0",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入频率",
+          "text": "1",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入幅度",
+          "text": "1",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入偏移",
+          "text": "0",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        }
+      ]
+    },
+    {
+      "file": "tek.afg31252-editing.png",
+      "model": "tek.afg31252",
+      "state": "editing",
+      "tab": "扫频",
+      "advanced_numeric_fields": 3,
+      "platform": "windows",
+      "device_pixel_ratio": 1.0,
+      "window": [
+        1440,
+        1000
+      ],
+      "fields": [
+        {
+          "placeholder": "请输入扫描时间",
+          "text": "0.001",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入扫频起始频率",
+          "text": "1e-06",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入扫频终止频率",
+          "text": "1e-06",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入频率",
+          "text": "2",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入幅度",
+          "text": "1",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入偏移",
+          "text": "0",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入频率",
+          "text": "1",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入幅度",
+          "text": "1",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入偏移",
+          "text": "0",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        }
+      ]
+    },
+    {
+      "file": "siglent.sdg2082x-disconnected.png",
+      "model": "siglent.sdg2082x",
+      "state": "disconnected",
+      "tab": "通道设置",
+      "advanced_numeric_fields": 0,
+      "platform": "windows",
+      "device_pixel_ratio": 1.0,
+      "window": [
+        1440,
+        1000
+      ],
+      "fields": [
+        {
+          "placeholder": "请输入频率",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入幅度",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入偏移",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入频率",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入幅度",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入偏移",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        }
+      ]
+    },
+    {
+      "file": "siglent.sdg2082x-readback.png",
+      "model": "siglent.sdg2082x",
+      "state": "readback",
+      "tab": "通道设置",
+      "advanced_numeric_fields": 0,
+      "platform": "windows",
+      "device_pixel_ratio": 1.0,
+      "window": [
+        1440,
+        1000
+      ],
+      "fields": [
+        {
+          "placeholder": "请输入频率",
+          "text": "1",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入幅度",
+          "text": "1",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入偏移",
+          "text": "0",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入频率",
+          "text": "1",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入幅度",
+          "text": "1",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入偏移",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        }
+      ]
+    },
+    {
+      "file": "siglent.sdg2082x-editing.png",
+      "model": "siglent.sdg2082x",
+      "state": "editing",
+      "tab": "通道设置",
+      "advanced_numeric_fields": 0,
+      "platform": "windows",
+      "device_pixel_ratio": 1.0,
+      "window": [
+        1440,
+        1000
+      ],
+      "fields": [
+        {
+          "placeholder": "请输入频率",
+          "text": "2",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入幅度",
+          "text": "1",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入偏移",
+          "text": "0",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入频率",
+          "text": "1",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入幅度",
+          "text": "1",
+          "font_px": 16,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        },
+        {
+          "placeholder": "请输入偏移",
+          "text": "",
+          "font_px": 13,
+          "weight": 400,
+          "height": 33,
+          "unit_height": 33,
+          "unit_font_px": 13,
+          "source_value": true,
+          "placeholder_fits": true
+        }
+      ]
+    }
+  ]
+}

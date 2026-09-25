@@ -31,6 +31,7 @@ from lab_control.ui.pages.device_control.editors import ArrayEditor, FeedbackLab
 
 DATA_OPERATIONS = {"block", "streaming", "phase_noise", "am_noise", "stability", "data_stream", "power"}
 SOURCE_LABELS = {
+    "model": "型号固定值",
     "instrument": "仪器读回",
     "session_cache": "本会话设置记录",
     "simulated": "模拟读回",
@@ -59,6 +60,7 @@ class OperationEditor(QFrame):
         *,
         compact: bool = False,
         actions: bool = True,
+        simplified: bool = False,
     ) -> None:
         super().__init__(parent)
         self.compact = compact
@@ -99,12 +101,16 @@ class OperationEditor(QFrame):
         form = QFormLayout()
         for name, parameter in cap.parameters.items():
             if parameter.kind != "array":
-                editor = ParameterEditor(parameter, self)
+                label = (
+                    OPERATION_LABELS.get(cap.name, cap.name)
+                    if name == "value" and len(cap.parameters) == 1
+                    else PARAMETER_LABELS.get(name, name)
+                )
+                editor = ParameterEditor(parameter, self, label=label, simplified=simplified)
                 self.editors[name] = editor
                 editor.changed.connect(self.save_draft)
                 if compact and name == "value":
                     layout.addWidget(editor)
-                    editor.unit.setFixedWidth(90)
                     if isinstance(editor.input, QComboBox):
                         labels = {
                             "SIN": "正弦波",
@@ -252,6 +258,7 @@ class OperationEditor(QFrame):
         self.range_note.setVisible(bool(self.range_note.text()))
         available = self.cap.available and state.get("connectionState") in {"connected", "busy"}
         available &= state.get("activeTask") != "continuous_acquisition" and not self.busy
+        available &= not state.get("controlsLocked")
         self.read_button.setEnabled(available)
         record = self.controller.records.get(self.device_id, {})
         self.apply_button.setEnabled(
@@ -268,7 +275,7 @@ class OperationEditor(QFrame):
         )
         self.apply_button.setVisible(self.cap.writable and (not self.compact or self.show_actions))
         for editor in self.editors.values():
-            editor.setEnabled(self.cap.available and self.cap.writable)
+            editor.setEnabled(self.cap.available and self.cap.writable and not state.get("controlsLocked"))
         if self.auto_sync:
             if self.sync_token and self.sync_token[:2] != (
                 state.get("sessionId"),
@@ -342,6 +349,8 @@ class OperationEditor(QFrame):
         self.readback.setVisible(self.dirty or not self._reading_valid or not self.matches_current())
 
     def read(self) -> None:
+        if self.controller.states.get(self.device_id, {}).get("controlsLocked"):
+            return
         try:
             self.busy = True
             self.refresh_enabled()
@@ -493,7 +502,7 @@ class ControlForm(QWidget):
         self.editors: dict[str, OperationEditor] = {}
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        refresh = QPushButton("刷新实机范围与选件")
+        self.refresh_button = refresh = QPushButton("刷新实机范围与选件")
         refresh.clicked.connect(self.refresh_capabilities)
         layout.addWidget(refresh)
         self.snapshot_status = QLabel()
@@ -507,6 +516,9 @@ class ControlForm(QWidget):
         self.groups: list[list[str]] = []
 
     def show_snapshot_status(self) -> None:
+        self.refresh_button.setEnabled(
+            not self.controller.states.get(self.device_id, {}).get("controlsLocked")
+        )
         snapshot = self.controller.runtime.sessions.capability_snapshot(self.device_id)
         self.snapshot_status.setText(
             f"范围快照 v{snapshot.version} · {snapshot.timestamp} · "
@@ -572,6 +584,7 @@ class ControlForm(QWidget):
         if (
             state.get("connectionState") not in {"connected", "busy"}
             or state.get("activeTask") == "continuous_acquisition"
+            or state.get("controlsLocked")
         ):
             return
         for name in self.groups[self.tabs.currentIndex()]:

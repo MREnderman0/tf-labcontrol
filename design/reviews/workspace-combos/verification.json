@@ -1,0 +1,79 @@
+{
+  "date": "2026-09-24",
+  "scope": "Application dropdown UI with isolated Mock runtime",
+  "real_hardware_access": false,
+  "physical_mouse_touchpad_manual_review": false,
+  "screenshots_visually_reviewed_by_agent": true,
+  "pyside_version": "6.11.2",
+  "software_regression": {
+    "passed": 498,
+    "skipped_hardware": 1,
+    "log_sha256": "c84dbee20b1ada7b02b0d3baba8730c5f6195ee5a9047500ef31015e510a1bc6"
+  },
+  "native_windows_cases": [
+    {
+      "percent": 100,
+      "qt_scale_factor": 0.6666666666666666,
+      "device_pixel_ratio": 1,
+      "tests_passed": 32,
+      "exit_code": 0,
+      "log_sha256": "7ffbdabbb8907591c34f8d9e3ba34ca4dd4e49ce6b74d28da8704d847fd8a878",
+      "windows_exception_trace_present": true,
+      "metrics": "windows-100/metrics.json"
+    },
+    {
+      "percent": 125,
+      "qt_scale_factor": 0.8333333333333334,
+      "device_pixel_ratio": 1.25,
+      "tests_passed": 32,
+      "exit_code": 0,
+      "log_sha256": "d9b0baf8a17160598d1c47292a5c96346cb32874f579cae66112b82cdc5e78bd",
+      "windows_exception_trace_present": true,
+      "metrics": "windows-125/metrics.json"
+    },
+    {
+      "percent": 150,
+      "qt_scale_factor": 1,
+      "device_pixel_ratio": 1.5,
+      "tests_passed": 32,
+      "exit_code": 0,
+      "log_sha256": "3a3d1fc6ba9b538e7571d9767c4941abd8133a702a4e8d678754e4de76376f8a",
+      "windows_exception_trace_present": true,
+      "metrics": "windows-150/metrics.json"
+    }
+  ],
+  "checks": {
+    "ruff": "passed",
+    "mypy": "passed",
+    "changed_file_format": "passed",
+    "full_repository_format": "4 pre-existing unchanged files reported; see review document",
+    "generated_documents": "passed, 0 changes",
+    "markdown": "passed, 72 files",
+    "capture_bounds": "all 12 popup surfaces fully contained in captures and screens"
+  },
+  "native_environment_note": {
+    "code": "0x8001010d",
+    "reproduced_with_plain_qt_widget_without_project_imports": true,
+    "plain_qt_exit": 0
+  },
+  "captures": {
+    "windows-100/amplitude-1100.png": "570b1e520b7ede1b69bf18fc4c110e98dd27108a22ae276c4e8817704e4fe0a8",
+    "windows-100/device-1100.png": "e54a2a83052fd0832325d012d7d1e51cbd99bd888bb5e4ebcbd7bca7a659c58f",
+    "windows-100/time-1100.png": "07ef73f677cffd4e24350f871f5803597b232982224a51dcdd75ad8e4c272cc6",
+    "windows-100/waveform-1100.png": "728c85b12f675d533bcd73f21f4c698bddbd93c0e04a0a205e373b2bbcd5e630",
+    "windows-125/amplitude-1100.png": "9ce76e5c02a72a85674f965ef9ff0739c47d3b602901d2fde806c3b4864214bc",
+    "windows-125/device-1100.png": "973bd2103efe200820d7a07015b0173e3ef4438c7b187d74082d8479abdc6f24",
+    "windows-125/time-1100.png": "747d8e428d05c4b60764318c9ca861799f49fe00038266f177ed9e5a7ea5f3d6",
+    "windows-125/waveform-1100.png": "4176f535195bdeab018fb66d28f79db4b833bdb9a403ab5805fdd568fd4abb70",
+    "windows-150/amplitude-1100.png": "315e321c3287d0bd701245948923624db81ca1ce26ea54470151f3ca886acae2",
+    "windows-150/device-1100.png": "7dd04255dca3338af4438b65a3d85a66ab6386ee3eb110130a0d3c9e2d3e0a83",
+    "windows-150/time-1100.png": "8a7cff8d2fa167b55e7a071310efbe0003b5c147f1cf4ba9444baa1ef3a08453",
+    "windows-150/waveform-1100.png": "0ac603361d051680c5157504c5bb77dff3e7e9264fd4add8d6037c588ad67c42"
+  },
+  "final_mouse_replay_guard_check": {
+    "platform": "windows",
+    "passed": 16,
+    "exit_code": 0,
+    "log_sha256": "ec5da29e9f34e857598a8a0775b19cc95afb7442f2cc9dc3a0369e0f45e4b74f"
+  }
+}

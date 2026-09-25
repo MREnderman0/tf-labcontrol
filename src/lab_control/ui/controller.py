@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
+import threading
 from concurrent.futures import Future
 from typing import Any, Callable
 
-from PySide6.QtCore import QObject, QTimer, Signal
+from PySide6.QtCore import QObject, Qt, QTimer, Signal
 
-from lab_control.application.catalog import mode_applicable
+from lab_control.application.catalog import instrument_category, mode_applicable
 from lab_control.application.config import config_from_record
 from lab_control.application.controls import control_capabilities
 from lab_control.application.runtime import ApplicationRuntime
+from lab_control.discovery.presence import LIVE_CONNECTIONS
 from lab_control.domain.instruments import DeviceCommand, DeviceError
 
 
@@ -19,6 +21,8 @@ class WorkspaceController(QObject):
     message = Signal(str)
     navigate = Signal(str, str, str)
     settings_changed = Signal(str)
+    frame_ready = Signal(str)
+    _frame_wakeup = Signal()
 
     def __init__(self, runtime: ApplicationRuntime, parent: QObject) -> None:
         super().__init__(parent)
@@ -29,6 +33,10 @@ class WorkspaceController(QObject):
         self.group_devices: set[str] = set()
         self.sync_device = ""
         self._sync_signature: tuple[Any, ...] = ()
+        self._frame_lock = threading.Lock()
+        self._frame_devices: set[str] = set()
+        self._frame_wakeup.connect(self._deliver_frames, Qt.ConnectionType.QueuedConnection)
+        self._unsubscribe_frames = runtime.monitoring.subscribe_frames(self._queue_frame)
         self.runtime.monitoring.enable_settings_sync()
         self.jobs: list[
             tuple[Future[Any], Callable[[Any], None] | None, Callable[[Exception], None] | None]
@@ -37,6 +45,20 @@ class WorkspaceController(QObject):
         self.timer.timeout.connect(self.poll)
         self.timer.start(100)
         self.poll()
+
+    def _queue_frame(self, device_id: str) -> None:
+        with self._frame_lock:
+            notify = not self._frame_devices
+            self._frame_devices.add(device_id)
+        if notify:
+            self._frame_wakeup.emit()
+
+    def _deliver_frames(self) -> None:
+        with self._frame_lock:
+            devices, self._frame_devices = self._frame_devices, set()
+        if not self.runtime.closed:
+            for device_id in devices:
+                self.frame_ready.emit(device_id)
 
     def watch(
         self,
@@ -106,6 +128,20 @@ class WorkspaceController(QObject):
             return snapshot.channels[channel]
         return control_capabilities(config_from_record(self.records[device_id]), channel)
 
+    def has_connected_session(self, device_id: str) -> bool:
+        return (
+            device_id in self.records
+            and self.states.get(device_id, {}).get("connectionState") in LIVE_CONNECTIONS
+        )
+
+    def connected_records(self, category: str = "") -> tuple[dict[str, Any], ...]:
+        """Selection eligibility uses cached sessions, never discovery or a new query."""
+        return tuple(
+            record
+            for key, record in self.records.items()
+            if self.has_connected_session(key) and (not category or instrument_category(record) == category)
+        )
+
     def ensure_applicable(self, device_id: str) -> None:
         if not mode_applicable(self.records[device_id], self.mode):
             raise DeviceError("此设备不适用于当前模式", "unsupported")
@@ -128,7 +164,27 @@ class WorkspaceController(QObject):
 
     def close(self) -> None:
         self.timer.stop()
+        self._unsubscribe_frames()
         self.runtime.monitoring.enable_settings_sync(False)
+
+
+def background_read_only(state: dict[str, Any]) -> bool:
+    """Presentation only: never use this to decide whether device I/O is safe."""
+    return bool(
+        state.get("connectionState") == "busy"
+        and state.get("backgroundRead")
+        and state.get("activeTask") == "read_settings"
+        and state.get("pending", 0) <= 1
+        and not any(state.get(key) for key in ("monitoring", "recording", "controlPending", "controlGroup"))
+    )
+
+
+def display_connection_state(state: dict[str, Any]) -> str:
+    return "connected" if background_read_only(state) else str(state.get("connectionState", "disconnected"))
+
+
+def display_task(state: dict[str, Any]) -> str:
+    return "" if background_read_only(state) else str(state.get("activeTask") or "")
 
 
 def state_label(state: str) -> str:

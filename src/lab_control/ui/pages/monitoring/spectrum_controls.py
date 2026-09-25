@@ -48,6 +48,7 @@ class SpectrumControls(QFrame):
         self.completed: list[str] = []
         self.read_pending: list[str] = []
         self.auto_running = False
+        self.refresh_only = False
         self.session_id = ""
         self.verified: dict[str, Any] = {}
         layout = QVBoxLayout(self)
@@ -55,7 +56,13 @@ class SpectrumControls(QFrame):
         layout.setSpacing(8)
         self.health = QLabel("同步中", self)
         self.health.setObjectName("spectrumHealth")
-        layout.addWidget(self.health)
+        heading = QHBoxLayout()
+        heading.addWidget(self.health, 1)
+        self.refresh_button = QPushButton("刷新参数", self)
+        self.refresh_button.setToolTip("读取仪器当前参数，保留未应用草稿；前面板修改后请点击刷新。")
+        self.refresh_button.clicked.connect(self.refresh_parameters)
+        heading.addWidget(self.refresh_button)
+        layout.addLayout(heading)
         self.scroller = QScrollArea(self)
         self.scroller.setWidgetResizable(True)
         self.scroller.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -241,8 +248,12 @@ class SpectrumControls(QFrame):
             self.device_id, tuple((1, k) for k in self.editors)
         )
         self.health.setText(
-            "正在自动设置…"
+            "采集中 · 参数已锁定"
+            if state.get("controlsLocked") and health != "同步异常"
+            else "正在自动设置…"
             if self.running and self.auto_running
+            else "正在读取…"
+            if self.running and self.refresh_only
             else "正在应用…"
             if self.running
             else "待应用"
@@ -262,14 +273,25 @@ class SpectrumControls(QFrame):
 
     def refresh_buttons(self) -> None:
         state = self.controller.states.get(self.device_id, {})
+        locked = bool(state.get("controlsLocked"))
+        self.scroller.setEnabled(not self.running)
+        for op in self.editors.values():
+            op.setEnabled(not locked)
         available = (
             state.get("connectionState") in {"connected", "busy"}
             and not self.running
+            and not locked
             and not state.get("capabilityStale", True)
             and self.mode == self.controller.mode
             and self.device_id not in self.controller.group_devices
         )
         self.apply_button.setEnabled(available and self.dirty() and len(self.current()) == len(self.editors))
+        self.refresh_button.setEnabled(
+            state.get("connectionState") in {"connected", "busy"}
+            and not locked
+            and not self.running
+            and self.device_id not in self.controller.group_devices
+        )
         caps = self.controller.capabilities(self.device_id)
         auto = next((c for c in caps.operations if c.name == "auto_setup"), None)
         self.auto_button.setEnabled(bool(available and auto and auto.available and auto.writable))
@@ -298,6 +320,15 @@ class SpectrumControls(QFrame):
         except Exception as exc:
             self.status.setText(str(exc))
 
+    def refresh_parameters(self) -> None:
+        try:
+            self.begin(False)
+            self.refresh_only = True
+            self.read_pending = list(self.editors)
+            self.read_next()
+        except DeviceError as exc:
+            self.status.setText(str(exc))
+
     def auto_setup(self) -> None:
         if self.running:
             return
@@ -314,15 +345,19 @@ class SpectrumControls(QFrame):
         ):
             return
         self.pending = [DeviceCommand("auto_setup")]
-        self.begin(True)
-        self.next_command()
+        try:
+            self.begin(True)
+            self.next_command()
+        except DeviceError as exc:
+            self.status.setText(str(exc))
 
     def begin(self, auto: bool) -> None:
         self.controller.ensure_applicable(self.device_id)
+        self.controller.begin_group(self.device_id)
         self.session_id = self.controller.states[self.device_id]["sessionId"]
         self.completed, self.verified = [], {}
         self.auto_running, self.running = auto, True
-        self.controller.begin_group(self.device_id)
+        self.refresh_only = False
         self.scroller.setEnabled(False)
         self.busy_changed.emit(True)
         self.refresh()
@@ -383,13 +418,21 @@ class SpectrumControls(QFrame):
                 for op in self.editors.values():
                     op.dirty = False
                     self.controller.runtime.repository.save_workspace(op.key, None)
-            self.finish("自动设置完成 · 已核对读回" if self.auto_running else "修改已应用 · 已核对读回")
+            self.finish(
+                "参数已刷新 · 草稿已保留"
+                if self.refresh_only
+                else "自动设置完成 · 已核对读回"
+                if self.auto_running
+                else "修改已应用 · 已核对读回"
+            )
             return
         names, self.read_pending = self.read_pending[:4], self.read_pending[4:]
         self.controller.watch(
             self.controller.runtime.sessions.submit(self.device_id, "read_settings", (tuple(names), 1)),
             self.read_done,
-            lambda exc: self.finish("设置已执行，读回未确认：" + str(exc)),
+            lambda exc: self.finish(
+                ("参数读取失败：" if self.refresh_only else "设置已执行，读回未确认：") + str(exc)
+            ),
         )
 
     def read_done(self, readings) -> None:
@@ -398,7 +441,7 @@ class SpectrumControls(QFrame):
         for reading in readings:
             op = self.editors[reading.operation]
             if not usable_reading(reading, op.cap.parameters):
-                self.finish("设置已执行，读回未确认；草稿已保留")
+                self.finish("读回未确认；草稿已保留")
                 return
             self.verified[reading.operation] = reading
         self.read_next()

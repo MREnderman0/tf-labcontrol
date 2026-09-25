@@ -5,15 +5,15 @@
       900
     ],
     "window": [
-      1440,
-      870
+      1436,
+      896
     ],
     "plot": [
-      759,
-      576
+      755,
+      554
     ],
     "controls_width": 392,
-    "scroll_max": 53,
+    "scroll_max": 72,
     "sidebar": 232,
     "apply_visible": 33
   },
@@ -23,15 +23,15 @@
       760
     ],
     "window": [
-      1280,
-      730
+      1276,
+      756
     ],
     "plot": [
-      599,
-      436
+      595,
+      414
     ],
     "controls_width": 392,
-    "scroll_max": 193,
+    "scroll_max": 212,
     "sidebar": 232,
     "apply_visible": 33
   },
@@ -41,15 +41,15 @@
       600
     ],
     "window": [
-      1024,
-      570
+      1020,
+      596
     ],
     "plot": [
-      343,
-      276
+      339,
+      254
     ],
     "controls_width": 392,
-    "scroll_max": 353,
+    "scroll_max": 372,
     "sidebar": 232,
     "apply_visible": 33
   }

@@ -26,6 +26,7 @@ from lab_control.domain.spectrum import SpectrumMarker
 from lab_control.ui.controller import state_label
 from lab_control.ui.pages.monitoring.spectrum_controls import SpectrumControls
 from lab_control.ui.pages.monitoring.spectrum_markers import MarkerDialog, SpectrumPlot, frequency_text
+from lab_control.ui.pages.monitoring.timing import MonitoringTiming
 from lab_control.ui.widgets.device_selector import DeviceSelector
 
 
@@ -53,6 +54,9 @@ class SpectrumMonitoringPage(QWidget):
         self.start_button.clicked.connect(self.toggle_monitoring)
         header.addWidget(self.start_button)
         layout.addLayout(header)
+        self.timing = MonitoringTiming(controller, self)
+        self.interval = self.timing.interval
+        layout.addWidget(self.timing)
         self.empty = QLabel("请先从总览连接频谱仪，再选择设备。", self)
         layout.addWidget(self.empty)
         self.splitter = QSplitter(Qt.Orientation.Horizontal, self)
@@ -72,7 +76,7 @@ class SpectrumMonitoringPage(QWidget):
         tools.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         menu = QMenu(tools)
         self.record_action = menu.addAction("开始记录", self.record)
-        self.save_action = menu.addAction("导出当前数据", self.save)
+        self.save_action = menu.addAction("保存当前帧", self.save)
         menu.addAction("添加到监测总览", self.pin)
         menu.addSeparator()
         menu.addAction("适应曲线", self.fit_plot)
@@ -101,6 +105,7 @@ class SpectrumMonitoringPage(QWidget):
         self.marker_list: QListWidget | None = None
         self.selector.selected.connect(self.select_device)
         controller.refreshed.connect(self.refresh)
+        controller.frame_ready.connect(self.refresh_frame)
         self.select_device(self.selector.device_id)
 
     def select_device(self, device_id: str) -> None:
@@ -109,6 +114,7 @@ class SpectrumMonitoringPage(QWidget):
         if self.device_id == device_id and self.mode == self.controller.mode and self.controls:
             return
         self.device_id, self.mode = device_id, self.controller.mode
+        self.timing.bind(device_id, self.mode)
         self.plot.reset()
         self.marker_list = None
         if self.controls:
@@ -164,6 +170,7 @@ class SpectrumMonitoringPage(QWidget):
     def showEvent(self, event) -> None:  # noqa: N802
         super().showEvent(event)
         self.controller.focus_settings(self.device_id)
+        self.refresh_frame(self.device_id)
 
     def hideEvent(self, event) -> None:  # noqa: N802
         super().hideEvent(event)
@@ -183,27 +190,41 @@ class SpectrumMonitoringPage(QWidget):
             try:
                 self.controller.ensure_applicable(self.device_id)
                 # Passive reads: never INIT, change trigger mode, or start a physical sweep.
-                service.start(self.device_id, (self.source.request((1,)),), interval=0.5, mode=self.mode)
+                self.timing.commit()
+                service.start(
+                    self.device_id,
+                    (self.source.request((1,)),),
+                    **self.timing.options(),
+                    mode=self.mode,
+                )
             except Exception as exc:
                 self.controller.message.emit(str(exc))
 
     def record(self) -> None:
         service = self.controller.runtime.monitoring
         task = service.snapshots().get(self.device_id, {})
-        service.set_recording(self.device_id, not task.get("recording"), mode=self.mode)
+        try:
+            self.timing.commit()
+            service.set_recording(self.device_id, not task.get("recording"), mode=self.mode)
+        except Exception as exc:
+            self.controller.message.emit(str(exc))
 
     def save(self) -> None:
-        if self.source:
-            service = self.controller.runtime.monitoring
-            frame = service.latest(self.device_id, self.source.kind, self.source.quantity)
-            if frame:
+        frame = self.plot.displayed_frame
+        if frame is not None:
+            try:
                 self.controller.watch(
-                    service.export(frame, self.mode),
-                    lambda path: self.controller.message.emit(f"已导出：{path}"),
+                    self.controller.runtime.monitoring.export_displayed_frame(
+                        self.device_id, frame, self.mode
+                    ),
+                    lambda path: self.controller.message.emit(f"已保存当前帧：{path}"),
                 )
+                self.refresh()
+            except Exception as exc:
+                self.controller.message.emit(str(exc))
 
     def fit_plot(self) -> None:
-        self.plot.plot.autoRange()
+        self.plot.fit_current()
 
     def pin(self) -> None:
         if self.source:
@@ -272,6 +293,7 @@ class SpectrumMonitoringPage(QWidget):
         state = self.controller.states.get(self.device_id, {})
         service = self.controller.runtime.monitoring
         task = service.snapshots().get(self.device_id, {})
+        self.timing.refresh(task)
         busy = bool(self.controls and self.controls.running)
         connected = state.get("connectionState") in {"connected", "busy"}
         self.connection.setText(
@@ -286,20 +308,37 @@ class SpectrumMonitoringPage(QWidget):
         frame = (
             service.latest(self.device_id, self.source.kind, self.source.quantity) if self.source else None
         )
-        self.save_action.setEnabled(frame is not None)
-        if self.isVisible() and frame and self.source:
-            self.plot.show_frame(frame, self.source, (1,))
-        elif frame is None and self.plot.trace is not None:
+        self.save_action.setEnabled(
+            self.plot.displayed_frame is not None
+            and not task.get("display_saving")
+            and not task.get("capture_saving")
+        )
+        if frame is None and self.plot.trace is not None:
             self.plot.trace = None
             self.plot.meta.setText("等待当前配置的新频谱 · 图中保留旧曲线")
             self.plot.update_markers()
-        text = task.get("error") or (
-            "设置中 · 曲线读取暂停"
-            if busy
-            else "正在记录原始数据"
-            if task.get("recording")
-            else "监测中"
-            if task.get("running")
-            else "监测已暂停 · 保留最后一帧"
+        text = (
+            task.get("error")
+            or task.get("recording_notice")
+            or task.get("recording_state", {}).get("csv_error")
+            or task.get("notice")
+            or (
+                "设置中 · 曲线读取暂停"
+                if busy
+                else "正在记录原始数据"
+                if task.get("recording")
+                else "监测中"
+                if task.get("running")
+                else "监测已暂停 · 保留最后一帧"
+            )
         )
         self.status.setText(text)
+
+    def refresh_frame(self, device_id: str) -> None:
+        if device_id != self.device_id or not self.isVisible() or not self.source:
+            return
+        service = self.controller.runtime.monitoring
+        frame = service.latest(device_id, self.source.kind, self.source.quantity)
+        if frame:
+            self.plot.show_frame(frame, self.source, (1,))
+            service.displayed(device_id, frame)

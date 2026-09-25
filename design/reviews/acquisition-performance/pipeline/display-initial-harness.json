@@ -1,0 +1,20 @@
+{
+  "hardware": false,
+  "description": "Same Qt LivePlot and Mock; compare former 100 ms polling with queued frame notifications; 3 s each",
+  "cases": [
+    {
+      "event_driven": false,
+      "displayed": 11,
+      "median_seconds": 0.03231340000638738,
+      "p95_seconds": 0.11239244999887887,
+      "received": 12
+    },
+    {
+      "event_driven": true,
+      "displayed": 5,
+      "median_seconds": 0.11110049999842886,
+      "p95_seconds": 0.772180559989647,
+      "received": 6
+    }
+  ]
+}

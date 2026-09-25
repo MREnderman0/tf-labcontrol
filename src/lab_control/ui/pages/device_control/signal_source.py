@@ -7,7 +7,6 @@ from typing import Any, cast
 import shiboken6
 from PySide6.QtCore import QEvent, QSize, Qt, QTimer
 from PySide6.QtWidgets import (
-    QComboBox,
     QFrame,
     QGridLayout,
     QHBoxLayout,
@@ -25,11 +24,14 @@ from PySide6.QtWidgets import (
 from lab_control.application.controls import OPERATION_LABELS
 from lab_control.domain.instruments import Capability, DeviceCommand, DeviceError
 from lab_control.domain.readback import boolean_value
-from lab_control.ui.controller import WorkspaceController
+from lab_control.ui.controller import WorkspaceController, display_connection_state
 from lab_control.ui.pages.device_control.form import OperationEditor, concise
+from lab_control.ui.pages.device_control.source_settings import SourceSettingsDialog, settings_icon
 from lab_control.ui.widgets.device_selector import DeviceSelector
+from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
 
 MAIN = ("waveform", "frequency", "power", "amplitude", "offset")
+ELECTRONIC_MAIN = (*MAIN, "phase")
 EXTRA = ("phase", "load", "pulse_duty", "pulse_width", "ramp_symmetry", "amplitude_unit")
 ORDER = ("waveform", "load", "amplitude_unit", "frequency", "power", "amplitude", "offset", "phase")
 
@@ -75,6 +77,7 @@ class ParameterGroup(QFrame):
         caps: list[Capability],
         *,
         columns: int = 1,
+        simplified: bool = False,
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -85,22 +88,32 @@ class ParameterGroup(QFrame):
         self.running = False
         self.reading = False
         self.columns = columns
+        self.simplified = simplified
         self.visible_columns = 0
         self.context_hidden: set[str] = set()
         self.success_report = False
         self.setObjectName("sourceGroup")
+        self.setProperty("simplified", simplified)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 10, 12, 10)
-        layout.setSpacing(8)
+        layout.setContentsMargins(*(20, 18, 20, 18) if simplified else (12, 10, 12, 10))
+        layout.setSpacing(16 if simplified else 8)
         self.fields = QGridLayout()
         self.fields.setContentsMargins(0, 0, 0, 0)
-        self.fields.setSpacing(8)
+        self.fields.setHorizontalSpacing(18 if simplified else 8)
+        self.fields.setVerticalSpacing(18 if simplified else 8)
         self.fields.setAlignment(Qt.AlignmentFlag.AlignTop)
         layout.addLayout(self.fields)
         for index, cap in enumerate(caps):
             standalone = not cap.parameters or any(p.kind == "array" for p in cap.parameters.values())
             editor = OperationEditor(
-                controller, device_id, cap, channel, parent=self, compact=not standalone, actions=standalone
+                controller,
+                device_id,
+                cap,
+                channel,
+                parent=self,
+                compact=not standalone,
+                actions=standalone,
+                simplified=simplified,
             )
             editor.enable_auto_sync()
             self.editors[cap.name] = editor
@@ -125,10 +138,11 @@ class ParameterGroup(QFrame):
         layout.addStretch()
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
         controller.refreshed.connect(self.refresh)
+        self.reflow_fields()
         self.refresh()
 
     def reflow_fields(self) -> None:
-        columns = self.columns if self.width() >= 720 else 1
+        columns = self.columns if self.simplified or self.width() >= 720 else 1
         if columns == self.visible_columns:
             return
         while self.fields.count():
@@ -137,7 +151,7 @@ class ParameterGroup(QFrame):
         for name, editor in self.editors.items():
             if name in self.context_hidden:
                 continue
-            span = columns if editor.array_editor else 1
+            span = columns if editor.array_editor or (self.simplified and name == "waveform") else 1
             if span > 1 and column:
                 row, column = row + 1, 0
             self.fields.addWidget(editor, row, column, 1, span, Qt.AlignmentFlag.AlignTop)
@@ -160,7 +174,13 @@ class ParameterGroup(QFrame):
             if editor is None or editor.isHidden():
                 continue
             row, _, _, _ = cast(tuple[int, int, int, int], self.fields.getItemPosition(index))
-            height = max(editor.minimumSizeHint().height(), editor.heightForWidth(editor.width()))
+            # SetMinimumSize on a child's layout can update its hard minimum before
+            # the grid's height-for-width cache catches up after text/unit changes.
+            height = max(
+                editor.minimumHeight(),
+                editor.minimumSizeHint().height(),
+                editor.heightForWidth(editor.width()),
+            )
             heights[row] = max(heights.get(row, 0), height)
         for row in range(self.fields.rowCount()):
             height = heights.get(row, 0)
@@ -207,6 +227,7 @@ class ParameterGroup(QFrame):
         busy = self.device_id in self.controller.group_devices
         allowed = connected and not busy and not state.get("controlPending")
         allowed &= state.get("activeTask") != "continuous_acquisition"
+        allowed &= not state.get("controlsLocked")
         dirty = sum(
             e.dirty and e.cap.writable and bool(e.editors)
             for name, e in self.editors.items()
@@ -221,7 +242,12 @@ class ParameterGroup(QFrame):
         self.apply_button.setEnabled(bool(allowed and dirty and not state.get("capabilityStale", True)))
         for editor in self.editors.values():
             for field in editor.editors.values():
-                field.setEnabled(editor.cap.available and editor.cap.writable and not busy)
+                field.setEnabled(
+                    editor.cap.available
+                    and editor.cap.writable
+                    and not busy
+                    and not state.get("controlsLocked")
+                )
 
     def sync_keys(self) -> tuple[tuple[int, str], ...]:
         return tuple(
@@ -359,9 +385,18 @@ class ParameterGroup(QFrame):
 
 
 class OutputControl(QWidget):
-    def __init__(self, controller: WorkspaceController, device_id: str, channel: int, *, rf: bool) -> None:
+    def __init__(
+        self,
+        controller: WorkspaceController,
+        device_id: str,
+        channel: int,
+        *,
+        rf: bool,
+        embedded: bool = False,
+    ) -> None:
         super().__init__()
         self.controller, self.device_id, self.channel, self.rf = controller, device_id, channel, rf
+        self.embedded = embedded
         self.value: bool | None = None
         self.sync_token: tuple[str, int, int] | None = None
         self.channel_status: tuple[str, str] = ("同步中", "等待通道参数与输出状态")
@@ -372,11 +407,13 @@ class OutputControl(QWidget):
         self.state.setObjectName("outputState")
         self.state.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         self.button = QPushButton("输出控制")
+        self.button.setObjectName("sourceOutputButton" if embedded else "")
         self.button.clicked.connect(self.toggle)
         self.button.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         row.addWidget(self.state)
         row.addWidget(self.button)
-        row.addStretch()
+        if not embedded:
+            row.addStretch()
         controller.refreshed.connect(self.refresh)
         self.refresh()
 
@@ -405,12 +442,16 @@ class OutputControl(QWidget):
         )
         health, reason = self.channel_status or output_health
         self.state.setText(
-            ("RF " if self.rf else f"CH {self.channel} ")
+            ("输出" if self.embedded else "RF " if self.rf else f"CH {self.channel} ")
             + ("开启" if self.value is True else "关闭" if self.value is False else "输出未知")
             + " · "
             + health
         )
         self.state.setToolTip(reason)
+        if self.embedded and self.state.property("outputActive") != bool(self.value):
+            self.state.setProperty("outputActive", bool(self.value))
+            self.state.style().unpolish(self.state)
+            self.state.style().polish(self.state)
         self.button.setText(
             "关闭输出" if self.value is True else "开启输出" if self.value is False else "输出控制"
         )
@@ -423,6 +464,7 @@ class OutputControl(QWidget):
             and state.get("connectionState") in {"connected", "busy"}
             and not self.busy
             and not state.get("controlPending")
+            and not state.get("controlsLocked")
             and self.device_id not in self.controller.group_devices
             and state.get("activeTask") != "continuous_acquisition"
         )
@@ -494,6 +536,7 @@ class SignalSourcePage(QWidget):
         self.advanced_groups: list[ParameterGroup] = []
         self.channel_cards: list[QWidget] = []
         self.last_columns = 0
+        self.settings_dialog: SourceSettingsDialog | None = None
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 10, 12, 10)
         layout.setSpacing(8)
@@ -503,14 +546,25 @@ class SignalSourcePage(QWidget):
         self.selector.channel.hide()
         self.selector.combo.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
         toolbar.addWidget(self.selector, 1)
+        self.connection_label = QLabel("未选择", self)
+        self.connection_label.setObjectName("sourceConnectionState")
+        toolbar.addWidget(self.connection_label)
         self.refresh_button = QPushButton("刷新范围")
         self.refresh_button.clicked.connect(self.refresh_ranges)
         toolbar.addWidget(self.refresh_button)
-        monitor = QPushButton("实时监测 ↗")
+        self.monitor_button = monitor = QPushButton("实时监测 ↗", self)
         monitor.clicked.connect(
             lambda: controller.navigate.emit("实时监测", "signal_generator", self.device_id)
         )
         toolbar.addWidget(monitor)
+        monitor.setVisible(controller.mode != "electronic")
+        self.settings_button = QPushButton("高级设置", self)
+        self.settings_button.setObjectName("sourceSettingsButton")
+        self.settings_button.setIcon(settings_icon())
+        self.settings_button.setIconSize(QSize(18, 18))
+        self.settings_button.clicked.connect(self.open_settings)
+        self.settings_button.setVisible(controller.mode == "electronic")
+        toolbar.addWidget(self.settings_button)
         layout.addLayout(toolbar)
         self.range_status = QLabel("范围尚未确认", self)
         self.range_status.setObjectName("mutedText")
@@ -525,7 +579,7 @@ class SignalSourcePage(QWidget):
         self.body_layout = QVBoxLayout(self.body)
         self.body_layout.setContentsMargins(0, 0, 0, 0)
         self.body_layout.setSpacing(12)
-        self.empty = QLabel("尚未选择信号源。请先在设备总览扫描或添加设备，再从上方选择。")
+        self.empty = QLabel("暂无选中的已连接信号源。请先在设备总览连接设备，再从上方选择。")
         self.empty.setWordWrap(True)
         self.empty.setObjectName("mutedText")
         self.body_layout.addWidget(self.empty)
@@ -534,6 +588,10 @@ class SignalSourcePage(QWidget):
         self.grid.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.body_layout.addLayout(self.grid)
         self.tabs = TaskTabs()
+        self.advanced_channel = WorkspaceComboBox(self.tabs)
+        self.advanced_channel.currentIndexChanged.connect(self.build_advanced)
+        self.tabs.setCornerWidget(self.advanced_channel)
+        self.tabs.hide()
         self.tabs.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
         self.tabs.currentChanged.connect(self.read_advanced)
         self.body_layout.addWidget(self.tabs)
@@ -545,15 +603,31 @@ class SignalSourcePage(QWidget):
         self.select_device(self.selector.device_id)
 
     def select_device(self, device_id: str) -> None:
+        if device_id and not self.controller.has_connected_session(device_id):
+            device_id = ""
         if (device_id, self.controller.mode) == (self.device_id, self.mode):
             return
-        if self.device_id in self.controller.group_devices:
+        if (
+            device_id
+            and self.device_id in self.controller.group_devices
+            and self.controller.has_connected_session(self.device_id)
+        ):
             self.selector.select(self.device_id)
             self.controller.message.emit("当前设备正在应用参数，完成后再切换设备")
             return
+        if self.settings_dialog is not None:
+            self.settings_dialog.reject()
+        electronic = self.controller.mode == "electronic"
         self.empty.setVisible(not device_id)
+        self.tabs.setVisible(bool(device_id) and not electronic)
+        self.settings_button.setVisible(electronic)
+        self.monitor_button.setVisible(not electronic)
+        if not device_id and self.controller.sync_device == self.device_id:
+            self.controller.focus_settings("")
         self.device_id, self.mode = device_id, self.controller.mode
         self.tabs.blockSignals(True)
+        self.advanced_channel.blockSignals(True)
+        self.advanced_channel.clear()
         while self.tabs.count():
             widget = self.tabs.widget(0)
             self.tabs.removeTab(0)
@@ -569,32 +643,59 @@ class SignalSourcePage(QWidget):
         if device_id:
             schema = self.controller.capabilities(device_id)
             self.rf = any(cap.name == "power" for cap in schema.operations)
-            self.advanced_channel = QComboBox()
             for ch in schema.channels:
                 self.advanced_channel.addItem(f"CH {ch}", ch)
                 caps = self.controller.capabilities(device_id, ch).operations
-                main = [cap for name in MAIN for cap in caps if cap.name == name]
-                if self.rf:
+                main = [
+                    cap
+                    for name in (ELECTRONIC_MAIN if electronic else MAIN)
+                    for cap in caps
+                    if cap.name == name
+                ]
+                if self.rf and not electronic:
                     main += [cap for cap in caps if cap.name == "reference_clock"]
                 card = QFrame()
                 card.setObjectName("channelPanel")
+                card.setProperty("simplified", electronic)
                 card.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
                 card_layout = QVBoxLayout(card)
                 card_layout.setContentsMargins(0, 0, 0, 0)
-                heading = QLabel(("射频信号 · 连续 / 扫频 / 列表" if self.rf else f"CH {ch} · 基本信号"))
+                card_layout.setSpacing(0)
+                heading = QLabel(
+                    ("射频信号" if self.rf else f"CH {ch}")
+                    if electronic
+                    else ("射频信号 · 连续 / 扫频 / 列表" if self.rf else f"CH {ch} · 基本信号")
+                )
                 heading.setObjectName("channelTitle")
                 heading.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-                card_layout.addWidget(heading)
-                group = ParameterGroup(self.controller, device_id, ch, main, columns=2 if self.rf else 1)
+                output = OutputControl(self.controller, device_id, ch, rf=self.rf, embedded=electronic)
+                self.outputs[ch] = output
+                if electronic:
+                    header = QFrame(card)
+                    header.setObjectName("sourceChannelHeader")
+                    header_layout = QHBoxLayout(header)
+                    header_layout.setContentsMargins(20, 14, 20, 14)
+                    header_layout.addWidget(heading)
+                    header_layout.addStretch()
+                    header_layout.addWidget(output)
+                    card_layout.addWidget(header)
+                else:
+                    card_layout.addWidget(heading)
+                    self.output_bar.addWidget(output, 0, len(self.outputs) - 1)
+                group = ParameterGroup(
+                    self.controller,
+                    device_id,
+                    ch,
+                    main,
+                    columns=2 if electronic or self.rf else 1,
+                    simplified=electronic,
+                )
                 card_layout.addWidget(group)
                 self.panels[ch] = group
                 self.channel_cards.append(card)
-                output = OutputControl(self.controller, device_id, ch, rf=self.rf)
-                self.outputs[ch] = output
-                self.output_bar.addWidget(output, 0, len(self.outputs) - 1)
-            self.advanced_channel.currentIndexChanged.connect(self.build_advanced)
-            self.tabs.setCornerWidget(self.advanced_channel)
-            self.build_advanced()
+            if not electronic:
+                self.build_advanced()
+        self.advanced_channel.blockSignals(False)
         self.tabs.blockSignals(False)
         self.last_columns = 0
         self.reflow()
@@ -603,6 +704,8 @@ class SignalSourcePage(QWidget):
             self.read_main()
 
     def build_advanced(self) -> None:
+        if self.mode == "electronic" or not self.device_id:
+            return
         self.tabs.blockSignals(True)
         while self.tabs.count():
             widget = self.tabs.widget(0)
@@ -647,12 +750,42 @@ class SignalSourcePage(QWidget):
         self.read_advanced()
         self.update_readings(self.device_id)
 
+    def open_settings(self) -> None:
+        if not self.device_id:
+            return
+        if self.settings_dialog is not None:
+            self.settings_dialog.raise_()
+            return
+        dialog = SourceSettingsDialog(self.controller, self.device_id, self)
+        self.settings_dialog = dialog
+        dialog.finished.connect(self.settings_closed)
+        dialog.show()
+        dialog.adjustSize()
+        position = self.window().frameGeometry().center() - dialog.rect().center()
+        screen = self.window().screen().availableGeometry()
+        position.setX(max(screen.left(), min(position.x(), screen.right() - dialog.width() + 1)))
+        position.setY(max(screen.top(), min(position.y(), screen.bottom() - dialog.height() + 1)))
+        dialog.move(position)
+        self.read_advanced()
+        self.controller.runtime.monitoring.refresh_settings(self.device_id)
+
+    def settings_closed(self, *_args) -> None:
+        self.settings_dialog = None
+        self.read_advanced()
+
+    def visible_sync_keys(self) -> tuple[tuple[int, str], ...]:
+        keys = tuple(key for panel in self.panels.values() for key in panel.sync_keys())
+        panel = self.tabs.currentWidget()
+        if self.mode != "electronic" and isinstance(panel, ParameterGroup):
+            keys += panel.sync_keys()
+        if self.settings_dialog is not None and self.settings_dialog.context_valid():
+            keys += self.settings_dialog.sync_keys()
+        return tuple(dict.fromkeys(keys))
+
     def read_advanced(self, *_args) -> None:
         self.tabs.updateGeometry()
-        panel = self.tabs.currentWidget()
         if self.isVisible():
-            keys = panel.sync_keys() if isinstance(panel, ParameterGroup) else ()
-            self.controller.focus_settings(self.device_id, keys)
+            self.controller.focus_settings(self.device_id, self.visible_sync_keys())
             self.update_readings(self.device_id)
 
     def update_readings(self, device_id: str) -> None:
@@ -721,7 +854,16 @@ class SignalSourcePage(QWidget):
             return
         if self.isVisible():
             self.update_readings(self.device_id)
+        state = self.controller.states.get(self.device_id, {})
+        self.refresh_button.setEnabled(bool(self.device_id) and not state.get("controlsLocked"))
+        self.connection_label.setText(
+            {"connected": "已连接", "busy": "已连接 · 忙碌", "degraded": "连接异常", "error": "连接异常"}.get(
+                display_connection_state(state), "未连接" if self.device_id else "未选择"
+            )
+        )
+        self.monitor_button.setEnabled(bool(self.device_id))
         busy = self.device_id in self.controller.group_devices
+        self.settings_button.setEnabled(bool(self.device_id) and not busy and not state.get("controlsLocked"))
         self.selector.combo.setEnabled(not busy)
         if hasattr(self, "advanced_channel"):
             self.advanced_channel.setEnabled(not busy)
@@ -733,10 +875,7 @@ class SignalSourcePage(QWidget):
                 for panel in self.advanced_groups:
                     panel.set_waveform(value)
         if self.isVisible():
-            selected = self.tabs.currentWidget()
-            self.controller.focus_settings(
-                self.device_id, selected.sync_keys() if isinstance(selected, ParameterGroup) else ()
-            )
+            self.controller.focus_settings(self.device_id, self.visible_sync_keys())
         if self.isVisible():
             advanced = self.tabs.currentWidget()
             for channel, output in self.outputs.items():
@@ -788,12 +927,13 @@ class SignalSourcePage(QWidget):
         output_columns = (
             4 if len(self.outputs) >= 4 and available_columns >= 4 else 2 if len(self.outputs) >= 2 else 1
         )
-        for output in self.outputs.values():
-            self.output_bar.removeWidget(output)
-        for index, output in enumerate(self.outputs.values()):
-            self.output_bar.addWidget(output, index // output_columns, index % output_columns)
-        for index in range(4):
-            self.output_bar.setColumnStretch(index, int(index < output_columns))
+        if self.mode != "electronic":
+            for output in self.outputs.values():
+                self.output_bar.removeWidget(output)
+            for index, output in enumerate(self.outputs.values()):
+                self.output_bar.addWidget(output, index // output_columns, index % output_columns)
+            for index in range(4):
+                self.output_bar.setColumnStretch(index, int(index < output_columns))
         for panel in [*self.panels.values(), *self.advanced_groups]:
             panel.reflow_fields()
         columns = 2 if len(self.channel_cards) > 1 else 1

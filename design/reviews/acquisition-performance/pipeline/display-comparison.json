@@ -1,0 +1,20 @@
+{
+  "hardware": false,
+  "description": "Same Qt LivePlot and Mock; compare former 100 ms polling with queued frame notifications; 1 s warmup + 3 s measured each; Python sleep releases GIL between event processing",
+  "cases": [
+    {
+      "event_driven": false,
+      "displayed": 27,
+      "median_seconds": 0.021251700003631413,
+      "p95_seconds": 0.0411014699973748,
+      "received": 73
+    },
+    {
+      "event_driven": true,
+      "displayed": 72,
+      "median_seconds": 0.0033051000064006075,
+      "p95_seconds": 0.006042065002111486,
+      "received": 73
+    }
+  ]
+}

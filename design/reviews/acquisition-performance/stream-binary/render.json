@@ -1,0 +1,28 @@
+{
+  "hardware": false,
+  "states": {
+    "monitoring": {
+      "auto_enabled": true,
+      "refresh_enabled": true,
+      "health": "正常"
+    },
+    "recording": {
+      "auto_enabled": false,
+      "refresh_enabled": false,
+      "health": "采集中 · 参数已锁定"
+    }
+  },
+  "sizes": [
+    [
+      1280,
+      760
+    ],
+    [
+      1440,
+      900
+    ]
+  ],
+  "save_label": "采集并保存",
+  "timing_tooltip": "有效帧接收间隔；不代表仪器新扫描率。\n采集：0.000 s；查询事务：0 次；排队：0.171 s\n发送：0.000 s；读取：0.000 s；解析：0.000 s\n合并发送 SCPI 子查询：45 条；保留前后配置核对。\n最近完整采集：0.000 s；写盘：1.487 s",
+  "saved_snapshot_count": 2
+}

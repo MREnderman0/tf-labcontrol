@@ -29,6 +29,8 @@ from lab_control.domain.instruments import DeviceError, Parameter, ValidationErr
 from lab_control.ui.widgets.parameter_combo import ParameterComboBox
 
 UNIT_CHOICES = {
+    "rad": (("°", math.pi / 180), ("rad", 1)),
+    "deg": (("°", 1),),
     "Hz": (("Hz", 1), ("kHz", 1e3), ("MHz", 1e6), ("GHz", 1e9)),
     "V": (("µV", 1e-6), ("mV", 1e-3), ("V", 1)),
     "Vpp": (("mVpp", 1e-3), ("Vpp", 1)),
@@ -79,10 +81,11 @@ class FeedbackLabel(QLabel):
 class ParameterEditor(QWidget):
     changed = Signal()
 
-    def __init__(self, spec: Parameter, parent=None) -> None:
+    def __init__(self, spec: Parameter, parent=None, *, label: str = "", simplified: bool = False) -> None:
         super().__init__(parent)
         self.setObjectName("parameterEditor")
         self.spec = spec
+        self.simplified = simplified
         self.feedback: QLabel
         self._editing_number = False
         self._last_factor = 1.0
@@ -95,7 +98,7 @@ class ParameterEditor(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         outer.addLayout(layout)
         self.unit = ParameterComboBox(self)
-        self.unit.setFixedWidth(100)
+        self.unit.fit_contents(100)
         self.unit.installEventFilter(self)
         self.input: QCheckBox | QComboBox | QLineEdit
         if spec.kind == "boolean":
@@ -109,16 +112,22 @@ class ParameterEditor(QWidget):
         else:
             self.input = QLineEdit(self)
             self.input.installEventFilter(self)
-            self.input.setPlaceholderText("输入目标值" if spec.kind == "text" else "例如 1e3")
+            fallback = {"number": "数值", "integer": "整数"}.get(spec.kind, "内容")
+            self.input.setPlaceholderText("请输入" + (label.strip() or fallback))
+            self.sync_input_style()
             self.input.textEdited.connect(self.changed)
             self.input.textEdited.connect(lambda: self.feedback.clear())
             self.input.textChanged.connect(self.number_edited)
+            self.input.textChanged.connect(self.sync_input_style)
             self.input.editingFinished.connect(lambda: QTimer.singleShot(0, self.finish_editing))
         layout.addWidget(self.input, 1)
         if spec.kind in {"number", "integer"}:
             for label, factor in UNIT_CHOICES.get(spec.unit, ((spec.unit or "数值", 1),)):
                 self.unit.addItem(label, factor)
             self.unit.setCurrentIndex(max(0, self.unit.findData(1)))
+            if simplified and spec.unit == "rad":
+                self.unit.setCurrentIndex(0)
+            self._last_factor = self.unit.currentData() or 1
             self.unit.currentIndexChanged.connect(self.unit_changed)
             layout.addWidget(self.unit)
         else:
@@ -133,6 +142,19 @@ class ParameterEditor(QWidget):
         outer.addWidget(self.range_label)
         outer.addWidget(self.feedback)
         self.update_range_label()
+
+    def sync_input_style(self) -> None:
+        """Keep placeholder typography in sync without touching text or undo history."""
+        if not isinstance(self.input, QLineEdit):
+            return
+        empty = not self.input.text()
+        if self.input.property("emptyInput") == empty:
+            return
+        self.input.setProperty("emptyInput", empty)
+        if self.input.testAttribute(Qt.WidgetAttribute.WA_WState_Polished):
+            self.input.style().unpolish(self.input)
+            self.input.style().polish(self.input)
+            self.input.update()
 
     def update_range_label(self) -> None:
         numeric = self.spec.kind in {"number", "integer"}
@@ -165,10 +187,10 @@ class ParameterEditor(QWidget):
                 return f"{value / scale:.12g} {label}"
 
             readable = f"（{frequency_label(self.spec.minimum)} ～ {frequency_label(self.spec.maximum)}）"
-        self.range_label.setText(
-            f"可输入范围：{low} ～ {high} {self.unit.currentText()}{readable} · {source}"
-        )
-        self.setToolTip(self.range_label.text())
+        details = f"可输入范围：{low} ～ {high} {self.unit.currentText()}{readable} · {source}"
+        self.range_label.setText(f"{low} ～ {high} {self.unit.currentText()}" if self.simplified else details)
+        self.range_label.setToolTip(details)
+        self.setToolTip(details)
 
     def set_spec(self, spec: Parameter) -> None:
         if self.spec == spec:
@@ -297,6 +319,8 @@ class ParameterEditor(QWidget):
                 self.input.setCurrentIndex(index)
         else:
             self.input.setText("" if value is None else str(value))
+            # Programmatic readback/restore suppresses textChanged deliberately.
+            self.sync_input_style()
         self.unit.setCurrentIndex(max(0, self.unit.findData(draft.get("factor", 1))))
         self.input.blockSignals(False)
         self.unit.blockSignals(False)

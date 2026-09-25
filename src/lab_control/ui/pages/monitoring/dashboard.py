@@ -7,7 +7,6 @@ from uuid import uuid4
 from PySide6.QtCore import QEvent, Qt, QTimer, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
-    QComboBox,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
@@ -30,6 +29,8 @@ from lab_control.application.config import config_from_record
 from lab_control.application.controls import data_sources, slot_label
 from lab_control.ui.controller import WorkspaceController
 from lab_control.ui.pages.monitoring.plot import LivePlot
+from lab_control.ui.pages.monitoring.timing import monitoring_options
+from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
 
 
 class ResponsiveGrid(QScrollArea):
@@ -101,9 +102,24 @@ class MonitorCard(QFrame):
         layout.addWidget(self.plot, 1)
         self.state = QLabel("未开始监测")
         self.state.setWordWrap(True)
-        layout.addWidget(self.state)
+        footer = QHBoxLayout()
+        footer.addWidget(self.state, 1)
+        self.fit_button = QPushButton("适应曲线")
+        self.fit_button.clicked.connect(self.plot.fit_current)
+        self.fit_button.setVisible(spec.get("view") != "number")
+        footer.addWidget(self.fit_button)
+        layout.addLayout(footer)
+        controller.frame_ready.connect(self.refresh_frame)
 
-    def refresh(self) -> None:
+    def refresh_frame(self, device_id: str) -> None:
+        if device_id == self.spec["device_id"] and self.isVisible():
+            self.refresh(plot_only=True)
+
+    def showEvent(self, event) -> None:  # noqa: N802
+        super().showEvent(event)
+        self.refresh_frame(self.spec["device_id"])
+
+    def refresh(self, plot_only: bool = False) -> None:
         device_id = self.spec["device_id"]
         record = self.controller.records.get(device_id)
         if not record:
@@ -111,9 +127,10 @@ class MonitorCard(QFrame):
             return
         slot = record.get("slots", {}).get(self.controller.mode, "")
         name = record["displayName"] or record["identity"].get("model") or record["adapterId"]
-        self.subtitle.setText(
-            f"{slot_label(slot)} · {name} · CH {', '.join(map(str, self.spec['channels']))}"
-        )
+        if not plot_only:
+            self.subtitle.setText(
+                f"{slot_label(slot)} · {name} · CH {', '.join(map(str, self.spec['channels']))}"
+            )
         source = next(
             (s for s in data_sources(config_from_record(record)) if s.key == self.spec["source"]), None
         )
@@ -123,14 +140,22 @@ class MonitorCard(QFrame):
             frame = self.controller.runtime.monitoring.latest(
                 device_id, source.kind, source.quantity, self.spec["channels"][0]
             )
-            if frame:
+            if frame and plot_only and self.isVisible():
                 self.plot.show_frame(frame, source, tuple(self.spec["channels"]))
-        status = task.get("error") or (
-            "监测中 · 记录中"
-            if task.get("recording")
-            else "监测中 · 未保存数据"
-            if task.get("running")
-            else "未开始 / 已停止监测"
+                self.controller.runtime.monitoring.displayed(device_id, frame)
+        if plot_only:
+            return
+        status = (
+            task.get("error")
+            or task.get("recording_notice")
+            or task.get("recording_state", {}).get("csv_error")
+            or (
+                "监测中 · 记录中"
+                if task.get("recording")
+                else "监测中 · 未保存数据"
+                if task.get("running")
+                else "未开始 / 已停止监测"
+            )
         )
         self.state.setText(status)
 
@@ -142,35 +167,73 @@ class AddCardDialog(QDialog):
         self.setWindowTitle("添加监测项目")
         self.resize(520, 330)
         form = QFormLayout(self)
-        self.device, self.source, self.view = QComboBox(), QComboBox(), QComboBox()
+        self.device, self.source, self.view = WorkspaceComboBox(), WorkspaceComboBox(), WorkspaceComboBox()
         self.title = QLineEdit()
         self.checks: dict[int, QCheckBox] = {}
         self.channel_box = QWidget()
         self.channel_layout = QHBoxLayout(self.channel_box)
+        self._device_signature: tuple | None = None
         form.addRow("设备 / 槽位", self.device)
         form.addRow("曲线或数值项目", self.source)
         form.addRow("通道", self.channel_box)
         form.addRow("显示方式", self.view)
         form.addRow("卡片名称", self.title)
-        for record in controller.records.values():
-            if record["adapterId"] and mode_applicable(record, controller.mode):
-                label = record["displayName"] or record["identity"].get("model") or record["adapterId"]
-                slot = record.get("slots", {}).get(controller.mode, "")
-                self.device.addItem((slot_label(slot) + " · " if slot else "") + label, record["id"])
+        self.notice = QLabel("暂无已连接设备，请先在设备总览连接。")
+        self.notice.setObjectName("mutedText")
+        self.notice.setWordWrap(True)
+        form.addRow(self.notice)
+        self.overview_button = QPushButton("前往设备总览连接")
+        self.overview_button.clicked.connect(self.go_overview)
+        form.addRow(self.overview_button)
         self.device.currentIndexChanged.connect(self.device_changed)
         self.source.currentIndexChanged.connect(self.source_changed)
-        buttons = QDialogButtonBox(
+        self.buttons = buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        buttons.button(QDialogButtonBox.StandardButton.Ok).setEnabled(self.device.count() > 0)
         form.addRow(buttons)
+        controller.refreshed.connect(self.refresh_devices)
+        self.refresh_devices()
         self.device_changed()
+
+    def go_overview(self) -> None:
+        self.reject()
+        self.controller.navigate.emit("设备管理", "", "")
+
+    def refresh_devices(self) -> None:
+        entries = []
+        for record in self.controller.connected_records():
+            if record["adapterId"] and mode_applicable(record, self.controller.mode):
+                label = record["displayName"] or record["identity"].get("model") or record["adapterId"]
+                slot = record.get("slots", {}).get(self.controller.mode, "")
+                if self.controller.states[record["id"]]["connectionState"] == "degraded":
+                    label += " · 连接异常"
+                entries.append(((slot_label(slot) + " · " if slot else "") + label, record["id"]))
+        signature = tuple(entries)
+        if signature != self._device_signature:
+            self.device.replace_items(entries, select_first=self._device_signature is None)
+            self._device_signature = signature
+        self.device.setPlaceholderText("选择已连接设备" if entries else "暂无已连接设备")
+        self.update_availability()
+
+    def update_availability(self) -> None:
+        available = self.controller.has_connected_session(self.device.currentData() or "")
+        self.buttons.button(QDialogButtonBox.StandardButton.Ok).setEnabled(available)
+        self.notice.setVisible(not available)
+        self.overview_button.setVisible(not available)
+
+    def accept(self) -> None:
+        # Recheck the latest cached session, including removal while the menu is open.
+        self.refresh_devices()
+        if self.controller.has_connected_session(self.device.currentData() or ""):
+            super().accept()
 
     def device_changed(self) -> None:
         device_id = self.device.currentData()
+        self.update_availability()
         self.source.clear()
+        self.view.clear()
         while self.channel_layout.count():
             item = self.channel_layout.takeAt(0)
             widget = item.widget() if item else None
@@ -310,6 +373,7 @@ class MonitoringDashboard(QWidget):
                 )
             except Exception as exc:
                 self.controller.message.emit(str(exc))
+        dialog.deleteLater()
 
     def card_action(self, action: str, card_id: str) -> None:
         index = next(i for i, spec in enumerate(self.specs) if spec["id"] == card_id)
@@ -375,8 +439,12 @@ class MonitoringDashboard(QWidget):
         for device_id, requests in grouped.items():
             try:
                 self.controller.ensure_applicable(device_id)
+                options = monitoring_options(self.controller, device_id, self.controller.mode)
                 self.controller.runtime.monitoring.start(
-                    device_id, tuple(requests), mode=self.controller.mode
+                    device_id,
+                    tuple(requests),
+                    **options,
+                    mode=self.controller.mode,
                 )
             except Exception as exc:
                 self.controller.message.emit(f"{self.controller.records[device_id]['adapterId']}：{exc}")

@@ -1,0 +1,54 @@
+{
+  "date": "2026-09-25",
+  "hardware_access": false,
+  "pytest": {
+    "passed": 1464,
+    "skipped": 1,
+    "seconds": 198.6,
+    "command": ".venv-dev/Scripts/python.exe -m pytest -q",
+    "initial_attempt": "Windows Qt access violation in pytest-qt event processing; not counted as passed",
+    "verified_attempt": "Complete rerun passed"
+  },
+  "targeted": {
+    "passed": 32,
+    "seconds": 35.61
+  },
+  "ruff": "passed",
+  "mypy": {
+    "status": "passed",
+    "source_files": 165
+  },
+  "documentation": "generation consistency and local links/anchors/navigation passed",
+  "build": {
+    "offline": true,
+    "formats": [
+      "wheel",
+      "sdist"
+    ],
+    "isolated_import": "passed",
+    "device_removals": 7
+  },
+  "renders": {
+    "count": 12,
+    "logical_sizes": [
+      [
+        1280,
+        760
+      ],
+      [
+        1440,
+        900
+      ]
+    ],
+    "dpi": [
+      100,
+      125,
+      150
+    ],
+    "modes": [
+      "fastest",
+      "interval"
+    ],
+    "visually_reviewed": true
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "hardware": false,
+  "renders": [
+    {
+      "file": "spectrum-fastest-1280x760-1.25.png",
+      "logical_size": [
+        1280,
+        760
+      ],
+      "dpr": 1.25,
+      "cadence": "fastest",
+      "one_row": true,
+      "numeric_fields": 1,
+      "tooltip": "",
+      "options": {
+        "interval": 0.5,
+        "record_interval": null,
+        "cadence": "fastest",
+        "csv_interval": 5
+      },
+      "y_range": [
+        -101.49983733941335,
+        -23.50178926645322
+      ],
+      "save_label": "保存当前帧"
+    },
+    {
+      "file": "spectrum-fastest-1440x900-1.25.png",
+      "logical_size": [
+        1440,
+        900
+      ],
+      "dpr": 1.25,
+      "cadence": "fastest",
+      "one_row": true,
+      "numeric_fields": 1,
+      "tooltip": "",
+      "options": {
+        "interval": 0.5,
+        "record_interval": null,
+        "cadence": "fastest",
+        "csv_interval": 5
+      },
+      "y_range": [
+        -101.49983733941335,
+        -23.50178926645322
+      ],
+      "save_label": "保存当前帧"
+    },
+    {
+      "file": "spectrum-interval-1280x760-1.25.png",
+      "logical_size": [
+        1280,
+        760
+      ],
+      "dpr": 1.25,
+      "cadence": "interval",
+      "one_row": true,
+      "numeric_fields": 1,
+      "tooltip": "",
+      "options": {
+        "interval": 0.5,
+        "record_interval": null,
+        "cadence": "interval",
+        "csv_interval": 5
+      },
+      "y_range": [
+        -101.49983733941335,
+        -23.50178926645322
+      ],
+      "save_label": "保存当前帧"
+    },
+    {
+      "file": "spectrum-interval-1440x900-1.25.png",
+      "logical_size": [
+        1440,
+        900
+      ],
+      "dpr": 1.25,
+      "cadence": "interval",
+      "one_row": true,
+      "numeric_fields": 1,
+      "tooltip": "",
+      "options": {
+        "interval": 0.5,
+        "record_interval": null,
+        "cadence": "interval",
+        "csv_interval": 5
+      },
+      "y_range": [
+        -101.49983733941335,
+        -23.50178926645322
+      ],
+      "save_label": "保存当前帧"
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "hardware": false,
+  "renders": [
+    {
+      "file": "fastest-1280x760.png",
+      "actual_size": [
+        1280,
+        760
+      ],
+      "cadence": "fastest",
+      "interval_enabled": false,
+      "recording": false,
+      "controls_locked": false,
+      "plot_has_data": true
+    },
+    {
+      "file": "fastest-1440x900.png",
+      "actual_size": [
+        1440,
+        900
+      ],
+      "cadence": "fastest",
+      "interval_enabled": false,
+      "recording": false,
+      "controls_locked": false,
+      "plot_has_data": true
+    },
+    {
+      "file": "interval-1280x760.png",
+      "actual_size": [
+        1280,
+        760
+      ],
+      "cadence": "interval",
+      "interval_enabled": true,
+      "recording": true,
+      "controls_locked": true,
+      "plot_has_data": true
+    },
+    {
+      "file": "interval-1440x900.png",
+      "actual_size": [
+        1440,
+        900
+      ],
+      "cadence": "interval",
+      "interval_enabled": true,
+      "recording": true,
+      "controls_locked": true,
+      "plot_has_data": true
+    }
+  ],
+  "display_latency": {
+    "frames": 10,
+    "median": 0.010081349995743949,
+    "p95": 0.11866474500129696
+  },
+  "recording_counts": {
+    "received": 1,
+    "committed": 1,
+    "converted": 1,
+    "pending": 0
+  },
+  "recording_format": "SQLite/BLOB v1 + CSV",
+  "timing_tooltip": "有效帧接收间隔；不代表仪器新扫描率。\n采集：0.115 s；查询事务：0 次；排队：0.043 s\n发送：0.000 s；读取：0.000 s；解析：0.000 s\n最近完整采集：0.115 s\n收到到绘图：0.125 s；调度间隙：0.390 s\n记录：已接收 1 / 待保存 1 / 已提交 0 / CSV 0\n二进制写入：0.000 s；CSV 转换：0.000 s；本次转换最大延迟：0.000 s"
+}

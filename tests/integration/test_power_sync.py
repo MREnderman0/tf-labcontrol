@@ -13,6 +13,7 @@ def test_twenty_mixed_devices_reads_are_serial_bounded_fair_and_write_free(tmp_p
         keys = []
         guard = threading.Lock()
         active, maximum, counts, writes = {}, {}, {}, []
+        monitored_reads = []
         for index in range(20):
             model = "gwinstek.gpd4303s" if index % 2 == 0 else "tek.afg31252"
             key = runtime.add(ConnectionConfig(f"mock://mixed/{index}", model, "mock"))
@@ -22,6 +23,8 @@ def test_twenty_mixed_devices_reads_are_serial_bounded_fair_and_write_free(tmp_p
             original = adapter.read_settings
 
             def read(names, channel, *, original=original, index=index, key=key):
+                if index == 6:
+                    monitored_reads.append((channel, names))
                 with guard:
                     active[key] = active.get(key, 0) + 1
                     maximum[key] = max(active[key], maximum.get(key, 0))
@@ -49,14 +52,14 @@ def test_twenty_mixed_devices_reads_are_serial_bounded_fair_and_write_free(tmp_p
         runtime.monitoring.focus_settings(keys[0])
         runtime.monitoring.enable_settings_sync()
         started = time.monotonic()
-        deadline = started + 8
+        deadline = started + 15
         while time.monotonic() < deadline:
             if all(
                 (4, "measured_current") in runtime.sessions.readback_frames(key)
                 if i % 2 == 0
                 else (2, "offset") in runtime.sessions.readback_frames(key)
                 for i, key in enumerate(keys)
-                if i not in {2, 4}
+                if i not in {2, 4, 6}
             ):
                 break
             assert all(s["pending"] <= 1 for s in runtime.sessions.snapshots())
@@ -65,6 +68,11 @@ def test_twenty_mixed_devices_reads_are_serial_bounded_fair_and_write_free(tmp_p
             raise AssertionError("At least one healthy device was starved")
         assert writes == [] and counts[keys[2]] == 1
         assert keys[4] not in counts
+        assert monitored_reads and all(
+            ch == 1 and names == ("measured_voltage",) for ch, names in monitored_reads
+        )
+        assert runtime.monitoring.latest(keys[6], "status", "measured_voltage") is not None
+        runtime.monitoring.stop(keys[6]).result(3)
         assert all(value == 1 for value in maximum.values())
         assert runtime.monitoring.settings_sync.max_observed_concurrent <= 4
         runtime.sessions.set_control_group(keys[4], False)

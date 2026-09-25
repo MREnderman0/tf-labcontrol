@@ -39,6 +39,7 @@ class PowerOutput(QWidget):
         row.setContentsMargins(0, 0, 0, 0)
         self.state = QLabel(self)
         self.state.setObjectName("powerOutputState")
+        self.state.setWordWrap(True)
         self.button = QPushButton("输出未知", self)
         self.button.setObjectName("powerOutputButton")
         self.button.setFixedSize(112, 36)
@@ -65,8 +66,11 @@ class PowerOutput(QWidget):
         )
         label = "整机输出" if self.operation == "all_outputs" else "输出"
         actual = "开启" if self.value is True else "关闭" if self.value is False else "未知"
-        self.state.setText(f"{label} · {actual}" + (f" · {health}" if health != "正常" else ""))
-        self.state.setToolTip(reason)
+        # Channel headers already show synchronization health. Repeating it
+        # beside both footer buttons expands cards while staggered reads arrive.
+        suffix = f" · {health}" if self.operation == "all_outputs" and health != "正常" else ""
+        self.state.setText(f"{label} · {actual}" + suffix)
+        self.state.setToolTip(f"{health} · {reason}")
         self.button.setText(
             "关闭输出" if self.value is True else "开启输出" if self.value is False else "输出未知"
         )
@@ -91,6 +95,7 @@ class PowerOutput(QWidget):
                 and self.value is not None
                 and not self.busy
                 and not state.get("controlPending")
+                and not state.get("controlsLocked")
                 and not state.get("capabilityStale", True)
                 and self.device_id not in self.controller.group_devices
                 and state.get("activeTask") != "continuous_acquisition"

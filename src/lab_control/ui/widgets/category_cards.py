@@ -88,6 +88,8 @@ class CategoryCard(QFrame):
     def mousePressEvent(self, event) -> None:  # noqa: N802
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit(self.category)
+            event.accept()
+            return
         super().mousePressEvent(event)
 
     def keyPressEvent(self, event) -> None:  # noqa: N802

@@ -1,0 +1,96 @@
+{
+  "date": "2026-09-24",
+  "scope": "Parameter typography, formal UI with isolated Mock only",
+  "real_hardware_access": false,
+  "models": [
+    "rs.sma100b",
+    "tek.afg31252",
+    "siglent.sdg2082x"
+  ],
+  "regression": {
+    "passed": 504,
+    "hardware_skipped": 1,
+    "exit_code": 0,
+    "log_sha256": "03c1a9c4bd836745647bf4679e4fafa0a6e875717a4aa69dad3255f4eaf10f18"
+  },
+  "native_cases": [
+    {
+      "dpr": 1,
+      "tests_passed": 22,
+      "exit_code": 0,
+      "numeric_field_states_checked": 66,
+      "captures": 9,
+      "parameter_writes": 0,
+      "test_log_sha256": "378c9eb7f332c5cd3c1abc7314af68e2fce1c8b4a40047f4fcb0819a2e1be693",
+      "metrics": "after-100/metrics.json"
+    },
+    {
+      "dpr": 1.25,
+      "tests_passed": 22,
+      "exit_code": 0,
+      "numeric_field_states_checked": 66,
+      "captures": 9,
+      "parameter_writes": 0,
+      "test_log_sha256": "883300dc8a0ac5435babe86a6f272d863d3df4e67c42a176f11d7ae869067f93",
+      "metrics": "after-125/metrics.json"
+    },
+    {
+      "dpr": 1.5,
+      "tests_passed": 22,
+      "exit_code": 0,
+      "numeric_field_states_checked": 66,
+      "captures": 9,
+      "parameter_writes": 0,
+      "test_log_sha256": "a6a7a9cbe8e950eaa2be66de64fe486eac6ac632ec93b51e696a08b0286945c5",
+      "metrics": "after-150/metrics.json"
+    }
+  ],
+  "checks": {
+    "ruff": "passed",
+    "changed_file_format": "passed",
+    "mypy": "passed",
+    "generated_docs": "passed",
+    "markdown": "passed"
+  },
+  "agent_visual_review": true,
+  "physical_input_manual_review": false,
+  "source_sha256": {
+    "src/lab_control/ui/pages/device_control/editors.py": "2eaea2bc5587241a0e53083f2fab627232ec20e5486948ed2199c4c15bec7746",
+    "src/lab_control/ui/pages/device_control/form.py": "622bb4fc630d354a6390e4477ea3db21839934de91e93a2b7b90449d8d0b627d",
+    "src/lab_control/ui/styles/card_workspace.qss": "6aa1e37a6304e4a78432a187f58ac6c92cfd97d7f0b4372acbeafaaff77a32f4",
+    "scripts/review_parameter_typography.py": "d443711b4cbc45de2dc4898164b4bd74448b02f37376686aa5d85a92edbece52",
+    "tests/integration/test_parameter_typography.py": "b2cfd2e6ea7b89e7f6d2a1a29a7fca1be87e2d1c307c4e3a26198603e9b67111"
+  },
+  "captures_sha256": {
+    "after-100/rs.sma100b-disconnected.png": "9af172437fc31331e55249b760674d565479db427e6df61d8fff32ecfb1c3a98",
+    "after-100/rs.sma100b-editing.png": "ec277d97e8d37572b61a50b70849b36dd0f398e167609cd59cc750938301a88c",
+    "after-100/rs.sma100b-readback.png": "944203fa8c2adf739523858cb3125296e591a20f568665b1b75d4e338c80c738",
+    "after-100/siglent.sdg2082x-disconnected.png": "7b88db6529785212ec6ba8d6905ca78f53f7c0c2342e925de5da8622c7b4ae91",
+    "after-100/siglent.sdg2082x-editing.png": "84f49f181cd389fd239277d99247f65fc7fb118041f99d16d3301d96ddcac206",
+    "after-100/siglent.sdg2082x-readback.png": "d3f22288f6e27ed2ab36691524f2d3fa95f812c572096050b5eb8bb8c73358f4",
+    "after-100/tek.afg31252-disconnected.png": "1fbfb71c197ddb234a8a6b890d66d26ced924ff143e7c422bde88770031765b2",
+    "after-100/tek.afg31252-editing.png": "f1ef49ac19731ec5e221d031e0d93afc053244d3b52e5d8d42da7e1d73912a01",
+    "after-100/tek.afg31252-readback.png": "5c8729836094d61488c02563984f230463202a9be48048048fd73e8bd48cc77e",
+    "after-125/rs.sma100b-disconnected.png": "05c5b0e0deb9f05516cf60d530d2d507b3d7b76b4a24c3287b4e61e3125fd68a",
+    "after-125/rs.sma100b-editing.png": "2a004fe699f2039f870cfbd31484a50e61d64bf968eafd3a3e54be00f0483d22",
+    "after-125/rs.sma100b-readback.png": "18e159e620870200315d44866513685f4571dd1481678415646d995b1f04faf0",
+    "after-125/siglent.sdg2082x-disconnected.png": "68b54311502e8a7bf588d1a6578dcc503132f936560983cb2d20999be7d976b5",
+    "after-125/siglent.sdg2082x-editing.png": "1d323f653bbf90ff05a7437d2ce1e926b273b8362a6ae896402d3e0e801b5a1d",
+    "after-125/siglent.sdg2082x-readback.png": "77e9c2a545dd148d0710f66f4415d6b73040d8b8cc5e4bb71b54832a5c710eb4",
+    "after-125/tek.afg31252-disconnected.png": "277d116f97588d1c58faa71b4f6e54ae279c0d48114bb66fcf21cdfad357f09f",
+    "after-125/tek.afg31252-editing.png": "3390d14f546cdb20955364b95ac73baccf80197c46a7e01a3763900b45bef701",
+    "after-125/tek.afg31252-readback.png": "6683007df8635fac5dfa68f5309e66c8de7e45c02806071dbad3a6d2514454cd",
+    "after-150/rs.sma100b-disconnected.png": "17b681c39588891814f031ff12e0b6d8b9a073e212528c5ba6de3cacb17b4d11",
+    "after-150/rs.sma100b-editing.png": "430503c1d2ed0630ecd3a3bddc371e0253779c9fbefa93f193e7897fe7c1eca1",
+    "after-150/rs.sma100b-readback.png": "5b447b391aa458dab128c666b417b11c4b239eba35f12e3834e908ad5d07b03f",
+    "after-150/siglent.sdg2082x-disconnected.png": "de8e1f75eedea3421a7e60c86960d9ed32cf15812436f327a3c8173b96c68688",
+    "after-150/siglent.sdg2082x-editing.png": "088b69e70698b8b2083e9e63a07228883fd640fa498425a7f4d721f336dcfecf",
+    "after-150/siglent.sdg2082x-readback.png": "8ec4d6506990b731e96b71676e51d14c7107f3192cf615a779ff82aeeb55e605",
+    "after-150/tek.afg31252-disconnected.png": "9f30c4b3e70d5170af3eaa3edc8424e075a285839d8c457f147c16627b1dbceb",
+    "after-150/tek.afg31252-editing.png": "76f5d1485325c38e79be211ff6314fe062c5d89d99a2e67f58cc2153c8622455",
+    "after-150/tek.afg31252-readback.png": "a5d8cac32c77710cba55d4c169aed0cad98603d4e19eee7a399534df270e8643",
+    "before-100/rs.sma100b-disconnected-sweep.png": "757c1e58cf0a7bc46b105b50041e55f8ccf5e30aa99cb13876dde38b88f6b3d9",
+    "before-100/rs.sma100b-editing-sweep.png": "c5ac0eb5eba4d36125acdc4200d623eb9e830a293d9c771e2e7efd181f533257",
+    "before-100/rs.sma100b-readback-sweep.png": "239920ebddf335899ba36d833b2cd829c9713cc315d95e11a05c5d41ff3724a5"
+  }
+}

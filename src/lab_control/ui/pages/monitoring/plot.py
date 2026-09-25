@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict, deque
+from dataclasses import replace
 from datetime import datetime
 from typing import Any
 
@@ -8,8 +9,11 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
+from lab_control.application.acquisition_pipeline import validate_displayed_batch
 from lab_control.application.controls import DataSource
 from lab_control.application.monitoring import MonitorFrame
+from lab_control.domain.instruments import DeviceError
+from lab_control.ui.pages.monitoring.trace_view import TraceView
 
 
 class LivePlot(QWidget):
@@ -34,8 +38,11 @@ class LivePlot(QWidget):
         self.history: dict[tuple[int, str], deque[tuple[float, float]]] = defaultdict(
             lambda: deque(maxlen=1200)
         )
-        self.last_token: tuple[str, int, str, tuple[int, ...]] | None = None
+        self.last_token: tuple | None = None
         self.unit_signature: tuple[str, str] | None = None
+        self.axis_signature: tuple | None = None
+        self.displayed_frame: MonitorFrame | None = None
+        self.trace_view = TraceView(self.plot)
 
     def reset(self) -> None:
         self.plot.clear()
@@ -43,19 +50,48 @@ class LivePlot(QWidget):
         self.history.clear()
         self.last_token = None
         self.unit_signature = None
+        self.axis_signature = None
+        self.displayed_frame = None
+        self.trace_view.reset()
+        self.plot.enableAutoRange()
         self.value.setText("—")
         self.meta.setText("尚无数据")
 
     def show_frame(self, frame: MonitorFrame, source: DataSource, channels: tuple[int, ...]) -> None:
-        token = (frame.batch.timestamp, frame.configuration_version, source.key, channels)
+        token = (
+            frame.session_id,
+            frame.sequence,
+            frame.received_at,
+            frame.batch.timestamp,
+            frame.configuration_version,
+            source.key,
+            channels,
+        )
         if token == self.last_token:
             return
-        self.last_token = token
         wanted = [
             m
             for m in frame.batch.measurements
             if m.channel in channels and (not source.measurement or m.quantity == source.measurement)
         ]
+        candidate = replace(frame, batch=replace(frame.batch, measurements=tuple(wanted)))
+        valid = True
+        try:
+            validate_displayed_batch(candidate.batch)
+        except DeviceError:
+            # A failed update must not replace the valid snapshot still on screen.
+            if any(np.asarray(m.values).size for m in wanted):
+                return
+            valid = False  # Preserve the existing "unknown" scalar display.
+        self.last_token = token
+        stable_trace = source.kind in {"spectrum", "waveform"}
+        if stable_trace and valid:
+            # Fit raw arrays first: peak decimation at the initial seconds-wide
+            # viewport can turn a microsecond trace into zero display points.
+            points = [(np.asarray(m.axis), np.asarray(m.values)) for m in wanted if m.axis is not None]
+            self.trace_view.update(
+                candidate, source.key, channels, points, waveform=source.kind == "waveform"
+            )
         used = set()
         values_text = []
         for measurement in wanted:
@@ -77,7 +113,7 @@ class LivePlot(QWidget):
             if self.unit_signature is not None and self.unit_signature != signature:
                 self.history.clear()
             self.unit_signature = signature
-            if measurement.axis is None or len(values) == 1:
+            if measurement.axis is None:
                 now = datetime.fromisoformat(frame.batch.timestamp).timestamp()
                 history = self.history[key]
                 history.append((now, float(values[-1])))
@@ -96,13 +132,25 @@ class LivePlot(QWidget):
                 curve.setDownsampling(auto=True, method="peak")
                 curve.setClipToView(True)
                 self.curves[key] = curve
-            self.curves[key].setData(x, y, connect="finite")
+            self.curves[key].setData(
+                x, y, connect="finite", symbol="o" if len(x) == 1 else None, symbolSize=5
+            )
             self.curves[key].show()
             used.add(key)
-            self.plot.setLabel("bottom", axis_label, units=axis_unit or None)
-            self.plot.setLabel("left", source.label, units=unit or None)
             log_x = source.quantity in {"phase_noise", "am_noise", "stability"} and bool(np.all(x > 0))
-            self.plot.setLogMode(x=log_x, y=source.quantity == "stability")
+            axis_signature = (
+                axis_label,
+                axis_unit,
+                source.label,
+                unit,
+                log_x,
+                source.quantity == "stability",
+            )
+            if axis_signature != self.axis_signature:
+                self.plot.setLabel("bottom", axis_label, units=axis_unit or None)
+                self.plot.setLabel("left", source.label, units=unit or None)
+                self.plot.setLogMode(x=log_x, y=source.quantity == "stability")
+                self.axis_signature = axis_signature
             values_text.append(f"CH {measurement.channel}  {values[-1]:.6g} {unit}")
         for key, curve in self.curves.items():
             if key not in used:
@@ -110,4 +158,23 @@ class LivePlot(QWidget):
         self.value.setText("   ·   ".join(values_text) or "没有所选通道的数据")
         self.value.setVisible(source.view == "number" or any(len(m.values) <= 1 for m in wanted))
         quality = " / ".join(sorted({m.quality.value for m in wanted}))
-        self.meta.setText(f"{frame.batch.timestamp} · {quality} · 配置版本 {frame.configuration_version}")
+        count = (
+            " · 实收 " + " / ".join(f"CH {m.channel}: {len(m.values)} 点" for m in wanted)
+            if stable_trace
+            else ""
+        )
+        complete = (
+            " · 按仪器完整波形读取"
+            if frame.batch.performance.get("requested_points_is_not_a_hardware_limit")
+            else ""
+        )
+        self.meta.setText(
+            f"{frame.batch.timestamp} · {quality} · 配置版本 {frame.configuration_version}{count}{complete}"
+        )
+        self.displayed_frame = candidate if valid else None
+
+    def fit_current(self) -> None:
+        if self.trace_view.active:
+            self.trace_view.fit()
+        else:
+            self.plot.autoRange()
