@@ -80,18 +80,6 @@ def test_every_numeric_limit_and_confirmation_enforced(profile):
     assert transport.history == []
 
 
-@pytest.mark.parametrize(
-    "name,write,readback",
-    [
-        ("rigol.dg5504pro", "SOUR2:FREQ 1000", "SOUR2:FREQ?"),
-    ],
-)
-def test_function_generator_golden_frequency(name, write, readback):
-    device, transport = adapter(name, [(write, b""), (readback, b"1000"), ("SYST:ERR?", b'0,"No error"')])
-    assert device.apply(DeviceCommand("frequency", {"value": 1000}, 2)).outcome == "success"
-    assert not transport.exchanges
-
-
 def test_keithley_select_set_readback_atomic_sequence():
     device, transport = adapter(
         "keithley.2231a",
@@ -111,8 +99,6 @@ def test_spd_uses_channel_argument_and_no_invented_error_queue():
         device.apply(DeviceCommand("voltage", {"value": 12}, 1))
 
 
-
-
 def test_unknown_no_commands_and_exact_suffix():
     unknown = UnknownDeviceAdapter(DeviceIdentity("", "DS1202Z"))
     with pytest.raises(Unsupported):
@@ -120,8 +106,6 @@ def test_unknown_no_commands_and_exact_suffix():
     assert match(DeviceIdentity("RIGOL", "DS1202Z")) == ""
     assert match(DeviceIdentity("RIGOL", "DS1202Z-E")) == "rigol.ds1202ze"
     assert match(DeviceIdentity("Wrong vendor", "DG5504 Pro")) == ""
-
-
 
 
 def test_waveform_scaling_complex_data_and_bad_lengths():

@@ -159,8 +159,7 @@ def verify_reconnect(config: ConnectionConfig, folder: Path, *, cycles: int = 3)
             + "\n\n[结果](results.json) · [通信](communication.jsonl)。\n",
             encoding="utf-8",
         )
-        with (folder.parents[1] / "index.md").open("a", encoding="utf-8") as stream:
-            stream.write(
-                f"\n- {report['finished_at']}：GPD-4303S LOCAL/REMOTE 验收；[记录]({folder.parent.name}/{folder.name}/record.md)。\n"
-            )
+        from lab_control.storage.hardware_documents import refresh_after_batch
+
+        refresh_after_batch(folder)
     return report

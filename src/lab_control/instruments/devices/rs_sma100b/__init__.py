@@ -16,4 +16,5 @@ DEFINITION = DeviceDefinition(
         "64 位 VISA Runtime",
     ),
     Path(__file__).parent,
+    deployment_components=("rs-visa",),
 )

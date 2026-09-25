@@ -11,10 +11,13 @@ from importlib import import_module
 from lab_control.instruments.devices.definition import DeviceDefinition
 
 DEVICE_MODULES = (
+    "lab_control.instruments.devices.rigol_dg5504pro",
     "lab_control.instruments.devices.tek_afg31252",
     "lab_control.instruments.devices.siglent_sdg2082x",
     "lab_control.instruments.devices.rs_sma100b",
     "lab_control.instruments.devices.gwinstek_gpd4303s",
+    "lab_control.instruments.devices.rigol_dsa815",
+    "lab_control.instruments.devices.lecroy_waverunner9404m",
 )
 
 

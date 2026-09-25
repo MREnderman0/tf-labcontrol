@@ -1,0 +1,1286 @@
+{
+  "capabilities": {
+    "category": "spectrum_analyzer",
+    "channels": [
+      1
+    ],
+    "operations": [
+      {
+        "name": "start_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0,
+            "maximum": 1500000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "SENS:FREQ:STAR",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "stop_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0,
+            "maximum": 1500000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "SENS:FREQ:STOP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "center_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0,
+            "maximum": 1500000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "SENS:FREQ:CENT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "span",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0,
+            "maximum": 1500000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "SENS:FREQ:SPAN",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "rbw",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 10,
+            "maximum": 1000000.0,
+            "choices": [
+              "10",
+              "30",
+              "100",
+              "300",
+              "1000",
+              "3000",
+              "10000",
+              "30000",
+              "100000",
+              "300000",
+              "1e+06"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "SENS:BAND:RES",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "vbw",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 1,
+            "maximum": 3000000.0,
+            "choices": [
+              "1",
+              "3",
+              "10",
+              "30",
+              "100",
+              "300",
+              "1000",
+              "3000",
+              "10000",
+              "30000",
+              "100000",
+              "300000",
+              "1e+06",
+              "3e+06"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "SENS:BAND:VID",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "rbw_auto",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "SENS:BAND:RES:AUTO",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "vbw_auto",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "SENS:BAND:VID:AUTO",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "reference_level",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "dBm",
+            "minimum": -100,
+            "maximum": 20,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "DISP:WIN:TRAC:Y:RLEV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "attenuation",
+        "parameters": {
+          "value": {
+            "kind": "integer",
+            "unit": "dB",
+            "minimum": 0,
+            "maximum": 30,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "SENS:POW:RF:ATT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "attenuation_auto",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "SENS:POW:RF:ATT:AUTO",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_time",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s",
+            "minimum": 2e-05,
+            "maximum": 7500,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "SENS:SWE:TIME",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_time_auto",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "SENS:SWE:TIME:AUTO",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "continuous",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "INIT:CONT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "amplitude_unit",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "DBM",
+              "DBMV",
+              "DBUV",
+              "V",
+              "W"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "UNIT:POW",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "detector",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "POS",
+              "NEG",
+              "SAMP",
+              "NORM",
+              "RMS",
+              "VAV"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "SENS:DET:FUNC",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trace_mode",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "WRIT",
+              "MAXH",
+              "MINH",
+              "VIEW",
+              "BLAN",
+              "VID",
+              "POW"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "TRAC1:MODE",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_source",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "IMM",
+              "VID",
+              "EXT"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "TRIG:SEQ:SOUR",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_enabled",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "CALC:MARK1:STAT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0,
+            "maximum": 1500000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "CALC:MARK1:X",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_position",
+        "parameters": {
+          "value": {
+            "kind": "integer",
+            "unit": "point",
+            "minimum": 0,
+            "maximum": 600,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "CALC:MARK1:X:POS",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_mode",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "POS"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "CALC:MARK1:MODE",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_readout",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "FREQ",
+              "TIME"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "CALC:MARK1:X:READ",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "options",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "SYST:OPT?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "transfer_format",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "FORM?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "byte_order",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "FORM:BORD?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_points",
+        "parameters": {
+          "value": {
+            "kind": "integer",
+            "unit": "point",
+            "minimum": 601,
+            "maximum": 601,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "User Guide 2-33 / 5-7: fixed 601 display points",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "errors",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "SYST:ERR?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_count",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "SENS:SWE:COUN?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_current",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "SENS:SWE:COUN:CURR?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "operation_condition",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "STAT:OPER:COND?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "measurement_mode",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "CONF?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "frequency_offset",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "SENS:FREQ:OFFS?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "reference_offset",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "DISP:WIN:TRAC:Y:RLEV:OFFS?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "preamplifier",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "SENS:POW:RF:GAIN:STAT?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "mixer_level",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "SENS:POW:RF:MIX:RANG:UPP?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_value",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "CALC:MARK1:Y?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_trace",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "CALC:MARK1:TRAC?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_trace_auto",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "CALC:MARK1:TRAC:AUTO?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_function",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "CALC:MARK1:FUNC?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_tracking",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "CALC:MARK1:CPE:STAT?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_search",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "CALC:MARK1:PEAK:SEAR:MODE?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "single",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "INIT:IMM",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "auto_setup",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": ":SENSe:POWer:ATUNe",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_peak",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+        "section": "CALC:MARK1:MAX:MAX",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      }
+    ]
+  },
+  "profile": {
+    "adapter_id": "rigol.dsa815",
+    "manufacturer": [
+      "RIGOL"
+    ],
+    "models": [
+      "DSA815"
+    ],
+    "category": "spectrum_analyzer",
+    "channels": [
+      1
+    ],
+    "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
+    "revision": "DSA800 Programming Guide chapters 2-16, 2-48, 2-75, 2-126..149, 2-188..199",
+    "status": [
+      "start_frequency",
+      "stop_frequency",
+      "rbw",
+      "reference_level"
+    ],
+    "identity_query": "*IDN?",
+    "error_query": "SYST:ERR?",
+    "acquisition": "dsa",
+    "channel_limits": {}
+  },
+  "commands": {
+    "start_frequency": {
+      "writes": [
+        "SENS:FREQ:STAR {value}"
+      ],
+      "query": "SENS:FREQ:STAR?",
+      "select": [],
+      "compare": false
+    },
+    "stop_frequency": {
+      "writes": [
+        "SENS:FREQ:STOP {value}"
+      ],
+      "query": "SENS:FREQ:STOP?",
+      "select": [],
+      "compare": false
+    },
+    "center_frequency": {
+      "writes": [
+        "SENS:FREQ:CENT {value}"
+      ],
+      "query": "SENS:FREQ:CENT?",
+      "select": [],
+      "compare": false
+    },
+    "span": {
+      "writes": [
+        "SENS:FREQ:SPAN {value}"
+      ],
+      "query": "SENS:FREQ:SPAN?",
+      "select": [],
+      "compare": false
+    },
+    "rbw": {
+      "writes": [
+        "SENS:BAND:RES {value}"
+      ],
+      "query": "SENS:BAND:RES?",
+      "select": [],
+      "compare": false
+    },
+    "vbw": {
+      "writes": [
+        "SENS:BAND:VID {value}"
+      ],
+      "query": "SENS:BAND:VID?",
+      "select": [],
+      "compare": false
+    },
+    "rbw_auto": {
+      "writes": [
+        "SENS:BAND:RES:AUTO {value}"
+      ],
+      "query": "SENS:BAND:RES:AUTO?",
+      "select": [],
+      "compare": false
+    },
+    "vbw_auto": {
+      "writes": [
+        "SENS:BAND:VID:AUTO {value}"
+      ],
+      "query": "SENS:BAND:VID:AUTO?",
+      "select": [],
+      "compare": false
+    },
+    "reference_level": {
+      "writes": [
+        "DISP:WIN:TRAC:Y:RLEV {value}"
+      ],
+      "query": "DISP:WIN:TRAC:Y:RLEV?",
+      "select": [],
+      "compare": false
+    },
+    "attenuation": {
+      "writes": [
+        "SENS:POW:RF:ATT {value}"
+      ],
+      "query": "SENS:POW:RF:ATT?",
+      "select": [],
+      "compare": false
+    },
+    "attenuation_auto": {
+      "writes": [
+        "SENS:POW:RF:ATT:AUTO {value}"
+      ],
+      "query": "SENS:POW:RF:ATT:AUTO?",
+      "select": [],
+      "compare": false
+    },
+    "sweep_time": {
+      "writes": [
+        "SENS:SWE:TIME {value}"
+      ],
+      "query": "SENS:SWE:TIME?",
+      "select": [],
+      "compare": false
+    },
+    "sweep_time_auto": {
+      "writes": [
+        "SENS:SWE:TIME:AUTO {value}"
+      ],
+      "query": "SENS:SWE:TIME:AUTO?",
+      "select": [],
+      "compare": false
+    },
+    "continuous": {
+      "writes": [
+        "INIT:CONT {value}"
+      ],
+      "query": "INIT:CONT?",
+      "select": [],
+      "compare": false
+    },
+    "amplitude_unit": {
+      "writes": [
+        "UNIT:POW {value}"
+      ],
+      "query": "UNIT:POW?",
+      "select": [],
+      "compare": false
+    },
+    "detector": {
+      "writes": [
+        "SENS:DET:FUNC {value}"
+      ],
+      "query": "SENS:DET:FUNC?",
+      "select": [],
+      "compare": false
+    },
+    "trace_mode": {
+      "writes": [
+        "TRAC1:MODE {value}"
+      ],
+      "query": "TRAC1:MODE?",
+      "select": [],
+      "compare": false
+    },
+    "trigger_source": {
+      "writes": [
+        "TRIG:SEQ:SOUR {value}"
+      ],
+      "query": "TRIG:SEQ:SOUR?",
+      "select": [],
+      "compare": false
+    },
+    "marker_enabled": {
+      "writes": [
+        "CALC:MARK1:STAT {value}"
+      ],
+      "query": "CALC:MARK1:STAT?",
+      "select": [],
+      "compare": false
+    },
+    "marker_frequency": {
+      "writes": [
+        "CALC:MARK1:X {value}"
+      ],
+      "query": "CALC:MARK1:X?",
+      "select": [],
+      "compare": false
+    },
+    "marker_position": {
+      "writes": [
+        "CALC:MARK1:X:POS {value}"
+      ],
+      "query": "CALC:MARK1:X:POS?",
+      "select": [],
+      "compare": false
+    },
+    "marker_mode": {
+      "writes": [
+        "CALC:MARK1:MODE {value}"
+      ],
+      "query": "CALC:MARK1:MODE?",
+      "select": [],
+      "compare": false
+    },
+    "marker_readout": {
+      "writes": [
+        "CALC:MARK1:X:READ {value}"
+      ],
+      "query": "CALC:MARK1:X:READ?",
+      "select": [],
+      "compare": false
+    },
+    "options": {
+      "writes": [],
+      "query": "SYST:OPT?",
+      "select": [],
+      "compare": false
+    },
+    "transfer_format": {
+      "writes": [],
+      "query": "FORM?",
+      "select": [],
+      "compare": false
+    },
+    "byte_order": {
+      "writes": [],
+      "query": "FORM:BORD?",
+      "select": [],
+      "compare": false
+    },
+    "sweep_points": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": false
+    },
+    "errors": {
+      "writes": [],
+      "query": "SYST:ERR?",
+      "select": [],
+      "compare": false
+    },
+    "sweep_count": {
+      "writes": [],
+      "query": "SENS:SWE:COUN?",
+      "select": [],
+      "compare": false
+    },
+    "sweep_current": {
+      "writes": [],
+      "query": "SENS:SWE:COUN:CURR?",
+      "select": [],
+      "compare": false
+    },
+    "operation_condition": {
+      "writes": [],
+      "query": "STAT:OPER:COND?",
+      "select": [],
+      "compare": false
+    },
+    "measurement_mode": {
+      "writes": [],
+      "query": "CONF?",
+      "select": [],
+      "compare": false
+    },
+    "frequency_offset": {
+      "writes": [],
+      "query": "SENS:FREQ:OFFS?",
+      "select": [],
+      "compare": false
+    },
+    "reference_offset": {
+      "writes": [],
+      "query": "DISP:WIN:TRAC:Y:RLEV:OFFS?",
+      "select": [],
+      "compare": false
+    },
+    "preamplifier": {
+      "writes": [],
+      "query": "SENS:POW:RF:GAIN:STAT?",
+      "select": [],
+      "compare": false
+    },
+    "mixer_level": {
+      "writes": [],
+      "query": "SENS:POW:RF:MIX:RANG:UPP?",
+      "select": [],
+      "compare": false
+    },
+    "marker_value": {
+      "writes": [],
+      "query": "CALC:MARK1:Y?",
+      "select": [],
+      "compare": false
+    },
+    "marker_trace": {
+      "writes": [],
+      "query": "CALC:MARK1:TRAC?",
+      "select": [],
+      "compare": false
+    },
+    "marker_trace_auto": {
+      "writes": [],
+      "query": "CALC:MARK1:TRAC:AUTO?",
+      "select": [],
+      "compare": false
+    },
+    "marker_function": {
+      "writes": [],
+      "query": "CALC:MARK1:FUNC?",
+      "select": [],
+      "compare": false
+    },
+    "marker_tracking": {
+      "writes": [],
+      "query": "CALC:MARK1:CPE:STAT?",
+      "select": [],
+      "compare": false
+    },
+    "marker_search": {
+      "writes": [],
+      "query": "CALC:MARK1:PEAK:SEAR:MODE?",
+      "select": [],
+      "compare": false
+    },
+    "single": {
+      "writes": [
+        "INIT:IMM"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "auto_setup": {
+      "writes": [
+        ":SENSe:POWer:ATUNe"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "marker_peak": {
+      "writes": [
+        "CALC:MARK1:MAX:MAX"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    }
+  }
+}

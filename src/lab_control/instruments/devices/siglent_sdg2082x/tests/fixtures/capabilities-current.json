@@ -1,0 +1,1426 @@
+{
+  "capabilities": {
+    "category": "signal_generator",
+    "channels": [
+      1,
+      2
+    ],
+    "operations": [
+      {
+        "name": "waveform",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "SINE",
+              "SQUARE",
+              "RAMP",
+              "PULSE",
+              "DC"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:BSWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 1e-06,
+            "maximum": 80000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:BSWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "amplitude",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Vpp",
+            "minimum": 0.001,
+            "maximum": 20,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:BSWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "offset",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": -10,
+            "maximum": 10,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:BSWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "output",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:OUTP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "load",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:OUTP?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:SWWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "burst",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:BTWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "modulation",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:MDWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "coupling",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "COUP?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "reference_clock",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "INT",
+              "EXT"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "ROSC",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "phase",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "deg",
+            "minimum": 0,
+            "maximum": 360,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:BSWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "pulse_duty",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "%",
+            "minimum": 0.001,
+            "maximum": 99.999,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:BSWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "pulse_width",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s",
+            "minimum": 1.63e-08,
+            "maximum": 1000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:BSWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "ramp_symmetry",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "%",
+            "minimum": 0,
+            "maximum": 100,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:BSWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_start",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 1e-06,
+            "maximum": 80000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:SWWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_stop",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 1e-06,
+            "maximum": 80000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:SWWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_time",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s",
+            "minimum": 0.001,
+            "maximum": 500,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:SWWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_spacing",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "LINE",
+              "LOG"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:SWWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_direction",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "UP",
+              "DOWN"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:SWWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_trigger",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "INT",
+              "EXT",
+              "MAN"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:SWWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "burst_mode",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "NCYC",
+              "GATE"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:BTWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "burst_cycles",
+        "parameters": {
+          "value": {
+            "kind": "integer",
+            "unit": "",
+            "minimum": 1,
+            "maximum": 1000000,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:BTWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "burst_trigger",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "INT",
+              "EXT",
+              "MAN"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:BTWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "burst_period",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s",
+            "minimum": 1e-06,
+            "maximum": 1000,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:BTWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "burst_delay",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s",
+            "minimum": 0,
+            "maximum": 100,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:BTWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "burst_phase",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "deg",
+            "minimum": 0,
+            "maximum": 360,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:BTWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "modulation_type",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "AM",
+              "FM",
+              "PM"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:MDWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "am_source",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "INT",
+              "EXT"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:MDWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "am_shape",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "SINE",
+              "SQUARE",
+              "TRIANGLE",
+              "UPRAMP",
+              "DNRAMP",
+              "NOISE"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:MDWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "am_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0.001,
+            "maximum": 1000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:MDWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "am_depth",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "%",
+            "minimum": 0,
+            "maximum": 120,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:MDWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "fm_source",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "INT",
+              "EXT"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:MDWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "fm_shape",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "SINE",
+              "SQUARE",
+              "TRIANGLE",
+              "UPRAMP",
+              "DNRAMP",
+              "NOISE"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:MDWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "fm_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0.001,
+            "maximum": 1000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:MDWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "fm_deviation",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0,
+            "maximum": 40000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:MDWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "pm_source",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "INT",
+              "EXT"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:MDWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "pm_shape",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "SINE",
+              "SQUARE",
+              "TRIANGLE",
+              "UPRAMP",
+              "DNRAMP",
+              "NOISE"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:MDWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "pm_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0.001,
+            "maximum": 1000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:MDWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "pm_deviation",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "deg",
+            "minimum": 0,
+            "maximum": 360,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "C{ch}:MDWV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "upload_waveform",
+        "parameters": {
+          "name": {
+            "kind": "text",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          },
+          "samples": {
+            "kind": "array",
+            "unit": "",
+            "minimum": -1,
+            "maximum": 1,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "PG02-E05A 3.9/3.31",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "load_waveform",
+        "parameters": {
+          "name": {
+            "kind": "text",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+        "section": "PG02-E05A 3.9/3.31",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      }
+    ]
+  },
+  "profile": {
+    "adapter_id": "siglent.sdg2082x",
+    "manufacturer": [
+      "SIGLENT"
+    ],
+    "models": [
+      "SDG2082X"
+    ],
+    "category": "signal_generator",
+    "channels": [
+      1,
+      2
+    ],
+    "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
+    "revision": "PG02-E05A / SDG2000X EN02H pp. 7-9",
+    "status": [
+      "waveform",
+      "frequency",
+      "amplitude",
+      "offset",
+      "output",
+      "load"
+    ],
+    "identity_query": "*IDN?",
+    "error_query": "",
+    "acquisition": "",
+    "channel_limits": {}
+  },
+  "commands": {
+    "waveform": {
+      "writes": [
+        "C{ch}:BSWV WVTP,{value}"
+      ],
+      "query": "C{ch}:BSWV?",
+      "select": [],
+      "compare": true
+    },
+    "frequency": {
+      "writes": [
+        "C{ch}:BSWV FRQ,{value}"
+      ],
+      "query": "C{ch}:BSWV?",
+      "select": [],
+      "compare": true
+    },
+    "amplitude": {
+      "writes": [
+        "C{ch}:BSWV AMP,{value}"
+      ],
+      "query": "C{ch}:BSWV?",
+      "select": [],
+      "compare": true
+    },
+    "offset": {
+      "writes": [
+        "C{ch}:BSWV OFST,{value}"
+      ],
+      "query": "C{ch}:BSWV?",
+      "select": [],
+      "compare": true
+    },
+    "output": {
+      "writes": [
+        "C{ch}:OUTP {value}"
+      ],
+      "query": "C{ch}:OUTP?",
+      "select": [],
+      "compare": true
+    },
+    "load": {
+      "writes": [],
+      "query": "C{ch}:OUTP?",
+      "select": [],
+      "compare": false
+    },
+    "sweep": {
+      "writes": [
+        "C{ch}:SWWV STATE,{value}"
+      ],
+      "query": "C{ch}:SWWV?",
+      "select": [],
+      "compare": true
+    },
+    "burst": {
+      "writes": [
+        "C{ch}:BTWV STATE,{value}"
+      ],
+      "query": "C{ch}:BTWV?",
+      "select": [],
+      "compare": true
+    },
+    "modulation": {
+      "writes": [
+        "C{ch}:MDWV STATE,{value}"
+      ],
+      "query": "C{ch}:MDWV?",
+      "select": [],
+      "compare": true
+    },
+    "coupling": {
+      "writes": [],
+      "query": "COUP?",
+      "select": [],
+      "compare": false
+    },
+    "reference_clock": {
+      "writes": [
+        "ROSC {value}"
+      ],
+      "query": "ROSC?",
+      "select": [],
+      "compare": true
+    },
+    "phase": {
+      "writes": [
+        "C{ch}:BSWV PHSE,{value}"
+      ],
+      "query": "C{ch}:BSWV?",
+      "select": [],
+      "compare": true
+    },
+    "pulse_duty": {
+      "writes": [
+        "C{ch}:BSWV DUTY,{value}"
+      ],
+      "query": "C{ch}:BSWV?",
+      "select": [],
+      "compare": true
+    },
+    "pulse_width": {
+      "writes": [
+        "C{ch}:BSWV WIDTH,{value}"
+      ],
+      "query": "C{ch}:BSWV?",
+      "select": [],
+      "compare": true
+    },
+    "ramp_symmetry": {
+      "writes": [
+        "C{ch}:BSWV SYM,{value}"
+      ],
+      "query": "C{ch}:BSWV?",
+      "select": [],
+      "compare": true
+    },
+    "sweep_start": {
+      "writes": [
+        "C{ch}:SWWV START,{value}"
+      ],
+      "query": "C{ch}:SWWV?",
+      "select": [],
+      "compare": true
+    },
+    "sweep_stop": {
+      "writes": [
+        "C{ch}:SWWV STOP,{value}"
+      ],
+      "query": "C{ch}:SWWV?",
+      "select": [],
+      "compare": true
+    },
+    "sweep_time": {
+      "writes": [
+        "C{ch}:SWWV TIME,{value}"
+      ],
+      "query": "C{ch}:SWWV?",
+      "select": [],
+      "compare": true
+    },
+    "sweep_spacing": {
+      "writes": [
+        "C{ch}:SWWV SWMD,{value}"
+      ],
+      "query": "C{ch}:SWWV?",
+      "select": [],
+      "compare": true
+    },
+    "sweep_direction": {
+      "writes": [
+        "C{ch}:SWWV DIR,{value}"
+      ],
+      "query": "C{ch}:SWWV?",
+      "select": [],
+      "compare": true
+    },
+    "sweep_trigger": {
+      "writes": [
+        "C{ch}:SWWV TRSR,{value}"
+      ],
+      "query": "C{ch}:SWWV?",
+      "select": [],
+      "compare": true
+    },
+    "burst_mode": {
+      "writes": [
+        "C{ch}:BTWV GATE_NCYC,{value}"
+      ],
+      "query": "C{ch}:BTWV?",
+      "select": [],
+      "compare": true
+    },
+    "burst_cycles": {
+      "writes": [
+        "C{ch}:BTWV TIME,{value}"
+      ],
+      "query": "C{ch}:BTWV?",
+      "select": [],
+      "compare": true
+    },
+    "burst_trigger": {
+      "writes": [
+        "C{ch}:BTWV TRSR,{value}"
+      ],
+      "query": "C{ch}:BTWV?",
+      "select": [],
+      "compare": true
+    },
+    "burst_period": {
+      "writes": [
+        "C{ch}:BTWV PRD,{value}"
+      ],
+      "query": "C{ch}:BTWV?",
+      "select": [],
+      "compare": true
+    },
+    "burst_delay": {
+      "writes": [
+        "C{ch}:BTWV DLAY,{value}"
+      ],
+      "query": "C{ch}:BTWV?",
+      "select": [],
+      "compare": true
+    },
+    "burst_phase": {
+      "writes": [
+        "C{ch}:BTWV STPS,{value}"
+      ],
+      "query": "C{ch}:BTWV?",
+      "select": [],
+      "compare": true
+    },
+    "modulation_type": {
+      "writes": [
+        "C{ch}:MDWV {value}"
+      ],
+      "query": "C{ch}:MDWV?",
+      "select": [],
+      "compare": true
+    },
+    "am_source": {
+      "writes": [
+        "C{ch}:MDWV AM,SRC,{value}"
+      ],
+      "query": "C{ch}:MDWV?",
+      "select": [],
+      "compare": true
+    },
+    "am_shape": {
+      "writes": [
+        "C{ch}:MDWV AM,MDSP,{value}"
+      ],
+      "query": "C{ch}:MDWV?",
+      "select": [],
+      "compare": true
+    },
+    "am_frequency": {
+      "writes": [
+        "C{ch}:MDWV AM,FRQ,{value}"
+      ],
+      "query": "C{ch}:MDWV?",
+      "select": [],
+      "compare": true
+    },
+    "am_depth": {
+      "writes": [
+        "C{ch}:MDWV AM,DEPTH,{value}"
+      ],
+      "query": "C{ch}:MDWV?",
+      "select": [],
+      "compare": true
+    },
+    "fm_source": {
+      "writes": [
+        "C{ch}:MDWV FM,SRC,{value}"
+      ],
+      "query": "C{ch}:MDWV?",
+      "select": [],
+      "compare": true
+    },
+    "fm_shape": {
+      "writes": [
+        "C{ch}:MDWV FM,MDSP,{value}"
+      ],
+      "query": "C{ch}:MDWV?",
+      "select": [],
+      "compare": true
+    },
+    "fm_frequency": {
+      "writes": [
+        "C{ch}:MDWV FM,FRQ,{value}"
+      ],
+      "query": "C{ch}:MDWV?",
+      "select": [],
+      "compare": true
+    },
+    "fm_deviation": {
+      "writes": [
+        "C{ch}:MDWV FM,DEVI,{value}"
+      ],
+      "query": "C{ch}:MDWV?",
+      "select": [],
+      "compare": true
+    },
+    "pm_source": {
+      "writes": [
+        "C{ch}:MDWV PM,SRC,{value}"
+      ],
+      "query": "C{ch}:MDWV?",
+      "select": [],
+      "compare": true
+    },
+    "pm_shape": {
+      "writes": [
+        "C{ch}:MDWV PM,MDSP,{value}"
+      ],
+      "query": "C{ch}:MDWV?",
+      "select": [],
+      "compare": true
+    },
+    "pm_frequency": {
+      "writes": [
+        "C{ch}:MDWV PM,FRQ,{value}"
+      ],
+      "query": "C{ch}:MDWV?",
+      "select": [],
+      "compare": true
+    },
+    "pm_deviation": {
+      "writes": [
+        "C{ch}:MDWV PM,DEVI,{value}"
+      ],
+      "query": "C{ch}:MDWV?",
+      "select": [],
+      "compare": true
+    },
+    "upload_waveform": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "load_waveform": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": true
+    }
+  }
+}

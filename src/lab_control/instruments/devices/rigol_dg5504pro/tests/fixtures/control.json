@@ -1,0 +1,139 @@
+{
+  "fixture_origin": "authored from the linked manufacturer command reference; not a hardware recording",
+  "adapter": "rigol.dg5504pro",
+  "operation": "frequency",
+  "channel": 4,
+  "parameters": {
+    "value": 2000
+  },
+  "exchanges": [
+    [
+      "SOUR1:TRAC?",
+      "OFF"
+    ],
+    [
+      "SOUR1:FREQ:COUP:STAT?",
+      "0"
+    ],
+    [
+      "SOUR1:VOLT:COUP:STAT?",
+      "0"
+    ],
+    [
+      "SOUR1:PHAS:COUP:STAT?",
+      "0"
+    ],
+    [
+      "SOUR2:TRAC?",
+      "OFF"
+    ],
+    [
+      "SOUR2:FREQ:COUP:STAT?",
+      "0"
+    ],
+    [
+      "SOUR2:VOLT:COUP:STAT?",
+      "0"
+    ],
+    [
+      "SOUR2:PHAS:COUP:STAT?",
+      "0"
+    ],
+    [
+      "SOUR3:TRAC?",
+      "OFF"
+    ],
+    [
+      "SOUR3:FREQ:COUP:STAT?",
+      "0"
+    ],
+    [
+      "SOUR3:VOLT:COUP:STAT?",
+      "0"
+    ],
+    [
+      "SOUR3:PHAS:COUP:STAT?",
+      "0"
+    ],
+    [
+      "SOUR4:TRAC?",
+      "OFF"
+    ],
+    [
+      "SOUR4:FREQ:COUP:STAT?",
+      "0"
+    ],
+    [
+      "SOUR4:VOLT:COUP:STAT?",
+      "0"
+    ],
+    [
+      "SOUR4:PHAS:COUP:STAT?",
+      "0"
+    ],
+    [
+      "SOUR4:FUNC:ADV:STAT?",
+      "0"
+    ],
+    [
+      "SOUR4:FUNC?",
+      "SIN"
+    ],
+    [
+      "SOUR4:AM:STAT?",
+      "0"
+    ],
+    [
+      "SOUR4:FM:STAT?",
+      "0"
+    ],
+    [
+      "SOUR4:PM:STAT?",
+      "0"
+    ],
+    [
+      "SOUR4:BURS:STAT?",
+      "0"
+    ],
+    [
+      "SOUR4:VOLT:UNIT?",
+      "VPP"
+    ],
+    [
+      "OUTP4:LOAD?",
+      "50"
+    ],
+    [
+      "SOUR4:VOLT:UNIT?",
+      "VPP"
+    ],
+    [
+      "SOUR4:VOLT?",
+      "1"
+    ],
+    [
+      "SOUR4:VOLT:OFFS?",
+      "0"
+    ],
+    [
+      "SOUR4:FREQ? MIN",
+      "1e-6"
+    ],
+    [
+      "SOUR4:FREQ? MAX",
+      "500000000"
+    ],
+    [
+      "SOUR4:FREQ 2000",
+      ""
+    ],
+    [
+      "SOUR4:FREQ?",
+      "2000"
+    ],
+    [
+      "SYST:ERR?",
+      "0,No error"
+    ]
+  ]
+}

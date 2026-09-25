@@ -1,4 +1,4 @@
-"""Opt-in, output-OFF AFG31252 acceptance; never uses LAN or nonvolatile storage.
+"""Opt-in, output-OFF AFG31252 USB/LAN acceptance; no nonvolatile storage writes.
 
 Run with the project Python and --config <runtime TOML>. --preflight-only backs
 up and checks the connected asset without changing any instrument settings.
@@ -27,13 +27,16 @@ from lab_control.application.config import ConnectionConfig, load_config
 from lab_control.application.runtime import ApplicationRuntime
 from lab_control.discovery.service import ConfiguredDiscoveryProvider
 from lab_control.domain.instruments import DeviceCommand, jsonable, utc_now
+from lab_control.instruments.common.hardware_acceptance import (
+    enumerate_configured,
+    interface_label,
+    visa_interface,
+)
 from lab_control.instruments.devices.tek_afg31252.adapter import Afg31252Adapter
 from lab_control.instruments.registry import create_adapter
 from lab_control.storage.repository import application_home
 
-CONNECTION_NOTE = (
-    "当前仅 USB 连接验证通过；USB 转网口及原生网口直连均未成功建立通信，LAN 暂不可用，原因未确定。"
-)
+CONNECTION_NOTE = "本批仅验证所选接口；其他接口及历史排查结果见资产结构化测试说明。"
 SOURCE_PATHS = (
     "FUNC",
     "FREQ",
@@ -244,7 +247,7 @@ class Acceptance:
         self.current_group = "preflight"
         self.report: dict[str, Any] = {
             "started_at": utc_now(),
-            "scope": "USB controls with both outputs OFF; no physical measurement",
+            "scope": f"{interface_label(config)} controls with both outputs OFF; no physical measurement",
             "resource": config.resource,
             "expected_serial": config.expected_serial,
             "connection_note": CONNECTION_NOTE,
@@ -288,6 +291,9 @@ class Acceptance:
                 (self.folder / f"{name}.json").write_text(
                     json.dumps(self.report[name], ensure_ascii=False, indent=2), encoding="utf-8"
                 )
+        from lab_control.instruments.devices.tek_afg31252.hardware.records import publish_report
+
+        publish_report(self.folder)
 
     def worker(self, fn):
         assert self.app is not None
@@ -523,7 +529,7 @@ class Acceptance:
         self.report["errors_before_restore"] = self.errors()
         if self.app.sessions.sessions[self.device_id].state == "degraded":
             self.app.sessions.disconnect(self.device_id)
-            self.app.connect(self.device_id).result(timeout=30)
+            self.app.connect(self.device_id, configure_acquisition=False).result(timeout=30)
         for guard in self.guards:
             guard.allow_settings = True
         actions: list[tuple[str, Callable[[], Any]]] = []
@@ -647,15 +653,20 @@ class Acceptance:
 
             self.app.discovery.probe = probe
             self.app.discovery.providers = (ConfiguredDiscoveryProvider((self.config,)),)
-            self.report["enumeration"] = list(self.app.visa.manager.list_resources("USB?*::INSTR"))
-            if self.config.resource not in self.report["enumeration"]:
-                raise RuntimeError("Configured USB asset not enumerated")
+            self.report["enumeration"] = list(enumerate_configured(self.app.visa, self.config))
+            self.report["stages"]["enumeration"] = (
+                "passed"
+                if self.config.resource.upper() in {r.upper() for r in self.report["enumeration"]}
+                else "blocked"
+            )
             self.report["scan"] = self.app.discovery.scan().result(timeout=30)
             if any(item.get("error") for item in self.report["scan"]["items"]):
                 raise RuntimeError("Identity scan failed")
             self.report["stages"]["scan"] = "passed"
             self.device_id = self.app.add(self.config)
-            self.report["identity"] = jsonable(self.app.connect(self.device_id).result(timeout=30))
+            self.report["identity"] = jsonable(
+                self.app.connect(self.device_id, configure_acquisition=False).result(timeout=30)
+            )
             self.report["stages"].update(identity="passed", connection="passed")
             self.report["environment"]["visa"] = str(self.app.visa.manager.visalib)
             self.report["initial_errors"] = self.errors()
@@ -709,16 +720,9 @@ class Acceptance:
                     guard.allow_settings = True
                 self.restore()
                 return
+            self.outputs_off()
             for guard in self.guards:
                 guard.allow_settings = True
-            # Direct adapter calls only for OFF initialization, before the OFF invariant is established.
-            for ch in (1, 2):
-                outcome = self.app.sessions.submit(
-                    self.device_id, "apply", DeviceCommand("output", {"value": False}, ch, True)
-                ).result(timeout=30)
-                if outcome.outcome != "success":
-                    raise RuntimeError(f"Could not establish output OFF: {outcome}")
-            self.outputs_off()
             try:
                 for ch in (1, 2):
                     for path in ("FREQ:CONC", "VOLT:CONC", "PHAS:CONC"):
@@ -761,7 +765,9 @@ class Acceptance:
             self.current_group = "reconnection"
             for attempt in range(3):
                 self.app.sessions.disconnect(self.device_id)
-                identity = jsonable(self.app.connect(self.device_id).result(timeout=30))
+                identity = jsonable(
+                    self.app.connect(self.device_id, configure_acquisition=False).result(timeout=30)
+                )
                 snapshot = self.snapshot()
                 diff = differences(expected, snapshot)
                 self.report["reconnections"].append(
@@ -801,7 +807,7 @@ class Acceptance:
         stages = self.report["stages"]
         rows = "\n".join(f"| {name} | {state} |" for name, state in stages.items())
         text = (
-            f"# AFG31252 / {self.config.expected_serial} USB 验证\n\n"
+            f"# AFG31252 / {self.config.expected_serial} {interface_label(self.config)} 验证\n\n"
             f"{CONNECTION_NOTE}\n\n本批次：{self.folder.name}。全程禁止输出 ON、触发、复位和非易失存储写入。\n\n"
             f"| 阶段 | 结果 |\n| --- | --- |\n{rows}\n\n"
             f"错误：{self.report.get('error', self.report.get('control_error', '无'))}\n\n"
@@ -810,21 +816,9 @@ class Acceptance:
             "EMEM*-original.bin 保存原始编辑存储器，哈希见结果文件。\n"
         )
         (self.folder / "record.md").write_text(text, encoding="utf-8")
-        index = self.folder.parent.parent / "index.md"
-        previous = index.read_text(encoding="utf-8-sig") if index.exists() else "# 逐台实机测试台账\n"
-        link = f"{self.folder.parent.name}/{self.folder.name}/record.md"
-        if link not in previous:
-            if not previous.rstrip().splitlines()[-1].startswith("|"):
-                previous += (
-                    "\n\n| 日期 | 设备 / 序列号 | 接口 | 测试结果 | 验收边界 | 记录 |\n"
-                    "| --- | --- | --- | --- | --- | --- |\n"
-                )
-            row = (
-                f"| {datetime.now():%Y-%m-%d %H:%M} | AFG31252 / {self.config.expected_serial} | USB / PyVISA | "
-                f"控制 {stages['repeat_control']}；恢复 {stages['restoration']}；重连 {stages['reconnection']} | "
-                f"物理输出未验收；LAN 当前不可用 | [详情]({link}) |\n"
-            )
-            index.write_text(previous.rstrip() + "\n" + row, encoding="utf-8")
+        from lab_control.storage.hardware_documents import refresh_after_batch
+
+        refresh_after_batch(self.folder)
 
 
 def capture_sources(folder: Path) -> dict[str, Any]:
@@ -879,10 +873,14 @@ def main(runner_type: type[Acceptance] = Acceptance, suffix: str = "usb-control"
     if (
         config.adapter != "tek.afg31252"
         or config.transport != "visa"
-        or not config.resource.startswith("USB")
         or not re.fullmatch(r"[A-Za-z0-9_-]+", config.expected_serial)
     ):
-        parser.error("An exact AFG31252 USB/VISA configuration and expected serial are required")
+        parser.error("An exact AFG31252 VISA configuration and expected serial are required")
+    try:
+        interface = visa_interface(config)
+    except ValueError as exc:
+        parser.error(str(exc))
+    suffix = suffix.replace("usb-", interface.lower() + "-", 1)
     asset = application_home() / "hardware-tests" / f"AFG31252-{config.expected_serial}"
     folder = asset / (
         datetime.now().strftime("%Y-%m-%d-%H%M%S-%f")

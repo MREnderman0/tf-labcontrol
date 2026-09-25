@@ -221,6 +221,9 @@ class Acceptance:
     def save(self):
         self.report["setting_write_count"] = sum(g.writes for g in self.guards)
         save_json(self.folder / "results.json", self.report)
+        from lab_control.instruments.devices.rs_sma100b.hardware.records import publish_report
+
+        publish_report(self.folder)
 
     def factory(self, config):
         assert self.app is not None
@@ -721,15 +724,9 @@ class Acceptance:
             "完整请求、读回、错误及恢复结果见 [results.json](results.json) 和 [communication.jsonl](communication.jsonl)。\n",
             encoding="utf-8",
         )
-        index = self.folder.parent.parent / "index.md"
-        old = index.read_text(encoding="utf-8-sig") if index.exists() else "# 实机台账\n"
-        link = f"{self.folder.parent.name}/{self.folder.name}/record.md"
-        if link not in old:
-            index.write_text(
-                old.rstrip()
-                + f"\n\n- {self.folder.name}：SMA100B，{self.report['stages']}；[记录]({link})\n",
-                encoding="utf-8",
-            )
+        from lab_control.storage.hardware_documents import refresh_after_batch
+
+        refresh_after_batch(self.folder)
 
 
 def main():

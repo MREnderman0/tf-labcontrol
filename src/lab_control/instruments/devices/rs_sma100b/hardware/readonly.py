@@ -3,6 +3,8 @@
 from lab_control.instruments.common.readonly_hardware import main
 from lab_control.instruments.devices.rs_sma100b import DEFINITION
 
+from .records import publish_report
+
 EXTRA_QUERIES = (
     "*OPT?",
     "SOUR:POW:OFFS?",
@@ -15,4 +17,4 @@ EXTRA_QUERIES = (
 )
 
 if __name__ == "__main__":
-    raise SystemExit(main(DEFINITION, EXTRA_QUERIES))
+    raise SystemExit(main(DEFINITION, EXTRA_QUERIES, record_summary=publish_report))

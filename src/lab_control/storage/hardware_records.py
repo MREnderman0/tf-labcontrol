@@ -15,6 +15,20 @@ STATUSES = frozenset({"passed", "failed", "blocked", "not_tested"})
 SCHEMA_VERSION = 1
 
 
+def resource_protocol(resource: str) -> str:
+    """Generic transport label; LAN protocols do not share control qualification."""
+    value = resource.upper()
+    if value.startswith("TCPIP"):
+        if value.endswith("::SOCKET"):
+            return "VISA SOCKET"
+        return "HiSLIP" if "::HISLIP" in value else "VXI-11"
+    if value.startswith("TCP://"):
+        return "TCP Socket"
+    if value.startswith("VICP://"):
+        return "VICP"
+    return ""
+
+
 def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -153,6 +167,7 @@ def normalize(
         "expected_serial": expected,
         "resource": resource,
         "interface": interface,
+        "protocol": resource_protocol(resource),
         "started_at": str(started),
         "finished_at": str(finished),
         "scope": scope,

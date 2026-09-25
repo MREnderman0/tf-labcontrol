@@ -11,6 +11,7 @@ import hashlib
 import json
 import platform
 import re
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -148,7 +149,7 @@ def verify(
         report["stages"]["scan"] = "passed"
         stage = "connection"
         device_id = app.add(config)
-        identity = app.connect(device_id).result(timeout=90)
+        identity = app.connect(device_id, configure_acquisition=False).result(timeout=90)
         report["identity"] = jsonable(identity)
         report["stages"].update(identity="passed", connection="passed")
         if config.transport == "visa":
@@ -176,7 +177,7 @@ def verify(
         stage = "reconnection"
         for attempt in range(3):
             app.sessions.disconnect(device_id)
-            reconnect_identity = app.connect(device_id).result(timeout=90)
+            reconnect_identity = app.connect(device_id, configure_acquisition=False).result(timeout=90)
             actual = snapshot()
             report["reconnections"].append(
                 {
@@ -234,16 +235,6 @@ def verify(
             "[结构化结果](results.json) · [原始通信](communication.jsonl)\n",
             encoding="utf-8",
         )
-        index = folder.parent.parent / "index.md"
-        previous = index.read_text(encoding="utf-8-sig") if index.exists() else "# 实机测试台账\n"
-        if not previous.rstrip().splitlines()[-1].startswith("|"):
-            previous += "\n\n| 日期 | 设备 / 序列号 | 接口 | 测试结果 | 验收边界 | 记录 |\n| --- | --- | --- | --- | --- | --- |\n"
-        row = (
-            f"| {datetime.now():%Y-%m-%d %H:%M} | {profile.models[0]} / {config.expected_serial} | {config.transport} | "
-            f"只读 {report['stages']['parameter_read']}；重连 {report['stages']['reconnection']} | 无设置写入；物理输出未验收 | "
-            f"[详情]({folder.parent.name}/{folder.name}/record.md) |\n"
-        )
-        index.write_text(previous.rstrip() + "\n" + row, encoding="utf-8")
     return report
 
 
@@ -255,7 +246,11 @@ def asset_folder_name(model: str, serial: str, explicit: str | None = None) -> s
     return name
 
 
-def main(definition: DeviceDefinition, extra_queries: tuple[str, ...] = ()) -> int:
+def main(
+    definition: DeviceDefinition,
+    extra_queries: tuple[str, ...] = (),
+    record_summary: Callable[[Path], None] | None = None,
+) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--asset-name", help="Existing asset directory name, without path separators")
@@ -281,6 +276,11 @@ def main(definition: DeviceDefinition, extra_queries: tuple[str, ...] = ()) -> i
     )
     folder.mkdir(parents=True, exist_ok=False)
     result = verify(definition, config, folder, extra_queries)
+    if record_summary:
+        record_summary(folder)
+    from lab_control.storage.hardware_documents import refresh_after_batch
+
+    refresh_after_batch(folder)
     print(folder, flush=True)
     print(json.dumps(result["stages"], ensure_ascii=False), flush=True)
     return int(bool(result.get("error") or result.get("close_error")))

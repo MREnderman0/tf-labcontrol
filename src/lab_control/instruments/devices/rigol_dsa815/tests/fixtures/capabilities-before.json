@@ -1,0 +1,658 @@
+{
+  "capabilities": {
+    "category": "spectrum_analyzer",
+    "channels": [
+      1
+    ],
+    "operations": [
+      {
+        "name": "start_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0,
+            "maximum": 1500000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf",
+        "section": "SENS:FREQ:STAR",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "stop_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0,
+            "maximum": 1500000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf",
+        "section": "SENS:FREQ:STOP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "center_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0,
+            "maximum": 1500000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf",
+        "section": "SENS:FREQ:CENT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "span",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0,
+            "maximum": 1500000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf",
+        "section": "SENS:FREQ:SPAN",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "rbw",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 100,
+            "maximum": 1000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf",
+        "section": "SENS:BAND:RES",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "vbw",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 10,
+            "maximum": 1000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf",
+        "section": "SENS:BAND:VID",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "rbw_auto",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf",
+        "section": "SENS:BAND:RES:AUTO",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "vbw_auto",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf",
+        "section": "SENS:BAND:VID:AUTO",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "reference_level",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "dBm",
+            "minimum": -100,
+            "maximum": 30,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf",
+        "section": "DISP:TRAC:Y:RLEV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "attenuation",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "dB",
+            "minimum": 0,
+            "maximum": 30,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf",
+        "section": "INP:ATT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "attenuation_auto",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf",
+        "section": "INP:ATT:AUTO",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_time",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s",
+            "minimum": 0.001,
+            "maximum": 1000,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf",
+        "section": "SENS:SWE:TIME",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "continuous",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf",
+        "section": "INIT:CONT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_enabled",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf",
+        "section": "CALC:MARK1:STAT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0,
+            "maximum": 1500000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf",
+        "section": "CALC:MARK1:X",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "single",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf",
+        "section": "INIT:IMM",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_peak",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf",
+        "section": "CALC:MARK1:MAX",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_value",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf",
+        "section": "CALC:MARK1:Y?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trace_mode",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "WRIT",
+              "MAXH",
+              "MINH",
+              "VIEW",
+              "BLAN"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf",
+        "section": "TRAC1:MODE",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "detector",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "POS",
+              "NEG",
+              "SAMP",
+              "NORM",
+              "RMS",
+              "VAV"
+            ],
+            "required": true,
+            "range_source": "model"
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf",
+        "section": "SENS:DET:FUNC",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      }
+    ]
+  },
+  "profile": {
+    "adapter_id": "rigol.dsa815",
+    "manufacturer": [
+      "RIGOL"
+    ],
+    "models": [
+      "DSA815"
+    ],
+    "category": "spectrum_analyzer",
+    "channels": [
+      1
+    ],
+    "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf",
+    "revision": "DSA800 Programming Guide",
+    "status": [
+      "start_frequency",
+      "stop_frequency",
+      "rbw",
+      "reference_level"
+    ],
+    "identity_query": "*IDN?",
+    "error_query": "SYST:ERR?",
+    "acquisition": "dsa",
+    "channel_limits": {}
+  },
+  "commands": {
+    "start_frequency": {
+      "writes": [
+        "SENS:FREQ:STAR {value}"
+      ],
+      "query": "SENS:FREQ:STAR?",
+      "select": [],
+      "compare": true
+    },
+    "stop_frequency": {
+      "writes": [
+        "SENS:FREQ:STOP {value}"
+      ],
+      "query": "SENS:FREQ:STOP?",
+      "select": [],
+      "compare": true
+    },
+    "center_frequency": {
+      "writes": [
+        "SENS:FREQ:CENT {value}"
+      ],
+      "query": "SENS:FREQ:CENT?",
+      "select": [],
+      "compare": true
+    },
+    "span": {
+      "writes": [
+        "SENS:FREQ:SPAN {value}"
+      ],
+      "query": "SENS:FREQ:SPAN?",
+      "select": [],
+      "compare": true
+    },
+    "rbw": {
+      "writes": [
+        "SENS:BAND:RES {value}"
+      ],
+      "query": "SENS:BAND:RES?",
+      "select": [],
+      "compare": true
+    },
+    "vbw": {
+      "writes": [
+        "SENS:BAND:VID {value}"
+      ],
+      "query": "SENS:BAND:VID?",
+      "select": [],
+      "compare": true
+    },
+    "rbw_auto": {
+      "writes": [
+        "SENS:BAND:RES:AUTO {value}"
+      ],
+      "query": "SENS:BAND:RES:AUTO?",
+      "select": [],
+      "compare": true
+    },
+    "vbw_auto": {
+      "writes": [
+        "SENS:BAND:VID:AUTO {value}"
+      ],
+      "query": "SENS:BAND:VID:AUTO?",
+      "select": [],
+      "compare": true
+    },
+    "reference_level": {
+      "writes": [
+        "DISP:TRAC:Y:RLEV {value}"
+      ],
+      "query": "DISP:TRAC:Y:RLEV?",
+      "select": [],
+      "compare": true
+    },
+    "attenuation": {
+      "writes": [
+        "INP:ATT {value}"
+      ],
+      "query": "INP:ATT?",
+      "select": [],
+      "compare": true
+    },
+    "attenuation_auto": {
+      "writes": [
+        "INP:ATT:AUTO {value}"
+      ],
+      "query": "INP:ATT:AUTO?",
+      "select": [],
+      "compare": true
+    },
+    "sweep_time": {
+      "writes": [
+        "SENS:SWE:TIME {value}"
+      ],
+      "query": "SENS:SWE:TIME?",
+      "select": [],
+      "compare": true
+    },
+    "continuous": {
+      "writes": [
+        "INIT:CONT {value}"
+      ],
+      "query": "INIT:CONT?",
+      "select": [],
+      "compare": true
+    },
+    "marker_enabled": {
+      "writes": [
+        "CALC:MARK1:STAT {value}"
+      ],
+      "query": "CALC:MARK1:STAT?",
+      "select": [],
+      "compare": true
+    },
+    "marker_frequency": {
+      "writes": [
+        "CALC:MARK1:X {value}"
+      ],
+      "query": "CALC:MARK1:X?",
+      "select": [],
+      "compare": true
+    },
+    "single": {
+      "writes": [
+        "INIT:IMM"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "marker_peak": {
+      "writes": [
+        "CALC:MARK1:MAX"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "marker_value": {
+      "writes": [],
+      "query": "CALC:MARK1:Y?",
+      "select": [],
+      "compare": false
+    },
+    "trace_mode": {
+      "writes": [
+        "TRAC1:MODE {value}"
+      ],
+      "query": "TRAC1:MODE?",
+      "select": [],
+      "compare": true
+    },
+    "detector": {
+      "writes": [
+        "SENS:DET:FUNC {value}"
+      ],
+      "query": "SENS:DET:FUNC?",
+      "select": [],
+      "compare": true
+    }
+  }
+}

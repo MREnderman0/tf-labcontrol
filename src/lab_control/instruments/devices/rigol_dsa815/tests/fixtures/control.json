@@ -8,6 +8,14 @@
   },
   "exchanges": [
     [
+      "SENS:BAND:RES:AUTO?",
+      "0"
+    ],
+    [
+      "SENS:DET:FUNC?",
+      "POS"
+    ],
+    [
       "SENS:BAND:RES 1000",
       ""
     ],

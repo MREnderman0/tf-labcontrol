@@ -3,5 +3,7 @@
 from lab_control.instruments.common.readonly_hardware import main
 from lab_control.instruments.devices.tek_afg31252 import DEFINITION
 
+from .records import publish_report
+
 if __name__ == "__main__":
-    raise SystemExit(main(DEFINITION))
+    raise SystemExit(main(DEFINITION, record_summary=publish_report))

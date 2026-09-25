@@ -34,7 +34,9 @@ def test_exact_model_and_available_controls():
     assert caps.channels == (1, 2)
     assert caps.get("frequency").parameters["value"].maximum == 80e6
     assert caps.get("load").readable and not caps.get("load").writable
-    assert not {"upload_waveform", "load_waveform"} & {c.name for c in caps.operations}
+    assert {"upload_waveform", "load_waveform", "modulation_type", "sweep_start", "burst_mode"} <= {
+        c.name for c in caps.operations
+    }
 
 
 @pytest.mark.parametrize("header", ["C2:OUTP ", ""])
@@ -55,6 +57,7 @@ def test_frequency_write_and_readback_are_channel_scoped(ch):
             ("COUP?", COUPLING),
             (f"C{ch}:BSWV?", wave(ch)),
             (f"C{ch}:OUTP?", f"C{ch}:OUTP OFF,LOAD,HZ".encode()),
+            *[(f"C{ch}:{group}?", b"STATE,OFF") for group in ("MDWV", "SWWV", "BTWV")],
             (f"C{ch}:BSWV FRQ,2000", None),
             (f"C{ch}:BSWV?", wave(ch, frequency=2000)),
         ]
@@ -131,6 +134,7 @@ def test_leaving_dc_mode_requires_output_off_without_missing_field_queries(outpu
         ("C1:OUTP?", f"C1:OUTP {output},LOAD,HZ".encode()),
     ]
     if output == "OFF":
+        exchanges += [(f"C1:{group}?", b"STATE,OFF") for group in ("MDWV", "SWWV", "BTWV")]
         exchanges += [("C1:BSWV WVTP,SINE", None), ("C1:BSWV?", wave())]
     d, t = device(exchanges)
     if output == "ON":

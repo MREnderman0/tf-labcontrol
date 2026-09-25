@@ -18,10 +18,11 @@ def test_removed_package_keeps_old_inventory_cli_scan_and_ui_usable(
     monkeypatch.delitem(registry.PROFILES, removed)
     assert main(["models"]) == 0
     models = json.loads(capsys.readouterr().out)["models"]
-    assert removed not in models and "rigol.dg5504pro" in models
+    remaining = next(key for key in registry.DEVICE_DEFINITIONS if key != removed)
+    assert removed not in models and remaining in models
     configs = (
         ConnectionConfig("mock://removed", removed, "mock"),
-        ConnectionConfig("mock://remaining", "rigol.dg5504pro", "mock"),
+        ConnectionConfig("mock://remaining", remaining, "mock"),
     )
     runtime = ApplicationRuntime(configs, root=tmp_path, hardware=False)
     window = None

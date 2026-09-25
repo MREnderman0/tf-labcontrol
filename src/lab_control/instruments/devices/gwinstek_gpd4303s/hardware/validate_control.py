@@ -460,12 +460,9 @@ def verify(
             + "[原始结果](results.json) · [摘要](summary.json) · [通信](communication.jsonl)\n",
             encoding="utf-8",
         )
-        with (folder.parents[1] / "index.md").open("a", encoding="utf-8") as stream:
-            stream.write(
-                f"\n- {report['finished_at']}：GPD-4303S USB {'空载控制' if control else '只读'}；"
-                f"[记录]({folder.parent.name}/{folder.name}/record.md)；"
-                f"恢复 {report['stages']['restoration']}，物理输出未验收。\n"
-            )
+        from lab_control.storage.hardware_documents import refresh_after_batch
+
+        refresh_after_batch(folder)
     return report
 
 

@@ -11,7 +11,7 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-SMOKE = r'''
+SMOKE = r"""
 import importlib
 import json
 import socket
@@ -41,9 +41,14 @@ for definition in registry.DEVICE_DEFINITIONS.values():
     transport = MockTransport([])
     assert type(registry.build_scpi_adapter(config, transport)) is definition.adapter_type
     assert not transport.history
-    for file in ("README.md", "tests/fixtures/control.json", "tests/fixtures/capabilities-before.json"):
+    for file in ("README.md", "hardware/README.md", "hardware/records.py", "tests/fixtures/control.json", "tests/fixtures/capabilities-before.json"):
         assert (definition.root / file).is_file(), file
     importlib.import_module(definition.adapter_type.__module__.rsplit(".", 1)[0] + ".hardware.readonly")
+    records = importlib.import_module(definition.adapter_type.__module__.rsplit(".", 1)[0] + ".hardware.records")
+    from lab_control.storage.hardware_records import validate
+    summary = records.summarize({"stages": {"physical_output": "not_tested"}})
+    assert summary["adapter_id"] == definition.adapter_id
+    assert not summary["identity_verified"] and not validate(summary)
     if (definition.root / "hardware/validate_usb.py").exists():
         verification = importlib.import_module(definition.adapter_type.__module__.rsplit(".", 1)[0] + ".hardware.validate_usb")
         evidence = verification.capture_sources(root / "evidence")
@@ -59,7 +64,7 @@ if removed:
     else:
         raise AssertionError("Removed adapter was accepted")
 print(json.dumps({"modules": {key: d.root.name for key, d in registry.DEVICE_DEFINITIONS.items()}, "removed": removed, "isolated_import": True}))
-'''
+"""
 
 
 def smoke(root: Path, removed: str = "") -> dict:

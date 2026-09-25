@@ -27,7 +27,8 @@ def device_for(adapter_id, exchanges):
 
 
 FIXTURES = sorted((Path(__file__).parents[1] / "fixtures/protocols").glob("*/control.json")) + [
-    d.root / "tests/fixtures/control.json" for d in DEVICE_DEFINITIONS.values()
+    d.root / "tests/fixtures/control.json"
+    for d in DEVICE_DEFINITIONS.values()
     if (d.root / "tests/fixtures/control.json").exists()
 ]
 
@@ -61,12 +62,6 @@ def test_sdg_disabled_modulation_does_not_implicitly_enable_output():
     with pytest.raises(ValidationError):
         device.apply(DeviceCommand("am_depth", {"value": 20}))
     assert transport.history == ["C1:MDWV?"]
-
-
-
-
-
-
 
 
 def test_tserve_mhz_conversion_and_labelled_allan_deviation():

@@ -164,4 +164,4 @@ def lecroy(model: str) -> Profile:
     )
 
 
-PROFILES = (rs_scope(), rs_scope(True), rigol(), lecroy("WaveRunner9254"), lecroy("WaveRunner9404M"))
+PROFILES = (rs_scope(), rs_scope(True), rigol(), lecroy("WaveRunner9254"))

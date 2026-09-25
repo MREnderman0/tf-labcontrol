@@ -234,9 +234,7 @@ def verify_panel(
             + "原始备份保留且不修改；等待确认期间没有自动恢复任务。物理测量未执行。\n",
             encoding="utf-8",
         )
-        with (folder.parents[1] / "index.md").open("a", encoding="utf-8") as stream:
-            stream.write(
-                f"\n- {report['finished_at']}：GPD-4303S 前面板{'恢复' if restore_from else '设值待核对'}；"
-                f"[记录]({folder.parent.name}/{folder.name}/record.md)；{report['final_state']}。\n"
-            )
+        from lab_control.storage.hardware_documents import refresh_after_batch
+
+        refresh_after_batch(folder)
     return report

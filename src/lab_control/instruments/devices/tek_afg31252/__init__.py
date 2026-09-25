@@ -16,4 +16,5 @@ DEFINITION = DeviceDefinition(
         "可用的 64 位 VISA Runtime 和匹配的接口驱动；优先复用已验证的安装",
     ),
     Path(__file__).parent,
+    deployment_components=("rs-visa",),
 )

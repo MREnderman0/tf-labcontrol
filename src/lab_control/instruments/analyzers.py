@@ -5,16 +5,15 @@ from dataclasses import replace
 from lab_control.domain.instruments import Parameter
 from lab_control.instruments.base import Profile, command, enum, parameter, read_command
 
-DSA_SOURCE = "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/spectrum-analyzers/DSA800_ProgrammingGuide_EN.pdf"
 FPH_SOURCE = "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf"
 ZNB_SOURCE = "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1179_7491_01/ZNB3000_UserManual_en_09.pdf"
 DMM_SOURCE = "https://www.keysight.com/us/en/assets/9018-01343/user-manuals/9018-01343.pdf"
 BOOL = Parameter("boolean")
 
 
-def spectrum(fph: bool = False) -> Profile:
+def spectrum() -> Profile:
     commands = {}
-    maximum = 2e9 if fph else 1.5e9
+    maximum = 2e9
     for name, path, param in (
         ("start_frequency", "SENS:FREQ:STAR", parameter("Hz", 0, maximum)),
         ("stop_frequency", "SENS:FREQ:STOP", parameter("Hz", 0, maximum)),
@@ -36,24 +35,17 @@ def spectrum(fph: bool = False) -> Profile:
     commands["single"] = command("single", "INIT:IMM", read=False, scoped=False, confirm=True)
     commands["marker_peak"] = command("marker_peak", "CALC:MARK1:MAX", read=False, scoped=False)
     commands["marker_value"] = read_command("marker_value", "CALC:MARK1:Y?", scoped=False)
-    if not fph:
-        commands["trace_mode"] = command(
-            "trace_mode", "TRAC1:MODE", enum("WRIT", "MAXH", "MINH", "VIEW", "BLAN"), scoped=False
-        )
-        commands["detector"] = command(
-            "detector", "SENS:DET:FUNC", enum("POS", "NEG", "SAMP", "NORM", "RMS", "VAV"), scoped=False
-        )
     return Profile(
-        "rs.fph" if fph else "rigol.dsa815",
-        ("Rohde&Schwarz", "Rohde-Schwarz") if fph else ("RIGOL",),
-        ("FPH",) if fph else ("DSA815",),
+        "rs.fph",
+        ("Rohde&Schwarz", "Rohde-Schwarz"),
+        ("FPH",),
         "spectrum_analyzer",
         (1,),
-        FPH_SOURCE if fph else DSA_SOURCE,
-        "1321.1011 revision 21" if fph else "DSA800 Programming Guide",
+        FPH_SOURCE,
+        "1321.1011 revision 21",
         commands,
         ("start_frequency", "stop_frequency", "rbw", "reference_level"),
-        acquisition="fph" if fph else "dsa",
+        acquisition="fph",
     )
 
 
@@ -156,4 +148,4 @@ def multimeter() -> Profile:
     )
 
 
-PROFILES = (spectrum(), spectrum(True), network(), multimeter())
+PROFILES = (spectrum(), network(), multimeter())
