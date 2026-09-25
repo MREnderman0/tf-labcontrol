@@ -41,6 +41,9 @@ def render(output: Path, scale: str, waveform_file: Path | None = None) -> None:
         key = runtime.add(ConnectionConfig("mock://scope-view", "lecroy.9404m", "mock"))
         runtime.connect(key).result(3)
         adapter = runtime.sessions.sessions[key].adapter
+        adapter.values["1.timebase"] = {"value": 1e-6}
+        for ch in (1, 2, 3, 4):
+            adapter.values[f"{ch}.scale"] = {"value": (0.02, 0.05, 0.1, 0.2)[ch - 1]}
         acquire = adapter.acquire
 
         def fixture(request):
@@ -52,7 +55,11 @@ def render(output: Path, scale: str, waveform_file: Path | None = None) -> None:
                     axis=sample.axis if sample else np.linspace(-5e-6, 5e-6, 5002),
                     values=sample.values
                     if sample
-                    else np.sin(np.linspace(0, 20, 5002)) * 0.01 + m.channel * 0.02,
+                    else (
+                        np.sin(np.linspace(0, 20, 5002) + m.channel * 0.3) * 0.7
+                        + (2.4, 0.8, -0.8, -2.4)[m.channel - 1]
+                    )
+                    * adapter._value(m.channel, "scale"),
                     axis_unit="s",
                 )
                 for m in batch.measurements
@@ -68,8 +75,8 @@ def render(output: Path, scale: str, waveform_file: Path | None = None) -> None:
         window.show()
         window.navigate("实时监测", "oscilloscope", key)
         page = window.stack.currentWidget()
-        for check in page.channel_checks.values():
-            check.setChecked(True)
+        pump(2)
+        assert len(page.controls.channels()) == 4
         page.start()
         try:
             pump(0.6)
@@ -89,13 +96,26 @@ def render(output: Path, scale: str, waveform_file: Path | None = None) -> None:
                             file=name,
                             logical_size=[width, height],
                             scale=scale,
-                            raw_points=[len(c.xData) for c in curves],
+                            raw_points=[len(m.values) for m in page.plot.displayed_frame.batch.measurements],
                             display_points=[len(c.getData()[0]) for c in curves],
                             ranges=page.plot.plot.viewRange(),
                             time_label=page.plot.plot.getAxis("bottom").label.toPlainText(),
                         )
                     )
             assert not (runtime.repository.root / "data").exists()
+            if not sample:
+                window.navigate("实时监测", "oscilloscope", key)
+                page.record()
+                pump(0.4)
+                assert not page.controls.checks[1].isEnabled()
+                window.grab().save(str(output / f"recording-locked-{scale}.png"))
+                page.record()
+                pump(0.5)
+                runtime.monitoring.stop(key).result(5)
+                page.controls.refresh_parameters()
+                pump(1)
+                page.controls.status.setText("等待当前配置的新帧 · 图中保留旧波形及刻度")
+                window.grab().save(str(output / f"waiting-{scale}.png"))
         finally:
             window.timer.stop()
             window.controller.close()
@@ -115,7 +135,7 @@ def render(output: Path, scale: str, waveform_file: Path | None = None) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, default=Path("design/reviews/waveform-view"))
+    parser.add_argument("--output", type=Path, default=Path("design/reviews/oscilloscope"))
     parser.add_argument("--scale", choices=("1", "1.25", "1.5"), default="1")
     parser.add_argument("--waveform-file", type=Path)
     args = parser.parse_args()

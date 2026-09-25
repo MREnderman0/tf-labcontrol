@@ -66,7 +66,8 @@ def test_monitor_serializes_control_shares_channels_and_records_only_on_request(
         assert frame.configuration_version == 1
         assert frame.request.channels == (1, 2)
         assert session.session_id == original_id
-        assert np.isclose(frame.batch.measurements[0].axis[-1], 0.02)
+        assert np.isclose(frame.batch.measurements[0].axis[-1], 0.01)
+        assert np.isclose(frame.batch.measurements[0].axis[0], -0.01)
         assert not (runtime.repository.root / "data").exists()
         runtime.monitoring.set_recording(device, True)
         wait_for(lambda: bool(runtime.monitoring.snapshots()[device]["last_path"]))

@@ -437,7 +437,9 @@ class MonitoringService:
             frame = task.frames.get(key)
         if frame:
             snapshot = next((s for s in self.sessions.snapshots() if s["stableDeviceId"] == device_id), {})
-            if frame.configuration_version < snapshot.get("configurationVersion", 0):
+            if frame.session_id != snapshot.get("sessionId") or frame.configuration_version != snapshot.get(
+                "configurationVersion"
+            ):
                 return None
         return frame
 

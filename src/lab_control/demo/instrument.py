@@ -222,7 +222,17 @@ class SimulatedInstrument:
         return ApplyResult("success", command.operation, values, values, 1)
 
     def acquisition_readings(self, batch: MeasurementBatch) -> tuple[ParameterReading, ...]:
+        from lab_control.domain.oscilloscope import CONTROL_NAMES
         from lab_control.domain.spectrum import SETTINGS
+
+        if self.caps.category == "oscilloscope":
+            return tuple(
+                ParameterReading(name, int(ch), value, "simulated", batch.timestamp, Quality.SIMULATED)
+                for key, value in batch.configuration.items()
+                if "." in key
+                for ch, name in [key.split(".", 1)]
+                if name in CONTROL_NAMES
+            )
 
         if self.caps.category != "spectrum_analyzer":
             return ()
@@ -241,6 +251,7 @@ class SimulatedInstrument:
         self.sample_index += 1
         result = []
         for channel in request.channels:
+            metadata = {}
             x: Any = np.arange(request.points, dtype=float) * 1e-6
             values = np.sin(2 * np.pi * 1000 * x)
             unit, axis_unit, quantity = "V", "s", request.quantity or request.kind
@@ -260,6 +271,16 @@ class SimulatedInstrument:
                 amplitude = float(channel_setup.get("range", amplitude))
                 offset = channel_setup.get("offset", offset)
                 values = amplitude * np.sin(2 * np.pi * 1000 * x + channel * 0.2) - offset
+                if any(c.name == "scale" for c in self.caps.operations) and self.adapter_id != "pico.6404e":
+                    from lab_control.domain.oscilloscope import ScopeDisplay
+
+                    center = -self._value(1, "time_position", 0)
+                    x = np.linspace(center - duration / 2, center + duration / 2, request.points)
+                    # A fixed simulated input makes instrument scale/offset changes visible.
+                    values = 0.3 * np.sin(2 * np.pi * 1000 * x + channel * 0.2)
+                    metadata["scope_display"] = ScopeDisplay(
+                        amplitude, -offset, duration / 10, center
+                    ).metadata()
             elif request.kind == "scalar" and self.caps.category == "power_supply":
                 for name, unit in (("voltage", "V"), ("current", "A")):
                     enabled = self._value(channel, "output", self._value(1, "all_outputs", False))
@@ -325,7 +346,11 @@ class SimulatedInstrument:
                 )
                 values = np.exp(-(((x - 1550) / 8) ** 2))
                 unit, axis_unit = "a.u.", "nm"
-            result.append(Measurement(quantity, unit, values, channel, x, axis_unit, Quality.SIMULATED))
+            result.append(
+                Measurement(
+                    quantity, unit, values, channel, x, axis_unit, Quality.SIMULATED, metadata=metadata
+                )
+            )
         return MeasurementBatch(
             self.identity,
             tuple(result),

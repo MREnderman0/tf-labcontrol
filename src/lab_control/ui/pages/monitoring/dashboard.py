@@ -27,10 +27,29 @@ from PySide6.QtWidgets import (
 from lab_control.application.catalog import instrument_category, mode_applicable
 from lab_control.application.config import config_from_record
 from lab_control.application.controls import data_sources, slot_label
+from lab_control.domain.readback import boolean_value
 from lab_control.ui.controller import WorkspaceController
+from lab_control.ui.pages.monitoring.oscilloscope_plot import OscilloscopePlot
 from lab_control.ui.pages.monitoring.plot import LivePlot
 from lab_control.ui.pages.monitoring.timing import monitoring_options
 from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
+
+
+def scope_channels(controller, device_id: str, channels) -> tuple[int, ...]:
+    """Use current confirmed OFF values; missing reads never imply a hardware write."""
+    state = controller.states.get(device_id, {})
+    frames = controller.runtime.sessions.readback_frames(device_id)
+    result = []
+    for ch in channels:
+        frame = frames.get((ch, "channel_enabled"))
+        if frame and (frame.session_id, frame.configuration_version) == (
+            state.get("sessionId"),
+            state.get("configurationVersion"),
+        ):
+            if boolean_value(frame.reading.value) is False:
+                continue
+        result.append(ch)
+    return tuple(result)
 
 
 class ResponsiveGrid(QScrollArea):
@@ -98,13 +117,15 @@ class MonitorCard(QFrame):
         self.subtitle.setWordWrap(True)
         self.subtitle.setObjectName("mutedText")
         layout.addWidget(self.subtitle)
-        self.plot = LivePlot()
+        record = controller.records.get(spec["device_id"])
+        scope = bool(record and instrument_category(record) == "oscilloscope")
+        self.plot = OscilloscopePlot() if scope else LivePlot()
         layout.addWidget(self.plot, 1)
         self.state = QLabel("未开始监测")
         self.state.setWordWrap(True)
         footer = QHBoxLayout()
         footer.addWidget(self.state, 1)
-        self.fit_button = QPushButton("适应曲线")
+        self.fit_button = QPushButton("恢复仪器视图" if scope else "适应曲线")
         self.fit_button.clicked.connect(self.plot.fit_current)
         self.fit_button.setVisible(spec.get("view") != "number")
         footer.addWidget(self.fit_button)
@@ -135,13 +156,17 @@ class MonitorCard(QFrame):
             (s for s in data_sources(config_from_record(record)) if s.key == self.spec["source"]), None
         )
         task = self.controller.runtime.monitoring.snapshots().get(device_id, {})
+        channels = tuple(self.spec["channels"])
+        if isinstance(self.plot, OscilloscopePlot):
+            channels = scope_channels(self.controller, device_id, channels)
+            self.plot.restrict_channels(channels)
         if source:
             source = replace(source, view=self.spec.get("view", source.view))
             frame = self.controller.runtime.monitoring.latest(
-                device_id, source.kind, source.quantity, self.spec["channels"][0]
+                device_id, source.kind, source.quantity, channels[0] if channels else 1
             )
             if frame and plot_only and self.isVisible():
-                self.plot.show_frame(frame, source, tuple(self.spec["channels"]))
+                self.plot.show_frame(frame, source, channels)
                 self.controller.runtime.monitoring.displayed(device_id, frame)
         if plot_only:
             return
@@ -416,8 +441,13 @@ class MonitoringDashboard(QWidget):
                 self.controller.message.emit(f"卡片 {spec['title']} 的数据源已不可用，请重新选择")
                 continue
             requires_start = record["adapterId"] in {"pico.6404e", "keysight.3458a"}
+            channels = tuple(spec["channels"])
+            if instrument_category(record) == "oscilloscope":
+                channels = scope_channels(self.controller, record["id"], channels)
+                if not channels:
+                    continue
             grouped.setdefault(record["id"], []).append(
-                source.request(tuple(spec["channels"]), initiate=requires_start, confirmed=requires_start)
+                source.request(channels, initiate=requires_start, confirmed=requires_start)
             )
         dangerous = [
             self.controller.records[key]["displayName"] or self.controller.records[key]["adapterId"]

@@ -8647,6 +8647,49 @@
             "query": "ILVD?",
             "custom_encoder": false
           }
+        },
+        {
+          "name": "trigger_source",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "C1",
+                "C2",
+                "C3",
+                "C4"
+              ],
+              "required": true,
+              "range_source": "model"
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://cdn.teledynelecroy.com/files/manuals/maui-remote-control-and-automation-manual.pdf",
+          "section": "TRSE",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "触发源",
+          "ui_location": "实时监测 / 示波器 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "TRSE EDGE,SR,{value}"
+            ],
+            "query": "TRSE?",
+            "custom_encoder": false
+          }
         }
       ]
     },

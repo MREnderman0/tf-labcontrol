@@ -13,6 +13,7 @@ from typing import Any, Callable
 
 from lab_control.application.sessions import SessionManager, SettingsFrame
 from lab_control.domain.instruments import ParameterReading
+from lab_control.domain.oscilloscope import CONTROL_NAMES as SCOPE_SETTINGS
 from lab_control.domain.readback import usable_reading
 from lab_control.domain.spectrum import SETTINGS as SPECTRUM_SETTINGS
 
@@ -75,6 +76,7 @@ class SettingsSync:
             "signal_generator": BASE,
             "power_supply": POWER_BASE,
             "spectrum_analyzer": SPECTRUM_SETTINGS,
+            "oscilloscope": SCOPE_SETTINGS,
         }.get(category)
         if base is None:
             return {}

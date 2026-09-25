@@ -14,6 +14,7 @@ def test_scope_page_and_overview_fit_current_frame_without_instrument_io(qtbot, 
     key = runtime.add(ConnectionConfig("mock://scope-ui", "lecroy.9404m", "mock"))
     runtime.connect(key).result(3)
     adapter = runtime.sessions.sessions[key].adapter
+    adapter.values["1.timebase"] = {"value": 1e-6}
     acquire = adapter.acquire
     calls = []
 
@@ -39,13 +40,15 @@ def test_scope_page_and_overview_fit_current_frame_without_instrument_io(qtbot, 
     window.navigate("实时监测", "oscilloscope", key)
     page = window.stack.currentWidget()
     try:
-        page.start(once=True)
+        qtbot.waitUntil(lambda: len(page.controls.channels()) == 4)
+        page.start()
         qtbot.waitUntil(lambda: page.plot.displayed_frame is not None, timeout=5000)
         runtime.monitoring.stop(key).result(3)
         assert all(len(c.getData()[0]) > 1 for c in page.plot.curves.values())
-        assert "0.5 ～ 60 s" in page.numeric_ranges.text()
+        reads_after_stop = len(calls)
+        assert page.timing.interval.minimum() == 0.5 and page.timing.interval.maximum() == 60
         page.plot.plot.setXRange(-1, 1, padding=0)
-        qtbot.mouseClick(page.fit_button, Qt.MouseButton.LeftButton)
+        page.fit_action.trigger()
         assert page.plot.plot.viewRange()[0][1] < 1e-5
         frame = page.plot.displayed_frame
         page.save()
@@ -64,7 +67,7 @@ def test_scope_page_and_overview_fit_current_frame_without_instrument_io(qtbot, 
         card.plot.plot.setXRange(-1, 1, padding=0)
         qtbot.mouseClick(card.fit_button, Qt.MouseButton.LeftButton)
         assert card.plot.plot.viewRange()[0][1] < 1e-5
-        assert len(calls) == 1
+        assert len(calls) == reads_after_stop
     finally:
         window.timer.stop()
         window.controller.close()

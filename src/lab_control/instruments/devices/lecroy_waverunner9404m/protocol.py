@@ -38,6 +38,25 @@ def value_text(raw: bytes) -> str:
     return re.sub(r"^(?:C[1-4]:)?[A-Z][A-Z_]*\s+", "", value).strip()
 
 
+def trigger_setup(raw: bytes) -> dict[str, str]:
+    """Keep all TRSE qualifiers; a source edit must not reset holdoff."""
+    parts = [v.strip().upper() for v in value_text(raw).split(",")]
+    if len(parts) < 3 or len(parts) % 2 != 1 or not parts[0]:
+        raise DeviceError("Invalid trigger setup", "parse_error")
+    result = {"type": parts[0]}
+    for key, value in zip(parts[1::2], parts[2::2], strict=True):
+        if not key or not value or key in result:
+            raise DeviceError("Invalid or duplicate trigger qualifier", "parse_error")
+        result[key] = value
+    if "SR" not in result:
+        raise DeviceError("Missing trigger source", "parse_error")
+    return result
+
+
+def trigger_source(raw: bytes) -> str:
+    return trigger_setup(raw)["SR"]
+
+
 def grouped_scalars(raw: bytes, queries: tuple[str, ...]) -> tuple[bytes, ...]:
     """Qualified SHORT headers make field order explicit, even for equal values."""
     fields = response(raw).split(";")

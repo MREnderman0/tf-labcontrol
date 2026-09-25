@@ -60,7 +60,9 @@ SessionManager.submit 返回 Future。start_acquisition 在同一 worker 上重�
 GUI 的纯监测使用独立 MonitoringService，避免沿用 CLI start_acquisition 的默认落盘语义：
 
 ```python
-app.monitoring.start(device_id, (AcquisitionRequest("waveform", (1, 2), 2000),), interval=0.5, mode="electronic")
+app.monitoring.start(
+    device_id, (AcquisitionRequest("waveform", (1, 2), 2000),), interval=0.5, mode="electronic"
+)
 app.monitoring.apply(device_id, DeviceCommand("timebase", {"value": 0.001})).result()
 frame = app.monitoring.latest(device_id, "waveform")
 app.monitoring.set_recording(device_id, True, mode="electronic")

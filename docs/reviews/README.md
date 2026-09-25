@@ -11,6 +11,7 @@
 - [公共采集与 DSA815 快速监测软件验收（2026-09-25）](acquisition-performance-review.md)
 - [统一采集节奏、保存当前帧与频谱轴稳定（2026-09-25）](unified-monitoring-review.md)
 - [示波器短时基显示修复与工作区整理（2026-09-25）](waveform-view-review.md)
+- [示波器紧凑滑块与仪器网格（2026-09-26）](oscilloscope-workspace-review.md)
 - [桌面部署与环境修复验收（2026-09-25）](desktop-deployment-review.md)
 
 - [菜单、长单位与已连接设备筛选验收](connected-selection-review.md)

@@ -7,7 +7,7 @@ from typing import Any, Callable
 from lab_control.domain.instruments import Parameter
 from lab_control.instruments.base import Profile, command, enum, parameter, read_command
 
-from .protocol import choice, numeric, transfer_setup, value_text
+from .protocol import choice, numeric, transfer_setup, trigger_source, value_text
 
 SOURCE = "https://cdn.teledynelecroy.com/files/manuals/maui-remote-control-and-automation-manual.pdf"
 SPECS = "https://www.teledynelecroy.com/options/productdetails.aspx?categoryid=1&groupid=5&modelid=11110"
@@ -53,6 +53,14 @@ def profile() -> Profile:
         ("interleaved", "ILVD?", partial(choice, choices=("ON", "OFF"))),
     ):
         commands[name] = replace(read_command(name, query, scoped=False), decode=decode)
+    commands["trigger_source"] = replace(
+        command("trigger_source", "TRSE EDGE,SR,{value}", scoped=False, query="TRSE?"),
+        capability=replace(
+            command("trigger_source", "TRSE", enum("C1", "C2", "C3", "C4"), scoped=False).capability,
+            verification="documented_pending_hardware",
+        ),
+        decode=trigger_source,
+    )
     return Profile(
         "lecroy.9404m",
         ("LECROY", "TELEDYNE"),

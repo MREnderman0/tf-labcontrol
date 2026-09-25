@@ -161,9 +161,10 @@ def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
                     assert set(page.form.editors) == {c.name for c in caps.operations}
             window.navigate("实时监测", category)
             monitor = window.stack.currentWidget()
+            from lab_control.ui.pages.monitoring.oscilloscope import OscilloscopeMonitoringPage
             from lab_control.ui.pages.monitoring.spectrum import SpectrumMonitoringPage
 
-            assert isinstance(monitor, (MonitoringPage, SpectrumMonitoringPage))
+            assert isinstance(monitor, (MonitoringPage, SpectrumMonitoringPage, OscilloscopeMonitoringPage))
             if category == "spectrum_analyzer":
                 assert set(monitor.controls.editors) == {
                     "start_frequency",
@@ -178,6 +179,11 @@ def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
                     "rbw_auto",
                     "vbw_auto",
                 }
+            elif category == "oscilloscope":
+                assert set(monitor.controls.checks) == set(
+                    window.controller.capabilities(monitor.device_id).channels
+                )
+                assert not hasattr(monitor, "form")
             elif category in MEASUREMENT_CATEGORIES:
                 caps = window.controller.capabilities(monitor.selector.device_id)
                 assert set(monitor.form.editors) == {c.name for c in caps.operations}
@@ -188,7 +194,9 @@ def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
         dashboard.add(device, "waveform", (2,), "CH2")
         card = dashboard.specs[-1]
         dashboard.card_action("open", card["id"])
-        assert window.stack.currentWidget().channels() == (2,)
+        focused = window.stack.currentWidget()
+        assert focused.device_id == device and 2 in focused.controls.checks
+        # Opening a scope card focuses it; it must not switch off other hardware channels.
         runtime.monitoring.start(device, (AcquisitionRequest("waveform", (1, 2), 32),), interval=0.05)
         qtbot.waitUntil(lambda: runtime.monitoring.latest(device, "waveform") is not None)
         original = runtime.sessions.sessions[device].session_id

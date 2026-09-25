@@ -49,6 +49,7 @@ from lab_control.ui.pages.device_control.page import DeviceControlPage
 from lab_control.ui.pages.device_control.power_supply import PowerSupplyPage
 from lab_control.ui.pages.device_control.signal_source import SignalSourcePage
 from lab_control.ui.pages.monitoring.dashboard import MonitoringDashboard
+from lab_control.ui.pages.monitoring.oscilloscope import OscilloscopeMonitoringPage
 from lab_control.ui.pages.monitoring.page import MonitoringPage
 from lab_control.ui.pages.monitoring.spectrum import SpectrumMonitoringPage
 from lab_control.ui.widgets.category_cards import CategoryCard, CategoryCardGrid
@@ -310,11 +311,11 @@ class RealWindow(QMainWindow):
 
     def focus_card(self, spec: dict) -> None:
         page = self.stack.currentWidget()
-        if isinstance(page, (MonitoringPage, SpectrumMonitoringPage)):
+        if isinstance(page, (MonitoringPage, SpectrumMonitoringPage, OscilloscopeMonitoringPage)):
             page.focus_card(spec)
 
     def navigate(self, module: str, category: str = "", device_id: str = "") -> None:
-        if module == "设备管理" and category == "spectrum_analyzer":
+        if module == "设备管理" and category in {"spectrum_analyzer", "oscilloscope"}:
             module = "实时监测"
         if module not in self.nav_buttons:
             return
@@ -330,7 +331,7 @@ class RealWindow(QMainWindow):
             self.submenu.addTab("总览")
             self.submenu.setTabData(0, "")
             for value, label in CATEGORY_LABELS.items():
-                if module == "设备管理" and value == "spectrum_analyzer":
+                if module == "设备管理" and value in {"spectrum_analyzer", "oscilloscope"}:
                     continue
                 index = self.submenu.addTab(label)
                 self.submenu.setTabData(index, value)
@@ -368,6 +369,8 @@ class RealWindow(QMainWindow):
                     page = (
                         SpectrumMonitoringPage(self.controller, self.dashboard.add)
                         if category == "spectrum_analyzer"
+                        else OscilloscopeMonitoringPage(self.controller, self.dashboard.add)
+                        if category == "oscilloscope"
                         else MonitoringPage(self.controller, category, self.dashboard.add)
                     )
                 else:
@@ -391,7 +394,14 @@ class RealWindow(QMainWindow):
         assert page is not None
         if device_id and isinstance(
             page,
-            (DeviceControlPage, MonitoringPage, SpectrumMonitoringPage, SignalSourcePage, PowerSupplyPage),
+            (
+                DeviceControlPage,
+                MonitoringPage,
+                SpectrumMonitoringPage,
+                OscilloscopeMonitoringPage,
+                SignalSourcePage,
+                PowerSupplyPage,
+            ),
         ):
             # Resolve a requested device before showEvent can start readback for the page.
             page.selector.select(device_id)
@@ -836,7 +846,9 @@ class RealWindow(QMainWindow):
         for key, button in self.action_buttons.items():
             if key == "manage":
                 button.setText("设备控制")
-                button.setVisible(not bool(record and instrument_category(record) == "spectrum_analyzer"))
+                button.setVisible(
+                    not bool(record and instrument_category(record) in {"spectrum_analyzer", "oscilloscope"})
+                )
             enabled = bool(record)
             if key == "connect":
                 enabled &= not bool(state) and bool(

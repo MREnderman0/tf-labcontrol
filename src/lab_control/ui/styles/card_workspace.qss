@@ -203,3 +203,19 @@ QFrame#spectrumControls QPushButton#primaryButton:disabled { background: #1a2022
 QListWidget#spectrumMarkerList { background: #13191b; border: 1px solid #354042; border-radius: 5px; font-size: 11px; }
 QListWidget#spectrumMarkerList::item { padding: 5px 7px; border-bottom: 1px solid #293234; }
 QListWidget#spectrumMarkerList::item:selected { background: #463722; color: #f2d2a2; }
+
+/* Oscilloscope: small channel cards with physical, release-to-apply sliders. */
+QFrame#scopeControls, QFrame#scopeControls QScrollArea { border: 0; background: transparent; }
+QFrame#scopeSection { background: #1a2224; border: 1px solid #354143; border-radius: 7px; }
+QFrame#scopeSection QWidget { background: transparent; }
+QFrame#scopeSection QLabel { border: 0; padding: 0; }
+QLabel#scopeControlLabel { font-size: 11px; color: #99aaa8; }
+QLabel#scopeControlValue { font-size: 12px; color: #e2d9c8; }
+QFrame#scopeSection QCheckBox { font-size: 13px; spacing: 7px; padding: 0; }
+QFrame#scopeSection QCheckBox::indicator { width: 14px; height: 14px; border-radius: 3px; }
+QFrame#scopeControls QSlider::groove:horizontal { height: 3px; background: #3b494c; border-radius: 1px; }
+QFrame#scopeControls QSlider::sub-page:horizontal { background: #ac7c43; border-radius: 1px; }
+QFrame#scopeControls QSlider::handle:horizontal { width: 12px; margin: -5px 0; border-radius: 6px; background: #deb273; border: 1px solid #edc58e; }
+QFrame#scopeControls QSlider::handle:horizontal:disabled { background: #52605d; border-color: #65706a; }
+QFrame#scopeControls QSlider::sub-page:horizontal:disabled { background: #52605d; }
+QFrame#scopeSection QToolButton { padding: 0 5px; min-height: 22px; font-size: 17px; border: 0; }

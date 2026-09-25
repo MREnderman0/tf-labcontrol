@@ -1,0 +1,262 @@
+import threading
+
+import pytest
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QFont
+from PySide6.QtWidgets import QDialog, QDialogButtonBox
+
+from lab_control.app import load_stylesheet, load_ui_font
+from lab_control.application.config import ConnectionConfig
+from lab_control.application.runtime import ApplicationRuntime
+from lab_control.domain.instruments import ApplyResult, DeviceCommand
+from lab_control.ui.pages.monitoring.oscilloscope import OscilloscopeMonitoringPage
+from lab_control.ui.real_window import RealWindow
+
+
+@pytest.fixture
+def scope(qapp, qtbot, tmp_path):
+    if qapp.property("scopeTestTheme") is None:
+        qapp.setStyle("Fusion")
+        qapp.setFont(QFont(load_ui_font(), 10))
+        qapp.setStyleSheet(load_stylesheet())
+        qapp.setProperty("scopeTestTheme", True)
+    runtime = ApplicationRuntime(root=tmp_path, hardware=False)
+    key = runtime.add(ConnectionConfig("mock://scope-ui", "lecroy.9404m", "mock"))
+    runtime.connect(key).result()
+    adapter = runtime.sessions.sessions[key].adapter
+    window = RealWindow(runtime)
+    qtbot.addWidget(window)
+    window.show()
+    window.navigate("实时监测", "oscilloscope", key)
+    page = window.stack.currentWidget()
+    qtbot.waitUntil(lambda: len(page.controls.values) >= 30, timeout=6000)
+    try:
+        yield window, page, runtime, key, adapter
+    finally:
+        window.timer.stop()
+        window.controller.close()
+        runtime.close()
+        window.closing = True
+        window.bridge.worker.shutdown()
+
+
+def test_navigation_keeps_card_and_only_monitoring_route(scope):
+    window, page, _, key, _ = scope
+    window.navigate("设备管理", "oscilloscope", key)
+    assert window.stack.currentWidget() is page and isinstance(page, OscilloscopeMonitoringPage)
+    window.navigate("设备管理")
+    assert "oscilloscope" not in [window.submenu.tabData(i) for i in range(window.submenu.count())]
+    assert "spectrum_analyzer" not in [window.submenu.tabData(i) for i in range(window.submenu.count())]
+    assert "oscilloscope" in window.cards
+    window.show_device_pool(window.cards["oscilloscope"])
+    window.open_details(key)
+    assert not window.action_buttons["manage"].isVisible()
+
+
+def test_drag_release_and_keyboard_gesture_write_once(scope, qtbot, monkeypatch):
+    _, page, _, _, adapter = scope
+    writes = []
+    original = adapter.apply
+    monkeypatch.setattr(adapter, "apply", lambda cmd: writes.append(cmd) or original(cmd))
+    field = page.controls.sliders[1, "scale"]
+    slider = field.slider
+    slider.setSliderDown(True)
+    slider.setValue(slider.value() + 1)
+    slider.setValue(slider.value() + 1)
+    qtbot.wait(250)
+    assert writes == []
+    slider.setSliderDown(False)
+    qtbot.waitUntil(lambda: len(writes) == 1 and not page.controls.running)
+    assert writes[0].operation == "scale" and field.actual == writes[0].parameters["value"]
+    qtbot.keyPress(slider, Qt.Key.Key_Left)
+    qtbot.wait(250)
+    assert len(writes) == 1
+    qtbot.keyRelease(slider, Qt.Key.Key_Left)
+    qtbot.waitUntil(lambda: len(writes) == 2 and not page.controls.running)
+
+
+def test_custom_readback_is_not_quantized_on_open(scope, qtbot):
+    window, page, runtime, key, adapter = scope
+    adapter.values["1.scale"] = {"value": 0.037}
+    page.controls.refresh_parameters()
+    qtbot.waitUntil(lambda: not page.controls.running)
+    window.controller.poll()
+    field = page.controls.sliders[1, "scale"]
+    assert field.actual == 0.037 and "自定义" in field.value_label.text()
+    assert adapter._value(1, "scale") == 0.037
+    assert not runtime.monitoring.snapshots().get(key, {}).get("running")
+
+
+def test_channel_off_replaces_requests_and_all_off_does_not_resume(scope, qtbot, monkeypatch):
+    _, page, runtime, key, adapter = scope
+    reads = []
+    original = adapter.acquire
+    monkeypatch.setattr(adapter, "acquire", lambda req: reads.append(req.channels) or original(req))
+    page.start()
+    qtbot.waitUntil(lambda: page.plot.displayed_frame is not None)
+    page.controls.checks[2].click()
+    qtbot.waitUntil(lambda: not page.controls.running and 2 not in page.controls.channels())
+    index = len(reads)
+    qtbot.waitUntil(lambda: len(reads) > index + 1)
+    assert all(2 not in channels for channels in reads[index:])
+    for ch in (1, 3, 4):
+        page.controls.checks[ch].click()
+        qtbot.waitUntil(lambda: not page.controls.running and ch not in page.controls.channels())
+    assert not runtime.monitoring.snapshots()[key]["running"]
+    assert page.plot.displayed_frame is None
+    page.controls.checks[1].click()
+    qtbot.waitUntil(lambda: not page.controls.running and page.controls.channels() == (1,))
+    assert not runtime.monitoring.snapshots()[key]["running"]
+
+
+def test_monitor_edit_and_record_drain_lock(scope, qtbot, monkeypatch):
+    window, page, runtime, key, _ = scope
+    page.start()
+    qtbot.waitUntil(lambda: page.plot.displayed_frame is not None)
+    assert page.controls.sliders[1, "scale"].isEnabled()
+    page.record()
+    window.controller.poll()
+    assert not page.controls.sliders[1, "scale"].isEnabled()
+    assert not page.controls.checks[1].isEnabled() and not page.controls.gear.isEnabled()
+    page.record()
+    qtbot.waitUntil(lambda: not runtime.sessions.snapshots()[0]["controlsLocked"])
+    window.controller.poll()
+    assert page.controls.sliders[1, "scale"].isEnabled()
+    assert runtime.monitoring.snapshots()[key]["running"]
+
+
+def test_display_save_no_instrument_read_or_normalized_data(scope, qtbot, monkeypatch):
+    _, page, runtime, key, adapter = scope
+    page.start()
+    qtbot.waitUntil(lambda: page.plot.displayed_frame is not None)
+    runtime.monitoring.stop(key).result(3)
+    old = page.plot.displayed_frame
+    saved = []
+    monkeypatch.setattr(adapter, "acquire", lambda req: pytest.fail("Export acquired new data"))
+    monkeypatch.setattr(runtime.repository, "export", lambda batch, mode: saved.append(batch) or "mock-path")
+    runtime.sessions.submit(key, "apply", DeviceCommand("scale", {"value": 0.2}, 1)).result()
+    page.save()
+    qtbot.waitUntil(lambda: bool(saved))
+    assert saved[0] is old.batch
+    assert saved[0].measurements[0].metadata["scope_display"]["units_per_div"] == 0.5
+
+
+def test_uncertain_write_stops_without_replay(scope, qtbot, monkeypatch):
+    _, page, runtime, key, adapter = scope
+    writes = []
+    monkeypatch.setattr(
+        adapter,
+        "apply",
+        lambda cmd: (
+            writes.append(cmd) or ApplyResult("uncertain", cmd.operation, cmd.parameters, error="timeout")
+        ),
+    )
+    page.start()
+    qtbot.waitUntil(lambda: page.plot.displayed_frame is not None)
+    page.controls.submit([DeviceCommand("offset", {"value": 0.02}, 1)])
+    qtbot.waitUntil(lambda: not page.controls.running)
+    assert len(writes) == 1 and "timeout" in page.controls.status.text()
+    assert not runtime.monitoring.snapshots()[key]["running"]
+    assert not runtime.sessions.snapshots()[0]["controlGroup"]
+
+
+def test_trigger_dialog_cancel_zero_writes_and_apply_only_changed_fields(scope, qtbot, monkeypatch):
+    from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
+
+    _, page, _, _, adapter = scope
+    writes = []
+    original = adapter.apply
+    monkeypatch.setattr(adapter, "apply", lambda cmd: writes.append(cmd) or original(cmd))
+
+    def edit(accept):
+        dialog = page.controls.findChild(QDialog)
+        source, slope, mode = dialog.findChildren(WorkspaceComboBox)
+        source.setCurrentIndex(source.findData("C2"))
+        slope.setCurrentIndex(slope.findData("NEG"))
+        mode.setCurrentIndex(mode.findData("SINGLE"))
+        assert writes == []
+        if accept:
+            dialog.findChild(QDialogButtonBox).button(QDialogButtonBox.StandardButton.Apply).click()
+        else:
+            dialog.reject()
+
+    QTimer.singleShot(0, lambda: edit(False))
+    page.controls.trigger_dialog()
+    qtbot.wait(20)
+    assert writes == []
+    QTimer.singleShot(0, lambda: edit(True))
+    page.controls.trigger_dialog()
+    qtbot.waitUntil(lambda: not page.controls.running)
+    assert [(c.operation, c.channel, c.parameters["value"]) for c in writes] == [
+        ("trigger_source", 1, "C2"),
+        ("trigger_slope", 2, "NEG"),
+        ("trigger_mode", 1, "SINGLE"),
+    ]
+    assert "等待新波形" in page.controls.status.text()
+
+
+def test_reconnect_drops_previous_frames_and_readings(scope, qtbot):
+    window, page, runtime, key, _ = scope
+    page.start()
+    qtbot.waitUntil(lambda: page.plot.displayed_frame is not None)
+    old_session = page.plot.displayed_frame.session_id
+    runtime.monitoring.stop(key).result(3)
+    runtime.sessions.disconnect(key)
+    window.controller.poll()
+    assert page.controls is None and page.plot.displayed_frame is None
+    runtime.connect(key).result()
+    window.controller.poll()
+    assert not page.selector.device_id
+    page.selector.select(key)
+    qtbot.waitUntil(lambda: len(page.controls.values) >= 30)
+    page.start()
+    qtbot.waitUntil(lambda: page.plot.displayed_frame is not None)
+    assert page.plot.displayed_frame.session_id != old_session
+
+
+def test_overview_removes_closed_channel_and_keeps_other_grid_traces(scope, qtbot):
+    window, page, _, _, _ = scope
+    page.start()
+    qtbot.waitUntil(lambda: page.plot.displayed_frame is not None)
+    page.pin()
+    window.navigate("实时监测")
+    card = next(iter(window.dashboard.cards.values()))
+    qtbot.waitUntil(lambda: card.plot.displayed_frame is not None)
+    page.controls.set_channel(1, False)
+    qtbot.waitUntil(lambda: not page.controls.running and 1 not in page.controls.channels())
+    qtbot.waitUntil(lambda: not card.plot.curves[1, "waveform"].isVisible())
+    assert card.plot.curves[2, "waveform"].isVisible() and card.plot.instrument_view
+
+
+def test_stop_recording_retains_ui_lock_through_blocked_binary_write(scope, qtbot, monkeypatch):
+    window, page, runtime, key, _ = scope
+    entered, release = threading.Event(), threading.Event()
+    factory = runtime.repository.create_recording
+
+    def create(mode, **options):
+        recorder = factory(mode, **options)
+        append = recorder.segments.append
+
+        def blocked(sequence, batch):
+            entered.set()
+            assert release.wait(8)
+            return append(sequence, batch)
+
+        recorder.segments.append = blocked
+        return recorder
+
+    monkeypatch.setattr(runtime.repository, "create_recording", create)
+    page.start()
+    page.record()
+    try:
+        qtbot.waitUntil(entered.is_set)
+        page.record()
+        window.controller.poll()
+        assert runtime.sessions.snapshots()[0]["controlsLocked"]
+        assert not page.controls.checks[1].isEnabled() and not page.controls.gear.isEnabled()
+        assert not page.refresh_action.isEnabled()
+    finally:
+        release.set()
+    qtbot.waitUntil(lambda: not runtime.sessions.snapshots()[0]["controlsLocked"])
+    window.controller.poll()
+    assert page.controls.checks[1].isEnabled() and runtime.monitoring.snapshots()[key]["running"]
