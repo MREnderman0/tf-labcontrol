@@ -53,7 +53,12 @@ def test_twenty_sessions_scan_and_stream_are_protected(tmp_path):
     sessions.subscribe(on_measurement)
     try:
         acquisitions = [
-            sessions.start_acquisition(str(i), AcquisitionRequest("waveform", points=32), interval=0.01)
+            sessions.start_acquisition(
+                str(i),
+                AcquisitionRequest("waveform", points=32),
+                interval=0.01,
+                record_interval=0.5,
+            )
             for i in range(20)
         ]
         assert ready.wait(5), "All 20 devices must produce data before scanning"

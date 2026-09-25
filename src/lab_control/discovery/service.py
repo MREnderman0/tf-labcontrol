@@ -11,6 +11,8 @@ from uuid import uuid4
 from lab_control.application.config import ConnectionConfig, canonical_resource
 from lab_control.application.leases import ResourceLeases
 from lab_control.application.sessions import SessionManager
+from lab_control.discovery.addresses import follow_verified_address, network_host, remember_identity
+from lab_control.discovery.presence import LIVE_CONNECTIONS, local_enumeration, update_record_presence
 from lab_control.domain.instruments import DeviceError, DeviceIdentity, jsonable, utc_now
 from lab_control.storage.repository import Repository
 from lab_control.transport.visa import VisaRuntime
@@ -142,6 +144,13 @@ class Inventory:
         self.repository = repository
         self.lock = threading.RLock()
         self.records = {item["id"]: item for item in repository.records()}
+        # Persisted evidence describes a previous process, not currently attached hardware.
+        # Do not rewrite the user's inventory just for starting the application.
+        for record in self.records.values():
+            for candidate in record["candidates"].values():
+                candidate["presenceState"] = "unknown"
+                candidate.pop("evidenceScanRunId", None)
+            update_record_presence(record)
 
     def all(self) -> tuple[dict[str, Any], ...]:
         import copy
@@ -156,7 +165,11 @@ class Inventory:
                 (
                     item
                     for item in self.records.values()
-                    if any(canonical_resource(res) == normalized for res in item["resources"])
+                    if any(
+                        canonical_resource(res) == normalized
+                        and not item["candidates"].get(res, {}).get("retired")
+                        for res in item["resources"]
+                    )
                 ),
                 None,
             )
@@ -169,10 +182,39 @@ class Inventory:
         adapter: str = "",
         error: str = "",
         reason: str = "",
+        *,
+        error_code: str = "",
     ) -> dict[str, Any]:
         with self.lock:
             resource = candidate.config.resource
             existing = self.by_resource(resource)
+            if (
+                existing
+                and identity
+                and identity.key
+                and existing.get("identityKey")
+                and existing["identityKey"] != identity.key
+                and network_host(resource)
+                and candidate.safe_scpi
+                and reason == "identified"
+            ):
+                # DHCP reuse does not transfer ownership, limits or historical data.
+                existing["candidates"][resource].update(
+                    retired=True, presenceState="unreachable", probeReason="address_reassigned"
+                )
+                update_record_presence(existing)
+                self.repository.save(existing)
+                existing = None
+                candidate = replace(
+                    candidate,
+                    config=ConnectionConfig(
+                        resource,
+                        adapter,
+                        candidate.config.transport,
+                        timeout=candidate.config.timeout,
+                        expected_serial=identity.serial,
+                    ),
+                )
             matches = [
                 item
                 for item in self.records.values()
@@ -222,16 +264,51 @@ class Inventory:
             }
             if resource not in record["resources"]:
                 record["resources"].append(resource)
-            record["candidates"][resource] = {
-                "candidateId": record["candidates"].get(resource, {}).get("candidateId", uuid4().hex),
+            previous = record["candidates"].get(resource, {})
+            sources = dict(previous.get("sources", {}))
+            if not sources and previous.get("source"):
+                sources[previous["source"]] = {
+                    "scanRunId": previous.get("scanRunId", ""),
+                    "observedAt": previous.get("lastSeenAt", ""),
+                    "rawDescriptor": previous.get("rawDescriptor", {}),
+                }
+            now = utc_now()
+            sources[candidate.source] = {
                 "scanRunId": scan_id,
-                "source": candidate.source,
-                "lastSeenAt": utc_now(),
+                "observedAt": now,
+                "rawDescriptor": candidate.descriptor,
+            }
+            entry = {
+                **previous,
+                "candidateId": previous.get("candidateId", uuid4().hex),
+                "scanRunId": scan_id,
+                "source": previous.get("source", candidate.source)
+                if candidate.source == "configured"
+                else candidate.source,
+                "sources": sources,
                 "rawDescriptor": candidate.descriptor,
                 "lastError": error,
+                "probeErrorCode": error_code,
                 "probeReason": reason,
                 "config": asdict(candidate.config),
             }
+            local_seen = any(
+                observation["scanRunId"] == scan_id and local_enumeration(source, resource)
+                for source, observation in sources.items()
+            )
+            if error or reason == "probe_failed":
+                entry.update(presenceState="unreachable", evidenceScanRunId=scan_id)
+            elif identity is not None or local_seen:
+                entry.update(presenceState="present", evidenceScanRunId=scan_id)
+            elif reason != "pending_probe" and scan_id != "manual":
+                entry.update(presenceState="unknown", evidenceScanRunId=scan_id)
+            else:
+                entry.setdefault("presenceState", "unknown")
+            # A configured address alone (including failed probing) is not a sighting.
+            if not error and (identity is not None or local_enumeration(candidate.source, resource)):
+                entry["lastSeenAt"] = now
+                record["lastSeenAt"] = now
+            record["candidates"][resource] = entry
             prefer_visa = bool(
                 identity is not None
                 and not conflict
@@ -254,7 +331,12 @@ class Inventory:
                 )
             if identity and not conflict:
                 record["identity"], record["identityKey"] = jsonable(identity), identity.key
-                record["lastProbeAt"] = utc_now()
+                if identity.key:
+                    remember_identity(record, resource, identity, scan_id)
+                if reason == "identified":
+                    follow_verified_address(record, resource, identity, candidate.config)
+                if reason != "cached_active_session":
+                    record["lastProbeAt"] = now
             if adapter:
                 record["adapterId"] = adapter
                 record["config"]["adapter"] = adapter
@@ -265,15 +347,20 @@ class Inventory:
                     else "identified"
                     if record["identity"]
                     else "unknown",
-                    "lastSeenAt": utc_now(),
                     "scanRunId": scan_id,
                     "lastError": error,
                     "probeReason": reason,
-                    "driverStatus": "error" if error else "enumerated",
+                    "probeErrorCode": error_code,
+                    "driverStatus": "error"
+                    if error_code == "driver_missing"
+                    else "unconfirmed"
+                    if error
+                    else "enumerated",
                 }
             )
             if conflict:
                 record["identityConflict"] = jsonable(identity)
+            update_record_presence(record)
             self.records[record["id"]] = record
             self.repository.save(record)
             return record
@@ -297,26 +384,67 @@ class Inventory:
                 record["slots"][mode] = slot
             self.repository.save(record)
 
-    def select_resource(self, device_id: str, resource: str) -> None:
+    def select_resource(self, device_id: str, resource: str, *, follow_address: bool = False) -> None:
         with self.lock:
             record = self.records[device_id]
             if resource not in record["candidates"]:
                 raise DeviceError("Resource does not belong to this inventory record", "invalid_parameter")
-            config = dict(record["candidates"][resource]["config"])
-            config["adapter"] = record["adapterId"]
+            entry = record["candidates"][resource]
+            if entry.get("retired"):
+                raise DeviceError("Address was reassigned to another device", "identity_conflict")
+            serial = record.get("identity", {}).get("serial", "")
+            if follow_address:
+                if not network_host(resource):
+                    raise DeviceError("Address following requires a LAN resource", "invalid_parameter")
+                if record.get("identityConflict") or record.get("discoveryState") == "conflict":
+                    raise DeviceError("Resolve the asset identity conflict first", "identity_conflict")
+                if (
+                    not serial
+                    or not record.get("identityKey")
+                    or entry.get("verifiedIdentityKey") != record["identityKey"]
+                ):
+                    raise DeviceError("Verify this LAN resource and serial first", "identity_required")
+                expected = record["config"].get("expected_serial")
+                if expected and expected != serial:
+                    raise DeviceError("Configured serial differs from asset identity", "identity_conflict")
+            config = {
+                **record["config"],
+                "resource": resource,
+                "transport": entry["config"]["transport"],
+                "adapter": record["adapterId"],
+            }
+            if follow_address:
+                config["expected_serial"] = serial
             record["config"] = config
-            record["primaryResourceExplicit"] = True
+            record["primaryResourceExplicit"] = not follow_address
             self.repository.save(record)
 
-    def stale(self, scan_id: str, successful_sources: set[str]) -> None:
+    def stale(self, scan_id: str, successful_sources: set[str], *, cancelled: bool = False) -> None:
         with self.lock:
             for record in self.records.values():
-                candidates = record["candidates"].values()
-                if candidates and all(
-                    c["source"] in successful_sources and c["scanRunId"] != scan_id for c in candidates
-                ):
-                    record["discoveryState"] = "stale"
-                    self.repository.save(record)
+                for resource, candidate in record["candidates"].items():
+                    if candidate.get("evidenceScanRunId") == scan_id:
+                        continue
+                    if any(
+                        observation.get("scanRunId") == scan_id and local_enumeration(source, resource)
+                        for source, observation in candidate.get("sources", {}).items()
+                    ):
+                        # A concurrent connection may have replaced the evidence ID.
+                        # Do not discard this scan's physical sighting during finalization.
+                        continue
+                    sources = set(candidate.get("sources", {})) or {candidate.get("source", "")}
+                    physical = {source for source in sources if local_enumeration(source, resource)}
+                    missing = bool(physical and physical <= successful_sources and not cancelled)
+                    candidate["presenceState"] = "not_seen" if missing else "unknown"
+                    candidate["probeReason"] = (
+                        "not_seen"
+                        if missing
+                        else "scan_cancelled"
+                        if cancelled
+                        else "enumeration_unconfirmed"
+                    )
+                update_record_presence(record)
+                self.repository.save(record)
 
 
 class DiscoveryService:
@@ -339,6 +467,11 @@ class DiscoveryService:
         self.lock, self.cancelled = threading.Lock(), threading.Event()
         self.future: Future[Any] | None = None
         self.progress: dict[str, Any] = {"state": "idle"}
+
+    @property
+    def is_scanning(self) -> bool:
+        with self.lock:
+            return bool(self.future and not self.future.done())
 
     def scan(self) -> Future[dict[str, Any]]:
         with self.lock:
@@ -364,7 +497,7 @@ class DiscoveryService:
         self.progress = report
         self.inventory.repository.audit("scan_started", scan_id=scan_id)
         successful: set[str] = set()
-        candidates: dict[str, DiscoveryCandidate] = {}
+        observations: dict[str, list[DiscoveryCandidate]] = {}
         with ThreadPoolExecutor(
             max_workers=max(1, len(self.providers)), thread_name_prefix="enumerate"
         ) as executor:
@@ -377,8 +510,7 @@ class DiscoveryService:
                     report["providers"][provider.name] = {"count": len(result), "state": "success"}
                     for candidate in result:
                         key = canonical_resource(candidate.config.resource)
-                        if key not in candidates or candidate.config.adapter:
-                            candidates[key] = candidate
+                        observations.setdefault(key, []).append(candidate)
                 except Exception as exc:
                     report["providers"][provider.name] = {"state": "error", "error": str(exc)}
                 self.inventory.repository.audit(
@@ -389,14 +521,35 @@ class DiscoveryService:
                 )
 
         # Publish every resource before identity I/O. One slow probe cannot hide the other resources.
-        for candidate in candidates.values():
-            self.inventory.merge(candidate, scan_id, reason="pending_probe")
+        candidates: list[DiscoveryCandidate] = []
+        for group in observations.values():
+            for candidate in group:
+                self.inventory.merge(candidate, scan_id, reason="pending_probe")
+            # Explicit connection settings win, independently of provider completion order.
+            chosen = max(group, key=lambda c: (bool(c.config.adapter), c.source == "configured"))
+            chosen = replace(chosen, safe_scpi=any(c.safe_scpi for c in group))
+            known = self.inventory.by_resource(chosen.config.resource)
+            if (
+                chosen.safe_scpi
+                and network_host(chosen.config.resource)
+                and not any(c.source == "configured" for c in group)
+                and known
+                and known.get("identityKey")
+                and not known.get("identityConflict")
+                and known["candidates"][chosen.config.resource].get("verifiedIdentityKey")
+                == known["identityKey"]
+            ):
+                # Rediscovery must retain the verified address's connection timeout.
+                # Copy no model, serial or limits: DHCP may have reassigned this address.
+                chosen = replace(chosen, config=replace(chosen.config, timeout=known["config"]["timeout"]))
+            candidates.append(chosen)
 
         # Each resource is leased atomically before opening a short-lived probe handle.
         def process(candidate: DiscoveryCandidate) -> dict[str, Any]:
             if self.cancelled.is_set():
                 return {"resource": candidate.config.resource, "reason": "cancelled"}
             identity, adapter, error, reason = None, candidate.config.adapter, "", "metadata_only"
+            error_code = ""
             owner = "probe:" + uuid4().hex
             leased = False
             try:
@@ -404,11 +557,11 @@ class DiscoveryService:
                     active = self.leases.owner(candidate.config.resource)
                     session = self.sessions.sessions.get(active or "")
                     if session is not None:
-                        identity, adapter, reason = (
-                            session.identity,
-                            session.config.adapter,
-                            "cached_active_session",
-                        )
+                        adapter = session.config.adapter
+                        if session.state in LIVE_CONNECTIONS and not session.closing:
+                            identity, reason = session.identity, "cached_active_session"
+                        else:
+                            reason = "cached_session_unconfirmed"
                     elif self.sessions.sessions:
                         reason = "deferred_possible_alias_of_active_device"
                     elif candidate.config.adapter and candidate.config.transport in {
@@ -429,24 +582,28 @@ class DiscoveryService:
                     reason = "identified"
             except Exception as exc:
                 error, reason = str(exc), "probe_failed"
+                error_code = exc.code if isinstance(exc, DeviceError) else ""
             finally:
                 if leased:
                     self.leases.release(owner)
-            record = self.inventory.merge(candidate, scan_id, identity, adapter, error, reason)
+            record = self.inventory.merge(
+                candidate, scan_id, identity, adapter, error, reason, error_code=error_code
+            )
             item = {
                 "device_id": record["id"],
                 "resource": candidate.config.resource,
+                "probeTimeoutSeconds": candidate.config.timeout,
                 "reason": reason,
                 "error": error,
+                "errorCode": error_code,
             }
             self.inventory.repository.audit("discovery_result", scan_id=scan_id, **item)
             return item
 
         # Serial probing avoids colliding unconfirmed USB/LAN aliases during the same scan.
-        for candidate in candidates.values():
+        for candidate in candidates:
             report["items"].append(process(candidate))
-        if not self.cancelled.is_set():
-            self.inventory.stale(scan_id, successful - {"configured"})
+        self.inventory.stale(scan_id, successful - {"configured"}, cancelled=self.cancelled.is_set())
         report.update(
             {
                 "state": "cancelled" if self.cancelled.is_set() else "complete",

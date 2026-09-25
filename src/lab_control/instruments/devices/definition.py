@@ -22,6 +22,8 @@ class DeviceDefinition:
     adapter_type: type[ScpiAdapter]
     documentation: DeviceDocumentation
     root: Path
+    socket_port: int | None = None
+    deployment_components: tuple[str, ...] = ()
 
     @property
     def adapter_id(self) -> str:

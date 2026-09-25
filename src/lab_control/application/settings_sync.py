@@ -9,14 +9,14 @@ from __future__ import annotations
 import time
 from concurrent.futures import Future
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Callable
 
 from lab_control.application.sessions import SessionManager, SettingsFrame
 from lab_control.domain.instruments import ParameterReading
 from lab_control.domain.readback import usable_reading
 from lab_control.domain.spectrum import SETTINGS as SPECTRUM_SETTINGS
 
-BASE = ("output", "waveform", "frequency", "power", "amplitude", "offset", "reference_clock")
+BASE = ("output", "waveform", "frequency", "power", "amplitude", "offset")
 POWER_BASE = ("all_outputs", "output", "voltage", "current", "measured_voltage", "measured_current")
 Key = tuple[int, str]
 
@@ -37,17 +37,23 @@ class SyncTask:
 
 
 class SettingsSync:
-    def __init__(self, sessions: SessionManager) -> None:
+    def __init__(self, sessions: SessionManager, wake: Callable[[], None] = lambda: None) -> None:
         self.sessions = sessions
+        self.wake = wake
         self.enabled = False
         self.focus = ""
         self.advanced: tuple[Key, ...] = ()
         self.tasks: dict[str, SyncTask] = {}
         self.round_robin: list[str] = []
         self.max_concurrent = 4
-        self.foreground_interval = 1.0
-        self.background_interval = 10.0
+        self.foreground_interval = 30.0
+        self.background_interval = 60.0
+        self.dispatch_interval = 0.05
+        self.next_dispatch_at = 0.0
         self.max_observed_concurrent = 0
+
+    def poll_interval(self, device_id: str) -> float:
+        return self.foreground_interval if device_id == self.focus else self.background_interval
 
     def set_focus(self, device_id: str, advanced: tuple[Key, ...] = ()) -> None:
         if (device_id, advanced) == (self.focus, self.advanced):
@@ -105,7 +111,7 @@ class SettingsSync:
         if not keys:
             return "无可读参数", "此功能没有可用的轻量读回"
         frames = self.sessions.readback_frames(device_id)
-        age = 3.0 if device_id == self.focus else 30.0
+        age = 3 * self.poll_interval(device_id)
         now = time.monotonic()
         if all(
             self.current(frames.get(k), state)
@@ -117,6 +123,8 @@ class SettingsSync:
         if (
             state.get("controlGroup")
             or state.get("controlPending")
+            or state.get("monitoring")
+            or state.get("recording")
             or state.get("activeTask") in {"continuous_acquisition", "acquire", "observe"}
         ):
             return "同步已暂停", "设备任务优先，空闲后自动继续"
@@ -188,7 +196,7 @@ class SettingsSync:
             k for k in self.round_robin if k != self.focus
         ]
         for device_id in order:
-            if active >= self.max_concurrent:
+            if active >= self.max_concurrent or now < self.next_dispatch_at:
                 break
             task, state = self.tasks[device_id], states.get(device_id, {})
             if (
@@ -198,7 +206,7 @@ class SettingsSync:
             ):
                 continue
             frames = self.sessions.readback_frames(device_id)
-            interval = self.foreground_interval if device_id == self.focus else self.background_interval
+            interval = self.poll_interval(device_id)
             wanted = self.wanted(device_id)
             due = [
                 key
@@ -225,7 +233,11 @@ class SettingsSync:
             )
             if submitted is None:
                 continue
+            # Space automatic batches globally, including first reads and
+            # resumption after monitoring. Never catch up missed dispatch slots.
+            self.next_dispatch_at = now + self.dispatch_interval
             task.pending, task.keys = submitted, keys
+            submitted.add_done_callback(lambda _future: self.wake())
             task.pending_version = state.get("configurationVersion", 0)
             active += 1
             self.max_observed_concurrent = max(self.max_observed_concurrent, active)

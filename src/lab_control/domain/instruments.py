@@ -209,8 +209,14 @@ class AcquisitionRequest:
     quantity: str = ""
     initiate: bool = False
     confirmed: bool = False
+    consistency: str = "full"
+    context_id: str = ""
 
     def validate(self) -> None:
+        if self.consistency not in {"full", "live", "stream"}:
+            raise ValidationError("consistency must be full, live or stream")
+        if self.consistency == "stream" and (not self.context_id or self.initiate):
+            raise ValidationError("Stream reads require a run context and passive acquisition")
         if not self.channels or any(type(c) is not int or c < 1 for c in self.channels):
             raise ValidationError("channels must be positive integers")
         if len(set(self.channels)) != len(self.channels):
@@ -241,6 +247,9 @@ class MeasurementBatch:
     timestamp: str = field(default_factory=utc_now)
     time_basis: str = "host_utc_at_read; waveform axes from instrument"
     adapter_version: str = "0.2.0"
+    validation: str = "legacy"
+    settings_timestamps: dict[str, str] = field(default_factory=dict)
+    performance: dict[str, Any] = field(default_factory=dict)
 
 
 class InstrumentAdapter(Protocol):

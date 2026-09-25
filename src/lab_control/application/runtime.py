@@ -3,7 +3,6 @@ from __future__ import annotations
 import platform
 import sys
 import threading
-from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -48,26 +47,38 @@ class ApplicationRuntime:
         self.process_lease: ProcessLease | None = None
         self.closed = False
         self._close_lock = threading.Lock()
+        lock_root = None
         try:
             if hardware:
                 # Fixed per-user lock even when LAB_CONTROL_HOME/config changes.
                 import os
 
                 lock_root = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "TF-LabControl"
-                self.process_lease = ProcessLease(lock_root)
+                self.process_lease = ProcessLease(lock_root, shared=True)
             self.visa = visa or VisaRuntime()
-            self.leases = ResourceLeases()
+            self.leases = ResourceLeases(lock_root)
             self.inventory = Inventory(self.repository)
             self.sessions = SessionManager(
                 self.leases, self.repository, lambda config: create_adapter(config, self.visa)
             )
             self.configurations = configurations
+            from lab_control.discovery.lan import (
+                LanDiscoveryProvider,
+                LanDiscoverySettings,
+                load_lan_settings,
+            )
+
+            self.lan_settings = (
+                load_lan_settings(self.repository.root) if hardware else LanDiscoverySettings()
+            )
             providers: tuple[Any, ...] = (ConfiguredDiscoveryProvider(configurations),)
             if hardware:
                 providers += (
                     VisaDiscoveryProvider(self.visa),
                     SerialDiscoveryProvider(),
                 )
+                if self.lan_settings.enabled:
+                    providers += (LanDiscoveryProvider(self.visa, self.lan_settings),)
                 sdk_groups: dict[tuple[str, str], list[ConnectionConfig]] = {}
                 for config in configurations:
                     if config.transport in {"tlpmx", "pico"}:
@@ -87,7 +98,7 @@ class ApplicationRuntime:
 
     def probe(self, candidate: DiscoveryCandidate) -> tuple[DeviceIdentity, str]:
         config = candidate.config
-        if config.adapter:
+        if config.adapter and not candidate.safe_scpi:
             adapter = create_adapter(config, self.visa)
             try:
                 return adapter.identify(), config.adapter
@@ -110,17 +121,30 @@ class ApplicationRuntime:
             DiscoveryCandidate(config, "configured"), "manual", adapter=config.adapter
         )["id"]
 
-    def connect(self, device_id: str):
+    def connect(self, device_id: str, *, configure_acquisition: bool = True):
+        from lab_control.domain.instruments import DeviceError
+
+        # Reserve the session under the scan lock, including enumeration and probe gaps.
+        with self.discovery.lock:
+            if self.discovery.future and not self.discovery.future.done():
+                raise DeviceError("正在扫描并核验设备，请等待扫描完成后连接", "scan_busy")
+            return self._connect(device_id, configure_acquisition=configure_acquisition)
+
+    def _connect(self, device_id: str, *, configure_acquisition: bool = True):
         record = next(item for item in self.inventory.all() if item["id"] == device_id)
         if record["discoveryState"] == "conflict":
             from lab_control.domain.instruments import DeviceError
 
             raise DeviceError("Resolve identity conflict before connection", "identity_conflict")
-        config = ConnectionConfig(**record["config"])
-        config = replace(
-            config, aliases=tuple(set((*config.aliases, *record["resources"])) - {config.resource})
+        from lab_control.discovery.addresses import verified_connection
+
+        config = verified_connection(record)
+        from lab_control.application.connection_preferences import qualified_connection
+
+        config, firmware = qualified_connection(record, config, self.repository, self.visa)
+        future = self.sessions.connect(
+            device_id, config, expected_firmware=firmware, configure_acquisition=configure_acquisition
         )
-        future = self.sessions.connect(device_id, config)
 
         def save_identity(completed):
             try:
@@ -149,13 +173,15 @@ class ApplicationRuntime:
             self.inventory.edit(device_id, slot=slot, mode=mode)
             self.repository.audit("slot_changed", device_id=device_id, slot=slot, mode=mode)
 
-    def select_resource(self, device_id: str, resource: str) -> None:
+    def select_resource(self, device_id: str, resource: str, *, follow_address: bool = False) -> None:
         from lab_control.domain.instruments import DeviceError
 
-        with self.sessions.lock:
+        with self.discovery.lock, self.sessions.lock:
+            if self.discovery.future and not self.discovery.future.done():
+                raise DeviceError("正在扫描并核验设备，请等待扫描完成后选择连接", "scan_busy")
             if device_id in self.sessions.sessions:
                 raise DeviceError("Disconnect before changing the primary resource", "resource_busy")
-            self.inventory.select_resource(device_id, resource)
+            self.inventory.select_resource(device_id, resource, follow_address=follow_address)
 
     def diagnostics(self) -> dict[str, Any]:
         result: dict[str, Any] = {

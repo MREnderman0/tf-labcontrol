@@ -7,6 +7,7 @@ from typing import Any
 
 from lab_control.domain.instruments import DeviceError
 from lab_control.transport.base import MAX_MESSAGE, BufferedReader
+from lab_control.transport.diagnostics import measured, synchronized
 
 
 class TcpSocketTransport:
@@ -15,21 +16,28 @@ class TcpSocketTransport:
         self.resource = f"tcp://{host}:{port}"
         self.terminator = terminator
         self.sock: socket.socket | None = None
-        self.reader = BufferedReader(self._receive, terminator)
+        self.reader = BufferedReader(self._receive, terminator, self._receive_some)
         self.lock = threading.RLock()
 
     def open(self) -> None:
         try:
             self.sock = socket.create_connection((self.host, self.port), self.timeout)
             self.sock.settimeout(self.timeout)
+            # SCPI/VICP exchanges are latency-sensitive, small request/reply
+            # messages. Do not coalesce a later command behind an earlier ACK.
+            self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             self.reader.buffer.clear()
         except OSError as exc:
+            self.close()
             raise DeviceError(str(exc), "connection_failed") from exc
 
     def close(self) -> None:
         if self.sock is not None:
             self.sock.close()
             self.sock = None
+
+    def _receive_some(self, count: int) -> bytes:
+        return self._receive(count)
 
     def _receive(self, count: int) -> bytes:
         if self.sock is None:
@@ -51,22 +59,34 @@ class TcpSocketTransport:
         except OSError as exc:
             raise DeviceError(str(exc), "disconnected") from exc
 
+    @synchronized
+    @measured("write")
     def write(self, payload: bytes | str) -> None:
         data = payload.encode("ascii") + self.terminator if isinstance(payload, str) else payload
         self._send(data)
 
+    @synchronized
+    @measured("read")
     def read(self) -> bytes:
         return self.reader.message()
 
+    @synchronized
+    @measured("query")
     def query(self, payload: bytes | str) -> bytes:
         with self.lock:
             self.write(payload)
             return self.read()
 
+    @synchronized
+    @measured("query")
     def query_fixed(self, payload: bytes | str, count: int) -> bytes:
         with self.lock:
             self.write(payload)
-            return self.reader.exact(count)
+            return self._read_exact(count)
+
+    @measured("read")
+    def _read_exact(self, count: int) -> bytes:
+        return self.reader.exact(count)
 
 
 class VicpTransport(TcpSocketTransport):
@@ -77,11 +97,15 @@ class VicpTransport(TcpSocketTransport):
         self.resource = f"vicp://{host}:{port}"
         self.sequence = 0
 
+    @synchronized
+    @measured("write")
     def write(self, payload: bytes | str) -> None:
         data = payload.encode("ascii") + b"\n" if isinstance(payload, str) else payload
         self.sequence = self.sequence % 255 + 1
         self._send(struct.pack(">BBBBI", 0x81, 1, self.sequence, 0, len(data)) + data)
 
+    @synchronized
+    @measured("read")
     def read(self) -> bytes:
         data = bytearray()
         while True:
@@ -102,8 +126,9 @@ class SerialTransport:
         self.resource, self.port = port.upper(), port
         self.baud_rate, self.timeout, self.terminator = baud_rate, timeout, terminator
         self.settings = settings
+        self.lock = threading.RLock()
         self.handle: Any = None
-        self.reader = BufferedReader(self._receive, terminator)
+        self.reader = BufferedReader(self._receive, terminator, self._receive_some)
 
     def open(self) -> None:
         try:
@@ -131,6 +156,11 @@ class SerialTransport:
             self.handle.close()
             self.handle = None
 
+    def _receive_some(self, count: int) -> bytes:
+        first = self._receive(1)
+        available = min(count - 1, int(self.handle.in_waiting))
+        return first + (self._receive(available) if available > 0 else b"")
+
     def _receive(self, count: int) -> bytes:
         try:
             chunk = self.handle.read(count)
@@ -142,6 +172,8 @@ class SerialTransport:
         except Exception as exc:
             raise DeviceError(str(exc), "disconnected") from exc
 
+    @synchronized
+    @measured("write")
     def write(self, payload: bytes | str) -> None:
         data = payload.encode("ascii") if isinstance(payload, str) else payload
         try:
@@ -153,16 +185,28 @@ class SerialTransport:
         except Exception as exc:
             raise DeviceError(str(exc), "disconnected") from exc
 
+    @synchronized
+    @measured("query")
     def query_fixed(self, payload: bytes | str, count: int) -> bytes:
         self.write(payload)
+        return self._read_exact(count)
+
+    @measured("read")
+    def _read_exact(self, count: int) -> bytes:
         return self.reader.exact(count)
 
+    @synchronized
+    @measured("read")
     def read_pending(self) -> bytes:
         return self.reader.exact(len(self.reader.buffer) + self.handle.in_waiting)
 
+    @synchronized
+    @measured("read")
     def read(self) -> bytes:
         return self.reader.message()
 
+    @synchronized
+    @measured("query")
     def query(self, payload: bytes | str) -> bytes:
         self.write(payload)
         return self.read()

@@ -45,7 +45,10 @@ def text_value(raw: bytes) -> Any:
 
 def identity_from_scpi(raw: bytes) -> DeviceIdentity:
     text = raw.decode("ascii", errors="strict").strip()
-    parts = [part.strip() for part in text.split(",")]
+    # Some SCPI instruments include the queried mnemonic as a response header.
+    # It is protocol framing, not part of the manufacturer/asset identity.
+    payload = re.sub(r"^\*IDN\s+", "", text, count=1, flags=re.IGNORECASE)
+    parts = [part.strip() for part in payload.split(",")]
     if len(parts) < 2 or not all(parts[:2]):
         raise DeviceError(f"Invalid identity response: {text[:120]}", "parse_error")
     return DeviceIdentity(

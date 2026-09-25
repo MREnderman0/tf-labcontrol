@@ -81,6 +81,11 @@ class Repository:
                     + "\n"
                 )
 
+    def create_recording(self, mode: str = "electronic", **options):
+        from lab_control.storage.recording import Recording
+
+        return Recording(self.root, mode, **options)
+
     def export(self, batch: MeasurementBatch, mode: str = "electronic") -> Path:
         if mode not in {"electronic", "optical"}:
             raise ValidationError("Invalid experiment mode")

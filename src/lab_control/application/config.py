@@ -76,6 +76,20 @@ def load_config(path: Path) -> tuple[ConnectionConfig, ...]:
     return tuple(result)
 
 
+def load_startup_config(path: Path | None = None) -> tuple[ConnectionConfig, ...]:
+    """Load the explicit file or the user's single default manifest, without hardware I/O.
+
+    Do not glob config directories: backups and alternate transports are not opt-in
+    scan targets. An invalid manifest must fail visibly rather than hide devices.
+    """
+    from lab_control.storage.repository import application_home
+
+    if path is not None:
+        return load_config(path)
+    default = application_home() / "config" / "devices.toml"
+    return load_config(default) if default.exists() else ()
+
+
 def canonical_resource(resource: str) -> str:
     value = resource.strip().upper()
     match = re.fullmatch(r"(?:COM|ASRL)(\d+)(?:::INSTR)?", value)

@@ -18,7 +18,7 @@ from lab_control.domain.instruments import (
 )
 
 
-def wait_for(predicate, timeout=6):
+def wait_for(predicate, timeout=15):
     end = time.monotonic() + timeout
     while time.monotonic() < end:
         if predicate():
@@ -100,7 +100,7 @@ def test_twenty_devices_slow_failure_monitor_and_writes_do_not_collide(tmp_path)
         try:
             wait_for(
                 lambda: all(
-                    (4, "offset") in runtime.sessions.readback_frames(k) for k in keys if k not in keys[1:3]
+                    (4, "offset") in runtime.sessions.readback_frames(k) for k in keys if k not in keys[1:4]
                 )
             )
             assert not runtime.sessions.readback_frames(keys[2])
@@ -110,6 +110,9 @@ def test_twenty_devices_slow_failure_monitor_and_writes_do_not_collide(tmp_path)
             assert all(len(names) <= 4 for _, _, names, _ in history)
             assert runtime.monitoring.settings_sync.max_observed_concurrent <= 4
             assert runtime.monitoring.latest(keys[3], "status", "frequency") is not None
+            assert all(ch == 1 and names == ("frequency",) for k, ch, names, _ in history if k == keys[3])
+            runtime.monitoring.stop(keys[3]).result(3)
+            wait_for(lambda: (4, "offset") in runtime.sessions.readback_frames(keys[3]))
             runtime.sessions.set_control_group(keys[2], False)
             wait_for(lambda: (4, "offset") in runtime.sessions.readback_frames(keys[2]))
             before = runtime.sessions.sessions[keys[0]].configuration_version
@@ -136,6 +139,7 @@ def test_intervals_staleness_retry_and_reconnection_versions(tmp_path, monkeypat
         key = add(runtime)
         session = runtime.sessions.sessions[key]
         service = SettingsSync(runtime.sessions)  # Driven explicitly by a fake monotonic clock.
+        service.dispatch_interval = 0  # Cadence and invalidation; staggering has its own regression.
         service.enabled = True
         now = [time.monotonic()]
         monkeypatch.setattr("lab_control.application.settings_sync.time.monotonic", lambda: now[0])
@@ -155,7 +159,7 @@ def test_intervals_staleness_retry_and_reconnection_versions(tmp_path, monkeypat
         task = service.tasks[key]
         assert not task.pending
         sequence = session.read_sequence
-        now[0] += 9
+        now[0] += 59
         cycle()
         assert session.read_sequence == sequence
         service.set_focus(key)
@@ -164,7 +168,7 @@ def test_intervals_staleness_retry_and_reconnection_versions(tmp_path, monkeypat
             cycle()
         assert session.read_sequence > sequence
         runtime.sessions.set_control_group(key, True)
-        now[0] += 4
+        now[0] += 91
         assert service.status(key, ((1, "output"),))[0] == "同步已暂停"
         runtime.sessions.set_control_group(key, False)
         assert service.status(key, ((1, "output"),))[0] == "待同步"
@@ -182,6 +186,7 @@ def test_recoverable_errors_back_off_and_unchanged_reads_do_not_flood_audit(tmp_
     with ApplicationRuntime(root=tmp_path, hardware=False) as runtime:
         key = add(runtime)
         service = SettingsSync(runtime.sessions)
+        service.dispatch_interval = 0
         service.enabled = True
         session = runtime.sessions.sessions[key]
         calls = []
@@ -254,6 +259,7 @@ def test_late_error_from_before_a_write_does_not_poison_new_configuration(tmp_pa
     with ApplicationRuntime(root=tmp_path, hardware=False) as runtime:
         key = add(runtime)
         service = SettingsSync(runtime.sessions)
+        service.dispatch_interval = 0
         service.enabled = True
         adapter = runtime.sessions.sessions[key].adapter
         original = adapter.read_settings
@@ -312,7 +318,7 @@ def test_continuous_acquisition_pauses_sync_then_resumes_without_backlog(tmp_pat
         runtime.sessions.submit(key, "read_settings", (("output",), 1)).result()
         session = runtime.sessions.sessions[key]
         old = session.frames[(1, "output")]
-        session.frames[(1, "output")] = replace(old, received_at=time.monotonic() - 4)
+        session.frames[(1, "output")] = replace(old, received_at=time.monotonic() - 91)
         entered, release = threading.Event(), threading.Event()
 
         def acquire(_):

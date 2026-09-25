@@ -4,10 +4,19 @@ from __future__ import annotations
 
 import threading
 import time
+from collections import deque
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field, replace
-from typing import Any
+from typing import Any, Callable
+from uuid import uuid4
 
+from lab_control.application.acquisition_pipeline import (
+    FrozenDict,
+    immutable_batch,
+    validate_cadence,
+    validate_displayed_batch,
+    validate_recorded_batch,
+)
 from lab_control.application.sessions import SessionManager
 from lab_control.application.settings_sync import SettingsSync
 from lab_control.domain.instruments import (
@@ -19,6 +28,7 @@ from lab_control.domain.instruments import (
     ValidationError,
     utc_now,
 )
+from lab_control.storage.recording import Recording
 from lab_control.storage.repository import Repository
 
 
@@ -28,6 +38,16 @@ class MonitorFrame:
     configuration_version: int
     request: AcquisitionRequest
     batch: MeasurementBatch
+    received_at: float = field(default_factory=time.perf_counter)
+    session_id: str = ""
+
+
+@dataclass
+class CaptureSave:
+    read: Future[Any]
+    result: Future[Any]
+    mode: str
+    write: Future[Any] | None = None
 
 
 @dataclass
@@ -35,6 +55,7 @@ class MonitorTask:
     requests: tuple[AcquisitionRequest, ...]
     mode: str
     interval: float
+    record_interval: float | None = 0.05
     running: bool = True
     recording: bool = False
     pending: Future[Any] | None = None
@@ -48,9 +69,29 @@ class MonitorTask:
     last_path: str = ""
     stop_future: Future[Any] | None = None
     record_session: str = ""
+    acquisition_context_id: str = ""
+    monitoring_context_id: str = field(default_factory=lambda: uuid4().hex)
     once: bool = False
     pending_record_session: str = ""
     pending_record_mode: str = "electronic"
+    last_started_at: float = 0
+    last_record_at: float = 0
+    next_record_at: float = 0
+    last_frame_at: float = 0
+    frame_interval: float | None = None
+    acquisition_seconds: float | None = None
+    configuration_changes: int = 0
+    configuration_wait_deadline: float = 0
+    configuration_wait_expired: bool = False
+    notice: str = ""
+    cadence: str = "interval"
+    csv_interval: float = 5
+    recorder: Recording | None = None
+    recording_notice: str = ""
+    display_seconds: float | None = None
+    scheduler_seconds: float = 0
+    timings: deque[dict[str, Any]] = field(default_factory=lambda: deque(maxlen=120))
+    timing_report_at: float = 0
 
 
 def merge_requests(requests: tuple[AcquisitionRequest, ...]) -> tuple[AcquisitionRequest, ...]:
@@ -74,13 +115,38 @@ class MonitoringService:
         self.sessions, self.repository = sessions, repository
         self.lock = threading.RLock()
         self.tasks: dict[str, MonitorTask] = {}
+        self.capture_saves: dict[str, CaptureSave] = {}
+        self.display_exports: dict[str, Future[Any]] = {}
+        self.save_seconds: dict[str, float] = {}
+        self.save_report_at: dict[str, float] = {}
+        self.recordings: list[Recording] = []
+        self.frame_listeners: list[Callable[[str], None]] = []
         self.wake = threading.Event()
         self.closing = False
-        self.settings_sync = SettingsSync(sessions)
+        self.settings_sync = SettingsSync(sessions, self.wake.set)
         self.writer = ThreadPoolExecutor(max_workers=2, thread_name_prefix="monitor-export")
         self.unsubscribe = sessions.subscribe(self._event)
         self.thread = threading.Thread(target=self._loop, name="monitor-scheduler", daemon=True)
         self.thread.start()
+
+    def subscribe_frames(self, callback: Callable[[str], None]) -> Callable[[], None]:
+        with self.lock:
+            self.frame_listeners.append(callback)
+
+        def unsubscribe() -> None:
+            with self.lock:
+                if callback in self.frame_listeners:
+                    self.frame_listeners.remove(callback)
+
+        return unsubscribe
+
+    def displayed(self, device_id: str, frame: MonitorFrame) -> None:
+        with self.lock:
+            task = self.tasks.get(device_id)
+            if task:
+                task.display_seconds = max(0, time.perf_counter() - frame.received_at)
+                if task.timings and task.timings[-1]["sequence"] == frame.sequence:
+                    task.timings[-1]["display_seconds"] = task.display_seconds
 
     def enable_settings_sync(self, enabled: bool = True) -> None:
         with self.lock:
@@ -107,17 +173,27 @@ class MonitoringService:
         requests: tuple[AcquisitionRequest, ...],
         *,
         interval: float = 0.5,
+        record_interval: float | None = 0.05,
         mode: str = "electronic",
         once: bool = False,
+        cadence: str | None = None,
+        csv_interval: float = 5,
     ) -> None:
         if not requests or not 0.05 <= interval <= 60 or mode not in {"electronic", "optical"}:
             raise ValidationError("Choose data sources, a 0.05..60 s interval and a valid mode")
+        self.validate_intervals(interval, record_interval)
+        validate_cadence(interval, cadence)
+        Recording.validate_csv_interval(csv_interval)
         merged = merge_requests(requests)
         with self.lock:
             if self.closing:
                 raise DeviceError("Monitoring is closing")
             task = self.tasks.get(device_id)
-            if task and not task.running and (task.pending or task.write_pending):
+            if (
+                task
+                and not task.running
+                and (task.pending or task.write_pending or (task.recorder and not task.recorder.binary_done))
+            ):
                 raise DeviceError("Wait until the current monitoring batch has stopped", "task_busy")
             if task and task.running and task.mode != mode:
                 raise DeviceError("Stop monitoring before assigning another recording mode", "task_busy")
@@ -127,9 +203,58 @@ class MonitoringService:
             if task and task.running:
                 task.requests = merge_requests((*task.requests, *merged))
                 task.interval = interval
+                task.record_interval = record_interval
             else:
-                self.tasks[device_id] = MonitorTask(merged, mode, interval, once=once)
+                self.tasks[device_id] = MonitorTask(merged, mode, interval, record_interval, once=once)
+            self.tasks[device_id].cadence = cadence or "interval"
+            self.tasks[device_id].csv_interval = csv_interval
             self.repository.audit("monitor_started", device_id=device_id, requests=merged, mode=mode)
+        self.wake.set()
+
+    @staticmethod
+    def validate_intervals(interval: float, record_interval: float | None) -> None:
+        if (
+            any(
+                isinstance(value, bool) or not isinstance(value, (int, float))
+                for value in (interval, record_interval)
+                if value is not None
+            )
+            or interval is None
+            or not 0.05 <= interval <= 60
+            or (record_interval is not None and not 0.05 <= record_interval <= 86400)
+        ):
+            raise ValidationError("Refresh interval must be 0.05..60 s; save interval must be 0.05..86400 s")
+
+    def set_intervals(
+        self,
+        device_id: str,
+        interval: float,
+        record_interval: float | None,
+        *,
+        cadence: str | None = None,
+        csv_interval: float | None = None,
+    ) -> None:
+        """Local scheduling only; does not start acquisition, recording, or device I/O."""
+        self.validate_intervals(interval, record_interval)
+        validate_cadence(interval, cadence)
+        if csv_interval is not None:
+            Recording.validate_csv_interval(csv_interval)
+        with self.lock:
+            task = self.tasks.get(device_id)
+            if task:
+                task.interval, task.record_interval = interval, record_interval
+                if cadence is not None:
+                    task.cadence = cadence
+                if csv_interval is not None:
+                    task.csv_interval = csv_interval
+                    if task.recorder:
+                        task.recorder.csv_interval = csv_interval
+                task.next_at = 0 if task.cadence == "fastest" else task.last_started_at + interval
+                task.next_record_at = (
+                    task.last_record_at + record_interval
+                    if task.last_record_at and record_interval is not None
+                    else 0
+                )
         self.wake.set()
 
     def apply(self, device_id: str, command: DeviceCommand) -> Future[Any]:
@@ -141,7 +266,93 @@ class MonitoringService:
         with self.lock:
             if self.closing:
                 raise DeviceError("Monitoring is closing")
+            self._validate_saved_batch(frame.batch)
             return self.writer.submit(self.repository.export, frame.batch, mode)
+
+    @staticmethod
+    def _validate_saved_batch(batch: MeasurementBatch) -> None:
+        validate_recorded_batch(batch)
+
+    def export_displayed_frame(self, device_id: str, frame: MonitorFrame, mode: str) -> Future[Any]:
+        """Export this displayed snapshot without I/O or upgrading its provenance."""
+        validate_displayed_batch(frame.batch)
+        if mode not in {"electronic", "optical"}:
+            raise ValidationError("Invalid recording mode")
+        with self.lock:
+            if self.closing or device_id in self.display_exports or device_id in self.capture_saves:
+                raise DeviceError("当前帧正在保存，请等待完成", "task_busy")
+            future = self.writer.submit(self.repository.export, frame.batch, mode)
+            self.display_exports[device_id] = future
+
+            def finished(_future: Future[Any]) -> None:
+                with self.lock:
+                    self.display_exports.pop(device_id, None)
+                self.wake.set()
+
+            future.add_done_callback(finished)
+            return future
+
+    def _export(self, device_id: str, batch: MeasurementBatch, mode: str) -> Any:
+        self._validate_saved_batch(batch)
+        started = time.perf_counter()
+        try:
+            return self.repository.export(batch, mode)
+        finally:
+            elapsed = time.perf_counter() - started
+            with self.lock:
+                self.save_seconds[device_id] = elapsed
+                now = time.monotonic()
+                report = now - self.save_report_at.get(device_id, 0) >= 5
+                if report:
+                    self.save_report_at[device_id] = now
+            if report:
+                self.repository.audit("monitor_save_timing", device_id=device_id, seconds=elapsed)
+
+    def capture_and_export(self, device_id: str, request: AcquisitionRequest, mode: str) -> Future[Any]:
+        """One explicit full read, queued behind in-flight I/O, then asynchronous save."""
+        request = replace(request, consistency="full", initiate=False, context_id="")
+        request.validate()
+        with self.lock:
+            if self.closing or device_id in self.capture_saves or device_id in self.display_exports:
+                raise DeviceError("采集并保存正在进行，请等待完成", "task_busy")
+            if mode not in {"electronic", "optical"}:
+                raise ValidationError("Invalid recording mode")
+            state = next((s for s in self.sessions.snapshots() if s["stableDeviceId"] == device_id), {})
+            task = self.tasks.get(device_id)
+            if task and task.recording and state.get("supportsStreamAcquisition"):
+                request = replace(request, consistency="stream", context_id=task.acquisition_context_id)
+            if state.get("controlGroup") or state.get("controlPending"):
+                raise DeviceError("请等待当前设置完成", "task_busy")
+            result: Future[Any] = Future()
+            read = self.sessions.submit(
+                device_id, "observe" if request.kind == "status" else "acquire", request
+            )
+            self.capture_saves[device_id] = CaptureSave(read, result, mode)
+            read.add_done_callback(lambda _future: self.wake.set())
+        self.wake.set()
+        return result
+
+    def _finish_captures(self) -> None:
+        for device_id, capture in tuple(self.capture_saves.items()):
+            try:
+                if capture.write is not None:
+                    if not capture.write.done():
+                        continue
+                    path = capture.write.result()
+                    capture.result.set_result(path)
+                    del self.capture_saves[device_id]
+                elif capture.read.done():
+                    task = self.tasks.get(device_id)
+                    if task and task.write_pending:
+                        continue
+                    batch = immutable_batch(capture.read.result())
+                    self._validate_saved_batch(batch)
+                    capture.write = self.writer.submit(self._export, device_id, batch, capture.mode)
+                    capture.write.add_done_callback(lambda _future: self.wake.set())
+            except Exception as exc:
+                capture.result.set_exception(exc)
+                del self.capture_saves[device_id]
+                self.repository.audit("capture_save_failed", device_id=device_id, error=str(exc))
 
     def stop(self, device_id: str) -> Future[Any]:
         with self.lock:
@@ -153,7 +364,20 @@ class MonitoringService:
             if task.stop_future and not task.stop_future.done():
                 return task.stop_future
             task.running = False
+            task.recording = False
+            if not task.configuration_wait_expired:
+                task.configuration_wait_deadline, task.notice = 0, ""
             task.stop_future = result
+            if task.recorder:
+                # CSV may finish after a new monitoring task replaces this one.
+                # Its stop waiter must not depend on that task staying in tasks.
+                def recorded(_future: Future[Any]) -> None:
+                    with self.lock:
+                        if self.tasks.get(device_id) is not task and not result.done():
+                            result.set_result(None)
+                    self.wake.set()
+
+                task.recorder.finished.add_done_callback(recorded)
         self.wake.set()
         return result
 
@@ -162,18 +386,39 @@ class MonitoringService:
             task = self.tasks.get(device_id)
             if not task or not task.running:
                 raise DeviceError("Start monitoring before recording", "task_busy")
+            if enabled and not task.recording and task.recorder and not task.recorder.binary_done:
+                raise DeviceError("Wait for the previous recording to drain", "task_busy")
             if mode is not None and mode not in {"electronic", "optical"}:
                 raise ValidationError("Invalid recording mode")
             if enabled and mode and task.mode != mode:
                 if task.recording or task.pending_record_session or task.write_pending:
                     raise DeviceError("Wait for the previous recording to finish", "task_busy")
+            self.sessions.set_monitoring(
+                device_id,
+                True,
+                bool(
+                    enabled
+                    or task.pending_record_session
+                    or task.write_pending
+                    or (task.recorder and not task.recorder.binary_done)
+                ),
+            )
+            if enabled and mode:
                 task.mode = mode
+            was_recording = task.recording
             task.recording = enabled
             if enabled:
+                if not was_recording:
+                    task.acquisition_context_id = uuid4().hex
+                    task.recorder = self.repository.create_recording(
+                        task.mode,
+                        csv_interval=task.csv_interval,
+                        wake=self.wake.set,
+                    )
+                    self.recordings.append(task.recorder)
+                    task.recording_notice = ""
                 task.record_session = utc_now()
-            self.sessions.set_monitoring(
-                device_id, True, bool(enabled or task.pending_record_session or task.write_pending)
-            )
+                task.last_record_at = task.next_record_at = 0
             self.repository.audit(
                 "monitor_recording",
                 device_id=device_id,
@@ -181,6 +426,7 @@ class MonitoringService:
                 mode=task.mode,
                 record_session=task.record_session,
             )
+        self.wake.set()
 
     def latest(self, device_id: str, kind: str, quantity: str = "", channel: int = 1) -> MonitorFrame | None:
         with self.lock:
@@ -207,11 +453,32 @@ class MonitoringService:
                     "last_path": task.last_path,
                     "mode": task.mode,
                     "interval": task.interval,
+                    "cadence": task.cadence,
+                    "csv_interval": task.csv_interval,
+                    "record_interval": task.record_interval,
+                    "frame_interval": task.frame_interval,
+                    "acquisition_seconds": task.acquisition_seconds,
+                    "notice": task.notice,
+                    "capture_saving": device_id in self.capture_saves,
+                    "display_saving": device_id in self.display_exports,
+                    "save_seconds": self.save_seconds.get(device_id),
+                    "recording_state": task.recorder.snapshot() if task.recorder else {},
+                    "recording_notice": task.recording_notice,
+                    "display_seconds": task.display_seconds,
+                    "scheduler_seconds": task.scheduler_seconds,
                 }
                 for device_id, task in self.tasks.items()
+            } | {
+                device_id: {
+                    "capture_saving": device_id in self.capture_saves,
+                    "display_saving": device_id in self.display_exports,
+                }
+                for device_id in self.capture_saves.keys() | self.display_exports.keys()
+                if device_id not in self.tasks
             }
 
     def _event(self, event: dict[str, Any]) -> None:
+        self.wake.set()
         if event["event"] == "result" and event.get("operation") == "apply":
             result = event["result"]
             if result.outcome != "success":
@@ -224,27 +491,41 @@ class MonitoringService:
             task = self.tasks.get(device_id)
             if task:
                 task.running, task.error = False, error
+                task.recording = False
                 self.repository.audit("monitor_paused", device_id=device_id, error=error)
         self.wake.set()
 
-    def _finish_batch(self, device_id: str, task: MonitorTask) -> None:
+    def _finish_batch(self, device_id: str, task: MonitorTask, session_id: str = "") -> None:
         future, request = task.pending, task.pending_request
         if future is None or request is None:
             return
         task.pending = None
         record_session, task.pending_record_session = task.pending_record_session, ""
-        batch: MeasurementBatch = future.result()
+        try:
+            batch: MeasurementBatch = future.result()
+        except DeviceError as exc:
+            if record_session and task.recorder:
+                task.recorder.cancel_reservation()
+            if exc.code != "configuration_changed":
+                raise
+            task.configuration_changes += 1
+            task.frames.clear()
+            task.frame_interval, task.last_frame_at = None, 0
+            if task.once:
+                self._pause(device_id, "本次读取期间配置变化，未取得有效曲线。" + str(exc))
+                return
+            if not task.running and not task.configuration_wait_expired:
+                task.notice = ""
+                return
+            if task.configuration_wait_expired:
+                return
+            now = time.monotonic()
+            if not task.configuration_wait_deadline:
+                task.configuration_wait_deadline = now + 30
+            task.notice = "仪器正在自动调整或配置变化 · 等待稳定曲线（最多 30 秒）"
+            task.next_at = min(now + task.interval, task.configuration_wait_deadline)
+            return
         good = all(m.quality in {Quality.GOOD, Quality.SIMULATED} for m in batch.measurements)
-        if record_session:
-            batch = replace(
-                batch,
-                configuration={
-                    **batch.configuration,
-                    "monitor_record_session": record_session,
-                    "monitor_request": request,
-                },
-            )
-            task.write_pending = self.writer.submit(self.repository.export, batch, task.pending_record_mode)
         if not good:
             raise DeviceError(
                 "; ".join(
@@ -253,27 +534,107 @@ class MonitoringService:
                     if m.quality not in {Quality.GOOD, Quality.SIMULATED}
                 )
             )
+        if task.configuration_wait_expired:
+            # Drain an already submitted read without extending the 30 s wait.
+            # Its errors still propagate above; late data is not shown or saved.
+            if record_session and task.recorder:
+                task.recorder.cancel_reservation()
+            return
+        batch = immutable_batch(batch)
+        if record_session and task.recorder:
+            batch = replace(
+                batch,
+                configuration=FrozenDict(
+                    {
+                        **batch.configuration,
+                        "monitor_record_session": record_session,
+                        "monitor_request": request,
+                        "monitor_refresh_interval": task.interval,
+                        "monitor_save_interval": task.record_interval,
+                        "monitor_cadence": task.cadence,
+                    }
+                ),
+            )
+            self._validate_saved_batch(batch)
+            if not task.recorder.submit(batch):
+                task.recording = False
+                task.recording_notice = task.recorder.pause_reason
+            task.last_record_at = task.last_started_at
+            task.next_record_at = (
+                task.last_record_at + task.record_interval if task.record_interval is not None else 0
+            )
+        now = time.monotonic()
+        task.acquisition_seconds = now - task.last_started_at
+        task.frame_interval = now - task.last_frame_at if task.last_frame_at else None
+        task.last_frame_at = now
+        task.configuration_changes, task.notice = 0, ""
+        task.configuration_wait_deadline = 0
         task.sequence += 1
         key = (
             request.kind,
             request.quantity + (f":{request.channels[0]}" if request.kind == "status" else ""),
         )
         task.frames[key] = MonitorFrame(
-            task.sequence, int(batch.configuration.get("_session_configuration_version", 0)), request, batch
+            task.sequence,
+            int(batch.configuration.get("_session_configuration_version", 0)),
+            request,
+            batch,
+            batch.performance.get("received_at_monotonic", time.perf_counter()),
+            session_id,
         )
-        task.next_at = time.monotonic() + task.interval
+        task.timings.append(
+            {
+                "sequence": task.sequence,
+                "acquisition_seconds": task.acquisition_seconds,
+                "scheduler_seconds": task.scheduler_seconds,
+            }
+        )
+        if now - task.timing_report_at >= 5:
+            self.repository.audit(
+                "pipeline_statistics",
+                device_id=device_id,
+                frames=list(task.timings),
+                recording=task.recorder.snapshot() if task.recorder else {},
+            )
+            task.timing_report_at = now
+        for callback in tuple(self.frame_listeners):
+            try:
+                callback(device_id)
+            except Exception as exc:
+                self.repository.audit("frame_listener_failed", device_id=device_id, error=str(exc))
+        # Start-to-start interval: slow device I/O does not incur another full
+        # interval afterwards. There is still only one in-flight read, no catch-up queue.
+        task.next_at = 0 if task.cadence == "fastest" else task.last_started_at + task.interval
         if task.once:
             task.running = False
 
     def _tick(self) -> None:
+        self._finish_captures()
         snapshots = {s["stableDeviceId"]: s for s in self.sessions.snapshots()}
         for device_id, task in tuple(self.tasks.items()):
             try:
+                if (
+                    task.running
+                    and task.configuration_wait_deadline
+                    and time.monotonic() >= task.configuration_wait_deadline
+                ):
+                    task.running = False
+                    task.configuration_wait_expired = True
+                    task.notice = "等待稳定已达 30 秒 · 已暂停读取，设置稳定后可重新开始"
+                    self.repository.audit("monitor_settle_expired", device_id=device_id)
                 if task.write_pending and task.write_pending.done():
                     writing, task.write_pending = task.write_pending, None
                     task.last_path = str(writing.result())
                 if task.pending and task.pending.done():
-                    self._finish_batch(device_id, task)
+                    self._finish_batch(device_id, task, snapshots.get(device_id, {}).get("sessionId", ""))
+                if task.recorder:
+                    info = task.recorder.snapshot()
+                    task.last_path = info["last_path"] or task.last_path
+                    if info["paused"]:
+                        task.recording = False
+                        task.recording_notice = info["paused"]
+                    if not task.recording and not task.pending_record_session:
+                        task.recorder.finish()
                 state = snapshots.get(device_id)
                 if not state or state["connectionState"] in {"error", "degraded"}:
                     task.running = False
@@ -282,48 +643,113 @@ class MonitoringService:
                     self.sessions.set_monitoring(
                         device_id,
                         True,
-                        bool(task.recording or task.pending_record_session or task.write_pending),
+                        bool(
+                            task.recording
+                            or task.pending_record_session
+                            or task.write_pending
+                            or (task.recorder and not task.recorder.binary_done)
+                        ),
                     )
                 if not task.running:
-                    if not task.pending and not task.write_pending:
-                        if state:
-                            self.sessions.set_monitoring(device_id, False)
-                        task.recording = False
-                        if task.stop_future and not task.stop_future.done():
-                            task.stop_future.set_result(None)
                     continue
                 if (
                     not state
                     or task.pending
-                    or task.write_pending
                     or state["pending"]
                     or time.monotonic() < task.next_at
+                    or device_id in self.capture_saves
                 ):
                     continue
                 request = task.requests[task.index % len(task.requests)]
+                save_due = bool(
+                    task.recording
+                    and (task.record_interval is None or time.monotonic() >= task.next_record_at)
+                )
+                if (
+                    save_due
+                    and task.recorder
+                    and not task.recorder.reserve(
+                        max(65536, request.points * len(request.channels) * 32 + 4096)
+                    )
+                ):
+                    task.recording = save_due = False
+                    task.recording_notice = task.recorder.pause_reason
+                request = replace(
+                    request,
+                    consistency="stream"
+                    if state.get("supportsStreamAcquisition") and task.recording and not request.initiate
+                    else "live"
+                    if state.get("supportsLiveAcquisition") and not save_due and not task.once
+                    else "full",
+                    context_id=task.acquisition_context_id if task.recording else task.monitoring_context_id,
+                )
                 future = self.sessions.try_submit_idle(
                     device_id, "observe" if request.kind == "status" else "acquire", request
                 )
                 if future is not None:
                     task.index += 1
                     task.pending_request = request
-                    task.pending_record_session = task.record_session if task.recording else ""
+                    task.last_started_at = time.monotonic()
+                    task.scheduler_seconds = (
+                        max(0, task.last_started_at - task.last_frame_at) if task.last_frame_at else 0
+                    )
+                    task.pending_record_session = task.record_session if save_due else ""
                     task.pending_record_mode = task.mode
                     task.pending = future
+                    future.add_done_callback(lambda _future: self.wake.set())
+                elif save_due and task.recorder:
+                    task.recorder.cancel_reservation()
             except Exception as exc:
+                if task.recorder:
+                    task.recorder.cancel_reservation()
                 self._pause(device_id, str(exc))
+            finally:
+                # An error can finish the last in-flight read/write during close.
+                # Release the monitoring flag in this tick, before _loop may exit.
+                if (
+                    not task.running
+                    and not task.pending
+                    and not task.write_pending
+                    and (not task.recorder or task.recorder.binary_done)
+                    and device_id not in self.capture_saves
+                ):
+                    if device_id in snapshots:
+                        self.sessions.set_monitoring(device_id, False)
+                    task.recording = False
+                    if (
+                        task.stop_future
+                        and not task.stop_future.done()
+                        and (not task.recorder or task.recorder.finished.done())
+                    ):
+                        task.stop_future.set_result(None)
+                if not task.running and task.recorder and not task.pending:
+                    task.recorder.finish()
         # Monitoring gets first refusal on idle workers; settings polling never queues behind it.
         if not self.closing:
             self.settings_sync.tick({s["stableDeviceId"]: s for s in self.sessions.snapshots()})
 
     def _loop(self) -> None:
         while True:
+            self.wake.clear()
             with self.lock:
                 self._tick()
-                if self.closing and all(not t.pending and not t.write_pending for t in self.tasks.values()):
+                if (
+                    self.closing
+                    and not self.capture_saves
+                    and all(not t.pending and not t.write_pending for t in self.tasks.values())
+                ):
                     break
-            self.wake.wait(0.02)
-            self.wake.clear()
+                deadlines = [
+                    t.next_at
+                    for t in self.tasks.values()
+                    if t.running and not t.pending and t.next_at > time.monotonic()
+                ]
+                if self.settings_sync.enabled and self.settings_sync.next_dispatch_at > time.monotonic():
+                    deadlines.append(self.settings_sync.next_dispatch_at)
+                # Idle worker/task completions wake us; the bounded fallback serves
+                # low-priority settings synchronization, never fastest frame pacing.
+                timeout = min(0.1, max(0.001, min(deadlines) - time.monotonic())) if deadlines else 0.1
+            self.wake.wait(timeout)
 
     def close(self) -> None:
         with self.lock:
@@ -331,7 +757,14 @@ class MonitoringService:
             self.settings_sync.stop()
             for task in self.tasks.values():
                 task.running = False
+                task.recording = False
         self.wake.set()
         self.thread.join()
         self.unsubscribe()
         self.writer.shutdown(wait=True)
+        for recording in self.recordings:
+            recording.finish().result()
+        with self.lock:
+            # Binary draining can outlive the scheduler's last device read.
+            # Release occupancy only after it has actually completed.
+            self._tick()

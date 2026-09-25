@@ -8,6 +8,7 @@ from typing import Protocol
 import numpy as np
 
 from lab_control.domain.instruments import DeviceError
+from lab_control.transport.diagnostics import measured
 
 MAX_MESSAGE = 64 * 1024 * 1024
 
@@ -67,8 +68,14 @@ def numeric_values(raw: bytes, dtype: str = "<f4") -> np.ndarray:
 class BufferedReader:
     """Framing for byte streams. A read may return part of, or several, messages."""
 
-    def __init__(self, receive: Callable[[int], bytes], terminator: bytes = b"\n") -> None:
+    def __init__(
+        self,
+        receive: Callable[[int], bytes],
+        terminator: bytes = b"\n",
+        receive_some: Callable[[int], bytes] | None = None,
+    ) -> None:
         self.receive = receive
+        self.receive_some = receive_some
         self.terminator = terminator
         self.buffer = bytearray()
 
@@ -85,9 +92,22 @@ class BufferedReader:
         return result
 
     def message(self) -> bytes:
-        first = self.exact(1)
-        while first in (b"\n", b"\r"):
+        # A read-up-to callback may bring the header and body in together. This
+        # avoids a separate one-byte transport read for every scalar response.
+        # Keep every received byte: LF may be inside a following binary block.
+        skipped = 0
+        while True:
+            if not self.buffer and self.receive_some is not None:
+                chunk = self.receive_some(65536)
+                if not chunk:
+                    raise DeviceError("Connection closed during response", "disconnected")
+                self.buffer.extend(chunk)
             first = self.exact(1)
+            if first not in (b"\n", b"\r"):
+                break
+            skipped += 1
+            if skipped >= MAX_MESSAGE:
+                raise DeviceError("Excessive response padding", "parse_error")
         if first == b"#":
             digits = self.exact(1)
             if digits not in b"123456789":
@@ -96,12 +116,32 @@ class BufferedReader:
             if not length.isdigit():
                 raise DeviceError("Invalid block length", "parse_error")
             return first + digits + length + self.exact(int(length))
-        data = bytearray(first)
-        while not data.endswith(self.terminator):
-            data.extend(self.exact(1))
-            if len(data) > MAX_MESSAGE:
+        if not self.terminator:
+            raise DeviceError("Text stream requires a terminator", "parse_error")
+        self.buffer[:0] = first
+        search_from = 0
+        while True:
+            end = self.buffer.find(self.terminator, search_from)
+            if end >= 0:
+                count = end + len(self.terminator)
+                if count > MAX_MESSAGE:
+                    raise DeviceError("Response exceeds size limit", "parse_error")
+                return self.exact(count)
+            if len(self.buffer) >= MAX_MESSAGE:
                 raise DeviceError("Response exceeds size limit", "parse_error")
-        return bytes(data)
+            # Revisit only the overlap where a split multi-byte terminator can
+            # begin, instead of rescanning a growing response from its start.
+            search_from = max(0, len(self.buffer) - len(self.terminator) + 1)
+            # Only an explicit read-up-to callback may request a chunk. Serial
+            # read(n) and VISA read_bytes(n) otherwise wait for all n bytes.
+            chunk = (
+                self.receive_some(min(65536, MAX_MESSAGE - len(self.buffer)))
+                if self.receive_some
+                else self.receive(1)
+            )
+            if not chunk:
+                raise DeviceError("Connection closed during response", "disconnected")
+            self.buffer.extend(chunk)
 
 
 class MockTransport:
@@ -125,6 +165,7 @@ class MockTransport:
         self.close_count += 1
         self.opened = False
 
+    @measured("write")
     def write(self, payload: bytes | str) -> None:
         if not self.opened:
             raise DeviceError("Mock is closed", "disconnected")
@@ -135,11 +176,13 @@ class MockTransport:
         if payload != expected:
             raise AssertionError(f"Expected {expected!r}, received {payload!r}")
 
+    @measured("read")
     def read(self) -> bytes:
         if isinstance(self._reply, Exception):
             raise self._reply
         return self._reply
 
+    @measured("query")
     def query(self, payload: bytes | str) -> bytes:
         with self.lock:
             self.write(payload)

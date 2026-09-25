@@ -1,4 +1,3 @@
-import json
 import threading
 import time
 from dataclasses import replace
@@ -10,6 +9,7 @@ from lab_control.application.config import ConnectionConfig
 from lab_control.application.monitoring import merge_requests
 from lab_control.application.runtime import ApplicationRuntime
 from lab_control.domain.instruments import AcquisitionRequest, ApplyResult, DeviceCommand, DeviceError
+from lab_control.storage.recording import read_frames
 
 
 def wait_for(predicate, timeout=4):
@@ -71,9 +71,9 @@ def test_monitor_serializes_control_shares_channels_and_records_only_on_request(
         runtime.monitoring.set_recording(device, True)
         wait_for(lambda: bool(runtime.monitoring.snapshots()[device]["last_path"]))
         runtime.monitoring.stop(device).result(timeout=3)
-        snapshots = list(runtime.repository.root.glob("data/electronic/*/snapshot.json"))
+        snapshots = list(runtime.repository.root.glob("data/electronic/*/segment-*.sqlite3"))
         assert snapshots
-        saved = json.loads(snapshots[0].read_text(encoding="utf-8"))
+        saved = next(read_frames(snapshots[0]))
         assert saved["configuration"]["monitor_record_session"]
         assert len(saved["measurements"][0]["values"]) == 64
         assert not session.monitoring and session.state == "connected"
@@ -158,5 +158,6 @@ def test_stop_recording_drains_authorized_batch_and_releases_mode_lock(tmp_path)
         wait_for(lambda: bool(runtime.monitoring.snapshots()[device]["last_path"]))
         wait_for(lambda: not session.recording)
         runtime.monitoring.stop(device).result(timeout=3)
-        assert len(list(runtime.repository.root.glob("data/optical/*/snapshot.json"))) == 1
+        paths = list(runtime.repository.root.glob("data/optical/*/segment-*.sqlite3"))
+        assert sum(len(list(read_frames(path))) for path in paths) == 1
         assert not (runtime.repository.root / "data/electronic").exists()
