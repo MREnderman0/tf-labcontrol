@@ -4,12 +4,11 @@
 
 “已实现”表示存在真实传输与型号代码；“软件测试”不等于“实机通过”。具体资产及接口的验证结果以运行目录中的批次记录为准。
 
-0.3.0 分类控制与实时监测已接入上述能力；每张型号卡片说明页面入口，能力 JSON 逐项记录中文标签和分组。使用方法见[控制与监测指南](control-and-monitoring.md)。未知型号仍只有隔离模拟示例。
+0.3.0 分类控制与实时监测已接入上述能力；每张型号卡片说明页面入口，能力 JSON 逐项记录中文标签和分组。使用方法见[控制与监测指南](guides/control-and-monitoring.md)。未知型号仍只有隔离模拟示例。
 
 | 类别 | 附件设备 | 电脑交互方式 | 实际注册 ID / 状态 | 归档 |
 | --- | --- | --- | --- | --- |
 | 信号源 | SDG6032X | USB/LAN VXI-11/Socket | siglent.sdg6032x；待实机 | [卡片](devices/signal-sources/sdg6032x.md) |
-| 信号源 | DG5504 Pro | USB/LAN VISA/Socket | rigol.dg5504pro；待实机 | [卡片](devices/signal-sources/dg5504-pro.md) |
 | 电源 | Keithley 2231A | 2231A-001 USB 适配器/COM | keithley.2231a；仅精确匹配 2231A-30-3 | [卡片](devices/power-supplies/keithley-2231a.md) |
 | 电源 | PSW160 | 待确认厂家、完整型号与接口 | 不推定为 EA 或其他厂家；不注册真实协议 | [待补卡片](devices/power-supplies/psw160.md) |
 | 电源 | SPD4306X | USB/LAN VISA/Socket | siglent.spd4306x；待实机 | [卡片](devices/power-supplies/spd4306x.md) |
@@ -18,9 +17,7 @@
 | 示波器 | RTM3004 | LAN/USB VISA/SCPI | rs.rtm3004；待实机 | [卡片](devices/oscilloscopes/rtm3004.md) |
 | 示波器 | RTO64 | LAN/USB VISA/SCPI | rs.rto64；RTO6 手册，待实机 | [卡片](devices/oscilloscopes/rto64.md) |
 | 示波器 | WaveRunner 9254 | LAN VICP/VXI-11/USBTMC | lecroy.9254；待实机 | [卡片](devices/oscilloscopes/waverunner-9254.md) |
-| 示波器 | WaveRunner 9404M | LAN VICP/VXI-11/USBTMC | lecroy.9404m；待实机 | [卡片](devices/oscilloscopes/waverunner-9404m.md) |
 | 示波器 | DS1202Z | 原条目待确认后缀；DS1202Z-E 为 USB/LAN VISA | 仅注册 rigol.ds1202ze；不静默改写原型号 | [共同归档](devices/oscilloscopes/rigol-ds1202z.md) |
-| 频谱仪 | DSA815 | USB/LAN/已安装 GPIB + VISA | rigol.dsa815；待实机 | [卡片](devices/spectrum-analyzers/rigol-dsa815.md) |
 | 频谱仪 | R&S FPH | LAN/USB VISA（核对当前接口） | rs.fph；待实机 | [卡片](devices/spectrum-analyzers/rs-fph.md) |
 | 光功率 | PM100D + S154C | 控制台 USB + TLPMX/旧 PM100D SDK；探头接控制台 | thorlabs.pm100d；待实机 | [卡片](devices/measurement-analyzers/thorlabs-pm100d-s154c.md) |
 | 光功率 | 多通道光功率计 | 待完整型号与 SDK/协议 | 仅类别模拟 | [待补卡片](devices/measurement-analyzers/multi-channel-optical-power-meter.md) |
@@ -42,14 +39,17 @@
 <!-- device-modules:start -->
 | 型号 | 注册 ID | 连接路线 | 归档 |
 | --- | --- | --- | --- |
+| RIGOL DG5504 Pro | `rigol.dg5504pro` | LAN / USB；优先 PyVISA | [卡片](devices/signal-sources/dg5504-pro.md) |
 | Tektronix AFG31252 | `tek.afg31252` | USB Device / LAN / GPIB（核对实际接口） | [卡片](devices/signal-sources/afg31252.md) |
 | Siglent SDG2082X | `siglent.sdg2082x` | USB USBTMC / LAN VXI-11，经 PyVISA 接入 | [卡片](devices/signal-sources/sdg2082x.md) |
 | R&S SMA100B | `rs.sma100b` | LAN / USB / 已安装 GPIB；优先 PyVISA | [卡片](devices/signal-sources/sma100b.md) |
 | GW Instek GPD-4303S | `gwinstek.gpd4303s` | USB 虚拟串口；优先 PyVISA ASRL，9600 baud / 8N1 / LF | [卡片](devices/power-supplies/gpd-4303s.md) |
+| RIGOL DSA815 | `rigol.dsa815` | LAN / USB；优先 PyVISA | [卡片](devices/spectrum-analyzers/rigol-dsa815.md) |
+| Teledyne LeCroy WaveRunner 9404M | `lecroy.9404m` | LAN PyVISA/VXI-11（仪器选择 LXI） | [卡片](devices/oscilloscopes/waverunner-9404m.md) |
 <!-- device-modules:end -->
 
 ## 现场盘点与状态提升
 
 记录完整型号、厂家、序列号、固件、接口/选件、Windows 设备管理器名称、驱动/DLL 位数及版本、VISA/COM/SDK 资源、当前输出和接线。照片、报告、采集文件保存在运行数据目录，不放进源码。
 
-先按[实机指南](hardware-testing.md)做只读检查，再逐项设置/采集/读回/故障恢复；报告关联到具体能力。全部基础验收完成后才能由现场记录确认“可控”，软件不会自动提升状态。
+先按[实机指南](testing/hardware-testing.md)做只读检查，再逐项设置/采集/读回/故障恢复；报告关联到具体能力。全部基础验收完成后才能由现场记录确认“可控”，软件不会自动提升状态。

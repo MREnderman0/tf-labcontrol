@@ -1,12 +1,12 @@
-# 设备型号文档
+# 设备型号导航（自动生成）
 
-设备型号按接入方式和实验能力分类。每张型号卡片都遵循统一结构：身份可信度、电脑连接、驱动/运行库、资源或 SDK 枚举、官方命令/API、统一能力、控制与采集、安全/超时/断连、Python 适配器、Mock 和实机验收。
+独立型号的维护源在各自包内。旧型号暂保留原实现；未注册条目仅作为资料需求。实测结果按具体资产、接口和固件查看。
 
-- [信号源](signal-sources/)
-- [电源](power-supplies/)
-- [示波器](oscilloscopes/)
-- [频谱仪](spectrum-analyzers/)
-- [测量与分析仪](measurement-analyzers/)
-- [温控、电子负载与驱动](temperature-load-drivers/)
+[原始设备条目对应](../device-research-index.md) · [新设备接入流程](../testing/onboarding.md) · [能力矩阵](../generated/capability-matrix.md)
 
-型号不完整的设备保留在待补目录中。收到完整型号、接口、固件和手册后，先更新型号卡片，再进入适配器实现和实机验证。
+- [信号源](signal-sources/README.md)
+- [电源](power-supplies/README.md)
+- [示波器](oscilloscopes/README.md)
+- [频谱仪](spectrum-analyzers/README.md)
+- [测量与分析仪](measurement-analyzers/README.md)
+- [温控、负载与驱动](temperature-load-drivers/README.md)

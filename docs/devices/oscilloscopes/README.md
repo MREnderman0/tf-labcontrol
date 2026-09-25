@@ -1,14 +1,12 @@
-# 示波器
+# 示波器（自动生成）
 
-示波器统一实现 `Oscilloscope` 能力：通道、量程、时基、触发、单次采集、波形读取、时间轴和电压缩放。波形数据必须保存前导信息和配置快照。
+软件实现与资产实测分别判定；维护型号包后重新生成本导航。
 
-| 型号 | 接入路线 | 状态 | 文档 |
-| --- | --- | --- | --- |
-| PicoScope 6404E | USB + PicoSDK `ps6000a` | SDK 路线，待实机验证 | [6404E](picoscope-6404e.md) |
-| R&S RTM3004 | LAN/USB/VISA/SCPI | 资料确认，待实机验证 | [RTM3004](rtm3004.md) |
-| R&S RTO64 | LAN/USB/VISA/SCPI | 资料确认，待实机验证 | [RTO64](rto64.md) |
-| WaveRunner 9254 | VICP/VXI-11/USBTMC | 待实机验证 | [9254](waverunner-9254.md) |
-| WaveRunner 9404M | VICP/VXI-11/USBTMC/GPIB | 资料确认，待实机验证 | [9404M](waverunner-9404m.md) |
-| RIGOL DS1202Z | USB/LAN/VISA/SCPI | 待实机验证 | [DS1202Z](rigol-ds1202z.md) |
-
-PicoScope 使用厂商 SDK 事件/回调，其他型号优先使用 VISA 会话。所有适配器都通过同一个波形领域模型输出数据。
+| 型号 | 接入路线 | 文档 |
+| --- | --- | --- |
+| Teledyne LeCroy WaveRunner 9404M | LAN PyVISA/VXI-11（仪器选择 LXI） | [型号说明](waverunner-9404m.md) |
+| PicoScope 6404E | USB 3.x + ps6000a SDK | [型号说明](picoscope-6404e.md) |
+| R&S RTM3004 | LAN / USB VISA | [型号说明](rtm3004.md) |
+| R&S RTO64 | LAN / USB VISA | [型号说明](rto64.md) |
+| Teledyne LeCroy WaveRunner 9254 | LAN VICP（1861）/ VISA VXI-11 或 USBTMC | [型号说明](waverunner-9254.md) |
+| RIGOL DS1202Z（待确认后缀）/ DS1202Z-E | DS1202Z-E：USB / LAN VISA | [型号说明](rigol-ds1202z.md) |

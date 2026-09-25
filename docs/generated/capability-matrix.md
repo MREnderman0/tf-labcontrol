@@ -4,14 +4,18 @@
 
 软件测试分为通用参数约束、特定协议夹具、SDK 生命周期和应用集成；协议夹具通过不代表目标固件通过，也不代表所有高级组合已经验证。
 
+JSON 保留 hardware_tested/hardware_passed 兼容字段；固定 false 不代表现场设备失败或全部未测。资产证据见[离线台账说明](../testing/records.md)。
+
 | 型号 | 注册 ID | 操作数 | 采集 | 详情 |
 | --- | --- | --- | --- | --- |
+| RIGOL DG5504 Pro | `rigol.dg5504pro` | 41 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/dg5504-pro.md) |
 | Tektronix AFG31252 | `tek.afg31252` | 37 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/afg31252.md) |
-| Siglent SDG2082X | `siglent.sdg2082x` | 10 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/sdg2082x.md) |
+| Siglent SDG2082X | `siglent.sdg2082x` | 42 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/sdg2082x.md) |
 | R&S SMA100B | `rs.sma100b` | 33 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/sma100b.md) |
 | GW Instek GPD-4303S | `gwinstek.gpd4303s` | 10 | power | [型号卡片](../devices/power-supplies/gpd-4303s.md) |
+| RIGOL DSA815 | `rigol.dsa815` | 45 | dsa | [型号卡片](../devices/spectrum-analyzers/rigol-dsa815.md) |
+| Teledyne LeCroy WaveRunner 9404M | `lecroy.9404m` | 21 | lecroy | [型号卡片](../devices/oscilloscopes/waverunner-9404m.md) |
 | Siglent SDG6032X | `siglent.sdg6032x` | 36 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/sdg6032x.md) |
-| RIGOL DG5504 Pro | `rigol.dg5504pro` | 38 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/dg5504-pro.md) |
 | Keithley 2231A-30-3 | `keithley.2231a` | 15 | power | [型号卡片](../devices/power-supplies/keithley-2231a.md) |
 | Siglent SPD4306X | `siglent.spd4306x` | 22 | power | [型号卡片](../devices/power-supplies/spd4306x.md) |
 | ITECH IT6322 | `itech.it6322` | 8 | power | [型号卡片](../devices/power-supplies/it6322.md) |
@@ -19,9 +23,7 @@
 | R&S RTM3004 | `rs.rtm3004` | 21 | rtm | [型号卡片](../devices/oscilloscopes/rtm3004.md) |
 | R&S RTO64 | `rs.rto64` | 16 | rto | [型号卡片](../devices/oscilloscopes/rto64.md) |
 | Teledyne LeCroy WaveRunner 9254 | `lecroy.9254` | 14 | lecroy | [型号卡片](../devices/oscilloscopes/waverunner-9254.md) |
-| Teledyne LeCroy WaveRunner 9404M | `lecroy.9404m` | 14 | lecroy | [型号卡片](../devices/oscilloscopes/waverunner-9404m.md) |
 | RIGOL DS1202Z（待确认后缀）/ DS1202Z-E | `rigol.ds1202ze` | 21 | rigol_scope | [型号卡片](../devices/oscilloscopes/rigol-ds1202z.md) |
-| RIGOL DSA815 | `rigol.dsa815` | 20 | dsa | [型号卡片](../devices/spectrum-analyzers/rigol-dsa815.md) |
 | R&S FPH | `rs.fph` | 18 | fph | [型号卡片](../devices/spectrum-analyzers/rs-fph.md) |
 | Thorlabs PM100D + S154C | `thorlabs.pm100d` | 8 | scalar | [型号卡片](../devices/measurement-analyzers/thorlabs-pm100d-s154c.md) |
 | Keysight / Agilent / HP 3458A | `keysight.3458a` | 16 | dmm | [型号卡片](../devices/measurement-analyzers/keysight-3458a.md) |

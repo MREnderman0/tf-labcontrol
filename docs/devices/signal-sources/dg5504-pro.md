@@ -1,88 +1,121 @@
+<!-- Generated from an independent device package; edit its README.md. -->
+
+维护源：[包内 README](../../../src/lab_control/instruments/devices/rigol_dg5504pro/README.md)。修改维护源后重新生成。
+
 # RIGOL DG5504 Pro
 
-## 1. 型号与可信度
+注册标识 `rigol.dg5504pro`；四通道，保留现有 UI/CLI/会话接口。本包集中维护协议、范围、脱敏样本、测试及实机入口，不依赖其他型号包或旧混合信号源模块。
 
-注册 ID：`rigol.dg5504pro`。型号精确匹配，当前为软件实现、待实机验证；附件简写和身份别名见本卡片说明。软件连接成功不等于验收通过。
+## 能力、单位与限制
 
-## 2. 电脑物理连接
+基础 SIN/SQU/RAMP/PULS/NOIS/DC、频率 Hz、幅度 Vpp、偏置 V、相位 deg、负载、输出、脉冲、斜坡、扫频、内部 AM/FM/PM、突发、任意波形文件上传和加载。幅度控制要求显式选择 VPP；不将其他单位的数值冒充 Vpp。
 
-USB / LAN VISA / 已配置 TCP Socket。接口和选件以设备背板、固件与现场盘点为准。
+正弦最高 500 MHz；方波快速边沿开启时 170 MHz，否则 120 MHz；斜坡 5 MHz；脉冲 120 MHz。调制/突发降低正弦至 350 MHz、方波至 120 MHz、斜坡至 2.5 MHz。DC 和噪声不提供周期频率设置。
 
-## 3. Windows 前置条件
+幅度/偏置按 50 Ω 或高阻、波形及 100/250/350 MHz 分段联合校验，噪声有独立包络。其他负载的相关电压写入在没有验证依据时拒绝。设置前重新读取关联参数和官方支持的 MIN/MAX 范围；读取失败阻止写入，不使用过期缓存，不静默钳位。实验限值在协议发送前再次限制。
 
-64 位 VISA Runtime 或直接 TCP。安装步骤见[实机测试指南](../../hardware-testing.md)；DLL 放在厂商安装位置，通过绝对路径加载，不复制进源码。
+四通道跟踪、频率/幅度/相位耦合全部关闭后才允许独立控制；OFF 输出命令始终可用。模式切换拒绝隐式退出其他模式或关闭方波快沿；FM 开启后改变载波同样检查频偏余量，开启扫频和输出时检查已存端点与实验限值。脉冲按周期核对脉宽/占空比；周期变更时对已存脉宽和边沿采取保守保护，可能需要先显式减小脉宽/边沿。脉冲路径为 `SOUR<n>:FUNC:PULS`；触发源路径为 `TRIG<n>:SOUR`，公共 INT/MAN 分别映射 IMM/BUS。基础相位为 −360..360°，PM 相偏为 0..360°。
 
-## 4. 资源与枚举
+任意波形采用最多 512 点一包的 ASCII HEAD/CONT/END，单包必须 END；当前实现限制 32..131072 点，不代表硬件存储上限。名称限制为 24 字符 ASCII 字母、数字和下划线，禁止目录注入及覆盖已有文件。目录、上传接受、选择与逐点读回是不同验收项目。手册没有提供通用文件内容下载或已加载文件名的查询时，不宣称完整数据验证/可恢复加载。
 
-连接模板见[config/examples](../../../config/examples/README.md)。VISA 使用扫描返回的完整资源；串口填写确认的 COM/波特率；Pico 使用 `PICO::序列号`；PM100D 使用 SDK 枚举的资源；53100A 手工填写已部署服务地址。扫描只枚举 SDK，不打开 SDK 仪器。
+Advanced Arb 采样率按手册限制为 1 μSa/s..1.25 GSa/s，不能把 DAC 标称采样率 2.5 GSa/s 当作该接口上限；该查询没有 MIN/MAX 形式。加载和采样率设置要求仪器已明确处于 Advanced Arb 模式；未经核实的 Advanced 模式切换不由兼容层自动执行。
 
-## 5. 官方命令/API 依据
+## 协议依据
 
-[厂家资料](https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/waveform-generators/DG5000Pro_ProgrammingGuide_EN.pdf)；版本：DG5000 Pro Programming Guide。逐操作命令定位、参数和模板见[自动生成能力清单](../../generated/capability-matrix.json)。测试样本是按手册编写的夹具，尚非实机抓包。
+- [DG5000 Pro 编程手册 PGB18101-1110](https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/waveform-generators/DG5000Pro_ProgrammingGuide_EN.pdf)：3.9 文件、3.10 输出、3.11 同步、3.12 信号参数、3.14 触发；表 3.59/3.61 为波形频率与电压限制。
+- [用户手册 UGB18101-1110](https://www.rigol.com/dam/global/downloads/brochures/en/user-manual/waveform-generators/DG5000Pro_UserGuide_EN.pdf)：各模式及关联参数限制。
 
-## 6. 当前统一能力
+旧迁移基线保留在 `tests/fixtures/capabilities-before.json`；当前契约记录已核实的命令路径、PM 范围、内调制频率和负载包络差异，不能覆盖原基线掩盖变化。
 
-逻辑类别 `signal_generator`；通道 `(1, 2, 3, 4)`。`None` 表示该侧未在通用参数层给出数值边界；适配器仍执行关联参数与通道校验。未列出的操作返回 `unsupported`。
+## 连接与驱动
+
+优先 PyVISA + 已有 x64 VISA，经 LAN VXI-11、明确配置的 VISA SOCKET（设备公布的 SCPI 端口 5025）或 USBTMC 接入。不同 LAN 协议分别留档，不自动重放失败命令或假定具有相同控制验收结果。LAN 自动发现与 IP 变更处理位于公共发现层；本包不配置网卡、不发现其他仪器。厂家、完整型号、序列号必须核验，不能只用 IP 判断设备身份。
+
+`profile.py` 保存静态能力与命令；`protocol.py` 保存纯解析/范围函数；`adapter.py` 实施关联校验与编码；`hardware/` 保存显式实测入口。公共依赖仅为领域类型、SCPI 基类、传输、会话、锁和留档工具。导入和注册不加载驱动或访问设备。
+
+## 测试入口与实机状态
+
+所有资产按[统一记录规范](../../testing/records.md)维护当前结论、接口矩阵、功能覆盖、已知问题及批次索引；补测更新对应表格，历史批次不改写。
+
+```powershell
+.venv-dev\Scripts\python.exe -m pytest src/lab_control/instruments/devices/rigol_dg5504pro/tests -q
+```
+
+固件 `00.01.01` 的脱敏验证范围如下；所有信号输出保持关闭。逐资产地址、时间和原始通信以运行目录为准。
+
+| 接口与条件 | 已验证范围及边界 |
+| --- | --- |
+| LAN VXI-11／历史控制 | 自动发现、身份、兼容层连接及四通道基础波形、频率、幅度、偏置、相位控制通过，逐项核对通道隔离；脉冲/斜坡、扫频、内部 AM/FM/PM、突发设置与回读通过，不发送触发。 |
+| LAN VXI-11／任意波形 | 256/1024 点、单包/跨包上传及目录检查通过，四个临时文件已删除；逐点读回、选择和原加载文件可靠恢复未验收。 |
+| LAN VXI-11／重复与恢复 | 范围拒绝与 10 轮交替读写通过。首次恢复遇到 `-350, Queue overflow` 后停止；独立恢复批次按快照只写差异项，最终无差异。恢复后 60 次间隔至少 1 秒的读取与 3 次重连通过。 |
+| LAN VISA SOCKET／只读补测 | 身份、兼容层连接、四通道读取、60 轮间隔至少 1 秒的稳定读取、3 次重连及重启后默认连接通过；零参数写入。此协议的参数控制与恢复仍待测，不能直接继承 VXI-11 的控制结论。 |
+| LAN 发现与服务 | 面板网络应用后捕获完整 DHCP 分配，并重新广播发现；同批次 VXI-11 的 TCP 111 拒绝连接，设备网页公布的 SCPI Socket 可用。保留 VXI-11 受阻记录，不声称其服务已修复。 |
+| 入口与保护 | 完整备份与恢复步骤见[硬件入口说明](../../../src/lab_control/instruments/devices/rigol_dg5504pro/hardware/README.md)。同步组查询必须携带 `CH<n>`；目录中的文件夹可没有大小。恢复先读回、跳过未变化值，首次失败和后续恢复分别留档。 |
+
+## 已知限制与待测
+
+| 项目 | 边界与后续验证 |
+| --- | --- |
+| 当前限制 | 任意波形逐点读回、可靠恢复原加载文件及高级选件未核实；外部调制、触发执行和实际输出精度未验收。 |
+| LAN 协议差异 | VXI-11 曾完成控制验证，但最近补测服务不可达；VISA SOCKET 已完成只读与重连验证，参数控制未补测。DHCP 分配成功不等于所有协议服务可用。 |
+| 证据维护 | 逐接口、固件和测试条件核对运行目录的结构化资产状态；历史受阻不删除，缺项不提升为通过 |
+
+## 扩展与移除
+
+遵循[设备模块规范](../../architecture/device-modules.md)。新增功能在本包补充来源、校验、测试；删除时撤销唯一注册项并删除本包，重新生成派生文档。保留现场配置和所有历史资产记录。
+
+## 文件与公共依赖
+
+协议、范围、tests 与 hardware 均在本包。仅依赖通用领域、会话、传输和记录工具，不导入其他型号。
+
+## 离线记录
+
+本包 `hardware/records.py` 负责历史字段解释和统一摘要。新增批次保存 summary.json；原始结果与通信保留。离线总览及导入方法见[记录规范](../../testing/records.md)。
+
+## 注册能力（自动生成）
+
+范围、单位及命令来自当前注册定义；资产级实测结果见运行目录。
 
 | 操作 | 参数 / 单位 / 范围 | 作用域 | 方向 | 额外确认 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| `waveform` | value: enum  SIN/SQU/RAMP/PULS/NOIS/DC | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `frequency` | value: number Hz [1e-06, 500000000.0] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `amplitude` | value: number Vpp [0.002, 10] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `offset` | value: number V [-5, 5] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `amplitude_unit` | value: enum  VPP/VRMS/DBM | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `phase` | value: number deg [0, 360] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `pulse_duty` | value: number % [0.01, 99.99] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `pulse_width` | value: number s [1e-09, 1000] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `ramp_symmetry` | value: number % [0, 100] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `output` | value: boolean  [None, None] | 通道 | 读/写 | 需要 | 已实现；待实机 |
-| `load` | value: number ohm [1, 10000] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `burst` | value: boolean  [None, None] | 通道 | 读/写 | 需要 | 已实现；待实机 |
-| `burst_mode` | value: enum  TRIG/GAT | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `burst_cycles` | value: integer  [1, 1000000] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `sweep_time` | value: number s [0.001, 300] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `sweep_spacing` | value: enum  LIN/LOG | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `sweep_start` | value: number Hz [1e-06, 500000000.0] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `sweep_stop` | value: number Hz [1e-06, 500000000.0] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `trigger` | 无 | 整机 | /写 | 需要 | 已实现；待实机 |
-| `reference_clock` | value: enum  INT/EXT | 整机 | 读/写 | 无需 | 已实现；待实机 |
-| `am_enabled` | value: boolean  [None, None] | 通道 | 读/写 | 需要 | 已实现；待实机 |
-| `am_source` | value: enum  INT/EXT | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `am_frequency` | value: number Hz [0.001, 100000] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `fm_enabled` | value: boolean  [None, None] | 通道 | 读/写 | 需要 | 已实现；待实机 |
-| `fm_source` | value: enum  INT/EXT | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `fm_frequency` | value: number Hz [0.001, 100000] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `pm_enabled` | value: boolean  [None, None] | 通道 | 读/写 | 需要 | 已实现；待实机 |
-| `pm_source` | value: enum  INT/EXT | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `pm_frequency` | value: number Hz [0.001, 100000] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `am_depth` | value: number % [0, 100] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `fm_deviation` | value: number Hz [0, 250000000.0] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `pm_deviation` | value: number deg [0, 180] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `sweep` | value: boolean  [None, None] | 通道 | 读/写 | 需要 | 已实现；待实机 |
-| `trigger_source` | value: enum  INT/EXT/MAN | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `arb_enabled` | value: boolean  [None, None] | 通道 | 读/写 | 需要 | 已实现；待实机 |
-| `arb_sample_rate` | value: number Sa/s [1, 2500000000.0] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `load_waveform` | name: text  [None, None] | 通道 | /写 | 需要 | 已实现；待实机 |
-| `upload_waveform` | samples: array  [-1, 1]; name: text  [None, None] | 通道 | /写 | 需要 | 已实现；待实机 |
-
-## 7. 控制、读回与采集
-
-页面入口：**设备管理 / 信号源**。参数由当前注册能力生成；常用、高级、状态与诊断分组。只读采集能力通过监测页的单次/开始操作使用；缺选件项显示原因且禁用。详细操作见[控制与监测指南](../../control-and-monitoring.md)。
-
-采集路线：`无测量输入；由外部测量仪器采集输出`。`apply` 返回成功、拒绝、部分执行或不确定；只有提供读回命令的操作才有硬件读回，不能将 SDK 已接收设置描述成测量值。`status` 显式读取，扫描和总览定时刷新不会额外采集。
-
-四通道。任意波形以分块 ASCII 保存到仪器内部 .arb 文件；随后 load_waveform、arb_sample_rate、arb_enabled 分步执行。参考时钟使用 SYST:ROSC:SOUR。当前上传限制 32..131072 点。
-
-## 8. 限制和故障处理
-
-单设备单 worker 串行执行。数值范围是软件保守边界，仍需核对负载、频率、探头和接线条件。输出/触发等动作要求明确确认；超时不重发、不自动回滚，先诊断再重连。断开软件连接不表示输出关闭。错误数据使用质量标记，不能以零值代替。
-
-## 9. Python 落点
-
-通过 `ApplicationRuntime` → `SessionManager.submit()` → 注册表 `rigol.dg5504pro` 调用；SCPI 型号共用所属类别的实现和独立 `Profile`，不创建空壳同名类。源码见 [instruments](../../../src/lab_control/instruments/)；示例见 [examples](../../../examples/README.md)。
-
-## 10. Mock 与实机验收
-
-软件：身份精确匹配、参数越界、未知能力和控制夹具；SDK 使用函数替身验证参数/句柄/缓冲区。完整结果以 `pytest` 报告为准，不能从该表推断全部高级命令已逐项验证。
-
-现场按[统一验收步骤](../../hardware-testing.md)记录完整身份、固件、驱动、资源、每个测试操作、请求、读回、原始错误、数据文件和恢复结果。先运行只读 `test`，再选择本卡片中一项设置和一次基础采集，最后测试断线重连。每项通过后将报告与具体能力关联；本轮所有能力的 `hardware_passed=false`。
+| `waveform` | value: enum  SIN/SQU/RAMP/PULS/NOIS/DC | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `frequency` | value: number Hz [1e-06, 500000000.0] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `amplitude` | value: number Vpp [0.001, 20] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `offset` | value: number V [-10, 10] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `amplitude_unit` | value: enum  VPP/VRMS/DBM | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `phase` | value: number deg [-360, 360] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `pulse_duty` | value: number % [0.01, 99.99] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `pulse_width` | value: number s [4.2e-09, 999999.9999563443] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `ramp_symmetry` | value: number % [0, 100] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `output` | value: boolean  [None, None] | 通道 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
+| `load` | value: number ohm [1, 10000] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `burst` | value: boolean  [None, None] | 通道 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
+| `burst_mode` | value: enum  TRIG/GAT | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `burst_cycles` | value: integer  [1, 1000000] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `sweep_time` | value: number s [0.001, 250000] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `sweep_spacing` | value: enum  LIN/LOG | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `sweep_start` | value: number Hz [1e-06, 500000000.0] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `sweep_stop` | value: number Hz [1e-06, 500000000.0] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `trigger` | 无 | 整机 | /写 | 需要 | 软件已实现；实测按资产查证 |
+| `reference_clock` | value: enum  INT/EXT | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `am_enabled` | value: boolean  [None, None] | 通道 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
+| `am_source` | value: enum  INT/EXT | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `am_frequency` | value: number Hz [0.002, 1000000.0] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `fm_enabled` | value: boolean  [None, None] | 通道 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
+| `fm_source` | value: enum  INT/EXT | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `fm_frequency` | value: number Hz [0.002, 1000000.0] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `pm_enabled` | value: boolean  [None, None] | 通道 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
+| `pm_source` | value: enum  INT/EXT | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `pm_frequency` | value: number Hz [0.002, 1000000.0] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `am_depth` | value: number % [0, 120] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `fm_deviation` | value: number Hz [0, 250000000.0] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `pm_deviation` | value: number deg [0, 360] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `sweep` | value: boolean  [None, None] | 通道 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
+| `trigger_source` | value: enum  INT/EXT/MAN | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `arb_enabled` | value: boolean  [None, None] | 通道 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
+| `arb_sample_rate` | value: number Sa/s [1e-06, 1250000000.0] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `load_waveform` | name: text  [None, None] | 通道 | /写 | 需要 | 软件已实现；实测按资产查证 |
+| `upload_waveform` | samples: array  [-1, 1]; name: text  [None, None] | 通道 | /写 | 需要 | 软件已实现；实测按资产查证 |
+| `am_shape` | value: enum  SIN/SQU/TRI/RAMP/NRAM/NOIS | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `fm_shape` | value: enum  SIN/SQU/TRI/RAMP/NRAM/NOIS | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `pm_shape` | value: enum  SIN/SQU/TRI/RAMP/NRAM/NOIS | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |

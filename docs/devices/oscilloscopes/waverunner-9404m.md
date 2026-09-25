@@ -1,64 +1,96 @@
+<!-- Generated from an independent device package; edit its README.md. -->
+
+维护源：[包内 README](../../../src/lab_control/instruments/devices/lecroy_waverunner9404m/README.md)。修改维护源后重新生成。
+
 # Teledyne LeCroy WaveRunner 9404M
 
-## 1. 型号与可信度
+独立注册标识 `lecroy.9404m`；精确匹配 LECROY/TELEDYNE 的 WaveRunner9404M 或 9404M，物理通道 C1–C4。本目录是型号维护源。
 
-注册 ID：`lecroy.9404m`。型号精确匹配，当前为软件实现、待实机验证；附件简写和身份别名见本卡片说明。软件连接成功不等于验收通过。
+## 能力与协议
 
-## 2. 电脑物理连接
+保留迁移前十四项基础控制：显示开关、档位、偏置、耦合、探头倍率、触发电平/边沿、时基、水平位置、触发模式、存储长度、运行、停止、单次。增加通信格式与关联模式的只读查询。型号适配器覆盖控制前置校验与完整波形采集，不调用旧混合示波器实现。
 
-LAN VICP（1861）/ VISA VXI-11 或 USBTMC。接口和选件以设备背板、固件与现场盘点为准。
+协议依据：[MAUI Remote Control and Automation Manual，February 2026](https://cdn.teledynelecroy.com/files/manuals/maui-remote-control-and-automation-manual.pdf)，第 6 部分波形描述/缩放，第 7 部分 CHDR/CFMT/CORD/WFSU、通道及触发命令；范围依据：[9404M 官方规格](https://www.teledynelecroy.com/options/productdetails.aspx?categoryid=1&groupid=5&modelid=11110)。协议契约与资产实测结论分开。
 
-## 3. Windows 前置条件
+## 连接与驱动
 
-VICP 直接 TCP 不需要 VISA；其他路线需 VISA。安装步骤见[实机测试指南](../../hardware-testing.md)；DLL 放在厂商安装位置，通过绝对路径加载，不复制进源码。
+默认 PyVISA + Windows x64 VISA，使用当前扫描返回的 VXI-11 INSTR 资源。仪器需在 Utilities → Utilities Setup → Remote 选择 **LXI (VXI-11)**。TCP/IP 是 VICP 模式，VXI-11 的身份查询可能仍成功，但其他查询返回接口警告；适配器报 `remote_interface_mismatch`，不将警告当参数、不自动改接口或重放命令。
 
-## 4. 资源与枚举
+`deployment_components=("rs-visa",)`，复用[部署组件清单](../../../deployment/components.json)中的现有来源、材料哈希、检测和待补分发依据。无需新 SDK，不修改 DHCP、防火墙或系统代理、不自动重启。Windows 10 仪器端的 LXI 管理员运行条件见厂家手册。USB 和 VICP 保留旧配置路由兼容，但尚未取得本次资产接口验收结论。
 
-连接模板见[config/examples](../../../config/examples/README.md)。VISA 使用扫描返回的完整资源；串口填写确认的 COM/波特率；Pico 使用 `PICO::序列号`；PM100D 使用 SDK 枚举的资源；53100A 手工填写已部署服务地址。扫描只枚举 SDK，不打开 SDK 仪器。
+## 单位与限制
 
-## 5. 官方命令/API 依据
+电压 V、时基 s/div、位置 s、倍率 ratio、存储长度 SAMPLE；标量兼容响应头与科学计数法，区分 MAUI 的 M（毫）和 MA（兆），未知单位、非有限值和多回包均拒绝。扫描与显式连接共用身份解析，去除 CHDR 添加的 `*IDN` 响应头后计算厂家/型号/序列号键，同时保留原始回复供留档。旧扫描曾将响应头误记为厂家而造成重复资产与假冲突；这类历史记录需在备份及真实身份核验后修复，不能通过忽略序列号或停用冲突检查解决。
 
-[厂家资料](https://cdn.teledynelecroy.com/files/manuals/maui-remote-control-and-automation-manual.pdf)；版本：MAUI Remote Control & Automation, IEEE 488.2 chapters 6-7。逐操作命令定位、参数和模板见[自动生成能力清单](../../generated/capability-matrix.json)。测试样本是按手册编写的夹具，尚非实机抓包。
+迁移前静态范围保留为软件边界，不代表完整仪器极限。写入前按当前探头倍率换算输入档位：50 Ω 为 1 mV–1 V/div，1 MΩ 为 1 mV–10 V/div。偏置采用保守的输入 ±1.4 V 子集，超过时拒绝关联设置，不推测带宽限制器相关范围。附加探头和更大偏置需另行资格验证。读回比较采用数值序列化精度，不能用通用绝对容差吞掉小时间量的明显变化。硬件量化导致的差异显式拒绝并保留实际读回，不伪装设定成功。
 
-## 6. 当前统一能力
+## 采集与监测
 
-逻辑类别 `oscilloscope`；通道 `(1, 2, 3, 4)`。`None` 表示该侧未在通用参数层给出数值边界；适配器仍执行关联参数与通道校验。未列出的操作返回 `unsupported`。
+连接身份与资源锁核对后，`prepare_acquisition()` 先备份 CHDR/CFMT/CORD/WFSU，必要时仅设置 `CFMT DEF9,WORD,BIN`，核对前后状态。保留响应头、字节序及传输窗口，不逐帧改格式。正常断开不恢复格式；硬件测试显式恢复。扫描和只读预检必须用 `configure_acquisition=False`。
+
+仅接受 C1–C4 普通单段波形、已知 LECROY_2_3/2_4 描述，校验完整定长块、长度/点数、通道来源、字节序、有效区间、有限值、缩放与时间轴。分段、RIS、数学/多数组及未知描述明确拒绝。描述中的单位与坐标是数据来源；不以请求点数冒充实际长度。当前最多处理 1000 万点，受公共消息上限约束。
+
+`full` 在波形前后完整读取关联设置；`live/stream` 每轮首帧完整核验，稳定帧每通道仅查询一次 `WF? ALL`，保留完整 WAVEDESC 和 WORD 样本。缓存以运行标识、模式和所选通道绑定，保存原始参数时间；缓存帧标为 `cached`，不更新公共参数缓存时间。软件调参、主动刷新、重连、通道或运行变化、异常均使缓存失效。监测/记录期间没有独立参数轮询；空闲沿用公共当前设备 30 秒、其他设备 60 秒错峰同步。
+
+每帧按自己的描述缩放。已验证描述字段与本轮基线有差异时报 `configuration_changed`；解析、超时、断线保持各自错误。无效帧不显示或保存。正常触发时间和水平起点抖动不触发完整重读；描述无法表达的前面板修改需要主动刷新。仅接受 FIRST_POINT=0、SPARSING_FACTOR=0/1 的完整窗口，不推测抽取窗口坐标。缓存字段对应与限制见[通信优化说明](../../../src/lab_control/instruments/devices/lecroy_waverunner9404m/communication-research.md)。
+
+每通道保留实际接收时间及描述中的采集时间标识；运行时各通道顺序读取，不宣称同次触发。读取帧、可辨认的新采集及重复比例分别统计，保存不按时间标识去重。公共暂态期限、刷新/保存独立调度及记录参数锁见[采集规则](../../architecture/live-acquisition.md)。普通手动保存执行 full；记录中的手动保存沿用锁定的 stream 上下文，二进制排空后释放锁，CSV 不占仪器。
+
+单次启动最多等连接超时与 5 秒中的较小值，未触发即报等待超时，不重发、不把 OPC 或旧波形当成新采集完成。软件监测默认被动读取；运行/停止/单次为独立显式控制动作。
+
+## 文件与公共依赖
+
+`profile.py` 定义协议与能力，`protocol.py` 负责标量及二进制验证，`adapter.py` 负责关联校验及采集；`tests/fixtures/capabilities-before.json` 是不可覆盖的迁移证据，`capabilities-current.json` 记录新增诊断查询与修正后的契约。专属控制夹具迁入本包。公共层仅依赖会话、传输、领域模型与存储，不交叉导入其他型号。
+
+## 测试入口与实机状态
+
+所有资产按[统一记录规范](../../testing/records.md)维护当前结论、接口矩阵、功能覆盖、已知问题及批次索引；补测更新对应表格，历史批次不改写。
+
+
+
+| 项目 | 验证范围、条件及限制 |
+| --- | --- |
+| 入口与条件 | 软件：`.venv-dev/Scripts/python.exe -m pytest src/lab_control/instruments/devices/lecroy_waverunner9404m/tests -q`。 |
+| 入口与条件 | 硬件：[测试入口与计划](../../../src/lab_control/instruments/devices/lecroy_waverunner9404m/hardware/README.md)。仅显式指定配置和预期序列号执行；默认只读，写入必须追加 `--write --empty-inputs`。所有测试通过正式型号工厂和会话执行。身份、参数、恢复、重连、波形与物理精度分别报告；当前资产证据以运行目录为准，不把 Mock 或可枚举当成全机通过。 |
+| 历史验证范围 | 2026-09-25，固件 9.2.0，空输入 LAN/VXI-11：四通道基础参数及全局控制、运行/停止、SINGLE 等待状态、三次重连、WORD/LO 波形、单次保存和约 30 秒监测记录已分别实测。四通道各取得 5002 点；记录接收、二进制提交及 CSV 转换均为 19 组，停止后无待写入，参数锁释放。每帧完整核验带来的耗时未作性能达标声明。两个写入批次均恢复全部快照，差异为零。 |
+| 效率验证 | 2026-09-25 后续三轮基准通过，默认启用 live/stream 缓存；稳定四通道 82→4 次查询，STOP 中位采集耗时约 429–474→20–24 ms。AUTO 监视/记录各 60 秒通过，另以真实保存逐点核对 220,088 行二进制/CSV。完整结果与条件见[通信优化说明](../../../src/lab_control/instruments/devices/lecroy_waverunner9404m/communication-research.md)。成组启动快照仅在已验证的固件/响应头下启用，读取块保留 VISA 默认。 |
+| 入口与条件 | 首个控制批次的单次保存因测试入口漏传保存模式而中止，随后修复入口、增加跨层回归并另建采集保存批次通过；失败批次保留。早期 VXI-11 接口警告与 VICP 连接超时也保留独立证据；后来 VXI-11 参数读取已可用，未由软件切换仪器接口。USB、VICP 协议功能、物理精度、分段及高级分析尚未验证。 |
+
+## 已知限制与待测
+
+| 项目 | 边界与后续验证 |
+| --- | --- |
+| 当前限制 | 空输入采集不证明物理精度或带宽；USB、VICP 协议功能、分段及高级分析尚未验证。历史失败及后续独立恢复分别保留。 |
+| 证据维护 | 逐接口、固件和测试条件核对运行目录的结构化资产状态；历史受阻不删除，缺项不提升为通过 |
+
+## 扩展与移除
+
+仅在本包扩展协议和测试，经 `devices/catalog.py` 注册并生成派生文档。移除时验证其他型号和旧配置的不可用提示，保留用户库存、配置和实机历史。WaveRunner 9254 保持既有实现，不依赖本包。
+
+## 注册能力（自动生成）
+
+范围、单位及命令来自当前注册定义；资产级实测结果见运行目录。
 
 | 操作 | 参数 / 单位 / 范围 | 作用域 | 方向 | 额外确认 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| `channel_enabled` | value: enum  ON/OFF | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `scale` | value: number V/div [0.001, 10] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `offset` | value: number V [-10, 10] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `coupling` | value: enum  A1M/D1M/D50/GND | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `probe_attenuation` | value: number ratio [1, 10000] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `trigger_level` | value: number V [-10, 10] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `trigger_slope` | value: enum  POS/NEG | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `timebase` | value: number s/div [1e-10, 1000] | 整机 | 读/写 | 无需 | 已实现；待实机 |
-| `time_position` | value: number s [-100, 100] | 整机 | 读/写 | 无需 | 已实现；待实机 |
-| `trigger_mode` | value: enum  AUTO/NORM/SINGLE/STOP | 整机 | 读/写 | 需要 | 已实现；待实机 |
-| `record_length` | value: integer  [1000, 10000000] | 整机 | 读/写 | 无需 | 已实现；待实机 |
-| `single` | 无 | 整机 | /写 | 需要 | 已实现；待实机 |
-| `run` | 无 | 整机 | /写 | 需要 | 已实现；待实机 |
-| `stop` | 无 | 整机 | /写 | 需要 | 已实现；待实机 |
-
-## 7. 控制、读回与采集
-
-页面入口：**实时监测 / 示波器**。参数由当前注册能力生成；常用、高级、状态与诊断分组。只读采集能力通过监测页的单次/开始操作使用；缺选件项显示原因且禁用。详细操作见[控制与监测指南](../../control-and-monitoring.md)。
-
-采集路线：`lecroy`。`apply` 返回成功、拒绝、部分执行或不确定；只有提供读回命令的操作才有硬件读回，不能将 SDK 已接收设置描述成测量值。`status` 显式读取，扫描和总览定时刷新不会额外采集。
-
-使用 MAUI IEEE 488.2 命令；兼容带响应头的标量读回。波形固定 DEF9/WORD/BIN 后按 WAVEDESC 解码；分段序列和数学波形未实现，不当成普通单段数据解析。
-
-## 8. 限制和故障处理
-
-单设备单 worker 串行执行。数值范围是软件保守边界，仍需核对负载、频率、探头和接线条件。输出/触发等动作要求明确确认；超时不重发、不自动回滚，先诊断再重连。断开软件连接不表示输出关闭。错误数据使用质量标记，不能以零值代替。
-
-## 9. Python 落点
-
-通过 `ApplicationRuntime` → `SessionManager.submit()` → 注册表 `lecroy.9404m` 调用；SCPI 型号共用所属类别的实现和独立 `Profile`，不创建空壳同名类。源码见 [instruments](../../../src/lab_control/instruments/)；示例见 [examples](../../../examples/README.md)。
-
-## 10. Mock 与实机验收
-
-软件：身份精确匹配、参数越界、未知能力和控制夹具；SDK 使用函数替身验证参数/句柄/缓冲区。完整结果以 `pytest` 报告为准，不能从该表推断全部高级命令已逐项验证。
-
-现场按[统一验收步骤](../../hardware-testing.md)记录完整身份、固件、驱动、资源、每个测试操作、请求、读回、原始错误、数据文件和恢复结果。先运行只读 `test`，再选择本卡片中一项设置和一次基础采集，最后测试断线重连。每项通过后将报告与具体能力关联；本轮所有能力的 `hardware_passed=false`。
+| `channel_enabled` | value: enum  ON/OFF | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `scale` | value: number V/div [0.001, 10] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `offset` | value: number V [-10, 10] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `coupling` | value: enum  A1M/D1M/D50/GND | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `probe_attenuation` | value: number ratio [1, 10000] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `trigger_level` | value: number V [-10, 10] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `trigger_slope` | value: enum  POS/NEG | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `timebase` | value: number s/div [1e-10, 1000] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `time_position` | value: number s [-100, 100] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `trigger_mode` | value: enum  AUTO/NORM/SINGLE/STOP | 整机 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
+| `record_length` | value: integer  [1000, 10000000] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `single` | 无 | 整机 | /写 | 需要 | 软件已实现；实测按资产查证 |
+| `run` | 无 | 整机 | /写 | 需要 | 软件已实现；实测按资产查证 |
+| `stop` | 无 | 整机 | /写 | 需要 | 软件已实现；实测按资产查证 |
+| `transfer_format` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `response_header` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `byte_order` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `waveform_setup` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `trigger_setup` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `sequence_setup` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `interleaved` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |

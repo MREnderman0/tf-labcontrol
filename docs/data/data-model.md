@@ -1,6 +1,12 @@
 # 数据模型与运行文件（0.3.0）
 
+实机验证的原始批次与派生摘要遵循[记录规范](../testing/records.md)。`summary.json` 和 `overview/` 仅用于离线证据检索，不参与库存状态、会话或控制判断；原始通信、快照和恢复文件保留原样。
+
 领域对象定义在 domain/instruments.py，持久化由 storage/repository.py 完成。电子学与光学共享结构，但分别导出到 data/electronic 与 data/optical。
+
+`AcquisitionRequest.consistency` 支持 `full`、`live`、`stream`，默认 `full`；`stream` 需要本次运行的非空 `context_id` 且不能启动物理扫描。批次 `validation=cached` 表示曲线为新读取、配置沿用已有快照，`settings_timestamps` 保留原时间。连续记录缓存帧在 `performance.acquisition_context_id` 中带来源编号，监测缓存不具备记录来源；不能把后者当作完整记录帧。手动显示快照可导出监测缓存及 live 帧，但保留原校验级别、时间及配置来源，不升级为 full。`_session_configuration_version` 和 `monitor_*` 是软件调度元数据，不是仪器读回。历史文件保持原样。
+
+会话快照 `controlsLocked` 只表示本软件连续采集/记录期间的参数锁，纯监测为否；不代表仪器物理面板被锁定。`acquisitionPreparation` 和运行日志记录可选二进制初始化的前后格式、字节序、写入是否尝试及成功/失败状态；不会删除失败后的最后可确认状态。
 
 ## 实际存储结构
 
@@ -35,6 +41,8 @@ workspace 使用键隔离，真实与模拟分别位于各自根目录：
 
 candidates 以原始资源字符串为键，保留 candidateId、scanRunId、source、rawDescriptor、lastSeenAt、config、lastError、probeReason。同一物理设备的多个地址合并后不删除候选；合并前的空身份占位行可被吸收。存在冲突时保留原身份和 identityConflict，连接被禁用，不用新身份覆盖旧资产。
 
+库存及候选新增 presenceState（present/not_seen/unreachable/unknown）；候选的 evidenceScanRunId 标识存在性证据批次，sources 按来源保留 scanRunId、observedAt、rawDescriptor。旧单来源候选在下次合并时兼容补入 sources，无需重建数据库。configured 的 observedAt 只表示配置被枚举，不刷新 lastSeenAt；真实本地枚举或身份成功才更新后者。启动时仅在内存中将旧存在性置为 unknown，并去除旧 evidenceScanRunId，等待当前扫描/会话确认。
+
 稳定 id 是持久化 UUID；可识别身份以厂家/型号/序列号匹配历史记录。序列号缺失时保持候选身份，不能因 COM/IP 相同证明是同一台设备。显示名与槽位保留。连接后才发现历史身份重复时保留 conflict，不在运行 worker 中偷偷更换设备 ID。
 
 ## 会话快照
@@ -43,7 +51,7 @@ snapshots 返回 stableDeviceId、sessionId、resource、adapterId、connectionS
 
 0.3.0 增加 monitoring、recording、configurationVersion、controlPending。监测任务存在时会话持续 busy，批次间也不会误允许断开。recording 在在途记录或写盘尚未结束时继续为真，用于模式锁。控制前值来自已读回/已接受缓存，并写入 operation_requested.before；没有历史值时为 null，不虚构。
 
-发现状态：unknown/identified/stale/conflict。candidate 与 duplicate 是设计概念，本版候选通过 candidates 集合保存，重复资源通过合并或 conflict 表达，不增加虚假的连接状态。连接状态：connecting/connected/busy/degraded/error；没有会话即 disconnected。
+发现状态：unknown/identified/stale/unreachable/conflict。identified 要求当前存在证据与身份记录同时成立；仅保存历史 identity 不代表本次已发现。candidate 与 duplicate 是设计概念，本版候选通过 candidates 集合保存，重复资源通过合并或 conflict 表达，不增加虚假的连接状态。连接状态：connecting/connected/busy/degraded/error；没有会话即 disconnected。
 
 扫描失败、取消或部分 provider 失败不覆盖连接快照。只有完整成功覆盖的发现来源才能把未出现的资源标记 stale。configured 地址表示配置存在，不代表网络设备在线。
 
@@ -62,9 +70,17 @@ ParameterReading 保存 operation、channel、value、source、timestamp、quali
 - snapshot.json 保留身份、设置缓存、传输/前导信息和质量。配置缓存只记录本会话已接受设置及主动读到的元数据，不宣称是设备全量状态快照。
 - UTC 时间为主机读回时间；时轴来自仪器前导数据或明确标注的 SDK/TSERVE 周期，不代表跨设备硬件同步。
 - quality 为 good/simulated/timeout/disconnected/parse_error/overload/sensor_missing/stale。故障批次使用空数组与错误元数据，不使用零值补齐。非有限 JSON 数字转 null。
-- 流式任务先前有效批次保留；中断时另存故障批次及已完成路径。
+- 流式任务先前有效批次保留；中断时审计错误及已提交路径，不生成冒充有效帧的空数据文件。
 
 NPZ 使用 NumPy 数据数组，不保存 pickle 对象。CSV 使用 UTF-8 BOM 便于中文 Excel 打开。Touchstone 要求 S11 或完整同一频率轴 S11/S21/S12/S22，顺序按规范，参考阻抗显式传入；不虚构缺失 S 参数。
+
+### 连续记录格式 v1
+
+连续记录目录含 segment-00001.sqlite3 等分段文件、对应 CSV 与 CSV 检查点，以及停止时的 summary.json。SQLite user_version=1：configs 保存配置和原始设置时间，按 SHA256 内容版本去重；frames 保存递增序号、配置版本引用、时间、身份、质量验证级别和性能；samples 保存各通道元数据、dtype、shape 及 values/axis BLOB，保留复数、字节序和精度，不使用 pickle。一个帧的所有通道和配置引用在同一事务提交，转换进程只读取已提交帧。
+
+CSV 增加 sequence、config_id 列；检查点保存完整帧对应的序号、文件偏移和帧数，重启时截断未提交尾部后续写，避免重复行。连续 CSV 为 UTF-8，旧单帧 CSV 仍使用 BOM。可离线执行 `python -m lab_control.storage.recording --csv <记录目录>` 恢复转换，不连接仪器。read_frames 支持分段格式读取；旧 JSON/CSV/NPZ 导出不改变。
+
+录制摘要及会话状态区分 received、pending、committed、converted、paused、error、csv_error；已收到不等于已落盘，CSV 转换失败不修改二进制提交数。start_acquisition 仍返回路径列表，路径单位改为分段文件，实际帧数见摘要。MonitorFrame 增加单调时钟 received_at 用于显示延迟，不用它替代 UTC 数据时间。
 
 ## 审计和报告
 

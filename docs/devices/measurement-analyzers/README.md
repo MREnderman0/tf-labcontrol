@@ -1,12 +1,12 @@
-# 测量与分析仪
+# 测量与分析仪（自动生成）
 
-本目录收录光功率计、万用表、网络分析仪、相噪仪和光电元器件分析仪。每类设备通过独立能力接口接入，不能因为都能返回数值就合并为一个通用电表协议。
+软件实现与资产实测分别判定；维护型号包后重新生成本导航。
 
-| 设备 | 接入路线 | 状态 | 文档 |
-| --- | --- | --- | --- |
-| PM100D + S154C | USB + TLPMX.dll/PM100D.dll | SDK 路线，待实机验证 | [PM100D](thorlabs-pm100d-s154c.md) |
-| 多通道光功率计 | 型号待补 | 待补信息 | [多通道光功率计](multi-channel-optical-power-meter.md) |
-| Keysight 3458A | GPIB/VISA | 资料确认，待实机验证 | [3458A](keysight-3458a.md) |
-| R&S ZNB3004 | LAN/USB/VISA/SCPI | 资料确认，待实机验证 | [ZNB3004](rs-znb3004.md) |
-| GOCA-8-NK2603212 | 厂家和型号待补 | 待补信息 | [GOCA](goca-8.md) |
-| 53100A | 厂家和型号待补 | 待补信息 | [53100A](phase-noise-53100a.md) |
+| 型号 | 接入路线 | 文档 |
+| --- | --- | --- |
+| Thorlabs PM100D + S154C | PM100D USB；S154C 接控制台传感器接口 | [型号说明](thorlabs-pm100d-s154c.md) |
+| Keysight / Agilent / HP 3458A | GPIB + USB-GPIB/LAN-GPIB 控制器 | [型号说明](keysight-3458a.md) |
+| R&S ZNB3004 | LAN / USB VISA | [型号说明](rs-znb3004.md) |
+| 53100A（Microchip 候选） | 仪器由已配置 TimeLab/TSERVE 服务控制；电脑连接其命令端口 1299 / 数据端口 1298 | [型号说明](phase-noise-53100a.md) |
+| GOCA-8-NK2603212 | 未注册，待补资料 | [待补卡片](goca-8.md) |
+| 多通道光功率计 | 未注册，待补资料 | [待补卡片](multi-channel-optical-power-meter.md) |

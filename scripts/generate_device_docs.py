@@ -17,10 +17,22 @@ from pathlib import Path
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.controls import CATEGORY_LABELS, COMMON, MEASUREMENT_CATEGORIES, OPERATION_LABELS
 from lab_control.domain.instruments import jsonable
+from lab_control.instruments.base import ScpiAdapter
 from lab_control.instruments.registry import DEVICE_DEFINITIONS, PENDING, PROFILES, describe
+from lab_control.transport.base import MockTransport
 
 ROOT = Path(__file__).resolve().parents[1]
 MODEL_CARD_MARKER = "<!-- Generated from an independent device package; edit its README.md. -->"
+LEGACY_CARD_MARKER = "<!-- Generated from scripts/generate_device_docs.py legacy metadata. -->"
+
+CATEGORY_FOLDERS = {
+    "signal-sources": "信号源",
+    "power-supplies": "电源",
+    "oscilloscopes": "示波器",
+    "spectrum-analyzers": "频谱仪",
+    "measurement-analyzers": "测量与分析仪",
+    "temperature-load-drivers": "温控、负载与驱动",
+}
 
 # adapter, card, display name, connection, driver, model-specific acceptance boundary
 LEGACY_MODELS = [
@@ -31,14 +43,6 @@ LEGACY_MODELS = [
         "USB / LAN VXI-11 / 已配置 TCP Socket",
         "VISA Runtime；直接 TCP 不需要 VISA",
         "BSWV/MDWV/SWWV/BTWV 是复合命令。先显式启用调制/扫频/突发，再设置子参数；不会替用户启用。WVDT 使用小端有符号 16 位数据，二进制末尾不追加换行。建议先用 USB/VXI-11 验证上传。",
-    ),
-    (
-        "rigol.dg5504pro",
-        "signal-sources/dg5504-pro",
-        "RIGOL DG5504 Pro",
-        "USB / LAN VISA / 已配置 TCP Socket",
-        "64 位 VISA Runtime 或直接 TCP",
-        "四通道。任意波形以分块 ASCII 保存到仪器内部 .arb 文件；随后 load_waveform、arb_sample_rate、arb_enabled 分步执行。参考时钟使用 SYST:ROSC:SOUR。当前上传限制 32..131072 点。",
     ),
     (
         "keithley.2231a",
@@ -97,28 +101,12 @@ LEGACY_MODELS = [
         "VICP 使用完整 8 字节头和 DATA/EOI 分段。WAVEDESC 提供字节序、单位、增益、偏移、有效点范围；当前仅接受单段波形。普通 TCP transport 不可代替 VICP。",
     ),
     (
-        "lecroy.9404m",
-        "oscilloscopes/waverunner-9404m",
-        "Teledyne LeCroy WaveRunner 9404M",
-        "LAN VICP（1861）/ VISA VXI-11 或 USBTMC",
-        "VICP 直接 TCP 不需要 VISA；其他路线需 VISA",
-        "使用 MAUI IEEE 488.2 命令；兼容带响应头的标量读回。波形固定 DEF9/WORD/BIN 后按 WAVEDESC 解码；分段序列和数学波形未实现，不当成普通单段数据解析。",
-    ),
-    (
         "rigol.ds1202ze",
         "oscilloscopes/rigol-ds1202z",
         "RIGOL DS1202Z（待确认后缀）/ DS1202Z-E",
         "DS1202Z-E：USB / LAN VISA",
         "64 位 VISA Runtime",
         "附件原型号 DS1202Z 保留待补信息；仅 DS1202Z-E 身份可匹配此实现。两通道；当前读取 NORM 屏幕波形，不宣称导出全部存储深度。BYTE 缩放包含 YORigin/YREFerence。",
-    ),
-    (
-        "rigol.dsa815",
-        "spectrum-analyzers/rigol-dsa815",
-        "RIGOL DSA815",
-        "USB / LAN / 已安装 GPIB",
-        "64 位 VISA Runtime及对应接口驱动",
-        "DSA800 编程手册；单次扫描先关闭连续扫描，再 INIT。轨迹读取 TRACE1，单位查询仪器实际设置；零跨度使用秒轴。当前未实现跟踪源和带宽/信道功率自动测量。",
     ),
     (
         "rs.fph",
@@ -176,19 +164,29 @@ def render(definitions=None) -> dict[Path, str]:
         )
         for d in definitions.values()
     ] + LEGACY_MODELS
+    for field, label in ((0, "adapter ID"), (1, "card path")):
+        values = [row[field] for row in models]
+        if len(values) != len(set(values)):
+            raise ValueError(f"Duplicate documentation {label}")
+    for definition in definitions.values():
+        for relative in ("README.md", "hardware/README.md"):
+            if not (definition.root / relative).is_file():
+                raise ValueError(f"Missing model documentation source: {definition.root / relative}")
     rows = []
     files: dict[Path, str] = {}
     fixtures = ROOT / "tests/fixtures/protocols"
     for adapter, card, title, connection, driver, note in models:
         config = ConnectionConfig("metadata://only", adapter)
-        caps = describe(config)
+        definition = definitions.get(adapter)
+        profile = definition.profile if definition else PROFILES.get(adapter)
+        caps = (
+            ScpiAdapter(MockTransport([]), profile, config).capabilities() if definition else describe(config)
+        )
         page = (
             ("实时监测" if caps.category in MEASUREMENT_CATEGORIES else "设备管理")
             + " / "
             + CATEGORY_LABELS[caps.category]
         )
-        profile = PROFILES.get(adapter)
-        definition = definitions.get(adapter)
         fixture = (
             definition.root / "tests/fixtures/control.json"
             if definition
@@ -246,17 +244,21 @@ def render(definitions=None) -> dict[Path, str]:
                 )
                 or "无"
             )
-            state = "缺选件/配置" if not cap.available else "已实现；待实机"
+            state = "缺选件/配置" if not cap.available else "软件已实现；实测按资产查证"
             operations.append(
                 f"| `{cap.name}` | {parameters} | {'通道' if cap.channel_scoped else '整机'} | {'读' if cap.readable else ''}{'/写' if cap.writable else ''} | {'需要' if cap.requires_confirmation else '无需'} | {state} |"
             )
         rows.append(record)
         source = record["source"]
-        files[ROOT / f"docs/devices/{card}.md"] = f"""# {title}
+        files[ROOT / f"docs/devices/{card}.md"] = f"""{LEGACY_CARD_MARKER}
+
+# {title}
+
+维护源：[旧型号文档元数据](../../../scripts/generate_device_docs.py)。本型号尚未迁入独立包，能力来自注册表；不要直接修改本页。
 
 ## 1. 型号与可信度
 
-注册 ID：`{adapter}`。型号精确匹配，当前为软件实现、待实机验证；附件简写和身份别名见本卡片说明。软件连接成功不等于验收通过。
+注册 ID：`{adapter}`。型号精确匹配；软件实现与具体资产的实测结果分别记录。附件简写和身份别名见本卡片说明。软件连接成功不等于验收通过。
 
 ## 2. 电脑物理连接
 
@@ -264,7 +266,7 @@ def render(definitions=None) -> dict[Path, str]:
 
 ## 3. Windows 前置条件
 
-{driver}。安装步骤见[实机测试指南](../../hardware-testing.md)；DLL 放在厂商安装位置，通过绝对路径加载，不复制进源码。
+{driver}。安装步骤见[实机测试指南](../../testing/hardware-testing.md)；DLL 放在厂商安装位置，通过绝对路径加载，不复制进源码。
 
 ## 4. 资源与枚举
 
@@ -284,7 +286,7 @@ def render(definitions=None) -> dict[Path, str]:
 
 ## 7. 控制、读回与采集
 
-页面入口：**{page}**。参数由当前注册能力生成；常用、高级、状态与诊断分组。只读采集能力通过监测页的单次/开始操作使用；缺选件项显示原因且禁用。详细操作见[控制与监测指南](../../control-and-monitoring.md)。
+页面入口：**{page}**。参数由当前注册能力生成；常用、高级、状态与诊断分组。只读采集能力通过监测页的单次/开始操作使用；缺选件项显示原因且禁用。详细操作见[控制与监测指南](../../guides/control-and-monitoring.md)。
 
 采集路线：`{record["acquisition"] or "无测量输入；由外部测量仪器采集输出"}`。`apply` 返回成功、拒绝、部分执行或不确定；只有提供读回命令的操作才有硬件读回，不能将 SDK 已接收设置描述成测量值。`status` 显式读取，扫描和总览定时刷新不会额外采集。
 
@@ -302,7 +304,7 @@ def render(definitions=None) -> dict[Path, str]:
 
 软件：身份精确匹配、参数越界、未知能力和控制夹具；SDK 使用函数替身验证参数/句柄/缓冲区。完整结果以 `pytest` 报告为准，不能从该表推断全部高级命令已逐项验证。
 
-现场按[统一验收步骤](../../hardware-testing.md)记录完整身份、固件、驱动、资源、每个测试操作、请求、读回、原始错误、数据文件和恢复结果。先运行只读 `test`，再选择本卡片中一项设置和一次基础采集，最后测试断线重连。每项通过后将报告与具体能力关联；本轮所有能力的 `hardware_passed=false`。
+现场按[统一验收步骤](../../testing/hardware-testing.md)记录完整身份、固件、驱动、资源、每个测试操作、请求、读回、原始错误、数据文件和恢复结果。按授权范围先只读，再控制/采集和恢复。`hardware_passed=false` 是保留的型号级兼容字段，不代表具体资产失败或尚未测试；逐项结论见运行目录摘要。
 """
         if definition:
             card_path = ROOT / f"docs/devices/{card}.md"
@@ -320,7 +322,9 @@ def render(definitions=None) -> dict[Path, str]:
             body = re.sub(r"\[([^\]]+)\]\(([^\s)]+)\)", rebase_link, body)
             files[card_path] = (
                 MODEL_CARD_MARKER
-                + "\n\n"
+                + "\n\n维护源：[包内 README]("
+                + Path(os.path.relpath(readme, card_path.parent)).as_posix()
+                + ")。修改维护源后重新生成。\n\n"
                 + body.rstrip()
                 + "\n\n## 注册能力（自动生成）\n\n"
                 + "范围、单位及命令来自当前注册定义；资产级实测结果见运行目录。\n\n"
@@ -329,7 +333,14 @@ def render(definitions=None) -> dict[Path, str]:
                 + "\n".join(operations)
                 + "\n"
             )
-    matrix = {"schema_version": 1, "hardware_tested": False, "models": rows, "pending": PENDING}
+    matrix = {
+        "schema_version": 1,
+        "hardware_tested": False,
+        "hardware_evidence_scope": "asset/interface/firmware/test-case records in runtime directory",
+        "legacy_hardware_boolean_note": "Compatibility fields only; false is not an asset verdict.",
+        "models": rows,
+        "pending": PENDING,
+    }
     files[ROOT / "docs/generated/capability-matrix.json"] = (
         json.dumps(jsonable(matrix), ensure_ascii=False, indent=2) + "\n"
     )
@@ -339,6 +350,8 @@ def render(definitions=None) -> dict[Path, str]:
         "由 `scripts/generate_device_docs.py` 从实际注册表生成。下面的操作均有实现；单项参数、命令定位与软件测试标记见 [JSON](capability-matrix.json)。未列出的功能返回 `unsupported`；选件或 TSERVE 配置缺失会禁用相应能力。具体资产的实机证据保存在运行目录，不将个别资产的验证结果推广到整个型号。",
         "",
         "软件测试分为通用参数约束、特定协议夹具、SDK 生命周期和应用集成；协议夹具通过不代表目标固件通过，也不代表所有高级组合已经验证。",
+        "",
+        "JSON 保留 hardware_tested/hardware_passed 兼容字段；固定 false 不代表现场设备失败或全部未测。资产证据见[离线台账说明](../testing/records.md)。",
         "",
         "| 型号 | 注册 ID | 操作数 | 采集 | 详情 |",
         "| --- | --- | --- | --- | --- |",
@@ -373,26 +386,47 @@ def render(definitions=None) -> dict[Path, str]:
         for d in definitions.values()
     }
     files[ROOT / "docs/generated/device-module-docs.json"] = json.dumps(cards, indent=2) + "\n"
-    for category, category_folder, category_title in (
-        ("signal_generator", "signal-sources", "信号源"),
-        ("power_supply", "power-supplies", "电源"),
-    ):
+    folders = dict(CATEGORY_FOLDERS)
+    for _adapter, card, *_rest in models:
+        folders.setdefault(str(Path(card).parent), str(Path(card).parent))
+    device_navigation = [
+        "# 设备型号导航（自动生成）",
+        "",
+        "独立型号的维护源在各自包内。旧型号暂保留原实现；未注册条目仅作为资料需求。实测结果按具体资产、接口和固件查看。",
+        "",
+        "[原始设备条目对应](../device-research-index.md) · [新设备接入流程](../testing/onboarding.md) · [能力矩阵](../generated/capability-matrix.md)",
+        "",
+    ]
+    for folder, title in folders.items():
         navigation = [
-            f"# {category_title}",
+            f"# {title}（自动生成）",
             "",
-            "型号卡片和能力来自注册目录；现场验证结果以运行目录逐台记录为准。",
+            "软件实现与资产实测分别判定；维护型号包后重新生成本导航。",
             "",
             "| 型号 | 接入路线 | 文档 |",
             "| --- | --- | --- |",
         ]
-        navigation.extend(
-            f"| {title} | {connection} | [型号说明]({Path(card).name}.md) |"
-            for adapter, card, title, connection, _driver, _note in models
-            if adapter in PROFILES and PROFILES[adapter].category == category
-        )
-        if category == "power_supply":
-            navigation += ["", "待补型号：[PSW160](psw160.md)，厂家和完整型号未确认。"]
-        files[ROOT / f"docs/devices/{category_folder}/README.md"] = "\n".join(navigation) + "\n"
+        owned = set()
+        for _adapter, card, model_title, connection, _driver, _note in models:
+            if str(Path(card).parent) == folder:
+                owned.add(Path(card).name + ".md")
+                navigation.append(f"| {model_title} | {connection} | [型号说明]({Path(card).name}.md) |")
+        # Unregistered requirement cards are human-maintained; never delete or manufacture an adapter.
+        for pending in sorted((ROOT / "docs/devices" / folder).glob("*.md")):
+            text = pending.read_text(encoding="utf-8")
+            if (
+                pending.name == "README.md"
+                or pending.name in owned
+                or text.startswith((MODEL_CARD_MARKER, LEGACY_CARD_MARKER))
+            ):
+                continue
+            name = next(
+                (line.lstrip("# ") for line in text.splitlines() if line.startswith("# ")), pending.stem
+            )
+            navigation.append(f"| {name} | 未注册，待补资料 | [待补卡片]({pending.name}) |")
+        files[ROOT / "docs/devices" / folder / "README.md"] = "\n".join(navigation) + "\n"
+        device_navigation.append(f"- [{title}]({folder}/README.md)")
+    files[ROOT / "docs/devices/README.md"] = "\n".join(device_navigation) + "\n"
     index_path = ROOT / "docs/device-research-index.md"
     index = index_path.read_text(encoding="utf-8")
     index_rows = [

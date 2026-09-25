@@ -48,4 +48,4 @@ Transport 保留 open/close/write/read/query。字节传输额外提供 query_fi
 
 控制超时返回 uncertain/partial，不自动重发；会话进入 degraded 后拒绝排队控制。重连只打开和识别，不复位、不恢复输出和预设。临时探测句柄由扫描自身释放。
 
-PyVISA/PySerial 是 Python 依赖；VISA Runtime、USB-GPIB 驱动、PicoSDK、Thorlabs OPM/DLL 独立安装。版本、位数及授权记录在[实机指南](../hardware-testing.md)，厂商 DLL 不随 wheel 分发。
+PyVISA/PySerial 是 Python 依赖；VISA Runtime、USB-GPIB 驱动、PicoSDK、Thorlabs OPM/DLL 独立安装。版本、位数及授权记录在[实机指南](../testing/hardware-testing.md)，厂商 DLL 不随 wheel 分发。

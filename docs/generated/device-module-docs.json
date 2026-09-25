@@ -1,6 +1,9 @@
 {
-  "docs/devices/signal-sources/afg31252.md": "5043df786ce82146c2ad67cdd50cc0434412b9034dda3c675635ee476214b504",
-  "docs/devices/signal-sources/sdg2082x.md": "8172c8499b3206ce523b0799234fdb51170508f016bed1650e0d46c1ef048d04",
-  "docs/devices/signal-sources/sma100b.md": "dc490668fb6b7dab0043e678d45d63037d6fc94fe1671a9a82cf747fad49a470",
-  "docs/devices/power-supplies/gpd-4303s.md": "bfd4a2fe560212b72e5ce5d0b5138a4ce6d000e8497f34b6d2def51a7a234726"
+  "docs/devices/signal-sources/dg5504-pro.md": "a2c4a3323a8d66d1fbbb435267bf7426caa1edca57a932c00bb9c8c0cb5fc56e",
+  "docs/devices/signal-sources/afg31252.md": "7c39c9c165e02e4386e13ebecb67792ce5c34fa1ddbff8f2badbeb8ab159f6d4",
+  "docs/devices/signal-sources/sdg2082x.md": "12f758ae260c0437f382e3bae61cee0aa85eacbfc65d19dc936239bc2e1132b5",
+  "docs/devices/signal-sources/sma100b.md": "0271f8f398ddd7919587ca235cb98e798a68dd78eefeeabcb3d490de5b924e34",
+  "docs/devices/power-supplies/gpd-4303s.md": "dd8e63b7102052a17ffe57ac5e827386b12b40aee65d7c426afff713245b2020",
+  "docs/devices/spectrum-analyzers/rigol-dsa815.md": "75d4a5ecc6b480da2ad5c136cc80d7186e4bbe512bfe759ed070b97193f2b504",
+  "docs/devices/oscilloscopes/waverunner-9404m.md": "804619ed00f285d8fb0c19f33419461fd3f288acd0a9cca6fa2e15c1e870817c"
 }

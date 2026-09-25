@@ -1,8 +1,12 @@
+<!-- Generated from scripts/generate_device_docs.py legacy metadata. -->
+
 # Keithley 2231A-30-3
+
+维护源：[旧型号文档元数据](../../../scripts/generate_device_docs.py)。本型号尚未迁入独立包，能力来自注册表；不要直接修改本页。
 
 ## 1. 型号与可信度
 
-注册 ID：`keithley.2231a`。型号精确匹配，当前为软件实现、待实机验证；附件简写和身份别名见本卡片说明。软件连接成功不等于验收通过。
+注册 ID：`keithley.2231a`。型号精确匹配；软件实现与具体资产的实测结果分别记录。附件简写和身份别名见本卡片说明。软件连接成功不等于验收通过。
 
 ## 2. 电脑物理连接
 
@@ -10,7 +14,7 @@
 
 ## 3. Windows 前置条件
 
-专用 USB 适配器驱动；PySerial 或 VISA ASRL。安装步骤见[实机测试指南](../../hardware-testing.md)；DLL 放在厂商安装位置，通过绝对路径加载，不复制进源码。
+专用 USB 适配器驱动；PySerial 或 VISA ASRL。安装步骤见[实机测试指南](../../testing/hardware-testing.md)；DLL 放在厂商安装位置，通过绝对路径加载，不复制进源码。
 
 ## 4. 资源与枚举
 
@@ -26,25 +30,25 @@
 
 | 操作 | 参数 / 单位 / 范围 | 作用域 | 方向 | 额外确认 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| `voltage` | value: number V [0, 30] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `current` | value: number A [0, 3] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `output` | value: boolean  [None, None] | 通道 | 读/写 | 需要 | 已实现；待实机 |
-| `voltage_limit` | value: number V [0, 30] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `voltage_limit_enabled` | value: boolean  [None, None] | 通道 | 读/写 | 需要 | 已实现；待实机 |
-| `timer` | value: boolean  [None, None] | 通道 | 读/写 | 需要 | 已实现；待实机 |
-| `timer_delay` | value: number s [0.1, 99999.9] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `voltage_step` | value: number V [0, 30] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `current_step` | value: number A [0, 3] | 通道 | 读/写 | 无需 | 已实现；待实机 |
-| `all_outputs` | value: boolean  [None, None] | 整机 | 读/写 | 需要 | 已实现；待实机 |
-| `coupling` | value: enum  SER/PAR/TRAC/OFF | 整机 | /写 | 需要 | 已实现；待实机 |
-| `measured_voltage` | 无 | 通道 | 读 | 无需 | 已实现；待实机 |
-| `measured_current` | 无 | 通道 | 读 | 无需 | 已实现；待实机 |
-| `measured_power` | 无 | 通道 | 读 | 无需 | 已实现；待实机 |
-| `protection` | 无 | 整机 | 读 | 无需 | 已实现；待实机 |
+| `voltage` | value: number V [0, 30] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `current` | value: number A [0, 3] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `output` | value: boolean  [None, None] | 通道 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
+| `voltage_limit` | value: number V [0, 30] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `voltage_limit_enabled` | value: boolean  [None, None] | 通道 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
+| `timer` | value: boolean  [None, None] | 通道 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
+| `timer_delay` | value: number s [0.1, 99999.9] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `voltage_step` | value: number V [0, 30] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `current_step` | value: number A [0, 3] | 通道 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `all_outputs` | value: boolean  [None, None] | 整机 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
+| `coupling` | value: enum  SER/PAR/TRAC/OFF | 整机 | /写 | 需要 | 软件已实现；实测按资产查证 |
+| `measured_voltage` | 无 | 通道 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `measured_current` | 无 | 通道 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `measured_power` | 无 | 通道 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `protection` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
 
 ## 7. 控制、读回与采集
 
-页面入口：**设备管理 / 电源**。参数由当前注册能力生成；常用、高级、状态与诊断分组。只读采集能力通过监测页的单次/开始操作使用；缺选件项显示原因且禁用。详细操作见[控制与监测指南](../../control-and-monitoring.md)。
+页面入口：**设备管理 / 电源**。参数由当前注册能力生成；常用、高级、状态与诊断分组。只读采集能力通过监测页的单次/开始操作使用；缺选件项显示原因且禁用。详细操作见[控制与监测指南](../../guides/control-and-monitoring.md)。
 
 采集路线：`power`。`apply` 返回成功、拒绝、部分执行或不确定；只有提供读回命令的操作才有硬件读回，不能将 SDK 已接收设置描述成测量值。`status` 显式读取，扫描和总览定时刷新不会额外采集。
 
@@ -62,4 +66,4 @@
 
 软件：身份精确匹配、参数越界、未知能力和控制夹具；SDK 使用函数替身验证参数/句柄/缓冲区。完整结果以 `pytest` 报告为准，不能从该表推断全部高级命令已逐项验证。
 
-现场按[统一验收步骤](../../hardware-testing.md)记录完整身份、固件、驱动、资源、每个测试操作、请求、读回、原始错误、数据文件和恢复结果。先运行只读 `test`，再选择本卡片中一项设置和一次基础采集，最后测试断线重连。每项通过后将报告与具体能力关联；本轮所有能力的 `hardware_passed=false`。
+现场按[统一验收步骤](../../testing/hardware-testing.md)记录完整身份、固件、驱动、资源、每个测试操作、请求、读回、原始错误、数据文件和恢复结果。按授权范围先只读，再控制/采集和恢复。`hardware_passed=false` 是保留的型号级兼容字段，不代表具体资产失败或尚未测试；逐项结论见运行目录摘要。
