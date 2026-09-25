@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-lab-control = "lab_control.app:main"
+lab-control = "lab_control.launcher:main"
 lab-control-cli = "lab_control.cli.main:main"
 
 [build-system]
@@ -25,9 +25,13 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 lab_control = ["ui/styles/*.qss", "py.typed"]
-"lab_control.instruments.devices" = ["*/README.md", "*/hardware/*.md", "*/tests/fixtures/*.json"]
+"lab_control.instruments.devices" = ["*/*.md", "*/hardware/*.md", "*/tests/fixtures/*.json"]
+
+[tool.setuptools.data-files]
+lab_control_deployment = ["deployment/components.json"]
 
 [dependency-groups]
+build = ["pyinstaller==6.22.3", "pyinstaller-hooks-contrib==2026.7"]
 dev = [
     "uv==0.12.18",
     "pytest>=8.3",

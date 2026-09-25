@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -15,9 +16,9 @@ def load_stylesheet() -> str:
 def load_ui_font() -> str:
     """Load a Windows CJK font when Qt does not expose system fonts directly."""
     candidates = (
-        Path(r"C:\Windows\Fonts\msyh.ttc"),
-        Path(r"C:\Windows\Fonts\NotoSansSC-VF.ttf"),
-        Path(r"C:\Windows\Fonts\simsun.ttc"),
+        Path(os.environ.get("WINDIR", r"C:\Windows")) / "Fonts/msyh.ttc",
+        Path(os.environ.get("WINDIR", r"C:\Windows")) / "Fonts/NotoSansSC-VF.ttf",
+        Path(os.environ.get("WINDIR", r"C:\Windows")) / "Fonts/simsun.ttc",
     )
     for font_path in candidates:
         if font_path.exists():
@@ -34,7 +35,7 @@ def main() -> int:
 
     from PySide6.QtWidgets import QMessageBox
 
-    from lab_control.application.config import load_config
+    from lab_control.application.config import load_startup_config
     from lab_control.application.runtime import ApplicationRuntime
     from lab_control.ui.real_window import RealWindow
 
@@ -47,13 +48,17 @@ def main() -> int:
     app.setStyle("Fusion")
     app.setStyleSheet(load_stylesheet())
     try:
-        configurations = load_config(args.config) if args.config else ()
+        configurations = load_startup_config(args.config)
         runtime = ApplicationRuntime(configurations)
     except Exception as exc:
         QMessageBox.critical(None, "启动失败", str(exc))
         return 2
     window = RealWindow(runtime)
     window.show()
+    if runtime.lan_settings.enabled:
+        from PySide6.QtCore import QTimer
+
+        QTimer.singleShot(0, window.scan)
     result = app.exec()
     runtime.close()
     return result

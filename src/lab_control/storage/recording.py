@@ -412,8 +412,10 @@ class Recording:
                     and _CSV_SLOTS.acquire(blocking=False)
                 ):
                     try:
+                        from lab_control.launcher import worker_command
+
                         process = subprocess.Popen(
-                            [sys.executable, "-m", "lab_control.storage.recording", "--csv", str(self.folder)],
+                            worker_command(self.folder),
                             stdin=subprocess.DEVNULL,
                             stdout=subprocess.DEVNULL,
                             stderr=subprocess.DEVNULL,

@@ -62,15 +62,19 @@ def find_sdk(kind: str) -> str:
     return ""
 
 
-def dependency_diagnostics(configs: tuple[ConnectionConfig, ...]) -> dict[str, Any]:
+def dependency_diagnostics(
+    configs: tuple[ConnectionConfig, ...], *, sdk_kinds: tuple[str, ...] | None = None
+) -> dict[str, Any]:
     packages = {}
-    for name in ("PySide6", "PyVISA", "pyserial", "numpy", "pyqtgraph", "pytest", "ruff", "mypy", "uv"):
+    for name in ("PySide6", "PyVISA", "pyserial", "numpy", "pyqtgraph"):
         try:
             packages[name] = {"state": "installed", "version": importlib.metadata.version(name)}
         except importlib.metadata.PackageNotFoundError:
             packages[name] = {"state": "missing"}
     libraries: dict[str, Any] = {}
     for kind, (_, symbols) in SDK_LIBRARIES.items():
+        if sdk_kinds is not None and kind not in sdk_kinds:
+            continue
         paths = {c.sdk_path for c in configs if c.transport == kind and c.sdk_path}
         paths.update(str(path) for path in sdk_candidates(kind))
         checks = []

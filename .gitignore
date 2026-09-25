@@ -13,6 +13,7 @@ htmlcov/
 dist/
 build/
 *.spec
+!deployment/*.spec
 *.h5
 *.hdf5
 *.db

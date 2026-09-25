@@ -29,6 +29,18 @@ def parser() -> argparse.ArgumentParser:
         "--mock", action="store_true", help="Isolated simulation; never opens physical transports"
     )
     sub = root.add_subparsers(dest="action", required=True)
+    environment = sub.add_parser("environment", help="Inspect environment without instrument access")
+    environment.add_argument("--report", type=Path)
+    environment.add_argument("--repair-plan", action="store_true")
+    network = sub.add_parser("network", help="Read-only per-computer Ethernet/DHCP deployment planning")
+    network.add_argument("network_action", choices=("inspect", "plan", "validate"))
+    network.add_argument("--interface", default="")
+    network.add_argument("--server-address", default="")
+    network.add_argument("--pool-start", default="")
+    network.add_argument("--pool-size", type=int, default=100)
+    network.add_argument("--lease-minutes", type=int, default=1440)
+    network.add_argument("--exclude", action="append", default=[])
+    network.add_argument("--plan-file", type=Path, help="New plan destination or existing plan to validate")
     for name in (
         "doctor",
         "scan",
@@ -85,6 +97,53 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     app: ApplicationRuntime | None = None
     try:
+        if args.action == "environment":
+            from lab_control.deployment.environment import export_report, inspect_environment, plan_repair
+            from lab_control.discovery.lan import load_lan_settings
+            from lab_control.storage.repository import application_home
+
+            home = args.home or application_home()
+            configs = (
+                load_config(args.config)
+                if args.config
+                else (
+                    load_config(home / "config/devices.toml")
+                    if (home / "config/devices.toml").is_file()
+                    else ()
+                )
+            )
+            report = inspect_environment(home, configs, lan=load_lan_settings(home).enabled)
+            if args.report:
+                export_report(report, args.report)
+            output(plan_repair(report) if args.repair_plan else report)
+            return 0
+        if args.action == "network":
+            from lab_control.application.network_setup import inspect_network, plan_dhcp, validate_plan
+
+            snapshot = inspect_network()
+            if args.network_action == "inspect":
+                output(snapshot)
+            elif args.network_action == "validate":
+                if not args.plan_file:
+                    raise ValueError("Specify --plan-file for validation")
+                plan = json.loads(args.plan_file.read_text(encoding="utf-8-sig"))
+                validate_plan(plan, snapshot)
+                output({"plan_matches_this_computer": True, "network_changed": False})
+            else:
+                plan = plan_dhcp(
+                    snapshot,
+                    args.interface,
+                    server_address=args.server_address,
+                    pool_start=args.pool_start,
+                    pool_size=args.pool_size,
+                    lease_minutes=args.lease_minutes,
+                    exclusions=tuple(args.exclude),
+                )
+                if args.plan_file:
+                    with args.plan_file.open("x", encoding="utf-8") as stream:
+                        json.dump(plan, stream, ensure_ascii=False, indent=2)
+                output(plan)
+            return 0
         configs = load_config(args.config) if args.config else ()
         if args.resource and args.adapter:
             if not any(config.resource == args.resource for config in configs):

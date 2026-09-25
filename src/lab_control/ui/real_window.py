@@ -252,7 +252,10 @@ class RealWindow(QMainWindow):
         directory = QLabel("数据目录：" + str(self.runtime.repository.root))
         directory.setWordWrap(True)
         settings.addWidget(directory)
-        settings.addStretch()
+        from lab_control.ui.pages.environment_repair import EnvironmentRepairPanel
+
+        self.environment_panel = EnvironmentRepairPanel(self.runtime, self.settings_page)
+        settings.addWidget(self.environment_panel, 1)
         self.stack.addWidget(self.settings_page)
         self.setCentralWidget(root)
         self.navigate("设备管理", "", "")
@@ -1056,7 +1059,8 @@ class RealWindow(QMainWindow):
             self.close()
 
     def diagnose(self) -> None:
-        self.bridge.watch(self.bridge.worker.submit(self.runtime.diagnostics), "diagnostics")
+        self.navigate("系统设置")
+        self.environment_panel.start()
 
     def add_resource(self) -> None:
         dialog = QDialog(self)
@@ -1123,7 +1127,11 @@ class RealWindow(QMainWindow):
         if central:
             central.setEnabled(False)
 
-        future = self.bridge.worker.submit(self.runtime.close)
+        def cleanup():
+            self.environment_panel.shutdown()
+            self.runtime.close()
+
+        future = self.bridge.worker.submit(cleanup)
 
         def finish(label: str, result: Any):
             if label == "shutdown":

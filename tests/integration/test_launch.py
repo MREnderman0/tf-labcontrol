@@ -14,26 +14,47 @@ from lab_control.application.runtime import ApplicationRuntime
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_formal_main_passes_config_to_real_runtime(qapp, tmp_path, monkeypatch):
+@pytest.mark.parametrize("explicit", [True, False])
+@pytest.mark.parametrize("lan_enabled", [True, False])
+def test_formal_main_passes_config_to_real_runtime(qapp, tmp_path, monkeypatch, explicit, lan_enabled):
+    from PySide6.QtCore import QTimer
+
     import lab_control.application.config as config
     import lab_control.application.runtime as runtime
     import lab_control.ui.real_window as window
 
-    path = tmp_path / "config with spaces.toml"
+    monkeypatch.setenv("LAB_CONTROL_HOME", str(tmp_path))
+    path = tmp_path / "config with spaces.toml" if explicit else tmp_path / "config/devices.toml"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.touch()
     configurations = (object(),)
     calls = []
-    monkeypatch.setattr(sys, "argv", ["lab-control", "--config", str(path)])
+    monkeypatch.setattr(sys, "argv", ["lab-control", "--config", str(path)] if explicit else ["lab-control"])
     monkeypatch.setattr(config, "load_config", lambda p: (calls.append(p), configurations)[1])
     monkeypatch.setattr(app, "QApplication", lambda _args: qapp)
     monkeypatch.setattr(qapp, "exec", lambda: 0)
     monkeypatch.setattr(
         runtime,
         "ApplicationRuntime",
-        lambda cfg: (calls.append(cfg), SimpleNamespace(close=lambda: calls.append("closed")))[1],
+        lambda cfg: (
+            calls.append(cfg),
+            SimpleNamespace(
+                close=lambda: calls.append("closed"), lan_settings=SimpleNamespace(enabled=lan_enabled)
+            ),
+        )[1],
     )
-    monkeypatch.setattr(window, "RealWindow", lambda _runtime: SimpleNamespace(show=lambda: None))
+    scheduled = []
+
+    def scan():
+        pass
+
+    monkeypatch.setattr(
+        QTimer, "singleShot", lambda interval, callback: scheduled.append((interval, callback))
+    )
+    monkeypatch.setattr(window, "RealWindow", lambda _runtime: SimpleNamespace(show=lambda: None, scan=scan))
     assert app.main() == 0
     assert calls == [path, configurations, "closed"]
+    assert scheduled == ([(0, scan)] if lan_enabled else [])
 
 
 def test_real_inventory_stays_empty_and_preserves_saved_state(tmp_path, monkeypatch):

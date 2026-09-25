@@ -1,0 +1,515 @@
+{
+  "schema_version": 1,
+  "target": "windows-x64",
+  "python_roots": {
+    "PySide6": "PySide6",
+    "PyVISA": "pyvisa",
+    "pyserial": "serial",
+    "numpy": "numpy",
+    "pyqtgraph": "pyqtgraph"
+  },
+  "components": [
+    {
+      "id": "rs-visa",
+      "name": "R&S VISA",
+      "purpose": "VISA communication and R&S LAN discovery",
+      "transports": [
+        "visa"
+      ],
+      "adapters": [],
+      "sdk": "",
+      "vendor": "Visa",
+      "version": "7.2.6",
+      "architecture": "x64",
+      "systems": [
+        "Windows 10 x64",
+        "Windows 11 x64"
+      ],
+      "source_page": "https://www.rohde-schwarz.com.cn/applications/rs-visa_56280-148812.html",
+      "url": "https://cdn.rohde-schwarz.com.cn/pws/dl_downloads/dl_application/application_notes/1dc02___rs_v/RS_VISA_Setup_Win_7_2_6.exe",
+      "filename": "RS_VISA_Setup_Win_7_2_6.exe",
+      "sha256": "6107881d30efe3f959c2484ca05eab41f2281a36b4f1cbfc490e8fb876f19723",
+      "signature": {
+        "policy": "authenticode",
+        "publisher": "Rohde",
+        "member": null,
+        "evidence": "verified local download 2026-09-23"
+      },
+      "redistribution": {
+        "state": "pending",
+        "evidence": null
+      },
+      "detection": {
+        "kind": "pending",
+        "detail": "Requires verified component-specific detection"
+      },
+      "installation": {
+        "state": "pending",
+        "arguments": null,
+        "order": 0,
+        "success_codes": null,
+        "reboot_codes": null,
+        "requires_admin": true,
+        "reboot": "possible",
+        "evidence": null
+      },
+      "recovery": "Preserve compatible shared drivers and user data; restore only changes owned by this application.",
+      "validation": {
+        "state": "pending",
+        "evidence": null
+      }
+    },
+    {
+      "id": "pico-sdk",
+      "name": "PicoSDK",
+      "purpose": "PicoScope 6404E SDK and USB driver",
+      "transports": [
+        "pico"
+      ],
+      "adapters": [
+        "pico.6404e"
+      ],
+      "sdk": "pico",
+      "vendor": "Pico",
+      "version": "11.1.0.481",
+      "architecture": "x64",
+      "systems": [
+        "Windows 10 x64",
+        "Windows 11 x64"
+      ],
+      "source_page": "https://www.picotech.com/downloads/_lightbox/pico-software-development-kit-64bit",
+      "url": "https://www.picotech.com/download/software/sr/PicoSDK_x64_11.1.0.481.exe",
+      "filename": "PicoSDK_x64_11.1.0.481.exe",
+      "sha256": "29a6177fc4ab67b57bab7d9b75c76c6dadf898d192e54531f0b177ff3b23cc3f",
+      "signature": {
+        "policy": "authenticode",
+        "publisher": "Pico",
+        "member": null,
+        "evidence": "verified local download 2026-09-23"
+      },
+      "redistribution": {
+        "state": "pending",
+        "evidence": null
+      },
+      "detection": {
+        "kind": "sdk",
+        "detail": "pico"
+      },
+      "installation": {
+        "state": "pending",
+        "arguments": null,
+        "order": 10,
+        "success_codes": null,
+        "reboot_codes": null,
+        "requires_admin": true,
+        "reboot": "possible",
+        "evidence": null
+      },
+      "recovery": "Preserve compatible shared drivers and user data; restore only changes owned by this application.",
+      "validation": {
+        "state": "pending",
+        "evidence": null
+      }
+    },
+    {
+      "id": "thorlabs-opm",
+      "name": "Thorlabs OPM / TLPMX",
+      "purpose": "PM100D optical meter SDK and driver",
+      "transports": [
+        "tlpmx",
+        "pm100d"
+      ],
+      "adapters": [
+        "thorlabs.pm100d"
+      ],
+      "sdk": "tlpmx",
+      "vendor": "Thorlabs",
+      "version": "7.0.5320.947",
+      "architecture": "x64",
+      "systems": [
+        "Windows 10 x64",
+        "Windows 11 x64"
+      ],
+      "source_page": "https://www.thorlabschina.cn/software-pages/OPM",
+      "url": "https://media.thorlabscms.cn/contentassets/012d23129bc54ff2bfdbf4c6d4a306fa/thorlabs.opticalparametermonitor.7.0.5320.947.zip",
+      "filename": "Thorlabs.OPM.7.0.5320.947.zip",
+      "sha256": "d759948f643033b4951182999377f44a0763265ad977971078a75592a757154e",
+      "signature": {
+        "policy": "authenticode",
+        "publisher": "Thorlabs",
+        "member": "ThorlabsOPMSetup.exe",
+        "evidence": "verified local download 2026-09-23"
+      },
+      "redistribution": {
+        "state": "pending",
+        "evidence": null
+      },
+      "detection": {
+        "kind": "sdk",
+        "detail": "tlpmx"
+      },
+      "installation": {
+        "state": "pending",
+        "arguments": null,
+        "order": 20,
+        "success_codes": null,
+        "reboot_codes": null,
+        "requires_admin": true,
+        "reboot": "possible",
+        "evidence": null
+      },
+      "recovery": "Preserve compatible shared drivers and user data; restore only changes owned by this application.",
+      "validation": {
+        "state": "pending",
+        "evidence": null
+      }
+    },
+    {
+      "id": "ftdi-vcp",
+      "name": "FTDI VCP",
+      "purpose": "GPD-4303S USB virtual serial driver",
+      "transports": [],
+      "adapters": [
+        "gwinstek.gpd4303s"
+      ],
+      "sdk": "",
+      "vendor": "",
+      "version": null,
+      "architecture": "x64",
+      "systems": [
+        "Windows 10 x64",
+        "Windows 11 x64"
+      ],
+      "source_page": "https://ftdichip.com/drivers/vcp-drivers/",
+      "url": null,
+      "filename": null,
+      "sha256": null,
+      "signature": {
+        "policy": "authenticode",
+        "publisher": null,
+        "member": null,
+        "evidence": null
+      },
+      "redistribution": {
+        "state": "pending",
+        "evidence": null
+      },
+      "detection": {
+        "kind": "pending",
+        "detail": "Requires verified component-specific detection"
+      },
+      "installation": {
+        "state": "pending",
+        "arguments": null,
+        "order": 30,
+        "success_codes": null,
+        "reboot_codes": null,
+        "requires_admin": true,
+        "reboot": "possible",
+        "evidence": null
+      },
+      "recovery": "Preserve compatible shared drivers and user data; restore only changes owned by this application.",
+      "validation": {
+        "state": "pending",
+        "evidence": null
+      }
+    },
+    {
+      "id": "keithley-usb",
+      "name": "Keithley 2231A USB adapter",
+      "purpose": "2231A-001 adapter driver",
+      "transports": [],
+      "adapters": [
+        "keithley.2231a"
+      ],
+      "sdk": "",
+      "vendor": "",
+      "version": null,
+      "architecture": "x64",
+      "systems": [
+        "Windows 10 x64",
+        "Windows 11 x64"
+      ],
+      "source_page": "https://www.tek.com/en/support",
+      "url": null,
+      "filename": null,
+      "sha256": null,
+      "signature": {
+        "policy": "authenticode",
+        "publisher": null,
+        "member": null,
+        "evidence": null
+      },
+      "redistribution": {
+        "state": "pending",
+        "evidence": null
+      },
+      "detection": {
+        "kind": "pending",
+        "detail": "Requires verified component-specific detection"
+      },
+      "installation": {
+        "state": "pending",
+        "arguments": null,
+        "order": 40,
+        "success_codes": null,
+        "reboot_codes": null,
+        "requires_admin": true,
+        "reboot": "possible",
+        "evidence": null
+      },
+      "recovery": "Preserve compatible shared drivers and user data; restore only changes owned by this application.",
+      "validation": {
+        "state": "pending",
+        "evidence": null
+      }
+    },
+    {
+      "id": "serial-interface",
+      "name": "Serial interface driver",
+      "purpose": "Identify USB-to-serial hardware by VID/PID before selecting its official driver",
+      "transports": [],
+      "adapters": [],
+      "sdk": "",
+      "vendor": "",
+      "version": null,
+      "architecture": "x64",
+      "systems": [
+        "Windows 10 x64",
+        "Windows 11 x64"
+      ],
+      "source_page": "",
+      "url": null,
+      "filename": null,
+      "sha256": null,
+      "signature": {
+        "policy": "authenticode",
+        "publisher": null,
+        "member": null,
+        "evidence": null
+      },
+      "redistribution": {
+        "state": "pending",
+        "evidence": null
+      },
+      "detection": {
+        "kind": "pending",
+        "detail": "Requires verified component-specific detection"
+      },
+      "installation": {
+        "state": "pending",
+        "arguments": null,
+        "order": 50,
+        "success_codes": null,
+        "reboot_codes": null,
+        "requires_admin": true,
+        "reboot": "possible",
+        "evidence": null
+      },
+      "recovery": "Preserve compatible shared drivers and user data; restore only changes owned by this application.",
+      "validation": {
+        "state": "pending",
+        "evidence": null
+      }
+    },
+    {
+      "id": "gpib-interface",
+      "name": "GPIB interface driver",
+      "purpose": "GPIB controller-specific driver and VISA interoperability",
+      "transports": [],
+      "adapters": [],
+      "sdk": "",
+      "vendor": "",
+      "version": null,
+      "architecture": "x64",
+      "systems": [
+        "Windows 10 x64",
+        "Windows 11 x64"
+      ],
+      "source_page": "",
+      "url": null,
+      "filename": null,
+      "sha256": null,
+      "signature": {
+        "policy": "authenticode",
+        "publisher": null,
+        "member": null,
+        "evidence": null
+      },
+      "redistribution": {
+        "state": "pending",
+        "evidence": null
+      },
+      "detection": {
+        "kind": "pending",
+        "detail": "Requires verified component-specific detection"
+      },
+      "installation": {
+        "state": "pending",
+        "arguments": null,
+        "order": 60,
+        "success_codes": null,
+        "reboot_codes": null,
+        "requires_admin": true,
+        "reboot": "possible",
+        "evidence": null
+      },
+      "recovery": "Preserve compatible shared drivers and user data; restore only changes owned by this application.",
+      "validation": {
+        "state": "pending",
+        "evidence": null
+      }
+    },
+    {
+      "id": "tserve",
+      "name": "TSERVE",
+      "purpose": "53100A command/data server",
+      "transports": [
+        "tserve"
+      ],
+      "adapters": [
+        "microchip.53100a"
+      ],
+      "sdk": "",
+      "vendor": "",
+      "version": null,
+      "architecture": "x64",
+      "systems": [
+        "Windows 10 x64",
+        "Windows 11 x64"
+      ],
+      "source_page": "https://www.microchip.com/en-us/product/53100A",
+      "url": null,
+      "filename": null,
+      "sha256": null,
+      "signature": {
+        "policy": "authenticode",
+        "publisher": null,
+        "member": null,
+        "evidence": null
+      },
+      "redistribution": {
+        "state": "pending",
+        "evidence": null
+      },
+      "detection": {
+        "kind": "pending",
+        "detail": "Requires verified component-specific detection"
+      },
+      "installation": {
+        "state": "pending",
+        "arguments": null,
+        "order": 70,
+        "success_codes": null,
+        "reboot_codes": null,
+        "requires_admin": true,
+        "reboot": "possible",
+        "evidence": null
+      },
+      "recovery": "Preserve compatible shared drivers and user data; restore only changes owned by this application.",
+      "validation": {
+        "state": "pending",
+        "evidence": null
+      }
+    },
+    {
+      "id": "tftpd64",
+      "name": "Tftpd64 DHCP",
+      "purpose": "Dedicated lab Ethernet DHCP service; other services disabled",
+      "transports": [],
+      "adapters": [],
+      "sdk": "",
+      "vendor": "",
+      "version": null,
+      "architecture": "x64",
+      "systems": [
+        "Windows 10 x64",
+        "Windows 11 x64"
+      ],
+      "source_page": "https://pjo2.github.io/tftpd64/",
+      "url": null,
+      "filename": null,
+      "sha256": null,
+      "signature": {
+        "policy": "authenticode",
+        "publisher": null,
+        "member": null,
+        "evidence": null
+      },
+      "redistribution": {
+        "state": "pending",
+        "evidence": null
+      },
+      "detection": {
+        "kind": "pending",
+        "detail": "Requires verified component-specific detection"
+      },
+      "installation": {
+        "state": "pending",
+        "arguments": null,
+        "order": 80,
+        "success_codes": null,
+        "reboot_codes": null,
+        "requires_admin": true,
+        "reboot": "possible",
+        "evidence": null
+      },
+      "recovery": "Preserve compatible shared drivers and user data; restore only changes owned by this application.",
+      "validation": {
+        "state": "pending",
+        "evidence": null
+      }
+    },
+    {
+      "id": "msvc-runtime",
+      "name": "Microsoft VC++ x64 runtime",
+      "purpose": "Native Qt/SDK runtime dependencies",
+      "transports": [],
+      "adapters": [],
+      "sdk": "",
+      "vendor": "",
+      "version": null,
+      "architecture": "x64",
+      "systems": [
+        "Windows 10 x64",
+        "Windows 11 x64"
+      ],
+      "source_page": "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist",
+      "url": null,
+      "filename": null,
+      "sha256": null,
+      "signature": {
+        "policy": "authenticode",
+        "publisher": null,
+        "member": null,
+        "evidence": null
+      },
+      "redistribution": {
+        "state": "pending",
+        "evidence": null
+      },
+      "detection": {
+        "kind": "pending",
+        "detail": "Requires verified component-specific detection"
+      },
+      "installation": {
+        "state": "pending",
+        "arguments": null,
+        "order": 90,
+        "success_codes": null,
+        "reboot_codes": null,
+        "requires_admin": true,
+        "reboot": "possible",
+        "evidence": null
+      },
+      "recovery": "Preserve compatible shared drivers and user data; restore only changes owned by this application.",
+      "validation": {
+        "state": "pending",
+        "evidence": null
+      }
+    }
+  ],
+  "python_transitive_roots": {
+    "shiboken6": "shiboken6"
+  }
+}
