@@ -7,7 +7,7 @@ import re
 from typing import Any
 
 from PySide6.QtCore import QRectF, QSize, Qt, QTimer, Signal
-from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
+from PySide6.QtGui import QColor, QIcon, QIntValidator, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QScrollArea,
     QSlider,
     QToolButton,
@@ -50,10 +51,24 @@ def gear_icon() -> QIcon:
 
 class GestureSlider(QSlider):
     key_finished = Signal()
+    fine_step = Signal(int)
+    linear = False
     key_active = False
 
     def keyPressEvent(self, event) -> None:  # noqa: N802
         self.key_active = True
+        directions = {
+            Qt.Key.Key_Left: -1,
+            Qt.Key.Key_Down: -1,
+            Qt.Key.Key_Right: 1,
+            Qt.Key.Key_Up: 1,
+            Qt.Key.Key_PageDown: -100,
+            Qt.Key.Key_PageUp: 100,
+        }
+        if self.linear and event.key() in directions:
+            self.fine_step.emit(directions[event.key()])
+            event.accept()
+            return
         super().keyPressEvent(event)
 
     def keyReleaseEvent(self, event) -> None:  # noqa: N802
@@ -74,10 +89,14 @@ class ScopeSlider(QWidget):
         self.actual: float | None = None
         self.signature: tuple | None = None
         self.dirty = False
-        layout = QHBoxLayout(self)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+        layout = QHBoxLayout()
+        outer.addLayout(layout)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(7)
-        self.setFixedHeight(22)
+        self.setMinimumHeight(40)
         self.title = QLabel(title)
         self.title.setObjectName("scopeControlLabel")
         self.title.setFixedWidth(28)
@@ -87,10 +106,20 @@ class ScopeSlider(QWidget):
         self.value_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         layout.addWidget(self.title)
         self.slider = GestureSlider(Qt.Orientation.Horizontal)
+        self.slider.linear = not coarse
+        self.target: float | None = None
         self.slider.setAccessibleName(title)
         self.slider.setFixedHeight(18)
         layout.addWidget(self.slider, 1)
         layout.addWidget(self.value_label)
+        endpoints = QHBoxLayout()
+        self.minimum_label, self.maximum_label = QLabel(), QLabel()
+        for label in (self.minimum_label, self.maximum_label):
+            label.setObjectName("rangeHint")
+        endpoints.addWidget(self.minimum_label)
+        endpoints.addStretch()
+        endpoints.addWidget(self.maximum_label)
+        outer.addLayout(endpoints)
         self.timer = QTimer(self)
         self.timer.setSingleShot(True)
         self.timer.setInterval(180)
@@ -99,14 +128,34 @@ class ScopeSlider(QWidget):
         self.slider.sliderPressed.connect(self.timer.stop)
         self.slider.sliderReleased.connect(self.commit)
         self.slider.key_finished.connect(self.timer.start)
+        self.slider.fine_step.connect(self.keyboard_step)
 
     def value(self) -> float:
         if self.coarse:
             return self.steps[self.slider.value()]
-        raw = self.low + self.slider.value() * self.step
+        if self.target is not None:
+            return self.target
+        if self.slider.value() == self.slider.minimum():
+            return self.low
+        if self.slider.value() == self.slider.maximum():
+            return self.high
+        raw = self.low + self.slider.value() / max(1, self.slider.maximum()) * (self.high - self.low)
+        raw = round(raw / self.step) * self.step
         return min(self.high, max(self.low, float(f"{raw:.12g}")))
 
+    def keyboard_step(self, direction: int) -> None:
+        if self.actual is None:
+            return
+        initial = self.value() if self.dirty else self.actual
+        self.target = min(self.high, max(self.low, float(f"{initial + direction * self.step:.12g}")))
+        self.slider.blockSignals(True)
+        self.slider.setValue(round((self.target - self.low) / (self.high - self.low) * self.slider.maximum()))
+        self.slider.blockSignals(False)
+        self.dirty = True
+        self.value_label.setText("→ " + self.text(self.target))
+
     def preview(self) -> None:
+        self.target = None
         self.dirty = True
         self.value_label.setText("→ " + self.text(self.value()))
         if not self.slider.isSliderDown() and not self.slider.key_active:
@@ -131,6 +180,7 @@ class ScopeSlider(QWidget):
         self.dirty = False
         self.slider.key_active = False
         self.signature = None
+        self.target = None
 
     def configure(self, actual: float, spec: Parameter, division: float) -> bool:
         if self.dirty or self.slider.isSliderDown():
@@ -141,6 +191,7 @@ class ScopeSlider(QWidget):
         if self.signature == signature:
             return True
         self.actual, self.signature = actual, signature
+        self.target = None
         self.low, self.high = spec.minimum, spec.maximum
         self.slider.blockSignals(True)
         if self.coarse:
@@ -152,21 +203,19 @@ class ScopeSlider(QWidget):
             self.slider.setValue(min(range(len(self.steps)), key=lambda i: abs(self.steps[i] - actual)))
             self.slider.setPageStep(1)
         else:
-            # A movable ten-division window keeps microsecond/millivolt gestures
-            # useful even when the qualified hardware range spans many decades.
-            radius = max(abs(division) * 5, 1e-15)
-            center = min(self.high, max(self.low, actual))
-            self.low, self.high = max(self.low, center - radius), min(self.high, center + radius)
-            self.step = max(abs(division) / 100, (self.high - self.low) / 2_000_000, 1e-15)
-            self.slider.setRange(0, math.ceil((self.high - self.low) / self.step))
-            self.slider.setValue(round((actual - self.low) / self.step))
+            self.step = spec.resolution or max(abs(division) / 100, 1e-15)
+            ticks = min(2_000_000_000, max(1, math.ceil((self.high - self.low) / self.step)))
+            self.slider.setRange(0, ticks)
+            self.slider.setValue(round((actual - self.low) / (self.high - self.low) * ticks))
             self.slider.setPageStep(100)
         self.slider.blockSignals(False)
         self.value_label.setText(self.text(actual))
         self.value_label.setToolTip(f"实际读回：{actual:.12g} {self.unit}")
+        self.minimum_label.setText(engineering(self.steps[0] if self.coarse else self.low, self.unit))
+        self.maximum_label.setText(engineering(self.steps[-1] if self.coarse else self.high, self.unit))
         self.slider.setToolTip(
-            f"当前滑块窗口：{engineering(self.low, self.unit)} ～ {engineering(self.high, self.unit)} · 松手应用"
-            + ("；读回后窗口跟随，可继续平移" if not self.coarse else "")
+            f"合法范围：{self.low:.12g} ～ {self.high:.12g} {self.unit} · 松手应用"
+            + (f" · 键盘步进 {self.step:.12g} {self.unit}" if not self.coarse else "")
         )
         return True
 
@@ -219,6 +268,19 @@ class OscilloscopeControls(QFrame):
         horizontal = section("水平")
         self.add_slider(horizontal, 1, "timebase", "时基", "s", coarse=True)
         self.add_slider(horizontal, 1, "time_position", "偏移", "s")
+        point_row = QHBoxLayout()
+        point_row.addWidget(QLabel("采集点数"))
+        self.points = QLineEdit()
+        self.points.setAccessibleName("采集点数")
+        self.points.setValidator(QIntValidator(1, 2_147_483_647, self.points))
+        self.points.setMaximumWidth(100)
+        self.points.editingFinished.connect(self.set_points)
+        point_row.addWidget(self.points)
+        self.points_range = QLabel("等待读回")
+        self.points_range.setObjectName("rangeHint")
+        self.points_range.setWordWrap(True)
+        point_row.addWidget(self.points_range, 1)
+        horizontal.addLayout(point_row)
         trigger = section("")
         row = QHBoxLayout()
         self.trigger_label = QLabel("触发 · 等待读回")
@@ -272,7 +334,7 @@ class OscilloscopeControls(QFrame):
                 for cap in self.capabilities(ch).values()
                 if cap.readable
                 and cap.available
-                and cap.name in (*CONTROL_NAMES, "coupling", "probe_attenuation")
+                and cap.name in (*CONTROL_NAMES, "record_length", "coupling", "probe_attenuation")
             )
         )
 
@@ -309,6 +371,21 @@ class OscilloscopeControls(QFrame):
             and not self.running
             and self.device_id not in self.controller.group_devices
         )
+        point_cap = self.capabilities().get("record_length")
+        point_value = self.values.get((1, "record_length"))
+        if point_value is not None and not self.points.hasFocus():
+            self.points.setText(str(int(point_value)))
+        self.points.setEnabled(
+            bool(available and point_cap and point_cap.writable and point_value is not None)
+        )
+        if point_cap and "value" in point_cap.parameters:
+            point_spec = point_cap.parameters["value"]
+            if point_spec.minimum is not None and point_spec.maximum is not None:
+                self.points_range.setText(f"{point_spec.minimum:,.0f}～{point_spec.maximum:,.0f}\n含软件限制")
+                self.points.setToolTip(
+                    point_cap.reason
+                    or "仪器最大采集长度；实际有效点数以收到的波形为准。超范围原值不自动修改。"
+                )
         for (ch, name), field in self.sliders.items():
             cap = self.capabilities(ch).get(name)
             actual = self.values.get((ch, name))
@@ -344,7 +421,7 @@ class OscilloscopeControls(QFrame):
         self.trigger_label.setText(f"触发 · {source} · {mode}")
         self.gear.setEnabled(bool(available and self.values))
         self.health.setText(
-            "设置中 · 暂停后续读取"
+            "设置中 · 完成后自动续采"
             if self.running
             else "记录收尾前参数锁定"
             if state.get("controlsLocked")
@@ -357,6 +434,17 @@ class OscilloscopeControls(QFrame):
         cap = self.capabilities(channel)["channel_enabled"]
         value = enabled if cap.parameters["value"].kind == "boolean" else ("ON" if enabled else "OFF")
         self.submit([DeviceCommand("channel_enabled", {"value": value}, channel)], channels=True)
+
+    def set_points(self) -> None:
+        if self.running or not self.points.isEnabled():
+            return
+        try:
+            value = int(self.points.text())
+            if value != self.values.get((1, "record_length")):
+                self.capabilities()["record_length"].validate({"value": value})
+                self.submit([DeviceCommand("record_length", {"value": value})])
+        except (ValueError, DeviceError) as exc:
+            self.status.setText(f"采集点数未写入：{exc}")
 
     def set_trigger_level(self, value: float) -> None:
         ch = self.trigger_channel()
@@ -386,6 +474,12 @@ class OscilloscopeControls(QFrame):
             if channels:
                 self.controller.watch(
                     self.controller.runtime.monitoring.stop(self.device_id),
+                    lambda _: self.next_command(),
+                    self.failed,
+                )
+            elif not commands:
+                self.controller.watch(
+                    self.controller.runtime.sessions.submit(self.device_id, "refresh_capabilities"),
                     lambda _: self.next_command(),
                     self.failed,
                 )
@@ -455,6 +549,8 @@ class OscilloscopeControls(QFrame):
         )
         self.refresh()
         if success:
+            if (1, "record_length") in self.values:
+                self.points.setText(str(int(self.values[1, "record_length"])))
             self.status.setText(
                 "已核对实际参数"
                 + (" · 单次模式：等待新波形" if self.values.get((1, "trigger_mode")) == "SINGLE" else "")

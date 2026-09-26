@@ -612,7 +612,13 @@ class SessionManager:
                     session.configuration_version += 1
                 self.repository.audit("acquisition_discarded", device_id=device_id, code=code, error=str(exc))
                 raise
-            if code not in {"unsupported", "invalid_parameter", "confirmation_required", "missing_option"}:
+            if code not in {
+                "unsupported",
+                "invalid_parameter",
+                "confirmation_required",
+                "missing_option",
+                "acquisition_budget_exceeded",
+            }:
                 session.state = "degraded"
             session.last_error = str(exc)
             if not quiet:

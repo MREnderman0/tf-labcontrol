@@ -17,6 +17,8 @@ def connected(tmp_path, exchanges):
     app = ApplicationRuntime(root=tmp_path, hardware=False)
     adapter, wire = device([("*IDN?", b"LECROY,WAVERUNNER9404M,TEST,9.2.0"), *exchanges])
     adapter.supports_live_acquisition = adapter.supports_stream_acquisition = True
+    # This strict script tests acquisition invalidation; CVAR has its own wire tests.
+    adapter.refresh_capabilities = lambda: None
     app.sessions.factory = lambda config: adapter
     key = app.add(ConnectionConfig("mock://scope-context", "lecroy.9404m", "mock"))
     app.connect(key, configure_acquisition=False).result(3)
@@ -30,7 +32,7 @@ def test_session_refresh_and_apply_invalidate_without_cached_timestamp_forgery(t
         + [("C1:WF? ALL", binary())]
         + settings
         + full()
-        + [("TDIV 0.002", b""), ("TDIV?", b"TDIV 0.002 S")]
+        + [("TDIV 0.002", b""), ("*OPC?", b"1"), ("TDIV?", b"TDIV 0.002 S")]
         + full()
     )
     app, key, adapter, wire = connected(tmp_path, exchanges)

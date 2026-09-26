@@ -117,6 +117,10 @@ def render(output: Path, scale: str, waveform_file: Path | None = None) -> None:
                 page.controls.status.setText("等待当前配置的新帧 · 图中保留旧波形及刻度")
                 window.grab().save(str(output / f"waiting-{scale}.png"))
         finally:
+            deadline = time.monotonic() + 6
+            while page.controls and page.controls.running and time.monotonic() < deadline:
+                pump(0.05)
+            assert not page.controls or not page.controls.running, "Preview control group did not drain"
             window.timer.stop()
             window.controller.close()
             runtime.close()

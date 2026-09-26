@@ -4,7 +4,7 @@ import threading
 from typing import Any
 
 from lab_control.domain.instruments import DeviceError
-from lab_control.transport.base import BufferedReader
+from lab_control.transport.base import MAX_MESSAGE, BufferedReader, block_payload
 from lab_control.transport.diagnostics import measured, synchronized
 
 
@@ -190,6 +190,104 @@ class VisaTransport:
     def query(self, payload: bytes | str) -> bytes:
         self.write(payload)
         return self.read()
+
+    @synchronized
+    def query_timeout(self, payload: bytes | str, seconds: float) -> bytes:
+        """One query with a bounded temporary deadline; never a retry."""
+        if not 0.1 <= seconds <= 60:
+            raise DeviceError("Invalid query timeout", "invalid_parameter")
+        if self.handle is None:
+            raise DeviceError("Connection requires explicit reconnect", "disconnected")
+        old = self.handle.timeout
+        self.handle.timeout = int(seconds * 1000)
+        try:
+            return self.query(payload)
+        except DeviceError:
+            # A delayed completion reply must not contaminate the next command.
+            self.close()
+            raise
+        finally:
+            if self.handle is not None:
+                self.handle.timeout = old
+
+    @synchronized
+    @measured("query")
+    def query_binary(self, payload: bytes | str, max_bytes: int) -> bytes:
+        """Optional bounded definite-block query for native VISA END transports.
+
+        An interrupted block poisons framing: close the handle, never flush/retry.
+        Other transports retain their existing model-qualified acquisition path.
+        """
+        if not 0 < max_bytes <= MAX_MESSAGE:
+            raise DeviceError("Invalid binary receive budget", "invalid_parameter")
+        if (
+            self.line_framing
+            or self.resource.upper().startswith("ASRL")
+            or self.resource.upper().endswith("::SOCKET")
+        ):
+            raise DeviceError("Bounded binary requires native VISA END", "unsupported")
+        if self.handle is None:
+            raise DeviceError("Binary connection requires explicit reconnect", "disconnected")
+        self.write(payload)
+        return self._read_binary(max_bytes)
+
+    @measured("read")
+    def _read_binary(self, max_bytes: int) -> bytes:
+        from pyvisa.constants import StatusCode
+
+        data = bytearray()
+        declared = None
+        end = None
+        offset = None
+        old = self.handle.read_termination
+        self.handle.read_termination = None
+        try:
+            while True:
+                # The first read takes only a bounded header, including optional
+                # mnemonic prefix. No multi-megabyte allocation precedes validation.
+                count = 64 if end is None else min(65536, max(1, end + 2 - len(data)))
+                chunk, status = self.handle.visalib.read(self.handle.session, count)
+                data.extend(chunk)
+                if offset is None:
+                    found = data.find(b"#")
+                    if found >= 0:
+                        offset = found
+                    elif len(data) >= 64 or status != StatusCode.success_max_count_read:
+                        raise DeviceError("Missing binary block header", "parse_error")
+                if offset is not None and end is None and len(data) >= offset + 2:
+                    digit = data[offset + 1 : offset + 2]
+                    if digit not in b"123456789":
+                        raise DeviceError("Invalid definite block header", "parse_error")
+                    digits = int(digit)
+                    if len(data) >= offset + 2 + digits:
+                        length = data[offset + 2 : offset + 2 + digits]
+                        if not length.isdigit():
+                            raise DeviceError("Invalid binary declared length", "parse_error")
+                        declared = int(length)
+                        if declared > max_bytes:
+                            raise DeviceError("IEEE block exceeds size limit", "parse_error")
+                        end = offset + 2 + digits + declared
+                if end is not None and len(data) > end + 2:
+                    raise DeviceError("Trailing IEEE block data", "parse_error")
+                if status != StatusCode.success_max_count_read:
+                    if end is None or len(data) < end:
+                        raise DeviceError("Truncated IEEE block", "parse_error")
+                    assert offset is not None
+                    block_payload(bytes(data[offset:]))
+                    return bytes(data)
+                if not chunk or (end is not None and len(data) >= end + 2):
+                    raise DeviceError("Binary reply has no confirmed END boundary", "parse_error")
+        except Exception as exc:
+            error = self._error(exc)
+            self.close()
+            raise DeviceError(
+                f"{error}; declared={declared}, received={len(data)}, limit={max_bytes}; "
+                "连接已关闭，须显式重连（未重发命令）",
+                error.code,
+            ) from exc
+        finally:
+            if self.handle is not None:
+                self.handle.read_termination = old
 
     @synchronized
     @measured("query")

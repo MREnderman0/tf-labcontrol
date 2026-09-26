@@ -43,7 +43,30 @@ def test_lan_probe_and_explicit_connection_keep_one_asset_without_setting_writes
         def factory(selected):
             wire = transport()
             wire.open()
-            return build_scpi_adapter(selected, wire)
+            scope = build_scpi_adapter(selected, wire)
+            from lab_control.instruments.devices.lecroy_waverunner9404m.ranges import (
+                MEMORY_QUERIES,
+                PATHS,
+                cvar_query,
+            )
+
+            wire.exchanges.extend(
+                (query, {"mode": b"SetMaximumMemory", "points": b"1000", "sample_rate": b"1e9"}[key])
+                for key, query in MEMORY_QUERIES.items()
+            )
+            for op in PATHS:
+                cap = scope.profile.commands[op].capability
+                spec = cap.parameters["value"]
+                for ch in scope.profile.channels if cap.channel_scoped else (1,):
+                    wire.exchanges.extend(
+                        (cvar_query(op, ch, member), str(value).encode())
+                        for member, value in (
+                            ("GetMinValue", spec.minimum),
+                            ("GetMaxValue", spec.maximum),
+                            ("GetGrainValue", 0),
+                        )
+                    )
+            return scope
 
         app.sessions.factory = factory
         connected = app.connect(key, configure_acquisition=False).result(3)
@@ -54,7 +77,9 @@ def test_lan_probe_and_explicit_connection_keep_one_asset_without_setting_writes
         )
         assert len(app.inventory.all()) == 1 and not current.get("identityConflict")
         assert verified_connection(current).expected_serial == "FIXTURE"
-        assert all(wire.history == ["*IDN?"] for wire in wires)
+        assert wires[0].history == ["*IDN?"]  # scan never refreshes settings/ranges
+        assert all("?" in q for wire in wires for q in wire.history)
+        assert not wires[-1].exchanges
 
         other = replace(identity, serial="DIFFERENT", raw="LECROY,WAVERUNNER9404M,DIFFERENT,9.2.0")
         conflict = app.inventory.merge(DiscoveryCandidate(config, "configured"), "connected", other, adapter)

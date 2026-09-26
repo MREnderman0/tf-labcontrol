@@ -107,7 +107,7 @@ def test_input_coupling_limit_enforced_before_write():
 
 
 def test_tiny_timebase_mismatch_is_not_hidden_by_common_absolute_tolerance():
-    adapter, _ = device([("TDIV 1e-10", b""), ("TDIV?", b"TDIV 2e-10 S")])
+    adapter, _ = device([("TDIV 1e-10", b""), ("*OPC?", b"1"), ("TDIV?", b"TDIV 2e-10 S")])
     assert adapter.apply(DeviceCommand("timebase", {"value": 1e-10})).outcome == "rejected"
 
 

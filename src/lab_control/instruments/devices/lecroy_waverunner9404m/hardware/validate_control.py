@@ -22,6 +22,8 @@ from lab_control.storage.repository import application_home
 from lab_control.transport.diagnostics import measured
 
 from ..adapter import CHANNEL_SETTINGS, WaveRunner9404MAdapter, equivalent
+from ..protocol import numeric
+from ..ranges import MEMORY_QUERIES, PATHS, POINTS_MAX, POINTS_MIN, cvar_query
 from .records import publish_report
 
 
@@ -157,6 +159,46 @@ class AuditTransport:
         self.write(payload)
         return self.read()
 
+    def query_binary(self, payload, max_bytes):
+        bounded = getattr(self.inner, "query_binary", None)
+        if not callable(bounded):
+            return self.query(payload)
+        if payload not in {f"C{ch}:WF? ALL" for ch in (1, 2, 3, 4)}:
+            raise DeviceError("Unreviewed binary query", "unsupported")
+        self.log(direction="tx", command=payload, receive_limit=max_bytes)
+        try:
+            raw = bounded(payload, max_bytes)
+            marker = raw.index(b"#")
+            digits = int(raw[marker + 1 : marker + 2])
+            self.log(
+                direction="rx",
+                bytes=len(raw),
+                declared=int(raw[marker + 2 : marker + 2 + digits]),
+                sha256=hashlib.sha256(raw).hexdigest(),
+            )
+            if payload not in self.binary_samples:
+                (self.folder / (payload[:2] + "-first-waveform.bin")).write_bytes(raw)
+                self.binary_samples.add(payload)
+            return raw
+        except Exception as exc:
+            self.log(direction="error", error=str(exc))
+            raise
+
+    def query_timeout(self, payload, seconds):
+        bounded = getattr(self.inner, "query_timeout", None)
+        if not callable(bounded):
+            return self.query(payload)
+        if payload not in self.allowed:
+            raise DeviceError("Unreviewed timed query", "unsupported")
+        self.log(direction="tx", command=payload, timeout=seconds)
+        try:
+            raw = bounded(payload, seconds)
+            self.log(direction="rx", text=raw.decode("ascii"))
+            return raw
+        except Exception as exc:
+            self.log(direction="error", error=str(exc))
+            raise
+
 
 class Verification:
     def __init__(self, app, device_id, folder, report):
@@ -226,11 +268,29 @@ class Verification:
                     self.apply(operation, target, channel)
             if not equivalent(self.call(lambda: self.adapter.read("offset", channel)), value("offset")):
                 self.apply("offset", value("offset"), channel)
-        for operation in ("timebase", "time_position", "record_length"):
+        for operation in ("timebase", "record_length"):
             target = desired[f"1.{operation}"]
             actual = self.call(lambda op=operation: self.adapter.read(op))
             if not equivalent(actual, target):
-                self.apply(operation, target)
+                if operation == "record_length" and not POINTS_MIN <= target <= POINTS_MAX:
+                    # Restore only this exact backed-up original, after independent
+                    # live hardware-range confirmation. Never widen the UI budget.
+                    def restore_memory():
+                        wire = self.adapter.transport
+                        low = numeric(wire.query(cvar_query(operation, 1, "GetMinValue")))
+                        high = numeric(wire.query(cvar_query(operation, 1, "GetMaxValue")))
+                        if not low <= target <= high:
+                            raise DeviceError(
+                                "Saved memory is outside current hardware range", "restoration_failed"
+                            )
+                        wire.write(f"MSIZ {target:.12g}")
+                        self.adapter.complete_setting(DeviceCommand(operation, {"value": target}))
+                        if not equivalent(self.adapter.read(operation), target):
+                            raise DeviceError("Saved memory restoration differs", "restoration_failed")
+
+                    self.call(restore_memory)
+                else:
+                    self.apply(operation, target)
         # Restore the exact saved transfer setup, not a default or a guessed inverse.
         for operation, mnemonic in (
             ("transfer_format", "CFMT"),
@@ -252,6 +312,9 @@ class Verification:
         mode = desired["1.trigger_mode"]
         if self.call(lambda: self.adapter.read("trigger_mode")) != mode:
             self.apply("trigger_mode", mode)
+        # Memory and re-arming can adapt delay; restore it after those dependencies.
+        if not equivalent(self.call(lambda: self.adapter.read("time_position")), desired["1.time_position"]):
+            self.apply("time_position", desired["1.time_position"])
         after = self.snapshot()
         differences = {
             k: {"before": v, "after": after[k]} for k, v in desired.items() if not equivalent(v, after[k])
@@ -415,6 +478,66 @@ class Verification:
         self.apply("stop")  # This also verifies release of the recording parameter lock.
         self.report["stages"]["monitoring_recording"] = "passed"
 
+    def continuity(self):
+        """Short, empty-input control batch; normal monitor intent survives each group."""
+        self.stage("parameter_write")
+        self.app.sessions.submit(self.device_id, "refresh_capabilities").result(120)
+        self.apply("record_length", 1000)
+        self.apply("timebase", 1e-6)
+        self.apply("channel_enabled", "ON", 1)
+        self.apply("scale", 0.002, 1)
+        self.apply("offset", 0, 1)
+        self.call(self.adapter.prepare_acquisition)
+        self.apply("run")
+        time.sleep(0.3)
+        service = self.app.monitoring
+        service.start(
+            self.device_id, (AcquisitionRequest("waveform", (1,)),), interval=0.5, cadence="interval"
+        )
+
+        def await_frame(previous=None):
+            deadline = time.monotonic() + 20
+            while time.monotonic() < deadline:
+                state = service.snapshots()[self.device_id]
+                frame = service.latest(self.device_id, "waveform", channel=1)
+                if not state["running"]:
+                    raise DeviceError(str(state), "monitoring_failed")
+                if frame is not None and frame is not previous:
+                    return frame
+                time.sleep(0.05)
+            raise DeviceError("No new valid frame after setting", "timeout")
+
+        try:
+            previous = await_frame()
+            self.report["continuity_frames"] = []
+            for operation, value in (
+                ("offset", 0.00006),
+                ("time_position", 1.73e-6),
+                ("record_length", 2500),
+                ("timebase", 0.02),
+                ("record_length", 10000),
+                ("timebase", 0.001),
+            ):
+                self.app.sessions.set_control_group(self.device_id, True)
+                try:
+                    result = self.apply(operation, value)
+                finally:
+                    self.app.sessions.set_control_group(self.device_id, False)
+                current = await_frame(previous)
+                previous = current
+                self.report["continuity_frames"].append(
+                    {
+                        "operation": operation,
+                        "requested": value,
+                        "actual": result.readback,
+                        "points": len(current.batch.measurements[0].values),
+                        "monitoring_running": service.snapshots()[self.device_id]["running"],
+                    }
+                )
+            self.report["stages"].update(parameter_write="passed", waveform="passed", monitoring="passed")
+        finally:
+            service.stop(self.device_id).result(120)
+
 
 def verify(
     config: ConnectionConfig,
@@ -423,6 +546,8 @@ def verify(
     write: bool = False,
     duration: float = 30,
     capture_only: bool = False,
+    continuity_only: bool = False,
+    restore_from: Path | None = None,
 ) -> dict[str, Any]:
     import pyvisa
 
@@ -498,11 +623,23 @@ def verify(
                 raise DeviceError("Only the configured asset is allowed", "identity_conflict")
             adapter = create_adapter(selected, runtime.visa)
             assert isinstance(adapter, WaveRunner9404MAdapter)
-            allowed = {"*IDN?"} | {
+            allowed = {"*IDN?", "*OPC?", *MEMORY_QUERIES.values()} | {
                 s.query.format(ch=ch)
                 for s in adapter.profile.commands.values()
                 if s.query
                 for ch in (1, 2, 3, 4)
+            }
+            allowed |= {
+                cvar_query(op, ch, member)
+                for op in PATHS
+                for ch in (1, 2, 3, 4)
+                for member in (
+                    "GetMinValue",
+                    "GetMaxValue",
+                    "GetGrainValue",
+                    "GetRequestedValue",
+                    "GetAdaptedValue",
+                )
             }
             transport = AuditTransport(adapter.transport, folder, allowed)
             transcripts.append(transport)
@@ -517,6 +654,7 @@ def verify(
         test = Verification(app, key, folder, report)
         test.stage("parameter_read")
         original = test.snapshot()
+        report["initial_capability_details"] = jsonable(test.adapter.capability_details)
         report["initial_snapshot"] = original
         save(folder / "initial_snapshot.json", original)
         report["stages"]["parameter_read"] = "passed"
@@ -536,9 +674,25 @@ def verify(
             # A full successful snapshot precedes enabling any setting command.
             cast(AuditTransport, test.adapter.transport).writes_allowed = True
             mutated = True
-            if not capture_only:
-                test.controls(original)
-            test.capture(duration)
+            if restore_from is not None:
+                saved = json.loads(restore_from.read_text(encoding="utf-8"))
+                if (
+                    saved.get("identity", {}).get("serial") != identity.serial
+                    or saved.get("identity", {}).get("model") != identity.model
+                ):
+                    raise DeviceError("Recovery backup belongs to another asset", "identity_conflict")
+                original = saved["initial_snapshot"]
+                report["recovery_source"] = str(restore_from)
+                report["recovery_target"] = original
+                test.stage("restoration")
+                # The single restoration attempt runs in finally, including
+                # its final verification. Never replay a failed recovery here.
+            elif continuity_only:
+                test.continuity()
+            else:
+                if not capture_only:
+                    test.controls(original)
+                test.capture(duration)
         report["final_snapshot"] = test.snapshot()
     except Exception as exc:
         report.update(error=str(exc), error_code=getattr(exc, "code", type(exc).__name__))
@@ -626,6 +780,7 @@ def main(argv=None) -> int:
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--write", action="store_true")
     parser.add_argument("--empty-inputs", action="store_true")
+    parser.add_argument("--continuity-only", action="store_true")
     parser.add_argument(
         "--capture-only",
         action="store_true",
@@ -639,6 +794,7 @@ def main(argv=None) -> int:
         len(configs) != 1
         or (args.write and not args.empty_inputs)
         or (args.capture_only and not args.write)
+        or (args.continuity_only and (not args.write or args.capture_only))
         or not 1 <= args.duration <= 60
     ):
         parser.error("Require one exact asset; writes require --empty-inputs; duration 1..60 s")
@@ -653,7 +809,14 @@ def main(argv=None) -> int:
         / (datetime.now().strftime("%Y%m%d-%H%M%S-%f") + ("-control" if args.write else "-readonly"))
     )
     folder.mkdir(parents=True, exist_ok=False)
-    report = verify(config, folder, write=args.write, duration=args.duration, capture_only=args.capture_only)
+    report = verify(
+        config,
+        folder,
+        write=args.write,
+        duration=args.duration,
+        capture_only=args.capture_only,
+        continuity_only=args.continuity_only,
+    )
     print(folder, flush=True)
     print(json.dumps(report["stages"], ensure_ascii=False), flush=True)
     return int(bool(report.get("error") or report.get("restoration_error") or report.get("close_error")))

@@ -35,7 +35,7 @@ def response(raw: bytes) -> str:
 
 def value_text(raw: bytes) -> str:
     value = response(raw)
-    return re.sub(r"^(?:C[1-4]:)?[A-Z][A-Z_]*\s+", "", value).strip()
+    return re.sub(r"^(?:C[1-4]:)?\*?[A-Z][A-Z_]*\s+", "", value).strip()
 
 
 def trigger_setup(raw: bytes) -> dict[str, str]:

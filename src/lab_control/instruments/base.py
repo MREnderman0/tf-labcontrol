@@ -277,6 +277,7 @@ class ScpiAdapter:
             for payload in self.encode(command.operation, spec, context, parameters):
                 self.transport.write(payload)
                 completed += 1
+            self.complete_setting(command)
             readback = spec.decode(self.transport.query(spec.query.format(**context))) if spec.query else None
             if self.profile.error_query:
                 error = self.transport.query(self.profile.error_query).decode("ascii").strip()
@@ -299,6 +300,17 @@ class ScpiAdapter:
                         and actual_text.startswith(expected_text)
                     )
                 if not matches:
+                    adaptation = self.adapted_readback(command, parameters, readback)
+                    if adaptation:
+                        self.configuration[f"{command.channel}.{command.operation}"] = {"value": readback}
+                        return ApplyResult(
+                            "success",
+                            command.operation,
+                            parameters,
+                            readback,
+                            completed,
+                            adaptation=adaptation,
+                        )
                     return ApplyResult(
                         "rejected",
                         command.operation,
@@ -317,6 +329,15 @@ class ScpiAdapter:
                 completed_steps=completed,
                 error=str(exc),
             )
+
+    def complete_setting(self, command: DeviceCommand) -> None:
+        """Optional model-owned, bounded completion barrier (never replay a write)."""
+
+    def adapted_readback(
+        self, command: DeviceCommand, parameters: dict[str, Any], readback: Any
+    ) -> dict[str, Any]:
+        """Optional evidence of model-specific adaptation; defaults to strict failure."""
+        return {}
 
     def preflight(self, command: DeviceCommand, parameters: dict[str, Any]) -> None:
         """Read correlated limits on the same worker before issuing any setting writes."""

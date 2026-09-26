@@ -145,6 +145,9 @@ def test_save_old_display_after_parameter_change_and_single_row(spectrum, qtbot,
         < runtime.sessions.snapshots()[0]["configurationVersion"]
     )
     controls = [page.timing.cadence, page.interval, page.timing.actual]
+    page.timing_action.setChecked(True)
+    qtbot.waitUntil(page.timing.isVisible)
+    qtbot.wait(30)
     assert (
         max(w.geometry().center().y() for w in controls) - min(w.geometry().center().y() for w in controls)
         <= 2

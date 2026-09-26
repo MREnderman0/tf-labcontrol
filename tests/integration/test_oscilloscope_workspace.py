@@ -29,7 +29,7 @@ def scope(qapp, qtbot, tmp_path):
     window.show()
     window.navigate("实时监测", "oscilloscope", key)
     page = window.stack.currentWidget()
-    qtbot.waitUntil(lambda: len(page.controls.values) >= 30, timeout=6000)
+    qtbot.waitUntil(lambda: len(page.controls.values) >= 30 and not page.controls.running, timeout=6000)
     try:
         yield window, page, runtime, key, adapter
     finally:
@@ -51,6 +51,64 @@ def test_navigation_keeps_card_and_only_monitoring_route(scope):
     window.show_device_pool(window.cards["oscilloscope"])
     window.open_details(key)
     assert not window.action_buttons["manage"].isVisible()
+
+
+def test_fixed_slider_endpoints_and_points_continue_monitoring(scope, qtbot, monkeypatch):
+    _, page, runtime, key, adapter = scope
+    writes = []
+    original = adapter.apply
+    monkeypatch.setattr(adapter, "apply", lambda cmd: writes.append(cmd) or original(cmd))
+    page.start()
+    qtbot.waitUntil(lambda: page.plot.displayed_frame is not None)
+    field = page.controls.sliders[1, "offset"]
+    low, high = field.low, field.high
+    position = field.slider.maximum() * 3 // 5
+    field.slider.setSliderDown(True)
+    field.slider.setValue(position)
+    field.slider.setSliderDown(False)
+    qtbot.waitUntil(lambda: len(writes) == 1 and not page.controls.running)
+    assert (field.low, field.high) == (low, high)
+    assert abs(field.slider.value() - position) <= 1
+    assert runtime.monitoring.snapshots()[key]["running"]
+    page.controls.points.setText("2500")
+    page.controls.points.editingFinished.emit()
+    qtbot.waitUntil(lambda: len(writes) == 2 and not page.controls.running)
+    assert writes[-1].operation == "record_length" and adapter._value(1, "record_length") == 2500
+    assert "1,000" in page.controls.points_range.text() and "软件" in page.controls.points_range.text()
+    assert runtime.monitoring.snapshots()[key]["running"]
+    page.controls.points.setText("999")
+    page.controls.points.editingFinished.emit()
+    assert len(writes) == 2 and "未写入" in page.controls.status.text()
+
+
+def test_point_original_outside_range_is_shown_without_write(scope, qtbot):
+    _, page, _, _, adapter = scope
+    adapter.values["1.record_length"] = {"value": 64_000_000}
+    page.controls.refresh_parameters()
+    qtbot.waitUntil(lambda: not page.controls.running)
+    assert page.controls.points.text() == "64000000"
+    assert adapter._value(1, "record_length") == 64_000_000
+
+
+def test_both_curve_tool_menus_default_closed_and_keep_cadence_local(scope, qtbot, monkeypatch):
+    window, page, runtime, _, adapter = scope
+    monkeypatch.setattr(adapter, "apply", lambda cmd: pytest.fail("Cadence must not write to instrument"))
+    assert not page.timing.isVisible()
+    page.timing_action.trigger()
+    assert page.timing.isVisible()
+    page.timing.cadence.setCurrentIndex(page.timing.cadence.findData("interval"))
+    page.timing.interval.setValue(0.7)
+    page.timing.commit()
+    assert page.timing.interval.minimum() == 0.5 and page.timing.interval.maximum() == 60
+    spec_key = runtime.add(ConnectionConfig("mock://spectrum-menu", "rigol.dsa815", "mock"))
+    runtime.connect(spec_key).result()
+    window.controller.poll()
+    window.navigate("实时监测", "spectrum_analyzer", spec_key)
+    spectrum = window.stack.currentWidget()
+    assert not spectrum.timing.isVisible()
+    spectrum.timing_action.trigger()
+    assert spectrum.timing.isVisible()
+    assert spectrum.timing.interval.minimum() == 0.5
 
 
 def test_drag_release_and_keyboard_gesture_write_once(scope, qtbot, monkeypatch):
@@ -201,7 +259,7 @@ def test_reconnect_drops_previous_frames_and_readings(scope, qtbot):
     qtbot.waitUntil(lambda: page.plot.displayed_frame is not None)
     old_session = page.plot.displayed_frame.session_id
     runtime.monitoring.stop(key).result(3)
-    runtime.sessions.disconnect(key)
+    runtime.sessions.disconnect(key, drain_reads=True)
     window.controller.poll()
     assert page.controls is None and page.plot.displayed_frame is None
     runtime.connect(key).result()

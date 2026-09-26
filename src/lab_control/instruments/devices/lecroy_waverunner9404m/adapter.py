@@ -25,7 +25,18 @@ from lab_control.instruments.base import ScpiAdapter
 from lab_control.transport.diagnostics import parsing
 
 from .context import AcquisitionContext, fingerprint
-from .protocol import grouped_scalars, numeric, trigger_setup, waveform
+from .protocol import grouped_scalars, numeric, trigger_setup, value_text, waveform
+from .ranges import (
+    DEPENDENCIES,
+    MAX_FRAME_BYTES,
+    MAX_WAVEFORM_BYTES,
+    MEMORY_QUERIES,
+    PATHS,
+    POINTS_MAX,
+    cvar_query,
+    plausible_adaptation,
+    read_range,
+)
 
 CHANNEL_SETTINGS = (
     "channel_enabled",
@@ -70,8 +81,72 @@ class WaveRunner9404MAdapter(ScpiAdapter):
 
     def remember(self, values: dict[str, Any]) -> None:
         cached = getattr(self, "_settings", {}).copy()
+        if any(
+            key.split(".", 1)[-1] in DEPENDENCIES and cached.get(key) != value
+            for key, value in values.items()
+        ):
+            self._ranges_dirty = True
         cached.update(values)
         self._settings = cached
+
+    def refresh_capabilities(self) -> None:
+        if not getattr(self, "_ranges_dirty", True):
+            return
+        ranges = {}
+        try:
+            memory = {
+                key: (
+                    value_text(self.transport.query(query))
+                    if key == "mode"
+                    else numeric(self.transport.query(query))
+                )
+                for key, query in MEMORY_QUERIES.items()
+            }
+            points, sample_rate = float(memory["points"]), float(memory["sample_rate"])
+            if points < 1 or int(points) != points or sample_rate <= 0:
+                raise DeviceError("Invalid current acquisition memory/rate", "parse_error")
+            for op in PATHS:
+                cap = self.profile.commands[op].capability
+                for ch in self.profile.channels if cap.channel_scoped else (1,):
+                    ranges[ch, op] = read_range(self.transport, op, ch, cap.parameters["value"])
+        except Exception as exc:
+            self.capability_error = str(exc)
+            raise
+        self._ranges = ranges
+        self.capability_details["memory"] = memory
+        self._ranges_dirty = False
+        self.capability_error = ""
+
+    def complete_setting(self, command: DeviceCommand) -> None:
+        # SINGLE/run are arming operations, not an acquisition-completion promise.
+        if command.operation not in {"run", "stop", "single", "trigger_mode"}:
+            bounded = getattr(self.transport, "query_timeout", None)
+            raw = (
+                bounded("*OPC?", min(60.0, max(30.0, self.config.timeout)))
+                if callable(bounded)
+                else self.transport.query("*OPC?")
+            )
+            if numeric(raw) != 1:
+                raise DeviceError("Setting completion was not confirmed", "readback_mismatch")
+
+    def adapted_readback(self, command, parameters, readback):
+        op, ch = command.operation, command.channel
+        spec = getattr(self, "_ranges", {}).get((ch, op))
+        if op not in PATHS or spec is None or not isinstance(readback, (int, float)):
+            return {}
+        requested = parameters["value"]
+        if not plausible_adaptation(op, requested, readback, spec):
+            return {}
+        reported_request = numeric(self.transport.query(cvar_query(op, ch, "GetRequestedValue")))
+        adapted = numeric(self.transport.query(cvar_query(op, ch, "GetAdaptedValue")))
+        if equivalent(requested, reported_request) and equivalent(readback, adapted):
+            return {
+                "source": "instrument_cvar",
+                "requested": reported_request,
+                "adapted": adapted,
+                "resolution": spec.resolution,
+            }
+        return {}
 
     def read(self, operation: str, channel: int = 1) -> Any:
         if operation == "trigger_source":
@@ -122,11 +197,23 @@ class WaveRunner9404MAdapter(ScpiAdapter):
                     writable=cap.writable and edge,
                     reason="仅支持模拟通道边沿触发；请先刷新参数" if not edge else "",
                 )
+            resolved = getattr(self, "_ranges", {}).get((channel if cap.channel_scoped else 1, cap.name))
+            if resolved is not None:
+                cap = replace(cap, parameters={"value": resolved})
+            if (
+                cap.name == "record_length"
+                and self.capability_details.get("memory", {}).get("mode") == "FixedSampleRate"
+            ):
+                cap = replace(
+                    cap, reason="当前固定采样率模式：最大长度设置不限制实收点数；需调整时基或仪器内存模式。"
+                )
             operations.append(cap)
         return replace(schema, operations=tuple(operations))
 
     def invalidate_acquisition_context(self, reason: str) -> None:
         self._acquisition_context = None
+        if reason in {"explicit_refresh", "connection_setup"}:
+            self._ranges_dirty = True
 
     def snapshot(self, channels: tuple[int, ...] = (1, 2, 3, 4)) -> tuple[dict[str, Any], dict[str, str]]:
         values: dict[str, Any] = {}
@@ -183,6 +270,9 @@ class WaveRunner9404MAdapter(ScpiAdapter):
     def preflight(self, command: DeviceCommand, parameters: dict[str, Any]) -> None:
         # No model protocol is placed in the common adapter/session layer.
         op, channel = command.operation, command.channel
+        resolved = getattr(self, "_ranges", {}).get((channel, op))
+        if resolved is not None:
+            resolved.validate(op, parameters["value"])
         if op in {"trigger_source", "trigger_level", "trigger_slope"}:
             setup = trigger_setup(self.read("trigger_setup").encode("ascii"))
             if setup["type"] != "EDGE" or setup["SR"] not in {"C1", "C2", "C3", "C4"}:
@@ -207,7 +297,10 @@ class WaveRunner9404MAdapter(ScpiAdapter):
             input_offset = (parameters["value"] if op == "offset" else offset) / attenuation
             # Conservative shared subset of the documented 50-ohm offset ranges.
             # Do not infer BWL-dependent limits from a scalar VDIV value.
-            if abs(input_offset) > 1.4:
+            known = getattr(self, "_ranges", {}).get((channel, "offset"))
+            if known and op == "offset":
+                known.validate("offset", parameters["value"])
+            elif not known and abs(input_offset) > 1.4:
                 raise ValidationError(
                     "Offset exceeds the qualified ±1.4 V input subset; preserve current state"
                 )
@@ -243,12 +336,19 @@ class WaveRunner9404MAdapter(ScpiAdapter):
             except DeviceError as exc:
                 result = replace(result, outcome="partial", error=str(exc))
         if result.outcome == "success" and "value" in result.requested and result.readback is not None:
-            if not equivalent(result.requested["value"], result.readback):
-                result = replace(
-                    result,
-                    outcome="rejected",
-                    error="Readback differs from request at scalar serialization precision",
-                )
+            if not equivalent(result.requested["value"], result.readback) and not result.adaptation:
+                try:
+                    evidence = self.adapted_readback(command, result.requested, result.readback)
+                    result = replace(
+                        result,
+                        adaptation=evidence,
+                        outcome="success" if evidence else "rejected",
+                        error=""
+                        if evidence
+                        else "Readback differs from request at scalar serialization precision",
+                    )
+                except DeviceError as exc:
+                    result = replace(result, outcome="partial", error=str(exc))
         if result.outcome == "success" and command.operation in {"run", "stop", "single"}:
             try:
                 actual = self.read("trigger_mode")
@@ -311,9 +411,24 @@ class WaveRunner9404MAdapter(ScpiAdapter):
         setup = before["1.waveform_setup"]
         if setup["SP"] not in (0, 1) or setup["FP"] != 0:
             raise Unsupported("Only unsparsed, zero-offset waveform transfers are qualified")
+        memory = before["1.record_length"]
+        actual_points = self.capability_details.get("memory", {}).get("points", memory)
+        if (
+            max(memory, actual_points) > POINTS_MAX
+            or (max(memory, actual_points) + 32) * 16 * len(request.channels) > MAX_FRAME_BYTES
+        ):
+            raise DeviceError(
+                f"采集点数 {actual_points:,.0f}（最大长度设置 {memory:,.0f}）超出软件处理预算；请调整点数/时基或仪器内存模式后重新开始（上限 {POINTS_MAX:,}）",
+                "acquisition_budget_exceeded",
+            )
         values = []
         for channel in request.channels:
-            raw = self.transport.query(f"C{channel}:WF? ALL")
+            bounded = getattr(self.transport, "query_binary", None)
+            raw = (
+                bounded(f"C{channel}:WF? ALL", MAX_WAVEFORM_BYTES)
+                if callable(bounded)
+                else self.transport.query(f"C{channel}:WF? ALL")
+            )
             with parsing():
                 measured = waveform(raw, channel)
             values.append(replace(measured, metadata={**measured.metadata, "received_at": utc_now()}))

@@ -10,6 +10,7 @@ from lab_control.domain.instruments import AcquisitionRequest, DeviceCommand, De
 from lab_control.instruments.registry import build_scpi_adapter
 
 from ..profile import profile
+from ..ranges import MEMORY_QUERIES, PATHS, cvar_query
 from .samples import CHANNELS, GLOBALS, binary
 
 
@@ -53,6 +54,22 @@ class Scope:
         self.history.append(command)
         if command == "*IDN?":
             return b"LECROY,WAVERUNNER9404M,TEST,9.2.0"
+        if command == "*OPC?":
+            return b"1"
+        if command in MEMORY_QUERIES.values():
+            return {"mode": b"SetMaximumMemory", "points": b"1000", "sample_rate": b"1e9"}[
+                next(k for k, v in MEMORY_QUERIES.items() if v == command)
+            ]
+        for op in PATHS:
+            spec = profile().commands[op].capability.parameters["value"]
+            for ch in (1, 2, 3, 4):
+                for member, value in (
+                    ("GetMinValue", spec.minimum),
+                    ("GetMaxValue", spec.maximum),
+                    ("GetGrainValue", 0),
+                ):
+                    if command == cvar_query(op, ch, member):
+                        return str(value).encode()
         if ":WF?" in command:
             raw = binary(int(command[1]))
             return raw[:-10] if self.broken else raw
@@ -79,7 +96,7 @@ def connected(tmp_path):
 
 def test_readonly_connection_does_not_prepare_and_explicit_connection_prepares(connected):
     app, key, wire = connected
-    assert wire.history == ["*IDN?"]
+    assert wire.history[0] == "*IDN?" and all("?" in q for q in wire.history)
     app.sessions.disconnect(key)
     wire.closed = False
     wire.values["CFMT?"] = b"DEF9,BYTE,BIN"
@@ -121,6 +138,17 @@ def test_invalid_frame_never_published_or_saved(connected):
     app.monitoring.start(key, (AcquisitionRequest("waveform"),), interval=0.05, once=True)
     wait_until(lambda: not app.monitoring.snapshots()[key]["running"])
     assert app.monitoring.latest(key, "waveform", channel=1) is None
+
+
+def test_oversized_capture_stops_task_but_retains_editable_connection(connected):
+    app, key, wire = connected
+    adapter = app.sessions.sessions[key].adapter
+    adapter.capability_details["memory"] = {"mode": "FixedSampleRate", "points": 64_000_000}
+    app.monitoring.start(key, (AcquisitionRequest("waveform"),), interval=0.5)
+    wait_until(lambda: not app.monitoring.snapshots()[key]["running"])
+    assert "采集点数" in app.monitoring.snapshots()[key]["error"]
+    assert app.sessions.sessions[key].state == "connected"
+    assert not any("WF?" in q for q in wire.history)
     assert not tuple(app.repository.root.rglob("samples.csv"))
     assert app.monitoring.snapshots()[key]["error"]
 

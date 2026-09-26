@@ -38,7 +38,8 @@
                 "DC"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -76,7 +77,8 @@
               "maximum": 500000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -114,7 +116,8 @@
               "maximum": 20,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -152,7 +155,8 @@
               "maximum": 10,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -194,7 +198,8 @@
                 "DBM"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -232,7 +237,8 @@
               "maximum": 360,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -270,7 +276,8 @@
               "maximum": 99.99,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -308,7 +315,8 @@
               "maximum": 999999.9999563443,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -346,7 +354,8 @@
               "maximum": 100,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -384,7 +393,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -422,7 +432,8 @@
               "maximum": 10000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -460,7 +471,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -501,7 +513,8 @@
                 "GAT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -539,7 +552,8 @@
               "maximum": 1000000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -577,7 +591,8 @@
               "maximum": 250000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -618,7 +633,8 @@
                 "LOG"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -656,7 +672,8 @@
               "maximum": 500000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -694,7 +711,8 @@
               "maximum": 500000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -763,7 +781,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -801,7 +820,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -842,7 +862,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -880,7 +901,8 @@
               "maximum": 1000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -918,7 +940,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -959,7 +982,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -997,7 +1021,8 @@
               "maximum": 1000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1035,7 +1060,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1076,7 +1102,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1114,7 +1141,8 @@
               "maximum": 1000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1152,7 +1180,8 @@
               "maximum": 120,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1190,7 +1219,8 @@
               "maximum": 250000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1228,7 +1258,8 @@
               "maximum": 360,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1266,7 +1297,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1308,7 +1340,8 @@
                 "MAN"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1346,7 +1379,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1384,7 +1418,8 @@
               "maximum": 1250000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1422,7 +1457,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -1458,7 +1494,8 @@
               "maximum": 1,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             },
             "name": {
               "kind": "text",
@@ -1467,7 +1504,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -1510,7 +1548,8 @@
                 "NOIS"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1555,7 +1594,8 @@
                 "NOIS"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1600,7 +1640,8 @@
                 "NOIS"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1662,7 +1703,8 @@
                 "DC"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1700,7 +1742,8 @@
               "maximum": 250000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1738,7 +1781,8 @@
               "maximum": 10,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1776,7 +1820,8 @@
               "maximum": 5,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1818,7 +1863,8 @@
                 "DBM"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1856,7 +1902,8 @@
               "maximum": 3.141592653589793,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1894,7 +1941,8 @@
               "maximum": 99.99,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1932,7 +1980,8 @@
               "maximum": 999.99,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -1970,7 +2019,8 @@
               "maximum": 100,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2008,7 +2058,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2046,7 +2097,8 @@
               "maximum": 10000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2084,7 +2136,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2125,7 +2178,8 @@
                 "GAT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2163,7 +2217,8 @@
               "maximum": 1000000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2201,7 +2256,8 @@
               "maximum": 300,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2242,7 +2298,8 @@
                 "LOG"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2280,7 +2337,8 @@
               "maximum": 250000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2318,7 +2376,8 @@
               "maximum": 250000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2387,7 +2446,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2425,7 +2485,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2466,7 +2527,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2504,7 +2566,8 @@
               "maximum": 100000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2542,7 +2605,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2583,7 +2647,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2621,7 +2686,8 @@
               "maximum": 100000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2659,7 +2725,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2700,7 +2767,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2738,7 +2806,8 @@
               "maximum": 100000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2776,7 +2845,8 @@
               "maximum": 100,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2814,7 +2884,8 @@
               "maximum": 125000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2852,7 +2923,8 @@
               "maximum": 180,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2893,7 +2965,8 @@
                 "SWE"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -2934,7 +3007,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3000,7 +3074,8 @@
               "maximum": 1,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             },
             "name": {
               "kind": "text",
@@ -3009,7 +3084,8 @@
               "maximum": null,
               "choices": [],
               "required": false,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -3096,7 +3172,8 @@
                 "DC"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3134,7 +3211,8 @@
               "maximum": 80000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3172,7 +3250,8 @@
               "maximum": 20,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3210,7 +3289,8 @@
               "maximum": 10,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3248,7 +3328,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3312,7 +3393,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3350,7 +3432,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3388,7 +3471,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3455,7 +3539,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3493,7 +3578,8 @@
               "maximum": 360,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3531,7 +3617,8 @@
               "maximum": 99.999,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3569,7 +3656,8 @@
               "maximum": 1000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3607,7 +3695,8 @@
               "maximum": 100,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3645,7 +3734,8 @@
               "maximum": 80000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3683,7 +3773,8 @@
               "maximum": 80000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3721,7 +3812,8 @@
               "maximum": 500,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3762,7 +3854,8 @@
                 "LOG"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3803,7 +3896,8 @@
                 "DOWN"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3845,7 +3939,8 @@
                 "MAN"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3886,7 +3981,8 @@
                 "GATE"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3924,7 +4020,8 @@
               "maximum": 1000000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -3966,7 +4063,8 @@
                 "MAN"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4004,7 +4102,8 @@
               "maximum": 1000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4042,7 +4141,8 @@
               "maximum": 100,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4080,7 +4180,8 @@
               "maximum": 360,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4122,7 +4223,8 @@
                 "PM"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4163,7 +4265,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4208,7 +4311,8 @@
                 "NOISE"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4246,7 +4350,8 @@
               "maximum": 1000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4284,7 +4389,8 @@
               "maximum": 120,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4325,7 +4431,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4370,7 +4477,8 @@
                 "NOISE"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4408,7 +4516,8 @@
               "maximum": 1000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4446,7 +4555,8 @@
               "maximum": 40000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4487,7 +4597,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4532,7 +4643,8 @@
                 "NOISE"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4570,7 +4682,8 @@
               "maximum": 1000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4608,7 +4721,8 @@
               "maximum": 360,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4646,7 +4760,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             },
             "samples": {
               "kind": "array",
@@ -4655,7 +4770,8 @@
               "maximum": 1,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -4691,7 +4807,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -4743,7 +4860,8 @@
               "maximum": 3000000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4781,7 +4899,8 @@
               "maximum": 18,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4823,7 +4942,8 @@
                 "LIST"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4861,7 +4981,8 @@
               "maximum": 3000000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4899,7 +5020,8 @@
               "maximum": 3000000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4940,7 +5062,8 @@
                 "LOG"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -4978,7 +5101,8 @@
               "maximum": 100,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5019,7 +5143,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5057,7 +5182,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5095,7 +5221,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5139,7 +5266,8 @@
                 "NOIS"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5177,7 +5305,8 @@
               "maximum": 1000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5221,7 +5350,8 @@
                 "PULS"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5259,7 +5389,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5303,7 +5434,8 @@
                 "NOIS"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5341,7 +5473,8 @@
               "maximum": 1000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5385,7 +5518,8 @@
                 "PULS"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5423,7 +5557,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5467,7 +5602,8 @@
                 "NOIS"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5505,7 +5641,8 @@
               "maximum": 1000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5549,7 +5686,8 @@
                 "PULS"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5587,7 +5725,8 @@
               "maximum": 100,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5625,7 +5764,8 @@
               "maximum": 1000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5663,7 +5803,8 @@
               "maximum": 20,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5701,7 +5842,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5742,7 +5884,8 @@
                 "STEP"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5784,7 +5927,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5822,7 +5966,8 @@
               "maximum": 100,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5888,7 +6033,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             },
             "frequencies": {
               "kind": "array",
@@ -5897,7 +6043,8 @@
               "maximum": 3000000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             },
             "powers": {
               "kind": "array",
@@ -5906,7 +6053,8 @@
               "maximum": 18,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -5946,7 +6094,8 @@
                 "STEP"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -5984,7 +6133,8 @@
               "maximum": 3000000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -6022,7 +6172,8 @@
               "maximum": 100,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -6088,7 +6239,8 @@
               "maximum": 30,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -6126,7 +6278,8 @@
               "maximum": 3,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -6216,7 +6369,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -6258,7 +6412,8 @@
                 "2"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -6420,7 +6575,8 @@
               "maximum": 1500000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -6458,7 +6614,8 @@
               "maximum": 1500000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -6496,7 +6653,8 @@
               "maximum": 1500000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -6534,7 +6692,8 @@
               "maximum": 1500000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -6584,7 +6743,8 @@
                 "1e+06"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -6637,7 +6797,8 @@
                 "3e+06"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -6675,7 +6836,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -6713,7 +6875,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -6751,7 +6914,8 @@
               "maximum": 20,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -6789,7 +6953,8 @@
               "maximum": 30,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -6827,7 +6992,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -6865,7 +7031,8 @@
               "maximum": 7500,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -6903,7 +7070,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -6941,7 +7109,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -6985,7 +7154,8 @@
                 "W"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -7030,7 +7200,8 @@
                 "VAV"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -7076,7 +7247,8 @@
                 "POW"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -7118,7 +7290,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -7156,7 +7329,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -7194,7 +7368,8 @@
               "maximum": 1500000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -7232,7 +7407,8 @@
               "maximum": 600,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -7272,7 +7448,8 @@
                 "POS"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -7313,7 +7490,8 @@
                 "TIME"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -7429,7 +7607,8 @@
               "maximum": 601,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -7961,7 +8140,8 @@
                 "OFF"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -7999,7 +8179,8 @@
               "maximum": 10,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -8037,7 +8218,8 @@
               "maximum": 10,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -8080,7 +8262,8 @@
                 "GND"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -8118,7 +8301,8 @@
               "maximum": 10000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -8156,7 +8340,8 @@
               "maximum": 10,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -8197,7 +8382,8 @@
                 "NEG"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -8235,7 +8421,8 @@
               "maximum": 1000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -8273,7 +8460,8 @@
               "maximum": 100,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -8316,7 +8504,8 @@
                 "STOP"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -8354,7 +8543,8 @@
               "maximum": 10000000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -8663,7 +8853,8 @@
                 "C4"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -8726,7 +8917,8 @@
                 "ARB"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -8764,7 +8956,8 @@
               "maximum": 350000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -8802,7 +8995,8 @@
               "maximum": 10,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -8840,7 +9034,8 @@
               "maximum": 5,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -8878,7 +9073,8 @@
               "maximum": 360,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -8916,7 +9112,8 @@
               "maximum": 99.99,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -8954,7 +9151,8 @@
               "maximum": 100,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -8992,7 +9190,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9030,7 +9229,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9068,7 +9268,8 @@
               "maximum": 350000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9106,7 +9307,8 @@
               "maximum": 350000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9144,7 +9346,8 @@
               "maximum": 300,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9186,7 +9389,8 @@
                 "STEP"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9228,7 +9432,8 @@
                 "MAN"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9266,7 +9471,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9304,7 +9510,8 @@
               "maximum": 1000000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9346,7 +9553,8 @@
                 "MAN"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9443,7 +9651,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9481,7 +9690,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9523,7 +9733,8 @@
                 "PM"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -9564,7 +9775,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9602,7 +9814,8 @@
               "maximum": 100000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9647,7 +9860,8 @@
                 "NOISE"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9685,7 +9899,8 @@
               "maximum": 120,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9726,7 +9941,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9764,7 +9980,8 @@
               "maximum": 100000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9809,7 +10026,8 @@
                 "NOISE"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9847,7 +10065,8 @@
               "maximum": 175000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9888,7 +10107,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9926,7 +10146,8 @@
               "maximum": 100000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -9971,7 +10192,8 @@
                 "NOISE"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -10009,7 +10231,8 @@
               "maximum": 360,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -10047,7 +10270,8 @@
               "maximum": 1,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             },
             "name": {
               "kind": "text",
@@ -10056,7 +10280,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -10092,7 +10317,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -10151,7 +10377,8 @@
               "maximum": 30,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -10191,7 +10418,8 @@
               "maximum": 3,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -10231,7 +10459,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -10271,7 +10500,8 @@
               "maximum": 30,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -10311,7 +10541,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -10351,7 +10582,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -10391,7 +10623,8 @@
               "maximum": 99999.9,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -10431,7 +10664,8 @@
               "maximum": 30,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -10471,7 +10705,8 @@
               "maximum": 3,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -10511,7 +10746,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -10554,7 +10790,8 @@
                 "OFF"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -10734,7 +10971,8 @@
               "maximum": 30,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -10772,7 +11010,8 @@
               "maximum": 6,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -10810,7 +11049,8 @@
               "maximum": 33,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -10848,7 +11088,8 @@
               "maximum": 6.6,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -10886,7 +11127,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -10924,7 +11166,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -10962,7 +11205,8 @@
               "maximum": 10,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -11000,7 +11244,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -11038,7 +11283,8 @@
               "maximum": 3600,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -11076,7 +11322,8 @@
               "maximum": 3600,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -11114,7 +11361,8 @@
               "maximum": 99999,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -11152,7 +11400,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -11190,7 +11439,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -11228,7 +11478,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -11266,7 +11517,8 @@
               "maximum": 2,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -11307,7 +11559,8 @@
                 "4W"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -11475,7 +11728,8 @@
               "maximum": 30,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             },
             "current": {
               "kind": "array",
@@ -11484,7 +11738,8 @@
               "maximum": 6,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             },
             "duration": {
               "kind": "array",
@@ -11493,7 +11748,8 @@
               "maximum": 99999,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -11552,7 +11808,8 @@
               "maximum": 30,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -11592,7 +11849,8 @@
               "maximum": 3,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -11632,7 +11890,8 @@
               "maximum": 30,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -11672,7 +11931,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -11712,7 +11972,8 @@
               "maximum": 999999,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -11855,7 +12116,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             },
             "range": {
               "kind": "enum",
@@ -11876,7 +12138,8 @@
                 "20"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             },
             "coupling": {
               "kind": "enum",
@@ -11889,7 +12152,8 @@
                 "DC50"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             },
             "offset": {
               "kind": "number",
@@ -11898,7 +12162,8 @@
               "maximum": 20,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -11928,7 +12193,8 @@
               "maximum": 1000000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -11958,7 +12224,8 @@
               "maximum": 1,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -11988,7 +12255,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             },
             "threshold": {
               "kind": "number",
@@ -11997,7 +12265,8 @@
               "maximum": 20,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             },
             "direction": {
               "kind": "enum",
@@ -12009,7 +12278,8 @@
                 "FALLING"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             },
             "timeout_us": {
               "kind": "integer",
@@ -12018,7 +12288,8 @@
               "maximum": 10000000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -12107,7 +12378,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -12145,7 +12417,8 @@
               "maximum": 10,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -12183,7 +12456,8 @@
               "maximum": 10,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -12226,7 +12500,8 @@
                 "DC"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -12264,7 +12539,8 @@
               "maximum": 10000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -12302,7 +12578,8 @@
               "maximum": 10,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -12340,7 +12617,8 @@
               "maximum": 50,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -12378,7 +12656,8 @@
               "maximum": 100,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -12422,7 +12701,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -12463,7 +12743,8 @@
                 "NORM"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -12501,7 +12782,8 @@
               "maximum": 10000000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -12539,7 +12821,8 @@
               "maximum": 1000000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -12691,7 +12974,8 @@
                 "ENV"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -12729,7 +13013,8 @@
               "maximum": 1024,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -12771,7 +13056,8 @@
                 "HRES"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -12812,7 +13098,8 @@
                 "B20"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -12850,7 +13137,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -12907,7 +13195,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -12945,7 +13234,8 @@
               "maximum": 10,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -12983,7 +13273,8 @@
               "maximum": 10,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -13025,7 +13316,8 @@
                 "DC"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -13063,7 +13355,8 @@
               "maximum": 10000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -13101,7 +13394,8 @@
               "maximum": 10,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -13139,7 +13433,8 @@
               "maximum": 50,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -13177,7 +13472,8 @@
               "maximum": 100,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -13221,7 +13517,8 @@
                 "EXT"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -13262,7 +13559,8 @@
                 "NORM"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -13300,7 +13598,8 @@
               "maximum": 10000000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -13338,7 +13637,8 @@
               "maximum": 1000000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -13508,7 +13808,8 @@
                 "OFF"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -13546,7 +13847,8 @@
               "maximum": 10,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -13584,7 +13886,8 @@
               "maximum": 10,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -13627,7 +13930,8 @@
                 "GND"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -13665,7 +13969,8 @@
               "maximum": 10000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -13703,7 +14008,8 @@
               "maximum": 10,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -13744,7 +14050,8 @@
                 "NEG"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -13782,7 +14089,8 @@
               "maximum": 1000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -13820,7 +14128,8 @@
               "maximum": 100,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -13863,7 +14172,8 @@
                 "STOP"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -13901,7 +14211,8 @@
               "maximum": 10000000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -14040,7 +14351,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -14078,7 +14390,8 @@
               "maximum": 10,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -14116,7 +14429,8 @@
               "maximum": 100,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -14158,7 +14472,8 @@
                 "GND"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -14203,7 +14518,8 @@
                 "1000"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -14244,7 +14560,8 @@
                 "20M"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -14282,7 +14599,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -14320,7 +14638,8 @@
               "maximum": 50,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -14358,7 +14677,8 @@
               "maximum": 100,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -14401,7 +14721,8 @@
                 "AC"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -14443,7 +14764,8 @@
                 "RFAL"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -14481,7 +14803,8 @@
               "maximum": 100,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -14523,7 +14846,8 @@
                 "SING"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -14566,7 +14890,8 @@
                 "HRES"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -14615,7 +14940,8 @@
                 "1024"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -14660,7 +14986,8 @@
                 "24000000"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -14852,7 +15179,8 @@
               "maximum": 2000000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -14890,7 +15218,8 @@
               "maximum": 2000000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -14928,7 +15257,8 @@
               "maximum": 2000000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -14966,7 +15296,8 @@
               "maximum": 2000000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -15004,7 +15335,8 @@
               "maximum": 1000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -15042,7 +15374,8 @@
               "maximum": 1000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -15080,7 +15413,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -15118,7 +15452,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -15156,7 +15491,8 @@
               "maximum": 30,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -15194,7 +15530,8 @@
               "maximum": 30,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -15232,7 +15569,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -15270,7 +15608,8 @@
               "maximum": 1000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -15308,7 +15647,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -15346,7 +15686,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -15384,7 +15725,8 @@
               "maximum": 2000000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -15520,7 +15862,8 @@
               "maximum": 2500,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -15550,7 +15893,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -15580,7 +15924,8 @@
               "maximum": 10,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -15610,7 +15955,8 @@
               "maximum": 10,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -15643,7 +15989,8 @@
                 "DBM"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -15760,7 +16107,8 @@
                 "PER"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -15798,7 +16146,8 @@
               "maximum": 1000000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -15839,7 +16188,8 @@
                 "OFF"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -15877,7 +16227,8 @@
               "maximum": 1000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -15915,7 +16266,8 @@
               "maximum": 100,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -15957,7 +16309,8 @@
                 "ONCE"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -15995,7 +16348,8 @@
               "maximum": 6000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -16038,7 +16392,8 @@
                 "SYN"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -16080,7 +16435,8 @@
                 "HOLD"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -16122,7 +16478,8 @@
                 "LIFO"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -16162,7 +16519,8 @@
                 "ASCII"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -16304,7 +16662,8 @@
               "maximum": 1000000,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -16359,7 +16718,8 @@
               "maximum": 4500000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -16397,7 +16757,8 @@
               "maximum": 4500000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -16435,7 +16796,8 @@
               "maximum": 100001,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -16473,7 +16835,8 @@
               "maximum": 1000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -16511,7 +16874,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -16549,7 +16913,8 @@
               "maximum": 65536,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -16587,7 +16952,8 @@
               "maximum": null,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -16631,7 +16997,8 @@
                 "CW"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -16669,7 +17036,8 @@
               "maximum": 10,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": true,
@@ -16792,7 +17160,8 @@
                 "S22"
               ],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -16913,7 +17282,8 @@
               "maximum": 200000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,
@@ -16943,7 +17313,8 @@
               "maximum": 200000000.0,
               "choices": [],
               "required": true,
-              "range_source": "model"
+              "range_source": "model",
+              "resolution": null
             }
           },
           "readable": false,

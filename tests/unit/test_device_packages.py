@@ -25,6 +25,10 @@ def test_declared_capabilities_units_ranges_and_wire_templates(definition):
     if not contract.exists():
         contract = fixtures / "capabilities-before.json"
     before = json.loads(contract.read_text(encoding="utf-8"))
+    # Older capability snapshots omit the newly optional resolution field.
+    for operation in before["capabilities"]["operations"]:
+        for parameter in operation["parameters"].values():
+            parameter.setdefault("resolution", None)
     assert (
         jsonable(registry.describe(ConnectionConfig("metadata://test", profile.adapter_id)))
         == before["capabilities"]

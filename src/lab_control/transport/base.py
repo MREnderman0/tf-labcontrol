@@ -41,8 +41,13 @@ def block_payload(raw: bytes, *, allow_indefinite: bool = False) -> bytes:
         raise DeviceError("Invalid IEEE block length", "parse_error")
     size = int(raw[2 : 2 + digits])
     end = 2 + digits + size
-    if size > MAX_MESSAGE or len(raw) < end or raw[end:] not in (b"", b"\n", b"\r\n"):
-        raise DeviceError("Truncated, excessive or trailing IEEE block data", "parse_error")
+    evidence = f"declared={size}, received={len(raw) - 2 - digits}, limit={MAX_MESSAGE}"
+    if size > MAX_MESSAGE:
+        raise DeviceError("IEEE block exceeds size limit: " + evidence, "parse_error")
+    if len(raw) < end:
+        raise DeviceError("Truncated IEEE block: " + evidence, "parse_error")
+    if raw[end:] not in (b"", b"\n", b"\r\n"):
+        raise DeviceError("Trailing IEEE block data: " + evidence, "parse_error")
     return raw[2 + digits : end]
 
 

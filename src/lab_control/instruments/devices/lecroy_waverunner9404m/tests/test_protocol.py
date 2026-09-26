@@ -13,6 +13,7 @@ from .samples import binary
     "raw,expected",
     [
         (b"TDIV 1e-3 S", 0.001),
+        (b"*OPC 1\n", 1),
         (b"C2:VDIV 50MV", 0.05),
         (b"MSIZ 1MA", 1e6),
         (b"MSIZ 500E+3 SAMPLE", 500000),

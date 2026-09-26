@@ -13,6 +13,7 @@ def test_trigger_source_edit_preserves_holdoff_and_confirms_complete_readback():
         [
             ("TRSE?", b"TRSE EDGE,SR,C1,HT,TI,HV,2e-6"),
             ("TRSE EDGE,SR,C3", b""),
+            ("*OPC?", b"1"),
             ("TRSE?", b"TRSE EDGE,SR,C3,HT,TI,HV,2e-6"),
             ("TRSE?", b"TRSE EDGE,SR,C3,HT,TI,HV,2e-6"),
         ]
@@ -37,6 +38,7 @@ def test_trigger_unexpected_holdoff_change_is_reported_without_compensation():
         [
             ("TRSE?", b"EDGE,SR,C1,HT,TI,HV,2e-6"),
             ("TRSE EDGE,SR,C2", b""),
+            ("*OPC?", b"1"),
             ("TRSE?", b"EDGE,SR,C2,HT,OFF"),
             ("TRSE?", b"EDGE,SR,C2,HT,OFF"),
         ]
@@ -76,6 +78,7 @@ def test_cached_channel_ranges_follow_coupling_probe_and_successful_write():
             ("C2:VDIV?", b".2 V"),
             ("C2:OFST?", b"0 V"),
             ("C2:CPL D50", b""),
+            ("*OPC?", b"1"),
             ("C2:CPL?", b"D50"),
         ]
     )

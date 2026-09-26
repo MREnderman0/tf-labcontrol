@@ -67,6 +67,7 @@ class Parameter:
     choices: tuple[str, ...] = ()
     required: bool = True
     range_source: str = "model"
+    resolution: float | None = None
 
     def validate(self, name: str, value: Any) -> Any:
         if self.kind in {"number", "integer"}:
@@ -181,6 +182,7 @@ class ApplyResult:
     completed_steps: int = 0
     error: str = ""
     timestamp: str = field(default_factory=utc_now)
+    adaptation: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
