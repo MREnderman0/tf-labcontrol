@@ -13,6 +13,7 @@
 - [示波器短时基显示修复与工作区整理（2026-09-25）](waveform-view-review.md)
 - [示波器紧凑滑块与仪器网格（2026-09-26）](oscilloscope-workspace-review.md)
 - [示波器调参连续性、点数与有界接收（2026-09-26）](oscilloscope-continuity-review.md)
+- [示波器按采样率限制可行时基（2026-09-26）](oscilloscope-timebase-range-review.md)
 - [桌面部署与环境修复验收（2026-09-25）](desktop-deployment-review.md)
 
 - [菜单、长单位与已连接设备筛选验收](connected-selection-review.md)

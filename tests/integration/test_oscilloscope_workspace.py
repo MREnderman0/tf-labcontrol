@@ -1,4 +1,5 @@
 import threading
+from dataclasses import replace
 
 import pytest
 from PySide6.QtCore import Qt, QTimer
@@ -8,8 +9,9 @@ from PySide6.QtWidgets import QDialog, QDialogButtonBox
 from lab_control.app import load_stylesheet, load_ui_font
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.runtime import ApplicationRuntime
-from lab_control.domain.instruments import ApplyResult, DeviceCommand
+from lab_control.domain.instruments import ApplyResult, DeviceCommand, Parameter
 from lab_control.ui.pages.monitoring.oscilloscope import OscilloscopeMonitoringPage
+from lab_control.ui.pages.monitoring.oscilloscope_controls import ScopeSlider
 from lab_control.ui.real_window import RealWindow
 
 
@@ -90,6 +92,71 @@ def test_point_original_outside_range_is_shown_without_write(scope, qtbot):
     assert adapter._value(1, "record_length") == 64_000_000
 
 
+def test_shrunk_timebase_range_preserves_original_until_endpoint_gesture(qtbot):
+    field = ScopeSlider("时基", "s", coarse=True)
+    qtbot.addWidget(field)
+    values = []
+    field.committed.connect(values.append)
+    assert field.configure(0.02, Parameter("number", "s/div", 5e-10, 0.001), 0.02)
+    assert values == [] and field.actual == 0.02
+    assert field.steps[-1] == 0.001 and field.maximum_label.text() == "1 ms"
+    # The thumb is already at its new maximum; clicking/releasing must still
+    # apply that valid endpoint exactly once, instead of appearing unresponsive.
+    field.slider.setSliderDown(True)
+    assert values == []
+    field.slider.setSliderDown(False)
+    assert values == [0.001]
+
+
+@pytest.mark.parametrize("uncertain", [False, True])
+def test_smaller_point_limit_clamps_once_in_control_group_and_preserves_monitor_intent(
+    scope, qtbot, monkeypatch, uncertain
+):
+    window, page, runtime, key, adapter = scope
+    adapter.values["1.record_length"] = {"value": 5000}
+    page.controls.refresh_parameters()
+    qtbot.waitUntil(lambda: not page.controls.running)
+    page.start()
+    qtbot.waitUntil(lambda: page.plot.displayed_frame is not None)
+    writes = []
+    original = adapter.apply
+
+    def shrink():
+        adapter.caps = replace(
+            adapter.caps,
+            operations=tuple(
+                replace(cap, parameters={"value": replace(cap.parameters["value"], maximum=2500)})
+                if cap.name == "record_length"
+                else cap
+                for cap in adapter.caps.operations
+            ),
+        )
+
+    def apply(command):
+        writes.append(command)
+        assert runtime.sessions.snapshots()[0]["controlGroup"]
+        return (
+            ApplyResult("uncertain", command.operation, command.parameters, error="timeout")
+            if uncertain
+            else original(command)
+        )
+
+    monkeypatch.setattr(adapter, "refresh_capabilities", shrink, raising=False)
+    monkeypatch.setattr(adapter, "apply", apply)
+    page.controls.refresh_parameters()
+    qtbot.waitUntil(lambda: not page.controls.running)
+    assert [(c.operation, c.parameters) for c in writes] == [("record_length", {"value": 2500})]
+    window.controller.poll()
+    if uncertain:
+        assert not runtime.monitoring.snapshots()[key]["running"]
+        assert "timeout" in page.controls.status.text()
+    else:
+        assert runtime.monitoring.snapshots()[key]["running"]
+        assert page.controls.points.text() == "2500"
+        assert adapter._value(1, "record_length") == 2500
+    assert not runtime.sessions.snapshots()[0]["controlGroup"]
+
+
 def test_both_curve_tool_menus_default_closed_and_keep_cadence_local(scope, qtbot, monkeypatch):
     window, page, runtime, _, adapter = scope
     monkeypatch.setattr(adapter, "apply", lambda cmd: pytest.fail("Cadence must not write to instrument"))
@@ -109,6 +176,27 @@ def test_both_curve_tool_menus_default_closed_and_keep_cadence_local(scope, qtbo
     spectrum.timing_action.trigger()
     assert spectrum.timing.isVisible()
     assert spectrum.timing.interval.minimum() == 0.5
+
+
+def test_smaller_point_limit_preserves_already_valid_value(scope, qtbot, monkeypatch):
+    _, page, _, _, adapter = scope
+
+    def shrink():
+        adapter.caps = replace(
+            adapter.caps,
+            operations=tuple(
+                replace(cap, parameters={"value": replace(cap.parameters["value"], maximum=2500)})
+                if cap.name == "record_length"
+                else cap
+                for cap in adapter.caps.operations
+            ),
+        )
+
+    monkeypatch.setattr(adapter, "refresh_capabilities", shrink, raising=False)
+    monkeypatch.setattr(adapter, "apply", lambda _: pytest.fail("In-range points must remain unchanged"))
+    page.controls.refresh_parameters()
+    qtbot.waitUntil(lambda: not page.controls.running)
+    assert page.controls.points.text() == "2000"
 
 
 def test_drag_release_and_keyboard_gesture_write_once(scope, qtbot, monkeypatch):
@@ -312,6 +400,7 @@ def test_stop_recording_retains_ui_lock_through_blocked_binary_write(scope, qtbo
         window.controller.poll()
         assert runtime.sessions.snapshots()[0]["controlsLocked"]
         assert not page.controls.checks[1].isEnabled() and not page.controls.gear.isEnabled()
+        assert not page.controls.points.isEnabled()
         assert not page.refresh_action.isEnabled()
     finally:
         release.set()

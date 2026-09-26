@@ -6,11 +6,16 @@ import math
 from dataclasses import replace
 
 from lab_control.domain.instruments import DeviceError, Parameter
+from lab_control.domain.oscilloscope import coarse_steps
 
 from .protocol import numeric
 
 POINTS_MIN = 1_000
 POINTS_MAX = 10_000_000
+# Software headroom for complete edge samples (real frames can exceed the
+# nominal window by two points). This is not a claimed hardware limit.
+EDGE_POINT_RESERVE = 32
+HORIZONTAL_DIVISIONS = 10
 MEMORY_QUERIES = {
     "mode": "VBS? 'return=app.Acquisition.Horizontal.SmartMemory'",
     "points": "VBS? 'return=app.Acquisition.Horizontal.NumPoints'",
@@ -60,6 +65,17 @@ def read_range(transport, operation: str, channel: int, spec: Parameter) -> Para
     return replace(
         spec, minimum=low, maximum=high, resolution=grain or None, range_source="instrument_cvar+software"
     )
+
+
+def fixed_rate_timebase(spec: Parameter, sample_rate: float) -> Parameter:
+    """Bound coarse timebase choices by the complete-frame software budget."""
+    if not math.isfinite(sample_rate) or sample_rate <= 0:
+        raise DeviceError("Invalid fixed sample rate", "parse_error")
+    budget = (POINTS_MAX - EDGE_POINT_RESERVE) / sample_rate / HORIZONTAL_DIVISIONS
+    steps = coarse_steps(spec.minimum or 0, min(spec.maximum or budget, budget))
+    if not steps:
+        raise DeviceError("No qualified timebase within the current sampling budget", "unsupported")
+    return replace(spec, maximum=steps[-1], range_source=spec.range_source + "+sampling_budget")
 
 
 def plausible_adaptation(operation: str, requested: float, actual: float, spec: Parameter) -> bool:

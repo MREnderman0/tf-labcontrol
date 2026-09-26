@@ -26,7 +26,7 @@ from PySide6.QtWidgets import (
 
 from lab_control.domain.instruments import DeviceCommand, DeviceError, Parameter
 from lab_control.domain.oscilloscope import COLORS, CONTROL_NAMES, coarse_steps, engineering
-from lab_control.domain.readback import boolean_value, usable_reading
+from lab_control.domain.readback import boolean_value, normalized_value, usable_reading
 from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
 
 
@@ -125,10 +125,19 @@ class ScopeSlider(QWidget):
         self.timer.setInterval(180)
         self.timer.timeout.connect(self.commit)
         self.slider.valueChanged.connect(self.preview)
-        self.slider.sliderPressed.connect(self.timer.stop)
+        self.slider.sliderPressed.connect(self.begin_gesture)
         self.slider.sliderReleased.connect(self.commit)
         self.slider.key_finished.connect(self.timer.start)
         self.slider.fine_step.connect(self.keyboard_step)
+
+    def begin_gesture(self) -> None:
+        self.timer.stop()
+        # The existing instrument value may now lie beyond a changed endpoint.
+        # An explicit press/release can select that endpoint even without travel;
+        # simply refreshing the range must never write it to the instrument.
+        if self.actual is not None and not math.isclose(self.value(), self.actual, rel_tol=1e-9, abs_tol=0):
+            self.dirty = True
+            self.value_label.setText("→ " + self.text(self.value()))
 
     def value(self) -> float:
         if self.coarse:
@@ -238,6 +247,8 @@ class OscilloscopeControls(QFrame):
         self.restart = False
         self.channel_change = False
         self.last_context: tuple | None = None
+        self.point_limit_before: float | None = None
+        self.point_clamp_attempted = False
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(6)
@@ -463,6 +474,9 @@ class OscilloscopeControls(QFrame):
                     raise DeviceError(cap.reason or "此设置暂不可写")
                 cap.validate(cmd.parameters)
             self.controller.begin_group(self.device_id)
+            point_cap = self.capabilities().get("record_length")
+            self.point_limit_before = point_cap.parameters["value"].maximum if point_cap else None
+            self.point_clamp_attempted = False
             self.session_id = self.controller.states[self.device_id]["sessionId"]
             self.running, self.channel_change = True, channels
             self.pending = list(commands)
@@ -527,7 +541,40 @@ class OscilloscopeControls(QFrame):
                 self.failed,
             )
         else:
-            self.finish()
+            try:
+                if not self.clamp_points_after_range_change():
+                    self.finish()
+            except Exception as exc:
+                self.failed(exc)
+
+    def clamp_points_after_range_change(self) -> bool:
+        """Only explicit control groups may lower a value after its range shrinks."""
+        cap = self.capabilities().get("record_length")
+        if not cap or not cap.available or not cap.writable or self.point_limit_before is None:
+            return False
+        spec = cap.parameters["value"]
+        maximum = spec.maximum
+        if maximum is None or maximum >= self.point_limit_before:
+            return False
+        frame = self.controller.runtime.sessions.readback_frames(self.device_id).get((1, "record_length"))
+        if (
+            not frame
+            or frame.session_id != self.session_id
+            or not usable_reading(frame.reading, cap.parameters)
+        ):
+            raise DeviceError("点数范围已变化，但当前点数未可靠读回，请刷新核对")
+        value = frame.reading.value
+        current = normalized_value(value.get("value") if isinstance(value, dict) else value, spec)
+        if current <= maximum:
+            return False
+        if self.point_clamp_attempted:
+            raise DeviceError("自动降低点数后仍超出新范围，已停止后续设置")
+        target = math.floor(maximum)
+        cap.validate({"value": target})
+        self.point_clamp_attempted = True
+        self.pending = [DeviceCommand("record_length", {"value": target})]
+        self.next_command()
+        return True
 
     def failed(self, exc) -> None:
         self.status.setText(f"未完成：{exc} · 未重发设置，请刷新核对")

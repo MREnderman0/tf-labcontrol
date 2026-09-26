@@ -23,7 +23,7 @@ from lab_control.transport.diagnostics import measured
 
 from ..adapter import CHANNEL_SETTINGS, WaveRunner9404MAdapter, equivalent
 from ..protocol import numeric
-from ..ranges import MEMORY_QUERIES, PATHS, POINTS_MAX, POINTS_MIN, cvar_query
+from ..ranges import MEMORY_QUERIES, PATHS, cvar_query
 from .records import publish_report
 
 
@@ -272,23 +272,26 @@ class Verification:
             target = desired[f"1.{operation}"]
             actual = self.call(lambda op=operation: self.adapter.read(op))
             if not equivalent(actual, target):
-                if operation == "record_length" and not POINTS_MIN <= target <= POINTS_MAX:
+                spec = self.adapter.capabilities_for_channel(1).get(operation).parameters["value"]
+                assert spec.minimum is not None and spec.maximum is not None
+                if not spec.minimum <= target <= spec.maximum:
                     # Restore only this exact backed-up original, after independent
                     # live hardware-range confirmation. Never widen the UI budget.
-                    def restore_memory():
+                    def restore_original():
                         wire = self.adapter.transport
                         low = numeric(wire.query(cvar_query(operation, 1, "GetMinValue")))
                         high = numeric(wire.query(cvar_query(operation, 1, "GetMaxValue")))
                         if not low <= target <= high:
                             raise DeviceError(
-                                "Saved memory is outside current hardware range", "restoration_failed"
+                                "Saved value is outside current hardware range", "restoration_failed"
                             )
-                        wire.write(f"MSIZ {target:.12g}")
+                        mnemonic = {"timebase": "TDIV", "record_length": "MSIZ"}[operation]
+                        wire.write(f"{mnemonic} {target:.12g}")
                         self.adapter.complete_setting(DeviceCommand(operation, {"value": target}))
                         if not equivalent(self.adapter.read(operation), target):
-                            raise DeviceError("Saved memory restoration differs", "restoration_failed")
+                            raise DeviceError("Saved value restoration differs", "restoration_failed")
 
-                    self.call(restore_memory)
+                    self.call(restore_original)
                 else:
                     self.apply(operation, target)
         # Restore the exact saved transfer setup, not a default or a guessed inverse.
@@ -510,13 +513,15 @@ class Verification:
         try:
             previous = await_frame()
             self.report["continuity_frames"] = []
+            timebase_range = self.adapter.capabilities_for_channel(1).get("timebase").parameters["value"]
+            long_timebase = min(0.02, timebase_range.maximum or 0.02)
             for operation, value in (
                 ("offset", 0.00006),
                 ("time_position", 1.73e-6),
                 ("record_length", 2500),
-                ("timebase", 0.02),
+                ("timebase", long_timebase),
                 ("record_length", 10000),
-                ("timebase", 0.001),
+                ("timebase", 1e-6),
             ):
                 self.app.sessions.set_control_group(self.device_id, True)
                 try:
@@ -655,6 +660,7 @@ def verify(
         test.stage("parameter_read")
         original = test.snapshot()
         report["initial_capability_details"] = jsonable(test.adapter.capability_details)
+        report["initial_capabilities"] = jsonable(test.adapter.capabilities_for_channel(1))
         report["initial_snapshot"] = original
         save(folder / "initial_snapshot.json", original)
         report["stages"]["parameter_read"] = "passed"

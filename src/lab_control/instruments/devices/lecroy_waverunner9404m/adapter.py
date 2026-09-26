@@ -28,12 +28,14 @@ from .context import AcquisitionContext, fingerprint
 from .protocol import grouped_scalars, numeric, trigger_setup, value_text, waveform
 from .ranges import (
     DEPENDENCIES,
+    EDGE_POINT_RESERVE,
     MAX_FRAME_BYTES,
     MAX_WAVEFORM_BYTES,
     MEMORY_QUERIES,
     PATHS,
     POINTS_MAX,
     cvar_query,
+    fixed_rate_timebase,
     plausible_adaptation,
     read_range,
 )
@@ -109,6 +111,8 @@ class WaveRunner9404MAdapter(ScpiAdapter):
                 cap = self.profile.commands[op].capability
                 for ch in self.profile.channels if cap.channel_scoped else (1,):
                     ranges[ch, op] = read_range(self.transport, op, ch, cap.parameters["value"])
+            if memory["mode"] == "FixedSampleRate":
+                ranges[1, "timebase"] = fixed_rate_timebase(ranges[1, "timebase"], sample_rate)
         except Exception as exc:
             self.capability_error = str(exc)
             raise
@@ -415,10 +419,16 @@ class WaveRunner9404MAdapter(ScpiAdapter):
         actual_points = self.capability_details.get("memory", {}).get("points", memory)
         if (
             max(memory, actual_points) > POINTS_MAX
-            or (max(memory, actual_points) + 32) * 16 * len(request.channels) > MAX_FRAME_BYTES
+            or (max(memory, actual_points) + EDGE_POINT_RESERVE) * 16 * len(request.channels)
+            > MAX_FRAME_BYTES
         ):
+            resolution = (
+                "当前为固定采样率模式，最大长度设置不限制实收点数。请调小右侧水平“时基”后重新开始；保留时基则需调整仪器内存模式。"
+                if self.capability_details.get("memory", {}).get("mode") == "FixedSampleRate"
+                else "请调整采集点数/时基后重新开始。"
+            )
             raise DeviceError(
-                f"采集点数 {actual_points:,.0f}（最大长度设置 {memory:,.0f}）超出软件处理预算；请调整点数/时基或仪器内存模式后重新开始（上限 {POINTS_MAX:,}）",
+                f"采集点数 {actual_points:,.0f}（最大长度设置 {memory:,.0f}）超过软件上限 {POINTS_MAX:,}。{resolution}",
                 "acquisition_budget_exceeded",
             )
         values = []

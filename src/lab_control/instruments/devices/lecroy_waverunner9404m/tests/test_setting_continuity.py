@@ -5,7 +5,14 @@ import pytest
 from lab_control.domain.instruments import AcquisitionRequest, DeviceCommand, DeviceError, ValidationError
 
 from ..profile import profile
-from ..ranges import MEMORY_QUERIES, cvar_query, read_range
+from ..ranges import (
+    EDGE_POINT_RESERVE,
+    MEMORY_QUERIES,
+    POINTS_MAX,
+    cvar_query,
+    fixed_rate_timebase,
+    read_range,
+)
 from .samples import snapshot_exchanges
 from .test_adapter import device
 from .test_sessions import Scope
@@ -143,3 +150,52 @@ def test_fixed_sample_rate_cannot_hide_actual_memory_behind_small_msiz():
         adapter.acquire(AcquisitionRequest("waveform"))
     assert exc.value.code == "acquisition_budget_exceeded"
     assert not any("WF?" in q for q in wire.history)
+
+
+@pytest.mark.parametrize("rate,maximum", [(500e6, 0.001), (1e9, 0.0005), (100e6, 0.005), (5e6, 0.02)])
+def test_fixed_rate_timebase_limit_fits_complete_points_and_hardware(rate, maximum):
+    spec = replace(profile().commands["timebase"].capability.parameters["value"], maximum=0.02)
+    effective = fixed_rate_timebase(spec, rate)
+    assert effective.maximum == maximum
+    assert 10 * maximum * rate + EDGE_POINT_RESERVE <= POINTS_MAX
+    assert effective.minimum == spec.minimum and "sampling_budget" in effective.range_source
+
+
+def test_rate_limits_refresh_without_writes_and_stop_invalid_timebase_before_io():
+    class FixedScope(Scope):
+        sample_rate = 500e6
+        memory_mode = "FixedSampleRate"
+
+        def query(self, command):
+            if command in {MEMORY_QUERIES["mode"], MEMORY_QUERIES["sample_rate"]}:
+                self.history.append(command)
+                return (
+                    self.memory_mode if command == MEMORY_QUERIES["mode"] else str(self.sample_rate)
+                ).encode()
+            return super().query(command)
+
+    adapter, _ = device()
+    wire = FixedScope()
+    adapter.transport = wire
+    adapter.remember({"1.timebase": 0.02})
+    adapter.refresh_capabilities()
+    assert adapter.capabilities_for_channel(1).get("timebase").parameters["value"].maximum == 0.001
+    count = len(wire.history)
+    with pytest.raises(ValidationError):
+        adapter.apply(DeviceCommand("timebase", {"value": 0.02}))
+    assert len(wire.history) == count
+    wire.sample_rate = 1e9
+    adapter.refresh_capabilities()  # Cached until the known change/explicit refresh.
+    assert len(wire.history) == count
+    adapter.invalidate_acquisition_context("explicit_refresh")
+    adapter.refresh_capabilities()
+    assert adapter.capabilities_for_channel(1).get("timebase").parameters["value"].maximum == 0.0005
+    assert adapter._settings["1.timebase"] == 0.02  # Never alter the original value.
+    wire.memory_mode = "SetMaximumMemory"
+    adapter.invalidate_acquisition_context("explicit_refresh")
+    adapter.refresh_capabilities()
+    assert (
+        "sampling_budget"
+        not in adapter.capabilities_for_channel(1).get("timebase").parameters["value"].range_source
+    )
+    assert all("?" in q for q in wire.history)

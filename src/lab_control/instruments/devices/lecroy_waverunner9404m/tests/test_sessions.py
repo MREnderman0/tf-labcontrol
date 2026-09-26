@@ -189,6 +189,34 @@ def test_failed_restoration_is_reported_without_replaying_write(connected, tmp_p
     assert wire.history.count(wire.fail_write) == 1
 
 
+def test_backed_up_timebase_above_software_budget_restores_with_hardware_bounds(
+    connected, tmp_path, monkeypatch
+):
+    from ..hardware.validate_control import Verification
+
+    app, key, wire = connected
+    query = wire.query
+
+    def fixed(command):
+        if command == MEMORY_QUERIES["mode"]:
+            wire.history.append(command)
+            return b"FixedSampleRate"
+        if command == MEMORY_QUERIES["sample_rate"]:
+            wire.history.append(command)
+            return b"500000000"
+        return query(command)
+
+    monkeypatch.setattr(wire, "query", fixed)
+    runner = Verification(app, key, tmp_path, {"operations": []})
+    desired = runner.snapshot()
+    desired["1.timebase"] = 0.02
+    app.sessions.submit(key, "refresh_capabilities").result(5)
+    assert runner.adapter.capabilities_for_channel(1).get("timebase").parameters["value"].maximum == 0.001
+    runner.restore_parameters(desired)
+    assert runner.snapshot() == desired
+    assert wire.history.count("TDIV 0.02") == 1
+
+
 def test_hardware_capture_entry_uses_public_save_and_recording_interfaces(connected, tmp_path):
     from ..hardware.validate_control import Verification
 
