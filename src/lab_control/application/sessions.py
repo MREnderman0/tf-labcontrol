@@ -346,6 +346,16 @@ class SessionManager:
 
         return session.worker.submit(opening)
 
+    @staticmethod
+    def _controls_instrument(operation: str, argument: Any) -> bool:
+        # Explicit memory reads may stop/run the instrument. Keep their queued
+        # and active lifetime under the same recording guard as parameter writes.
+        return operation == "apply" or (
+            operation == "acquire"
+            and isinstance(argument, AcquisitionRequest)
+            and argument.waveform_extent == "memory"
+        )
+
     def submit(self, device_id: str, operation: str, argument: Any = None) -> Future[Any]:
         with self.lock:
             session = self.sessions[device_id]
@@ -355,7 +365,10 @@ class SessionManager:
                 )
             if session.stream_future and not session.stream_future.done():
                 raise DeviceError("Stop acquisition before submitting another task", "task_busy")
-            if session.controls_locked and operation in {"apply", "read_settings", "refresh_capabilities"}:
+            if session.controls_locked and (
+                self._controls_instrument(operation, argument)
+                or operation in {"read_settings", "refresh_capabilities"}
+            ):
                 raise DeviceError("采集中参数已锁定，请先停止采集或记录", "task_busy")
             if operation not in {
                 "identify",
@@ -369,7 +382,7 @@ class SessionManager:
             }:
                 raise DeviceError("Unknown session operation", "invalid_parameter")
             session.pending += 1
-            if operation == "apply":
+            if self._controls_instrument(operation, argument):
                 session.control_pending += 1
         return session.worker.submit(
             self._execute, session, operation, argument, submitted_at=time.perf_counter()
@@ -402,6 +415,10 @@ class SessionManager:
         if session.adapter is None:
             raise DeviceError("No adapter", "disconnected")
         request.validate()
+        if request.waveform_extent != "default" and request.waveform_extent not in getattr(
+            session.adapter, "waveform_extents", ()
+        ):
+            raise DeviceError("Requested waveform extent is not supported by this model", "unsupported")
         if (
             request.consistency == "stream"
             and not getattr(session.adapter, "supports_stream_acquisition", False)
@@ -462,7 +479,7 @@ class SessionManager:
             session.background_read = False
             if session.state in {"error", "degraded"}:
                 session.pending -= 1
-                if operation == "apply":
+                if self._controls_instrument(operation, argument):
                     session.control_pending -= 1
                 raise DeviceError("Previous I/O failed; queued command was not sent", "disconnected")
             session.state, session.active_task = "busy", operation
@@ -643,7 +660,7 @@ class SessionManager:
             with self.lock:
                 session.background_read = False
                 session.pending -= 1
-                if operation == "apply":
+                if self._controls_instrument(operation, argument):
                     session.control_pending -= 1
                 session.active_task = "monitoring" if session.monitoring else ""
                 if session.state == "busy":
@@ -664,6 +681,10 @@ class SessionManager:
         csv_interval: float = 5,
     ) -> Future[Any]:
         request.validate()
+        if request.waveform_extent == "memory":
+            raise DeviceError(
+                "Full memory reads are not available during continuous recording", "unsupported"
+            )
         validate_cadence(interval, cadence, minimum=0.01)
         if (count is not None and (type(count) is not int or count < 1)) or (
             record_interval is not None

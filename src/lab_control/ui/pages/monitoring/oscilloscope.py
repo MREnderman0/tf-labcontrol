@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 
 from lab_control.application.config import config_from_record
 from lab_control.application.controls import DataSource, data_sources
+from lab_control.domain.instruments import AcquisitionRequest
 from lab_control.ui.controller import state_label
 from lab_control.ui.pages.monitoring.oscilloscope_controls import OscilloscopeControls
 from lab_control.ui.pages.monitoring.oscilloscope_plot import OscilloscopePlot
@@ -29,6 +30,7 @@ class OscilloscopeMonitoringPage(QWidget):
         self.device_id, self.mode = "", controller.mode
         self.controls: OscilloscopeControls | None = None
         self.source: DataSource | None = None
+        self.memory_busy = False
         self.plot: OscilloscopePlot
         layout = QVBoxLayout(self)
         layout.setContentsMargins(14, 10, 14, 12)
@@ -63,6 +65,8 @@ class OscilloscopeMonitoringPage(QWidget):
         menu = QMenu(tools)
         self.record_action = menu.addAction("开始记录", self.record)
         self.save_action = menu.addAction("保存当前帧", self.save)
+        self.memory_action = menu.addAction("读取完整存储波形", self.read_memory)
+        self.memory_action.setVisible(False)
         self.pin_action = menu.addAction("添加到监测总览", self.pin)
         menu.addSeparator()
         self.refresh_action = menu.addAction("刷新参数", self.refresh_parameters)
@@ -103,7 +107,7 @@ class OscilloscopeMonitoringPage(QWidget):
         self.select_device(self.selector.device_id)
 
     def select_device(self, device_id: str) -> None:
-        if self.controls and self.controls.running:
+        if self.memory_busy or self.controls and self.controls.running:
             return
         if (self.device_id, self.mode) == (device_id, self.controller.mode) and self.controls:
             return
@@ -214,20 +218,53 @@ class OscilloscopeMonitoringPage(QWidget):
             except Exception as exc:
                 self.controller.message.emit(str(exc))
 
+    def read_memory(self) -> None:
+        if not self.controls or self.memory_busy:
+            return
+        device_id = self.device_id
+        try:
+            request = AcquisitionRequest(
+                "waveform", self.controls.channels(), confirmed=True, waveform_extent="memory"
+            )
+            future = self.controller.runtime.monitoring.read_memory_waveform(device_id, request)
+            self.memory_busy = True
+            self.selector.setEnabled(False)
+
+            def finished(frame=None):
+                self.memory_busy = False
+                self.selector.setEnabled(True)
+                if frame is not None and self.source and self.controls and device_id == self.device_id:
+                    self.plot.show_frame(frame, self.source, self.controls.channels())
+                self.refresh()
+
+            self.controller.watch(future, finished, lambda _exc: finished())
+            self.refresh()
+        except Exception as exc:
+            self.controller.message.emit(str(exc))
+
     def pin(self) -> None:
         if self.source and self.controls and self.controls.channels():
             self.add_card(self.device_id, self.source.key, self.controls.channels())
 
     def refresh(self) -> None:
         if (self.device_id, self.mode) != (self.selector.device_id, self.controller.mode) and not (
-            self.controls and self.controls.running
+            self.memory_busy or self.controls and self.controls.running
         ):
             self.select_device(self.selector.device_id)
             return
         state = self.controller.states.get(self.device_id, {})
         task = self.controller.runtime.monitoring.snapshots().get(self.device_id, {})
-        busy = bool(self.controls and self.controls.running)
+        busy = self.memory_busy or bool(self.controls and self.controls.running)
+        snapshot = self.controller.runtime.sessions.capability_snapshot(self.device_id)
+        memory_supported = bool(snapshot and snapshot.details.get("memory_waveform"))
         connected = state.get("connectionState") in {"connected", "busy"}
+        self.memory_action.setVisible(memory_supported)
+        self.memory_action.setEnabled(
+            connected
+            and not busy
+            and not state.get("controlsLocked")
+            and bool(self.controls and self.controls.channels())
+        )
         self.connection.setText(
             "已连接" if connected else state_label(state.get("connectionState", "disconnected"))
         )
@@ -262,7 +299,9 @@ class OscilloscopeMonitoringPage(QWidget):
             or task.get("recording_state", {}).get("csv_error")
             or task.get("notice")
             or (
-                "设置中 · 暂停后续读取"
+                "完整波形读取中 · 完成后自动续采"
+                if self.memory_busy
+                else "设置中 · 暂停后续读取"
                 if busy
                 else "等待当前配置的新帧 · 保留旧波形及刻度"
                 if waiting

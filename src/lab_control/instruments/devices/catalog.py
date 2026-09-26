@@ -18,6 +18,7 @@ DEVICE_MODULES = (
     "lab_control.instruments.devices.gwinstek_gpd4303s",
     "lab_control.instruments.devices.rigol_dsa815",
     "lab_control.instruments.devices.lecroy_waverunner9404m",
+    "lab_control.instruments.devices.rigol_dho924",
 )
 
 

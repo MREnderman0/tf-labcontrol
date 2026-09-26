@@ -1,0 +1,956 @@
+{
+  "fixture_origin": "Initial independent DHO924 capability contract; no migrated implementation",
+  "adapter": "rigol.dho924",
+  "capabilities": {
+    "category": "oscilloscope",
+    "channels": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "operations": [
+      {
+        "name": "channel_enabled",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":CHAN{ch}:DISP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "scale",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V/div",
+            "minimum": 2e-07,
+            "maximum": 500000,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":CHAN{ch}:SCAL",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "offset",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": -5000000,
+            "maximum": 5000000,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":CHAN{ch}:OFFS",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "coupling",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "AC",
+              "DC",
+              "GND"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":CHAN{ch}:COUP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "probe_attenuation",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "ratio",
+            "minimum": 0.001,
+            "maximum": 50000,
+            "choices": [
+              "0.001",
+              "0.002",
+              "0.005",
+              "0.01",
+              "0.02",
+              "0.05",
+              "0.1",
+              "0.2",
+              "0.5",
+              "1.0",
+              "2.0",
+              "5.0",
+              "10.0",
+              "20.0",
+              "50.0",
+              "100.0",
+              "200.0",
+              "500.0",
+              "1000.0",
+              "2000.0",
+              "5000.0",
+              "10000.0",
+              "20000.0",
+              "50000.0"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":CHAN{ch}:PROB",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "timebase",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s/div",
+            "minimum": 2e-09,
+            "maximum": 500,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":TIM:MAIN:SCAL",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "time_position",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s",
+            "minimum": -5000,
+            "maximum": 5000,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":TIM:MAIN:OFFS",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "record_length",
+        "parameters": {
+          "value": {
+            "kind": "integer",
+            "unit": "point",
+            "minimum": 1000,
+            "maximum": 10000000,
+            "choices": [
+              "1000",
+              "10000",
+              "100000",
+              "1000000",
+              "5000000",
+              "10000000"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":ACQ:MDEP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_source",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "CHAN1",
+              "CHAN2",
+              "CHAN3",
+              "CHAN4"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":TRIG:EDGE:SOUR",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_level",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": -10000000.0,
+            "maximum": 10000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":TRIG:EDGE:LEV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_slope",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "POS",
+              "NEG",
+              "RFAL"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":TRIG:EDGE:SLOP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_mode",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "AUTO",
+              "NORM",
+              "SINGLE",
+              "STOP"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":TRIG:SWE",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sample_rate",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":ACQ:SRAT?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "channel_unit",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":CHAN{ch}:UNIT?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "invert",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":CHAN{ch}:INV?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "vernier",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":CHAN{ch}:VERN?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_type",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":TRIG:MODE?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_sweep",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":TRIG:SWE?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_status",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":TRIG:STAT?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_holdoff",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":TRIG:HOLD?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "acquisition_type",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":ACQ:TYPE?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "averages",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":ACQ:AVER?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "timebase_mode",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":TIM:MODE?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "roll_enabled",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":TIM:ROLL?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "xy_enabled",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":TIM:XY:ENAB?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "delay_enabled",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":TIM:DEL:ENAB?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "transfer_format",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":WAV:FORM?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "transfer_mode",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":WAV:MODE?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "transfer_source",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":WAV:SOUR?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "transfer_start",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":WAV:STAR?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "transfer_stop",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":WAV:STOP?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "transfer_points",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":WAV:POIN?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "run",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":RUN",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "stop",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":STOP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "single",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+        "section": ":SING",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      }
+    ]
+  },
+  "profile": {
+    "adapter_id": "rigol.dho924",
+    "manufacturer": [
+      "RIGOL"
+    ],
+    "models": [
+      "DHO924"
+    ],
+    "category": "oscilloscope",
+    "channels": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+    "revision": "DHO800900 Programming Guide PGA39106-1110: 3.3, 3.6, 3.26-3.28",
+    "status": [
+      "channel_enabled",
+      "scale",
+      "offset",
+      "timebase",
+      "record_length"
+    ],
+    "error_query": ":SYST:ERR?",
+    "acquisition": "dho924"
+  },
+  "commands": {
+    "channel_enabled": {
+      "writes": [
+        ":CHAN{ch}:DISP {value}"
+      ],
+      "query": ":CHAN{ch}:DISP?",
+      "select": [],
+      "compare": false
+    },
+    "scale": {
+      "writes": [
+        ":CHAN{ch}:SCAL {value}"
+      ],
+      "query": ":CHAN{ch}:SCAL?",
+      "select": [],
+      "compare": false
+    },
+    "offset": {
+      "writes": [
+        ":CHAN{ch}:OFFS {value}"
+      ],
+      "query": ":CHAN{ch}:OFFS?",
+      "select": [],
+      "compare": false
+    },
+    "coupling": {
+      "writes": [
+        ":CHAN{ch}:COUP {value}"
+      ],
+      "query": ":CHAN{ch}:COUP?",
+      "select": [],
+      "compare": false
+    },
+    "probe_attenuation": {
+      "writes": [
+        ":CHAN{ch}:PROB {value}"
+      ],
+      "query": ":CHAN{ch}:PROB?",
+      "select": [],
+      "compare": false
+    },
+    "timebase": {
+      "writes": [
+        ":TIM:MAIN:SCAL {value}"
+      ],
+      "query": ":TIM:MAIN:SCAL?",
+      "select": [],
+      "compare": false
+    },
+    "time_position": {
+      "writes": [
+        ":TIM:MAIN:OFFS {value}"
+      ],
+      "query": ":TIM:MAIN:OFFS?",
+      "select": [],
+      "compare": false
+    },
+    "record_length": {
+      "writes": [
+        ":ACQ:MDEP {value}"
+      ],
+      "query": ":ACQ:MDEP?",
+      "select": [],
+      "compare": false
+    },
+    "trigger_source": {
+      "writes": [
+        ":TRIG:EDGE:SOUR {value}"
+      ],
+      "query": ":TRIG:EDGE:SOUR?",
+      "select": [],
+      "compare": false
+    },
+    "trigger_level": {
+      "writes": [
+        ":TRIG:EDGE:LEV {value}"
+      ],
+      "query": ":TRIG:EDGE:LEV?",
+      "select": [],
+      "compare": false
+    },
+    "trigger_slope": {
+      "writes": [
+        ":TRIG:EDGE:SLOP {value}"
+      ],
+      "query": ":TRIG:EDGE:SLOP?",
+      "select": [],
+      "compare": false
+    },
+    "trigger_mode": {
+      "writes": [
+        ":TRIG:SWE {value}"
+      ],
+      "query": ":TRIG:SWE?",
+      "select": [],
+      "compare": false
+    },
+    "sample_rate": {
+      "writes": [],
+      "query": ":ACQ:SRAT?",
+      "select": [],
+      "compare": false
+    },
+    "channel_unit": {
+      "writes": [],
+      "query": ":CHAN{ch}:UNIT?",
+      "select": [],
+      "compare": false
+    },
+    "invert": {
+      "writes": [],
+      "query": ":CHAN{ch}:INV?",
+      "select": [],
+      "compare": false
+    },
+    "vernier": {
+      "writes": [],
+      "query": ":CHAN{ch}:VERN?",
+      "select": [],
+      "compare": false
+    },
+    "trigger_type": {
+      "writes": [],
+      "query": ":TRIG:MODE?",
+      "select": [],
+      "compare": false
+    },
+    "trigger_sweep": {
+      "writes": [],
+      "query": ":TRIG:SWE?",
+      "select": [],
+      "compare": false
+    },
+    "trigger_status": {
+      "writes": [],
+      "query": ":TRIG:STAT?",
+      "select": [],
+      "compare": false
+    },
+    "trigger_holdoff": {
+      "writes": [],
+      "query": ":TRIG:HOLD?",
+      "select": [],
+      "compare": false
+    },
+    "acquisition_type": {
+      "writes": [],
+      "query": ":ACQ:TYPE?",
+      "select": [],
+      "compare": false
+    },
+    "averages": {
+      "writes": [],
+      "query": ":ACQ:AVER?",
+      "select": [],
+      "compare": false
+    },
+    "timebase_mode": {
+      "writes": [],
+      "query": ":TIM:MODE?",
+      "select": [],
+      "compare": false
+    },
+    "roll_enabled": {
+      "writes": [],
+      "query": ":TIM:ROLL?",
+      "select": [],
+      "compare": false
+    },
+    "xy_enabled": {
+      "writes": [],
+      "query": ":TIM:XY:ENAB?",
+      "select": [],
+      "compare": false
+    },
+    "delay_enabled": {
+      "writes": [],
+      "query": ":TIM:DEL:ENAB?",
+      "select": [],
+      "compare": false
+    },
+    "transfer_format": {
+      "writes": [],
+      "query": ":WAV:FORM?",
+      "select": [],
+      "compare": false
+    },
+    "transfer_mode": {
+      "writes": [],
+      "query": ":WAV:MODE?",
+      "select": [],
+      "compare": false
+    },
+    "transfer_source": {
+      "writes": [],
+      "query": ":WAV:SOUR?",
+      "select": [],
+      "compare": false
+    },
+    "transfer_start": {
+      "writes": [],
+      "query": ":WAV:STAR?",
+      "select": [],
+      "compare": false
+    },
+    "transfer_stop": {
+      "writes": [],
+      "query": ":WAV:STOP?",
+      "select": [],
+      "compare": false
+    },
+    "transfer_points": {
+      "writes": [],
+      "query": ":WAV:POIN?",
+      "select": [],
+      "compare": false
+    },
+    "run": {
+      "writes": [
+        ":RUN"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "stop": {
+      "writes": [
+        ":STOP"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "single": {
+      "writes": [
+        ":SING"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    }
+  }
+}

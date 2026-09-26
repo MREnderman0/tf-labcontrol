@@ -48,6 +48,8 @@ class CaptureSave:
     result: Future[Any]
     mode: str
     write: Future[Any] | None = None
+    display_request: AcquisitionRequest | None = None
+    session_id: str = ""
 
 
 @dataclass
@@ -100,6 +102,8 @@ def merge_requests(requests: tuple[AcquisitionRequest, ...]) -> tuple[Acquisitio
         request.validate()
         key = (request.kind, request.quantity)
         previous = grouped.get(key)
+        if previous and previous.waveform_extent != request.waveform_extent:
+            raise ValidationError("Cannot merge different waveform extents")
         channels = tuple(sorted(set(request.channels + (previous.channels if previous else ()))))
         # Settings are separate channel queries; waveform and scalar instruments can merge channels.
         if request.kind == "status":
@@ -185,6 +189,8 @@ class MonitoringService:
         validate_cadence(interval, cadence)
         Recording.validate_csv_interval(csv_interval)
         merged = merge_requests(requests)
+        if any(request.waveform_extent == "memory" for request in merged):
+            raise ValidationError("Use the explicit memory waveform operation outside continuous recording")
         with self.lock:
             if self.closing:
                 raise DeviceError("Monitoring is closing")
@@ -332,6 +338,39 @@ class MonitoringService:
         self.wake.set()
         return result
 
+    def read_memory_waveform(self, device_id: str, request: AcquisitionRequest) -> Future[Any]:
+        """Explicit, serialized memory snapshot; no implicit export or recording."""
+        request = replace(
+            request, waveform_extent="memory", consistency="full", context_id="", initiate=False
+        )
+        request.validate()
+        with self.lock:
+            state = next((s for s in self.sessions.snapshots() if s["stableDeviceId"] == device_id), {})
+            session = self.sessions.sessions.get(device_id)
+            if not session or not getattr(session.adapter, "supports_memory_waveform", False):
+                raise DeviceError("当前型号未提供完整存储读取", "unsupported")
+            if (
+                self.closing
+                or device_id in self.capture_saves
+                or state.get("controlsLocked")
+                or state.get("controlGroup")
+                or state.get("controlPending")
+            ):
+                raise DeviceError("请等待控制或记录收尾完成", "task_busy")
+            self.sessions.set_control_group(device_id, True)
+            try:
+                future = self.sessions.submit(device_id, "acquire", request)
+            except Exception:
+                self.sessions.set_control_group(device_id, False)
+                raise
+            result: Future[Any] = Future()
+            self.capture_saves[device_id] = CaptureSave(
+                future, result, "", display_request=request, session_id=state["sessionId"]
+            )
+            future.add_done_callback(lambda _: self.wake.set())
+        self.wake.set()
+        return result
+
     def _finish_captures(self) -> None:
         for device_id, capture in tuple(self.capture_saves.items()):
             try:
@@ -343,13 +382,28 @@ class MonitoringService:
                     del self.capture_saves[device_id]
                 elif capture.read.done():
                     task = self.tasks.get(device_id)
-                    if task and task.write_pending:
+                    if task and (task.write_pending or capture.display_request and task.pending):
                         continue
                     batch = immutable_batch(capture.read.result())
                     self._validate_saved_batch(batch)
+                    if capture.display_request is not None:
+                        frame = MonitorFrame(
+                            (task.sequence if task else 0) + 1,
+                            int(batch.configuration.get("_session_configuration_version", 0)),
+                            capture.display_request,
+                            batch,
+                            session_id=capture.session_id,
+                        )
+                        self.sessions.set_control_group(device_id, False)
+                        capture.result.set_result(frame)
+                        del self.capture_saves[device_id]
+                        continue
                     capture.write = self.writer.submit(self._export, device_id, batch, capture.mode)
                     capture.write.add_done_callback(lambda _future: self.wake.set())
             except Exception as exc:
+                if capture.display_request is not None:
+                    self.sessions.set_control_group(device_id, False)
+                    self._pause(device_id, str(exc))
                 capture.result.set_exception(exc)
                 del self.capture_saves[device_id]
                 self.repository.audit("capture_save_failed", device_id=device_id, error=str(exc))
@@ -383,6 +437,8 @@ class MonitoringService:
 
     def set_recording(self, device_id: str, enabled: bool, *, mode: str | None = None) -> None:
         with self.lock:
+            if enabled and device_id in self.capture_saves and self.capture_saves[device_id].display_request:
+                raise DeviceError("请等待完整波形读取完成", "task_busy")
             task = self.tasks.get(device_id)
             if not task or not task.running:
                 raise DeviceError("Start monitoring before recording", "task_busy")

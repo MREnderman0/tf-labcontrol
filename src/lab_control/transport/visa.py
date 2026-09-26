@@ -213,18 +213,29 @@ class VisaTransport:
     @synchronized
     @measured("query")
     def query_binary(self, payload: bytes | str, max_bytes: int) -> bytes:
-        """Optional bounded definite-block query for native VISA END transports.
+        """Bounded definite block with native VISA END or a SOCKET LF/CRLF trailer.
 
         An interrupted block poisons framing: close the handle, never flush/retry.
         Other transports retain their existing model-qualified acquisition path.
         """
         if not 0 < max_bytes <= MAX_MESSAGE:
             raise DeviceError("Invalid binary receive budget", "invalid_parameter")
-        if (
-            self.line_framing
-            or self.resource.upper().startswith("ASRL")
-            or self.resource.upper().endswith("::SOCKET")
-        ):
+        if self.resource.upper().endswith("::SOCKET"):
+            if self.handle is None:
+                raise DeviceError("Binary connection requires explicit reconnect", "disconnected")
+            self.write(payload)
+            old = self.handle.read_termination
+            self.handle.read_termination = None
+            try:
+                return self.reader.definite_block(max_bytes)
+            except Exception as exc:
+                error = self._error(exc)
+                self.close()
+                raise DeviceError(f"{error}; 连接已关闭，须显式重连（未重发命令）", error.code) from exc
+            finally:
+                if self.handle is not None:
+                    self.handle.read_termination = old
+        if self.line_framing or self.resource.upper().startswith("ASRL"):
             raise DeviceError("Bounded binary requires native VISA END", "unsupported")
         if self.handle is None:
             raise DeviceError("Binary connection requires explicit reconnect", "disconnected")

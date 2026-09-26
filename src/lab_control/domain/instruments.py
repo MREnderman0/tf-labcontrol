@@ -213,8 +213,15 @@ class AcquisitionRequest:
     confirmed: bool = False
     consistency: str = "full"
     context_id: str = ""
+    waveform_extent: str = "default"
 
     def validate(self) -> None:
+        if self.waveform_extent not in {"default", "screen", "memory"}:
+            raise ValidationError("waveform_extent must be default, screen or memory")
+        if self.waveform_extent != "default" and self.kind != "waveform":
+            raise ValidationError("Waveform extent is only valid for waveform requests")
+        if self.waveform_extent == "memory" and (self.consistency != "full" or not self.confirmed):
+            raise ValidationError("Memory reads require an explicit confirmed full request")
         if self.consistency not in {"full", "live", "stream"}:
             raise ValidationError("consistency must be full, live or stream")
         if self.consistency == "stream" and (not self.context_id or self.initiate):

@@ -15,6 +15,7 @@ JSON 保留 hardware_tested/hardware_passed 兼容字段；固定 false 不代�
 | GW Instek GPD-4303S | `gwinstek.gpd4303s` | 10 | power | [型号卡片](../devices/power-supplies/gpd-4303s.md) |
 | RIGOL DSA815 | `rigol.dsa815` | 45 | dsa | [型号卡片](../devices/spectrum-analyzers/rigol-dsa815.md) |
 | Teledyne LeCroy WaveRunner 9404M | `lecroy.9404m` | 22 | lecroy | [型号卡片](../devices/oscilloscopes/waverunner-9404m.md) |
+| RIGOL DHO924 | `rigol.dho924` | 35 | dho924 | [型号卡片](../devices/oscilloscopes/rigol-dho924.md) |
 | Siglent SDG6032X | `siglent.sdg6032x` | 36 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/sdg6032x.md) |
 | Keithley 2231A-30-3 | `keithley.2231a` | 15 | power | [型号卡片](../devices/power-supplies/keithley-2231a.md) |
 | Siglent SPD4306X | `siglent.spd4306x` | 22 | power | [型号卡片](../devices/power-supplies/spd4306x.md) |

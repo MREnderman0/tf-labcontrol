@@ -78,3 +78,38 @@ def test_temporary_completion_timeout_restored_and_failure_closes(monkeypatch):
     with pytest.raises(DeviceError):
         wire.query_timeout("*OPC?", 30)
     assert wire.handle is None and history == ["closed"]
+
+
+def socket_transport(raw):
+    wire, history, counts = transport(raw)
+    pending = bytearray(raw)
+    wire.resource = "TCPIP0::example::5555::SOCKET"
+
+    def exact(count, **kwargs):
+        counts.append(count)
+        if not pending:
+            raise DeviceError("timeout", "timeout")
+        result = bytes(pending[:count])
+        del pending[:count]
+        return result
+
+    wire.handle.read_bytes = exact
+    return wire, history, counts
+
+
+def test_socket_bounded_binary_validates_trailer_and_does_not_split_payload_lf():
+    raw = b"#14\x00\n\xff\r\r\n"
+    wire, history, _ = socket_transport(raw)
+    assert wire.query_binary("DATA?", 4) == raw
+    assert history == ["DATA?"] and not wire.reader.buffer
+
+
+@pytest.mark.parametrize(
+    "raw,message", [(b"#9128000000", "exceeds"), (b"#14ab", "Truncated"), (b"#11ab", "Trailing")]
+)
+def test_socket_broken_boundary_closes_and_never_replays(raw, message):
+    wire, history, counts = socket_transport(raw)
+    with pytest.raises(DeviceError, match=message):
+        wire.query_binary("DATA?", 4)
+    assert history == ["DATA?", "closed"] and wire.handle is None
+    assert max(counts) <= 9

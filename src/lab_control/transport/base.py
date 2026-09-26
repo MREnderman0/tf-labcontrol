@@ -96,6 +96,45 @@ class BufferedReader:
         del self.buffer[:count]
         return result
 
+    def definite_block(self, max_bytes: int) -> bytes:
+        """One bounded block followed by LF/CRLF; binary LF is never a delimiter.
+
+        Unlike message(), this opt-in transaction consumes and validates its trailer.
+        The owning transport must close on error rather than reuse uncertain framing.
+        """
+        declared = None
+        received = 0
+        try:
+            header = self.exact(2)
+            received += len(header)
+            if header[:1] != b"#" or header[1:2] not in b"123456789":
+                raise DeviceError("Invalid definite block header", "parse_error")
+            length = self.exact(int(header[1:2]))
+            received += len(length)
+            if not length.isdigit():
+                raise DeviceError("Invalid binary declared length", "parse_error")
+            declared = int(length)
+            if declared > max_bytes:
+                raise DeviceError("IEEE block exceeds size limit", "parse_error")
+            body = self.exact(declared)
+            received += len(body)
+            trailer = self.exact(1)
+            if trailer == b"\r":
+                trailer += self.exact(1)
+            received += len(trailer)
+            if trailer not in (b"\n", b"\r\n") or self.buffer:
+                raise DeviceError("Trailing IEEE block data", "parse_error")
+            return header + length + body + trailer
+        except Exception as exc:
+            message = str(exc)
+            if not isinstance(exc, DeviceError) or getattr(exc, "code", "") in {"timeout", "disconnected"}:
+                message = "Truncated IEEE block: " + message
+            raise DeviceError(
+                f"{message}; declared={declared}, received_at_least={received + len(self.buffer)}, "
+                f"limit={max_bytes}",
+                getattr(exc, "code", "parse_error"),
+            ) from exc
+
     def message(self) -> bytes:
         # A read-up-to callback may bring the header and body in together. This
         # avoids a separate one-byte transport read for every scalar response.

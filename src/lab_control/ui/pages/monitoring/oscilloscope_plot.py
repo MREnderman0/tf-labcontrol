@@ -133,6 +133,11 @@ class OscilloscopePlot(LivePlot):
         self.meta.setText(
             f"{engineering(first.seconds_per_div, 's', custom_scale=True)}/格 · "
             + " / ".join(f"CH{m.channel} {len(m.values)} 点" for m in wanted)
+            + (
+                {"screen": " · 屏幕波形", "memory": " · 完整存储波形"}.get(
+                    wanted[0].metadata.get("waveform_extent"), ""
+                )
+            )
             + f" · 配置 {frame.configuration_version} · {frame.batch.validation}"
         )
         self.displayed_frame = candidate

@@ -378,6 +378,7 @@ class OscilloscopeControls(QFrame):
         available = (
             state.get("connectionState") in {"connected", "busy"}
             and not state.get("controlsLocked")
+            and not state.get("controlGroup")
             and not state.get("capabilityStale", True)
             and not self.running
             and self.device_id not in self.controller.group_devices
@@ -393,6 +394,12 @@ class OscilloscopeControls(QFrame):
             point_spec = point_cap.parameters["value"]
             if point_spec.minimum is not None and point_spec.maximum is not None:
                 self.points_range.setText(f"{point_spec.minimum:,.0f}～{point_spec.maximum:,.0f}\n含软件限制")
+                if point_spec.choices:
+                    self.points_range.setText(
+                        self.points_range.text()
+                        + "\n档位："
+                        + " / ".join(engineering(float(v), "").replace(" ", "") for v in point_spec.choices)
+                    )
                 self.points.setToolTip(
                     point_cap.reason
                     or "仪器最大采集长度；实际有效点数以收到的波形为准。超范围原值不自动修改。"
@@ -570,6 +577,8 @@ class OscilloscopeControls(QFrame):
         if self.point_clamp_attempted:
             raise DeviceError("自动降低点数后仍超出新范围，已停止后续设置")
         target = math.floor(maximum)
+        if spec.choices:
+            target = max(int(float(v)) for v in spec.choices if float(v) <= maximum)
         cap.validate({"value": target})
         self.point_clamp_attempted = True
         self.pending = [DeviceCommand("record_length", {"value": target})]
