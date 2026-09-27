@@ -24,6 +24,11 @@ from lab_control.application.config import config_from_record
 from lab_control.application.controls import DataSource, data_sources
 from lab_control.domain.spectrum import SpectrumMarker
 from lab_control.ui.controller import state_label
+from lab_control.ui.pages.monitoring.recording_state import (
+    RecordingButton,
+    recording_phase,
+    update_recording_frame,
+)
 from lab_control.ui.pages.monitoring.spectrum_controls import SpectrumControls
 from lab_control.ui.pages.monitoring.spectrum_markers import MarkerDialog, SpectrumPlot, frequency_text
 from lab_control.ui.pages.monitoring.timing import MonitoringTiming
@@ -61,9 +66,9 @@ class SpectrumMonitoringPage(QWidget):
         layout.addWidget(self.empty)
         self.splitter = QSplitter(Qt.Orientation.Horizontal, self)
         self.splitter.setChildrenCollapsible(False)
-        chart = QFrame(self.splitter)
+        chart = self.chart = QFrame(self.splitter)
         chart.setObjectName("spectrumChart")
-        chart.setMinimumWidth(240)
+        chart.setMinimumWidth(280)
         plot_layout = QVBoxLayout(chart)
         plot_layout.setContentsMargins(10, 10, 10, 10)
         toolbar = QHBoxLayout()
@@ -71,11 +76,15 @@ class SpectrumMonitoringPage(QWidget):
         title.setObjectName("spectrumChartTitle")
         toolbar.addWidget(title)
         toolbar.addStretch()
+        self.record_button = RecordingButton(chart)
+        self.record_button.clicked.connect(self.record)
+        toolbar.addWidget(self.record_button)
         tools = QToolButton(chart)
+        tools.setObjectName("curveTools")
+        tools.setFixedHeight(30)
         tools.setText("曲线工具")
         tools.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         menu = QMenu(tools)
-        self.record_action = menu.addAction("开始记录", self.record)
         self.save_action = menu.addAction("保存当前帧", self.save)
         menu.addAction("添加到监测总览", self.pin)
         menu.addSeparator()
@@ -215,6 +224,7 @@ class SpectrumMonitoringPage(QWidget):
         try:
             self.timing.commit()
             service.set_recording(self.device_id, not task.get("recording"), mode=self.mode)
+            self.refresh()
         except Exception as exc:
             self.controller.message.emit(str(exc))
 
@@ -313,8 +323,10 @@ class SpectrumMonitoringPage(QWidget):
         self.start_button.setEnabled(
             connected and not busy and not (task.get("pending") and not task.get("running"))
         )
-        self.record_action.setEnabled(bool(task.get("running")) and not busy)
-        self.record_action.setText("停止记录" if task.get("recording") else "开始记录")
+        self.record_button.refresh(
+            task, connected=connected, busy=busy, locked=bool(state.get("controlsLocked"))
+        )
+        update_recording_frame(self.chart, task)
         frame = (
             service.latest(self.device_id, self.source.kind, self.source.quantity) if self.source else None
         )
@@ -335,6 +347,8 @@ class SpectrumMonitoringPage(QWidget):
             or (
                 "设置中 · 曲线读取暂停"
                 if busy
+                else "记录收尾中 · 正在排空已接收数据"
+                if recording_phase(task) == "draining"
                 else "正在记录原始数据"
                 if task.get("recording")
                 else "监测中"

@@ -44,7 +44,7 @@ def test_spectrum_holds_axis_then_refits_once_on_settings_or_manual_fit(qtbot, p
     qtbot.wait(30)
     assert plot.plot.viewRange()[1] == pytest.approx([-98, -2])
     assert plot.plot.getViewBox().state["autoRange"] == [False, False]
-    plot.fit_current()
+    plot.plot.plotItem.autoBtnClicked()  # The built-in Fit must follow the same one-shot policy.
     assert plot.plot.viewRange()[1] == pytest.approx([-180, 60])
     plot.show_frame(frame((-70, -60)), source, (1,))
     assert plot.plot.viewRange()[1] == pytest.approx([-180, 60])

@@ -117,3 +117,51 @@ def test_legacy_missing_metadata_falls_back_but_nan_never_replaces_frame(plot):
         replace(sample, sequence=2, batch=replace(sample.batch, measurements=(bad,))), SOURCE, (1,)
     )
     assert plot.displayed_frame is prior
+
+
+def test_builtin_fit_and_autorange_cannot_collapse_grid(plot, qtbot):
+    sample = frame(channels=(1,))
+    plot.show_frame(sample, SOURCE, (1,))
+    plot.plot.plotItem.autoBtnClicked()
+    plot.plot.enableAutoRange()  # Also guard keyboard/context or stale widget state.
+    noise = np.random.default_rng(42).normal(0, 0.001, len(sample.batch.measurements[0].values))
+    for sequence, amplitude in enumerate((0.1, 0.02, 4, 0), 2):
+        m = sample.batch.measurements[0]
+        changed = replace(m, values=(m.values + noise) * amplitude, axis=m.axis + sequence * 1e-12)
+        plot.show_frame(
+            replace(sample, sequence=sequence, batch=replace(sample.batch, measurements=(changed,))),
+            SOURCE,
+            (1,),
+        )
+        qtbot.wait(10)
+        assert plot.plot.getViewBox().autoRangeEnabled() == [False, False]
+        assert plot.plot.viewRange()[1] == pytest.approx([-4, 4])
+        assert plot.plot.viewRange()[0] == pytest.approx([-5e-6, 5e-6])
+        assert sum(-4 < line.value() < 4 for line in plot.grid_lines[11:]) == 7
+        assert all(line.isVisible() and line.pen.color().alpha() >= 76 for line in plot.grid_lines[11:])
+        assert plot.grid_lines[15].pen.color().alpha() > plot.grid_lines[14].pen.color().alpha()
+        assert len(plot.curves[1, "waveform"].getData()[0]) > 1
+        assert not plot.plot.plotItem.autoBtn.isVisible()
+        np.testing.assert_array_equal(plot.displayed_frame.batch.measurements[0].values, changed.values)
+
+
+def test_legacy_builtin_fit_is_once_and_reset_can_restore_instrument_grid(plot, qtbot):
+    sample = frame(channels=(1,))
+    m = replace(sample.batch.measurements[0], metadata={})
+    plain = replace(sample, batch=replace(sample.batch, measurements=(m,)))
+    plot.show_frame(plain, SOURCE, (1,))
+    plot.plot.plotItem.autoBtnClicked()
+    previous = plot.plot.viewRange()
+    plot.show_frame(
+        replace(
+            plain, sequence=2, batch=replace(plain.batch, measurements=(replace(m, values=m.values * 0.01),))
+        ),
+        SOURCE,
+        (1,),
+    )
+    qtbot.wait(10)
+    assert plot.plot.viewRange() == previous
+    assert plot.plot.getViewBox().autoRangeEnabled() == [False, False]
+    plot.reset()
+    plot.show_frame(replace(sample, session_id="reconnected"), SOURCE, (1,))
+    assert plot.plot.viewRange()[1] == pytest.approx([-4, 4])

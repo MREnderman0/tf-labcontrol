@@ -19,6 +19,11 @@ from lab_control.domain.instruments import AcquisitionRequest
 from lab_control.ui.controller import state_label
 from lab_control.ui.pages.monitoring.oscilloscope_controls import OscilloscopeControls
 from lab_control.ui.pages.monitoring.oscilloscope_plot import OscilloscopePlot
+from lab_control.ui.pages.monitoring.recording_state import (
+    RecordingButton,
+    recording_phase,
+    update_recording_frame,
+)
 from lab_control.ui.pages.monitoring.timing import MonitoringTiming
 from lab_control.ui.widgets.device_selector import DeviceSelector
 
@@ -49,7 +54,7 @@ class OscilloscopeMonitoringPage(QWidget):
         layout.addWidget(self.empty)
         self.splitter = QSplitter(Qt.Orientation.Horizontal)
         self.splitter.setChildrenCollapsible(False)
-        chart = QFrame()
+        chart = self.chart = QFrame()
         chart.setObjectName("spectrumChart")
         chart.setMinimumWidth(280)
         chart_layout = QVBoxLayout(chart)
@@ -59,11 +64,15 @@ class OscilloscopeMonitoringPage(QWidget):
         title.setObjectName("spectrumChartTitle")
         tools_row.addWidget(title)
         tools_row.addStretch()
+        self.record_button = RecordingButton(chart)
+        self.record_button.clicked.connect(self.record)
+        tools_row.addWidget(self.record_button)
         tools = QToolButton()
+        tools.setObjectName("curveTools")
+        tools.setFixedHeight(30)
         tools.setText("曲线工具")
         tools.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         menu = QMenu(tools)
-        self.record_action = menu.addAction("开始记录", self.record)
         self.save_action = menu.addAction("保存当前帧", self.save)
         self.memory_action = menu.addAction("读取完整存储波形", self.read_memory)
         self.memory_action.setVisible(False)
@@ -184,6 +193,7 @@ class OscilloscopeMonitoringPage(QWidget):
                 **self.timing.options(),
                 mode=self.mode,
             )
+            self.refresh()
         except Exception as exc:
             self.controller.message.emit(str(exc))
 
@@ -202,6 +212,7 @@ class OscilloscopeMonitoringPage(QWidget):
                 not service.snapshots().get(self.device_id, {}).get("recording"),
                 mode=self.mode,
             )
+            self.refresh()
         except Exception as exc:
             self.controller.message.emit(str(exc))
 
@@ -277,8 +288,10 @@ class OscilloscopeMonitoringPage(QWidget):
                 and not (task.get("pending") and not task.get("running"))
             )
         )
-        self.record_action.setText("停止记录" if task.get("recording") else "开始记录")
-        self.record_action.setEnabled(bool(task.get("running") and not busy))
+        self.record_button.refresh(
+            task, connected=connected, busy=busy, locked=bool(state.get("controlsLocked"))
+        )
+        update_recording_frame(self.chart, task)
         self.save_action.setEnabled(
             self.plot.displayed_frame is not None
             and not task.get("display_saving")
@@ -305,6 +318,8 @@ class OscilloscopeMonitoringPage(QWidget):
                 if busy
                 else "等待当前配置的新帧 · 保留旧波形及刻度"
                 if waiting
+                else "记录收尾中 · 正在排空已接收数据"
+                if recording_phase(task) == "draining"
                 else "记录中 · 逐帧保存"
                 if task.get("recording")
                 else "监测中"

@@ -31,6 +31,7 @@ from lab_control.domain.readback import boolean_value
 from lab_control.ui.controller import WorkspaceController
 from lab_control.ui.pages.monitoring.oscilloscope_plot import OscilloscopePlot
 from lab_control.ui.pages.monitoring.plot import LivePlot
+from lab_control.ui.pages.monitoring.recording_state import recording_phase, update_recording_frame
 from lab_control.ui.pages.monitoring.timing import monitoring_options
 from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
 
@@ -119,6 +120,11 @@ class MonitorCard(QFrame):
         layout.addWidget(self.subtitle)
         record = controller.records.get(spec["device_id"])
         scope = bool(record and instrument_category(record) == "oscilloscope")
+        self.recording_frame = bool(
+            record and instrument_category(record) in {"oscilloscope", "spectrum_analyzer"}
+        )
+        if self.recording_frame:
+            update_recording_frame(self, {})
         self.plot = OscilloscopePlot() if scope else LivePlot()
         layout.addWidget(self.plot, 1)
         self.state = QLabel("未开始监测")
@@ -144,6 +150,8 @@ class MonitorCard(QFrame):
         device_id = self.spec["device_id"]
         record = self.controller.records.get(device_id)
         if not record:
+            if self.recording_frame:
+                update_recording_frame(self, {})
             self.subtitle.setText("设备记录暂不可用 · 保留卡片配置")
             return
         slot = record.get("slots", {}).get(self.controller.mode, "")
@@ -156,6 +164,8 @@ class MonitorCard(QFrame):
             (s for s in data_sources(config_from_record(record)) if s.key == self.spec["source"]), None
         )
         task = self.controller.runtime.monitoring.snapshots().get(device_id, {})
+        if self.recording_frame:
+            update_recording_frame(self, task)
         channels = tuple(self.spec["channels"])
         if isinstance(self.plot, OscilloscopePlot):
             channels = scope_channels(self.controller, device_id, channels)
@@ -175,7 +185,9 @@ class MonitorCard(QFrame):
             or task.get("recording_notice")
             or task.get("recording_state", {}).get("csv_error")
             or (
-                "监测中 · 记录中"
+                "记录收尾中 · 正在排空已接收数据"
+                if recording_phase(task) == "draining"
+                else "监测中 · 记录中"
                 if task.get("recording")
                 else "监测中 · 未保存数据"
                 if task.get("running")

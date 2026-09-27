@@ -19,8 +19,12 @@ class OscilloscopePlot(LivePlot):
         self.grid_range: tuple | None = None
         self.instrument_view = False
         self.legend_signature: tuple | None = None
+        self._restoring_grid = False
+        self.plot.getViewBox().sigStateChanged.connect(self._keep_instrument_view)
 
     def reset(self) -> None:
+        self.instrument_view = False
+        self.grid_range = None
         super().reset()
         self.grid_lines.clear()
         self.grid_range = None
@@ -68,6 +72,8 @@ class OscilloscopePlot(LivePlot):
         if not self.instrument_view:
             self.reset()
             self.instrument_view = True
+        self.plot_item.one_shot_fit = True
+        self.plot_item.hideButtons()
         self.last_token = token
         bounds = (
             first.time_center - 5 * first.seconds_per_div,
@@ -77,6 +83,7 @@ class OscilloscopePlot(LivePlot):
         if bounds != self.grid_range:
             self.grid_range = bounds
             self.fit_current()
+        self._keep_instrument_view()
         self.plot.hideAxis("left")
         self.plot.setLabel("bottom", "时间", units="s")
         self.plot.showGrid(x=False, y=False)
@@ -84,9 +91,10 @@ class OscilloscopePlot(LivePlot):
         self.plot.setMenuEnabled(False)
         self.value.hide()
         if not self.grid_lines:
-            pen = pg.mkPen((165, 185, 189, 42), width=1, style=Qt.PenStyle.DashLine)
             for angle, count in ((90, 11), (0, 9)):
-                for _ in range(count):
+                for index in range(count):
+                    alpha = 110 if index == count // 2 else 78
+                    pen = pg.mkPen((165, 185, 189, alpha), width=1, style=Qt.PenStyle.DashLine)
                     line = pg.InfiniteLine(angle=angle, pen=pen, movable=False)
                     line.setZValue(-10)
                     self.plot.addItem(line, ignoreBounds=True)
@@ -162,8 +170,20 @@ class OscilloscopePlot(LivePlot):
             self.last_token = None
             self.meta.setText("所选通道已关闭 · 无显示波形")
 
+    def _keep_instrument_view(self, *_args) -> None:
+        if not self.instrument_view or not self.grid_range or self._restoring_grid:
+            return
+        view = self.plot.getViewBox()
+        x, y = view.viewRange()
+        if any(view.autoRangeEnabled()) or tuple(x) != self.grid_range or tuple(y) != (-4, 4):
+            self.fit_current()
+
     def fit_current(self) -> None:
         if self.grid_range:
-            self.plot.setRange(xRange=self.grid_range, yRange=(-4, 4), padding=0, disableAutoRange=True)
+            self._restoring_grid = True
+            try:
+                self.plot.setRange(xRange=self.grid_range, yRange=(-4, 4), padding=0, disableAutoRange=True)
+            finally:
+                self._restoring_grid = False
         else:
             super().fit_current()

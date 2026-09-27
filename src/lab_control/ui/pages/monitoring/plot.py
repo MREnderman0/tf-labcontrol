@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 import pyqtgraph as pg
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from lab_control.application.acquisition_pipeline import validate_displayed_batch
@@ -14,6 +15,19 @@ from lab_control.application.controls import DataSource
 from lab_control.application.monitoring import MonitorFrame
 from lab_control.domain.instruments import DeviceError
 from lab_control.ui.pages.monitoring.trace_view import TraceView
+
+
+class MonitoringPlotItem(pg.PlotItem):
+    """Trace fit uses the application's one-shot policy, not continuous autorange."""
+
+    fit_requested = Signal()
+    one_shot_fit = False
+
+    def autoBtnClicked(self) -> None:  # noqa: N802
+        if self.one_shot_fit:
+            self.fit_requested.emit()
+        else:
+            super().autoBtnClicked()
 
 
 class LivePlot(QWidget):
@@ -25,7 +39,9 @@ class LivePlot(QWidget):
         self.value.setObjectName("liveValue")
         self.value.setWordWrap(True)
         layout.addWidget(self.value)
-        self.plot = pg.PlotWidget(background="#131c21")
+        self.plot_item = MonitoringPlotItem()
+        self.plot_item.fit_requested.connect(self.fit_current)
+        self.plot = pg.PlotWidget(background="#131c21", plotItem=self.plot_item)
         self.plot.showGrid(x=True, y=True, alpha=0.16)
         self.plot.addLegend(offset=(8, 8))
         self.plot.setMinimumSize(150, 170)
@@ -53,6 +69,8 @@ class LivePlot(QWidget):
         self.axis_signature = None
         self.displayed_frame = None
         self.trace_view.reset()
+        self.plot_item.one_shot_fit = False
+        self.plot_item.showButtons()
         self.plot.enableAutoRange()
         self.value.setText("—")
         self.meta.setText("尚无数据")
@@ -85,6 +103,7 @@ class LivePlot(QWidget):
             valid = False  # Preserve the existing "unknown" scalar display.
         self.last_token = token
         stable_trace = source.kind in {"spectrum", "waveform"}
+        self.plot_item.one_shot_fit = stable_trace
         if stable_trace and valid:
             # Fit raw arrays first: peak decimation at the initial seconds-wide
             # viewport can turn a microsecond trace into zero display points.
