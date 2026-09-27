@@ -97,7 +97,7 @@ def test_save_displayed_frame_without_reading_and_preserve_draft(spectrum, qtbot
         return replace(original(request), validation=request.consistency)
 
     monkeypatch.setattr(adapter, "acquire", acquire)
-    monkeypatch.setattr(runtime.repository, "export", lambda batch, mode: saved.append(batch) or "mock-path")
+    monkeypatch.setattr(runtime.repository, "export", lambda batch, mode, **options: saved.append(batch) or "mock-path")
     page.toggle_monitoring()
     qtbot.waitUntil(lambda: page.plot.displayed_frame is not None)
     runtime.monitoring.stop(key).result(3)
@@ -136,7 +136,7 @@ def test_save_old_display_after_parameter_change_and_single_row(spectrum, qtbot,
     assert runtime.monitoring.latest(key, "spectrum") is None
     assert page.save_action.isEnabled()
     saved = []
-    monkeypatch.setattr(runtime.repository, "export", lambda batch, mode: saved.append(batch) or "mock-path")
+    monkeypatch.setattr(runtime.repository, "export", lambda batch, mode, **options: saved.append(batch) or "mock-path")
     page.save_action.trigger()
     qtbot.waitUntil(lambda: bool(saved))
     assert saved[0] is displayed.batch
@@ -340,8 +340,8 @@ def test_timing_controls_are_local_persistent_and_separate_per_device(spectrum, 
     window, page, runtime, key, adapter = spectrum
     writes = []
     monkeypatch.setattr(adapter, "apply", writes.append)
-    assert page.timing.cadence.currentData() == "fastest" and not page.interval.isEnabled()
-    page.timing.cadence.setCurrentIndex(page.timing.cadence.findData("interval"))
+    assert page.timing.cadence.currentData() == "interval" and page.interval.isEnabled()
+    assert page.interval.value() == 0.5
     page.interval.setValue(0.75)
     page.interval.editingFinished.emit()
     assert not writes and key not in runtime.monitoring.tasks
@@ -356,6 +356,7 @@ def test_timing_controls_are_local_persistent_and_separate_per_device(spectrum, 
     qtbot.waitUntil(lambda: second in window.controller.records)
     page.selector.select(second)
     assert page.interval.value() == 0.5
+    assert page.timing.cadence.currentData() == "interval"
     page.selector.select(key)
     assert page.interval.value() == 0.75
     window.controller.set_mode("optical")
@@ -380,6 +381,7 @@ def test_timing_controls_are_local_persistent_and_separate_per_device(spectrum, 
     # Overview start must not reset either an active cadence or a saved preference.
     window.dashboard.start()
     assert runtime.monitoring.snapshots()[key]["interval"] == 0.5
+    assert runtime.monitoring.snapshots()[key]["cadence"] == "interval"
     assert runtime.monitoring.snapshots()[key]["record_interval"] is None
     runtime.monitoring.stop(key).result(3)
     window.dashboard.start()

@@ -718,7 +718,14 @@ class SessionManager:
                 or session.closing
             ):
                 raise DeviceError("Device has an active task", "task_busy")
-            recording = self.repository.create_recording(mode, csv_interval=csv_interval)
+            context = self.repository.new_save_context(
+                mode,
+                "continuous",
+                device_id=device_id,
+                identity=session.identity,
+                adapter_id=session.config.adapter,
+            )
+            recording = self.repository.create_recording(mode, context=context, csv_interval=csv_interval)
             session.direct_recording = recording
             self.recordings.append(recording)
             session.stop.clear()

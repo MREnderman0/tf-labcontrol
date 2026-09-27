@@ -54,7 +54,7 @@ def test_slow_snapshot_export_does_not_block_reading_or_controls(tmp_path):
         entered, release = threading.Event(), threading.Event()
         calls = []
 
-        def write(batch, mode):
+        def write(batch, mode, **options):
             calls.append(batch)
             entered.set()
             assert release.wait(5)

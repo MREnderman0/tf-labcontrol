@@ -26,8 +26,8 @@ from lab_control.domain.instruments import (
     MeasurementBatch,
     Quality,
     ValidationError,
-    utc_now,
 )
+from lab_control.storage.paths import SaveContext
 from lab_control.storage.recording import Recording
 from lab_control.storage.repository import Repository
 
@@ -50,6 +50,7 @@ class CaptureSave:
     write: Future[Any] | None = None
     display_request: AcquisitionRequest | None = None
     session_id: str = ""
+    save_context: SaveContext | None = None
 
 
 @dataclass
@@ -273,7 +274,8 @@ class MonitoringService:
             if self.closing:
                 raise DeviceError("Monitoring is closing")
             self._validate_saved_batch(frame.batch)
-            return self.writer.submit(self.repository.export, frame.batch, mode)
+            context = self.repository.new_save_context(mode, "single_frame", identity=frame.batch.identity)
+            return self.writer.submit(self.repository.export, frame.batch, mode, context=context)
 
     @staticmethod
     def _validate_saved_batch(batch: MeasurementBatch) -> None:
@@ -287,7 +289,10 @@ class MonitoringService:
         with self.lock:
             if self.closing or device_id in self.display_exports or device_id in self.capture_saves:
                 raise DeviceError("当前帧正在保存，请等待完成", "task_busy")
-            future = self.writer.submit(self.repository.export, frame.batch, mode)
+            context = self.repository.new_save_context(
+                mode, "single_frame", device_id=device_id, identity=frame.batch.identity
+            )
+            future = self.writer.submit(self.repository.export, frame.batch, mode, context=context)
             self.display_exports[device_id] = future
 
             def finished(_future: Future[Any]) -> None:
@@ -298,11 +303,13 @@ class MonitoringService:
             future.add_done_callback(finished)
             return future
 
-    def _export(self, device_id: str, batch: MeasurementBatch, mode: str) -> Any:
+    def _export(
+        self, device_id: str, batch: MeasurementBatch, mode: str, context: SaveContext | None = None
+    ) -> Any:
         self._validate_saved_batch(batch)
         started = time.perf_counter()
         try:
-            return self.repository.export(batch, mode)
+            return self.repository.export(batch, mode, context=context)
         finally:
             elapsed = time.perf_counter() - started
             with self.lock:
@@ -330,10 +337,11 @@ class MonitoringService:
             if state.get("controlGroup") or state.get("controlPending"):
                 raise DeviceError("请等待当前设置完成", "task_busy")
             result: Future[Any] = Future()
+            context = self.repository.new_save_context(mode, "single_frame", device_id=device_id)
             read = self.sessions.submit(
                 device_id, "observe" if request.kind == "status" else "acquire", request
             )
-            self.capture_saves[device_id] = CaptureSave(read, result, mode)
+            self.capture_saves[device_id] = CaptureSave(read, result, mode, save_context=context)
             read.add_done_callback(lambda _future: self.wake.set())
         self.wake.set()
         return result
@@ -398,7 +406,9 @@ class MonitoringService:
                         capture.result.set_result(frame)
                         del self.capture_saves[device_id]
                         continue
-                    capture.write = self.writer.submit(self._export, device_id, batch, capture.mode)
+                    capture.write = self.writer.submit(
+                        self._export, device_id, batch, capture.mode, capture.save_context
+                    )
                     capture.write.add_done_callback(lambda _future: self.wake.set())
             except Exception as exc:
                 if capture.display_request is not None:
@@ -449,6 +459,12 @@ class MonitoringService:
             if enabled and mode and task.mode != mode:
                 if task.recording or task.pending_record_session or task.write_pending:
                     raise DeviceError("Wait for the previous recording to finish", "task_busy")
+            previous_lock = bool(
+                task.recording
+                or task.pending_record_session
+                or task.write_pending
+                or (task.recorder and not task.recorder.binary_done)
+            )
             self.sessions.set_monitoring(
                 device_id,
                 True,
@@ -459,22 +475,31 @@ class MonitoringService:
                     or (task.recorder and not task.recorder.binary_done)
                 ),
             )
-            if enabled and mode:
-                task.mode = mode
             was_recording = task.recording
-            task.recording = enabled
-            if enabled:
-                if not was_recording:
-                    task.acquisition_context_id = uuid4().hex
-                    task.recorder = self.repository.create_recording(
-                        task.mode,
+            if enabled and not was_recording:
+                next_mode = mode or task.mode
+                try:
+                    context = self.repository.new_save_context(next_mode, "continuous", device_id=device_id)
+                    recorder = self.repository.create_recording(
+                        next_mode,
+                        context=context,
                         csv_interval=task.csv_interval,
                         wake=self.wake.set,
                     )
-                    self.recordings.append(task.recorder)
-                    task.recording_notice = ""
-                task.record_session = utc_now()
+                except Exception:
+                    # A pending read may fail during directory preparation. Release the
+                    # reservation even if the session can no longer start monitoring.
+                    with self.sessions.lock:
+                        self.sessions.sessions[device_id].recording = previous_lock
+                    raise
+                task.mode = next_mode
+                task.acquisition_context_id = uuid4().hex
+                task.recorder = recorder
+                self.recordings.append(recorder)
+                task.recording_notice = ""
+                task.record_session = context.started_utc
                 task.last_record_at = task.next_record_at = 0
+            task.recording = enabled
             self.repository.audit(
                 "monitor_recording",
                 device_id=device_id,

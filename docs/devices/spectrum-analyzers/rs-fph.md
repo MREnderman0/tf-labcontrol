@@ -1,32 +1,92 @@
-<!-- Generated from scripts/generate_device_docs.py legacy metadata. -->
+<!-- Generated from an independent device package; edit its README.md. -->
 
-# R&S FPH
+维护源：[包内 README](../../../src/lab_control/instruments/devices/rs_fph/README.md)。修改维护源后重新生成。
 
-维护源：[旧型号文档元数据](../../../scripts/generate_device_docs.py)。本型号尚未迁入独立包，能力来自注册表；不要直接修改本页。
+# R&S Spectrum Rider FPH02
 
-## 1. 型号与可信度
+独立适配标识 `rs.fph`，单路频谱（通道 1）。完整身份须为 R&S FPH，硬件编号 `1321.1111K02`；其他 FPH 硬件保持明确不可用，不能套用 .02 范围。本目录为唯一维护源。
 
-注册 ID：`rs.fph`。型号精确匹配；软件实现与具体资产的实测结果分别记录。附件简写和身份别名见本卡片说明。软件连接成功不等于验收通过。
+## 能力与协议
 
-## 2. 电脑物理连接
+| 能力 | 当前契约 |
+| --- | --- |
+| 频率 | 起止、中心、跨度及关联端点校验 |
+| 带宽 | RBW、VBW 及自动状态；手动写入前要求关闭对应自动状态 |
+| 电平 | 幅度单位、dBm 参考电平、衰减及自动状态 |
+| 扫描 | 单次、连续、扫描时间及自动状态、扫描计数；读取已有轨迹不触发扫描 |
+| 检测与轨迹 | 检测器及自动状态、轨迹模式；仅普通 Spectrum Analyzer 模式 |
+| 标记 | 标记 1 开关、频率位置、峰值搜索；关闭时不读取会隐式开启标记的坐标 |
+| 数据 | 711 点 ASCII / REAL32；按固件确认字节序，严格 IEEE 块长度、有限值、单位和轴校验 |
 
-LAN / USB VISA（核对仪器当前接口配置）。接口和选件以设备背板、固件与现场盘点为准。
+依据：[FPH 用户手册 1321.1011.02 revision 21](https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf)，频谱命令 pp.336–372；[规格书 revision 21](https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_brochures_and_datasheets/specifications/3607_2149_22/Spectrum-Rider-FPH_specs_en_3607-2149-22_v2100.pdf) pp.4–5、9。手册覆盖较新固件，本包对 V1.40 使用保守子集，不能推断新功能在旧固件可用。
 
-## 3. Windows 前置条件
+## 连接与驱动
 
-64 位 VISA Runtime。安装步骤见[实机测试指南](../../testing/hardware-testing.md)；DLL 放在厂商安装位置，通过绝对路径加载，不复制进源码。
+LAN 默认 PyVISA/VXI-11。扫描与只读预检只读取身份/参数，必须通过会话 `configure_acquisition=False` 跳过格式初始化。正式连接将格式设置为 `FORM REAL,32` 并读回核对，保留仪器字节序；失败不重发、不自动切回 ASCII。断开不恢复连接前格式；硬件测试会显式恢复测试前格式。
 
-## 4. 资源与枚举
+`deployment_components=("rs-visa",)`，Windows 10/11 x64 与 64 位 VISA Runtime，复用公共组件登记与离线安装材料；未新增 SDK、服务或防火墙要求。版本、签名/哈希、安装权限和恢复边界见项目根目录 `deployment/components.json` 及部署文档。USB、原生 TCP 和其他 VISA 后端尚未验收。
 
-连接模板见[config/examples](../../../config/examples/README.md)。VISA 使用扫描返回的完整资源；串口填写确认的 COM/波特率；Pico 使用 `PICO::序列号`；PM100D 使用 SDK 枚举的资源；53100A 手工填写已部署服务地址。扫描只枚举 SDK，不打开 SDK 仪器。
+地址采用当次发现并核验的资源；资产按完整序列号合并。硬件入口先在占用锁内核验身份再合并库存，避免 DHCP 换址被误建为另一台设备。
 
-## 5. 官方命令/API 依据
+## 单位与限制
 
-[厂家资料](https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf)；版本：1321.1011 revision 21。逐操作命令定位、参数和模板见[自动生成能力清单](../../generated/capability-matrix.json)。测试样本是按手册编写的夹具，尚非实机抓包。
+| 项目 | 范围与条件 |
+| --- | --- |
+| 频率 | 基线 0–2 GHz；实读 B3 后上限 3 GHz，B3+B4 后 4 GHz；这是控制范围，低于 5 kHz 不代表物理测量指标合格 |
+| 跨度 | 0 或至少 10 Hz；频率输入 1 Hz 网格；中心±跨度/2 必须落在硬件范围内 |
+| RBW / VBW | 保守子集 100 Hz–1 MHz / 10 Hz–1 MHz，1/3 序列 |
+| 参考电平 | −100–30 dBm；非 dBm 可读但不开放参考电平写入；零参考偏移、前放关闭 |
+| 衰减 | 保守 0–30 dB，5 dB 步进；手动组合采用软件保守边界：参考电平−衰减≤−10 dBm |
+| 扫描时间 | 保守 1 ms–1000 s；零跨度只允许手动时间，自动时间开启请求在写入前拒绝；单次完成时间必须小于会话超时 |
+| 数据单位 | 按实际 `UNIT:POW?` 标注 dBm、dBmV、dBuV、V 或 W；零跨度横轴为秒 |
+| 量化比较 | 枚举/布尔/离散带宽/衰减精确比较；频率 0.5 Hz；标记跨度/710 的半格加 0.5 Hz；参考电平精确比较；扫描时间 0.5 µs 为 V1.40 六位小数回复精度 |
 
-## 6. 当前统一能力
+频率或参考偏移、非 SAN 测量应用和前放相关电平控制未验收，拒绝相关写入。自动状态必须显式切换；软件不会自动替用户关闭自动状态或启动扫描。错误通道、越界和已知不适用组合在设置写入前拒绝。
 
-逻辑类别 `spectrum_analyzer`；通道 `(1,)`。`None` 表示该侧未在通用参数层给出数值边界；适配器仍执行关联参数与通道校验。未列出的操作返回 `unsupported`。
+`full` 在轨迹前后核对当前契约的配置字段；配置变化帧不发布。`live` / `stream` 首帧建立完整快照，随后每帧只有一次 `TRAC:DATA? TRACE1`，复用配置时保留原读回时间与 `cached` 校验级别。修改参数、主动刷新、重新连接、异常或新录制批次使上下文失效。面板改参数后需主动刷新；V1.40 曲线回包没有完整配置头，稳定监测不自动穿插参数查询。
+
+## 文件与公共依赖
+
+- `profile.py`：命令与范围；`protocol.py`：标量、ASCII、REAL32 和坐标解析。
+- `adapter.py`：关联校验、控制与采集上下文。
+- `tests/fixtures/capabilities-before.json`：迁移前能力基线，保持不变；`capabilities-current.json` 为当前契约。
+- `hardware/`：型号专属预检、控制、恢复和离线摘要转换。公共会话、传输、监测、记录与显示帧导出复用现有机制。
+
+## 测试入口与实机状态
+
+软件：`python -m pytest src/lab_control/instruments/devices/rs_fph/tests`。
+
+硬件入口及停止/恢复条件见 [hardware/README.md](../../../src/lab_control/instruments/devices/rs_fph/hardware/README.md)。必须指定一台设备的 LAN VISA 资源与完整预期序列号；不从软件通过推断整机验收通过。
+
+| 功能 | 接口及条件 | 验证范围 / 状态 | 证据位置 |
+| --- | --- | --- | --- |
+| 只读身份和参数 | LAN VXI-11 / V1.40 | 通过；基础参数、711 点 ASCII / REAL32 | 运行目录资产批次 |
+| 常用控制 | LAN VXI-11 / V1.40 | 通过；频率、带宽、电平、扫描、检测器与标记 | 运行目录 results/summary |
+| 采集与监测 | LAN VXI-11 / V1.40 | 普通/零跨度 × ASCII/REAL32，每条件 20 帧、同帧格式比较及 60 秒纯监测通过 | 运行目录时序、长度、哈希；无完整曲线文件 |
+| 恢复与重连 | LAN VXI-11 / V1.40 | 逐项恢复差异为空，3 次重连通过；固件保留 1.40 | 运行目录快照及恢复批次 |
+| 实际测量精度 | 无外部参考信号 | 未验收 | 不由噪声轨迹推断 |
+
+## 已知限制与待测
+
+| 功能或问题 | 限制 / 原因 | 后续验证 |
+| --- | --- | --- |
+| `SWE:POIN?` | V1.40 会超时；V1.90 发布说明修复，本包不发送该查询 | 固定 711 点并检查实际长度 |
+| 换能器补偿查询 | V1.40 实机 `SENS:CORR:TRAN1:STAT?` 无回复 | 不查询、不修改；补偿专项未验收，数据表示仪器当前显示结果 |
+| 二进制示例字节数 | 手册例子中的字节数与 711 点矛盾 | 按声明长度和 711×4 实际校验，不照抄示例数字 |
+| V1.40 字节序 | 实机 `NORM` 和 `SWAP` 均返回小端；已用冻结曲线与 ASCII 对比核验 | 仅 V1.40 使用明确的小端规则，同时保留设置读回与实际编码来源；其他固件按手册 NORM 大端 / SWAP 小端，不自动试换字节序 |
+| 零跨度自动时间 | V1.40 返回 −221 Settings conflict | 软件在写入前拒绝开启；零跨度使用手动扫描时间 |
+| Auto peak | 厂家定义读取仅返回正峰，不能还原屏幕双包络 | 结果元数据明确注明 |
+| 标记/选件 | 不测试 delta、解调、N dB、噪声等专项；有活动辅助标记时不进入需改变轴的硬件矩阵 | 必须先有可靠恢复路径 |
+| 自动设置、固件 | 当前不开放 Auto；本轮保留 V1.40，不再进行固件升级 | 后续单独授权与验证 |
+| 速度 | 读取帧率不代表仪器新扫描率 | 同条件 ASCII/REAL32 数据在运行目录 |
+
+## 扩展与移除
+
+新增固件能力在本包核对手册、补充专属测试与硬件证据，然后更新当前契约和派生文档。只在 `devices/catalog.py` 注册；移除注册及本包后运行模块移除检查，保留用户配置、库存及实机历史。不依赖旧混合实现，也不交叉导入其他型号包。
+
+## 注册能力（自动生成）
+
+范围、单位及命令来自当前注册定义；资产级实测结果见运行目录。
 
 | 操作 | 参数 / 单位 / 范围 | 作用域 | 方向 | 额外确认 | 状态 |
 | --- | --- | --- | --- | --- | --- |
@@ -34,39 +94,34 @@ LAN / USB VISA（核对仪器当前接口配置）。接口和选件以设备背
 | `stop_frequency` | value: number Hz [0, 2000000000.0] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
 | `center_frequency` | value: number Hz [0, 2000000000.0] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
 | `span` | value: number Hz [0, 2000000000.0] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
-| `rbw` | value: number Hz [100, 1000000.0] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
-| `vbw` | value: number Hz [10, 1000000.0] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `rbw` | value: number Hz 100/300/1000/3000/10000/30000/100000/300000/1e+06 | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `vbw` | value: number Hz 10/30/100/300/1000/3000/10000/30000/100000/300000/1e+06 | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
 | `rbw_auto` | value: boolean  [None, None] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
 | `vbw_auto` | value: boolean  [None, None] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
 | `reference_level` | value: number dBm [-100, 30] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
-| `attenuation` | value: number dB [0, 30] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `attenuation` | value: integer dB [0, 30] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
 | `attenuation_auto` | value: boolean  [None, None] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
 | `sweep_time` | value: number s [0.001, 1000] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `sweep_time_auto` | value: boolean  [None, None] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `sweep_count` | value: integer  [1, 999] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
 | `continuous` | value: boolean  [None, None] | 整机 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
+| `amplitude_unit` | value: enum  DBM/DBMV/DBUV/V/W | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `detector` | value: enum  POS/NEG/SAMP/RMS/AVER/APE | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `detector_auto` | value: boolean  [None, None] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `trace_mode` | value: enum  WRIT/AVER/MINH/MAXH/VIEW | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `trigger_source` | value: enum  IMM/EXT | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
 | `marker_enabled` | value: boolean  [None, None] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
 | `marker_frequency` | value: number Hz [0, 2000000000.0] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `options` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `measurement_mode` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `transfer_format` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `byte_order` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `sweep_points` | value: integer  [711, 711] | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `frequency_offset` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `reference_offset` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `preamplifier` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `marker_value` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `marker_frequency_mode` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `errors` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
 | `single` | 无 | 整机 | /写 | 需要 | 软件已实现；实测按资产查证 |
 | `marker_peak` | 无 | 整机 | /写 | 无需 | 软件已实现；实测按资产查证 |
-| `marker_value` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
-
-## 7. 控制、读回与采集
-
-页面入口：**实时监测 / 频谱仪**。参数由当前注册能力生成；常用、高级、状态与诊断分组。只读采集能力通过监测页的单次/开始操作使用；缺选件项显示原因且禁用。详细操作见[控制与监测指南](../../guides/control-and-monitoring.md)。
-
-采集路线：`fph`。`apply` 返回成功、拒绝、部分执行或不确定；只有提供读回命令的操作才有硬件读回，不能将 SDK 已接收设置描述成测量值。`status` 显式读取，扫描和总览定时刷新不会额外采集。
-
-使用 FPH 手册，轨迹为 TRAC1:DATA?，不能套用 DSA815 的 TRACE1 参数。频率上限保守为 2 GHz，RBW/VBW 使用保守范围；扩展频率、前置放大和测量应用选件需现场核对后扩展。
-
-## 8. 限制和故障处理
-
-单设备单 worker 串行执行。数值范围是软件保守边界，仍需核对负载、频率、探头和接线条件。输出/触发等动作要求明确确认；超时不重发、不自动回滚，先诊断再重连。断开软件连接不表示输出关闭。错误数据使用质量标记，不能以零值代替。
-
-## 9. Python 落点
-
-通过 `ApplicationRuntime` → `SessionManager.submit()` → 注册表 `rs.fph` 调用；SCPI 型号共用所属类别的实现和独立 `Profile`，不创建空壳同名类。源码见 [instruments](../../../src/lab_control/instruments/)；示例见 [examples](../../../examples/README.md)。
-
-## 10. Mock 与实机验收
-
-软件：身份精确匹配、参数越界、未知能力和控制夹具；SDK 使用函数替身验证参数/句柄/缓冲区。完整结果以 `pytest` 报告为准，不能从该表推断全部高级命令已逐项验证。
-
-现场按[统一验收步骤](../../testing/hardware-testing.md)记录完整身份、固件、驱动、资源、每个测试操作、请求、读回、原始错误、数据文件和恢复结果。按授权范围先只读，再控制/采集和恢复。`hardware_passed=false` 是保留的型号级兼容字段，不代表具体资产失败或尚未测试；逐项结论见运行目录摘要。

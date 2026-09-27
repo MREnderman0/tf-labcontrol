@@ -3,6 +3,7 @@
 from PySide6.QtWidgets import QDoubleSpinBox, QHBoxLayout, QLabel, QWidget
 
 from lab_control.application.acquisition_pipeline import validate_cadence
+from lab_control.application.catalog import instrument_category
 from lab_control.domain.instruments import ValidationError
 from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
 
@@ -13,6 +14,8 @@ def monitoring_intervals(controller, device_id: str, mode: str) -> tuple[float, 
 
 
 def monitoring_options(controller, device_id: str, mode: str) -> dict:
+    category = instrument_category(controller.records.get(device_id, {}))
+    default_cadence = "interval" if category in {"spectrum_analyzer", "oscilloscope"} else "fastest"
     key = f"monitor-timing/{mode}/{device_id}"
     stored = controller.runtime.repository.load_workspace(key, {}) if device_id else {}
     task = controller.runtime.monitoring.snapshots().get(device_id, {})
@@ -20,10 +23,10 @@ def monitoring_options(controller, device_id: str, mode: str) -> dict:
     try:
         raw = float(values.get("interval", 0.5))
         interval = 0.5 if raw < 0.5 else raw
-        cadence = values.get("cadence", "interval" if "interval" in values else "fastest")
+        cadence = values.get("cadence", "interval" if "interval" in values else default_cadence)
         validate_cadence(interval, cadence)
     except (AttributeError, TypeError, ValueError, ValidationError):
-        interval, cadence = 0.5, "fastest"
+        interval, cadence = 0.5, default_cadence
     # Old independent save/CSV preferences never throttle the new UI path.
     return dict(interval=interval, record_interval=None, cadence=cadence, csv_interval=5)
 

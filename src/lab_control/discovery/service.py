@@ -4,6 +4,7 @@ import hashlib
 import threading
 import time
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
+from copy import deepcopy
 from dataclasses import asdict, dataclass, field, replace
 from typing import Any, Callable, Protocol
 from uuid import uuid4
@@ -236,7 +237,7 @@ class Inventory:
                 elif not existing.get("identityKey") and not conflict:
                     target = matches[0]
                     if any(
-                        target.get("slots", {}).get(mode) not in (None, "", slot)
+                        mode in target.get("slots", {}) and target["slots"][mode] != slot
                         for mode, slot in existing.get("slots", {}).items()
                     ):
                         conflict = True
@@ -246,7 +247,8 @@ class Inventory:
                                 target["resources"].append(address)
                         target["candidates"].update(existing["candidates"])
                         target["displayName"] = target["displayName"] or existing["displayName"]
-                        target["slots"].update(existing.get("slots", {}))
+                        for mode, slot in existing.get("slots", {}).items():
+                            target["slots"].setdefault(mode, slot)
                         self.records.pop(existing["id"])
                         self.repository.remove_inventory(existing["id"])
                         existing = target
@@ -374,7 +376,7 @@ class Inventory:
         mode: str = "electronic",
     ) -> None:
         with self.lock:
-            record = self.records[device_id]
+            record = deepcopy(self.records[device_id])
             if display_name is not None:
                 record["displayName"] = display_name.strip()[:120]
             if slot is not None:
@@ -383,6 +385,32 @@ class Inventory:
                         raise DeviceError("Slot is already occupied", "slot_conflict")
                 record["slots"][mode] = slot
             self.repository.save(record)
+            self.records[device_id] = record
+
+    def bind_slot(
+        self, device_id: str, slot: str, mode: str, *, replace_device_id: str | None = None
+    ) -> None:
+        """Caller holds the session lock while validating both participants."""
+        with self.lock:
+            owners = [
+                item
+                for item in self.records.values()
+                if slot and item["id"] != device_id and item.get("slots", {}).get(mode) == slot
+            ]
+            if replace_device_id is not None:
+                if [item["id"] for item in owners] != [replace_device_id]:
+                    raise DeviceError("槽位占用已变化，请重新选择并确认", "slot_changed")
+            elif owners:
+                raise DeviceError("该槽位已有设备绑定，请确认是否替换", "slot_conflict")
+            record = deepcopy(self.records[device_id])
+            record.setdefault("slots", {})[mode] = slot
+            changed = [record]
+            for owner in owners:
+                previous = deepcopy(owner)
+                previous["slots"][mode] = ""
+                changed.append(previous)
+            self.repository.save_many(tuple(changed))
+            self.records.update((item["id"], item) for item in changed)
 
     def select_resource(self, device_id: str, resource: str, *, follow_address: bool = False) -> None:
         with self.lock:
@@ -467,6 +495,9 @@ class DiscoveryService:
         self.lock, self.cancelled = threading.Lock(), threading.Event()
         self.future: Future[Any] | None = None
         self.progress: dict[str, Any] = {"state": "idle"}
+        # Protected by the same lock as scan admission; checked by every frontend.
+        self.connection_batch_active = False
+        self.closing = False
 
     @property
     def is_scanning(self) -> bool:
@@ -475,6 +506,10 @@ class DiscoveryService:
 
     def scan(self) -> Future[dict[str, Any]]:
         with self.lock:
+            if self.closing:
+                raise DeviceError("程序正在退出", "runtime_closing")
+            if self.connection_batch_active:
+                raise DeviceError("正在批量连接，请等待完成或停止连接", "connection_batch_busy")
             if self.future and not self.future.done():
                 raise DeviceError("A scan is already running", "scan_busy")
             self.cancelled.clear()

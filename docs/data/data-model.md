@@ -2,7 +2,7 @@
 
 实机验证的原始批次与派生摘要遵循[记录规范](../testing/records.md)。`summary.json` 和 `overview/` 仅用于离线证据检索，不参与库存状态、会话或控制判断；原始通信、快照和恢复文件保留原样。
 
-领域对象定义在 domain/instruments.py，持久化由 storage/repository.py 完成。电子学与光学共享结构，但分别导出到 data/electronic 与 data/optical。
+领域对象定义在 domain/instruments.py，持久化由 storage/repository.py 完成。新记录统一使用设置中的数据保存一级目录；电子学与光学仅在元数据中区分，不增加目录层。历史 data/electronic 与 data/optical 保留原样。
 
 `AcquisitionRequest.consistency` 支持 `full`、`live`、`stream`，默认 `full`；`stream` 需要本次运行的非空 `context_id` 且不能启动物理扫描。批次 `validation=cached` 表示曲线为新读取、配置沿用已有快照，`settings_timestamps` 保留原时间。连续记录缓存帧在 `performance.acquisition_context_id` 中带来源编号，监测缓存不具备记录来源；不能把后者当作完整记录帧。手动显示快照可导出监测缓存及 live 帧，但保留原校验级别、时间及配置来源，不升级为 full。`_session_configuration_version` 和 `monitor_*` 是软件调度元数据，不是仪器读回。历史文件保持原样。
 
@@ -14,13 +14,38 @@
       config/                         # 用户自行保存的 UTF-8 TOML
       inventory.sqlite3               # WAL 模式
       logs/YYYY-MM-DD.jsonl           # UTF-8 审计
-      data/electronic/<UTC-UUID>/
-        snapshot.json
-        samples.csv
-        samples.npz
-      data/optical/<UTC-UUID>/
+      data/                           # 未配置时的新记录根目录
       reports/<UUID>.json
       simulation/                     # --mock 独立存储
+
+用户选择的数据保存一级目录（默认是运行目录下的 data）：
+
+```text
+一级目录/
+  单设备采集/YYYY-MM-DD/
+    HH-mm-ss-SSS_型号_序列号_continuous_批次标识/
+      recording.json
+      segment-00001.sqlite3
+      segment-00001.csv
+      summary.json
+    HH-mm-ss-SSS_型号_序列号_single_frame_批次标识/
+      recording.json
+      snapshot.json
+      samples.csv
+      samples.npz
+  批量采集/YYYY-MM-DD/HH-mm-ss-SSS_batch_批次标识/
+    型号_序列号_采集类型_记录标识/
+```
+
+日期使用接收操作时的电脑本地日期，同一天共用日期层。每次记录独立创建末级目录，时间精确到毫秒，随机标识防止重名覆盖。型号及序列号清理 Windows 非法字符、保留名及尾部空格/句点；缺失时使用适配器、稳定设备 ID 或明确的未知占位。原始身份仍完整保存在 recording.json。
+
+storage/paths.py 的不可变 `SaveContext` 固定根目录、带时区开始时间、身份、设备 ID、适配器、模式、类型和记录标识。`BatchSaveContext` 预留共用根目录、开始时间及批次路径；仅显式批量任务传入它，分别启动的多台设备仍属于单设备采集。本版不新增批量采集界面。构造上下文不创建目录或曲线文件。
+
+`Repository.export()`、`create_recording()` 和 `Recording` 可选接收 `context`；未传入时仍支持原调用方式并生成新目录。界面保存当前帧、兼容的新读帧导出、连续记录及 CLI 在接受操作时建立上下文，再排队读取/写盘。修改根目录、跨午夜和后台 CSV 转换都不会改变已固定路径；单帧内容保留原帧时间及配置来源。
+
+连续记录开始时立即独占创建目录及 recording.json，版本 1 保存 `kind`、`mode`、`scope`、`run_id`、可选 `batch_id`、`device_id`、`adapter_id`、原始 `identity`、`started_local` 与 `started_utc`。准备失败明确报错并撤销记录状态及参数锁，不切换备用位置。无有效帧即停止仍保留清单和零帧 summary.json，不产生分段曲线文件。
+
+自定义目录只影响采集数据。真实与 Mock 的偏好分别保存在各自库存中；Mock 默认使用 simulation/data，自定义一级目录下则额外使用 simulation 子目录，设置页展示实际生效路径。不迁移库存、槽位、日志、配置、实机档案或历史采集文件。
 
 进程锁固定在每用户 TF-LabControl 根目录，防止换数据目录后启动第二个真实设备进程。SQLite 包含 inventory(id, document)、scans(id, document) 和新增 workspace(id, document)，document 为 UTF-8 JSON。新增表不改变旧库存/槽位格式；会话驻留内存，旧记录不能当成当前已连接。
 
@@ -29,6 +54,7 @@
 workspace 使用键隔离，真实与模拟分别位于各自根目录：
 
 - `current_mode`：当前模式。
+- `data_storage/root`：用户选择的数据保存一级目录的绝对路径；缺省或 null 使用本运行目录的 data。保存前进行创建及写入/读回检查，失败保留原设置。
 - `monitor_layout/<mode>`：按顺序保存卡片 `{id, device_id, source, channels, title, view}`。device_id 为稳定库存 ID；不保存列数、仪器句柄或运行状态。
 - `draft/<mode>/<device_id>/<channel>/<operation>`：`fields` 保存原输入值及单位倍率，`rows` 保存数组草稿；成功应用后清除该项，失败保留。
 - `demo_slots_initialized`：仅模拟入口首次初始化 A/B，避免再次启动覆盖用户绑定。
@@ -44,6 +70,12 @@ candidates 以原始资源字符串为键，保留 candidateId、scanRunId、sou
 库存及候选新增 presenceState（present/not_seen/unreachable/unknown）；候选的 evidenceScanRunId 标识存在性证据批次，sources 按来源保留 scanRunId、observedAt、rawDescriptor。旧单来源候选在下次合并时兼容补入 sources，无需重建数据库。configured 的 observedAt 只表示配置被枚举，不刷新 lastSeenAt；真实本地枚举或身份成功才更新后者。启动时仅在内存中将旧存在性置为 unknown，并去除旧 evidenceScanRunId，等待当前扫描/会话确认。
 
 稳定 id 是持久化 UUID；可识别身份以厂家/型号/序列号匹配历史记录。序列号缺失时保持候选身份，不能因 COM/IP 相同证明是同一台设备。显示名与槽位保留。连接后才发现历史身份重复时保留 conflict，不在运行 worker 中偷偷更换设备 ID。
+
+`slots` 继续使用按模式索引的映射，例如 `{"electronic": "signal_generator:1", "optical": ""}`。缺少模式键代表该模式尚无绑定记录，空字符串代表明确未绑定。身份合并不得用不同的历史选择覆盖显式空绑定；相互矛盾时保留冲突。同型号不同序列号不会继承槽位。无需新增表或重建旧库存。
+
+`bind_slot(device_id, slot, mode, replace_device_id=...)` 的可选参数表示用户已确认替换的当前占用者；省略时占用仍报错，占用者变化时报 `slot_changed`，须重新确认。两台设备的任务状态和库存占用在同一锁定区间核对，仓储 `save_many()` 用一个 SQLite 事务提交双方记录，成功后才替换内存记录。事务失败不发布半完成状态；`slot_changed` 审计包含被替换设备 ID。
+
+批量连接进度仅在内存保存，包含状态、总数、已处理数、当前设备和逐项结果；结果状态为 `connected`、`already_connected`、`failed` 或 `skipped`，附设备 ID、显示身份和原因。返回的进度与最终结果是独立快照；逐项结果及汇总写入运行目录审计日志。它们不改变库存格式、槽位或实机验收结论。
 
 ## 会话快照
 

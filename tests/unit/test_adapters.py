@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 import pytest
 
@@ -12,7 +14,7 @@ from lab_control.domain.instruments import (
 )
 from lab_control.instruments.acquisition import complex_trace, scaled_rigol
 from lab_control.instruments.base import UnknownDeviceAdapter
-from lab_control.instruments.registry import PROFILES, build_scpi_adapter, match
+from lab_control.instruments.registry import DEVICE_DEFINITIONS, PROFILES, build_scpi_adapter, match
 from lab_control.transport.base import MockTransport, ieee_block
 
 
@@ -42,6 +44,10 @@ def test_parameter_reading_uses_verified_query_and_write_only_cache():
 @pytest.mark.parametrize("profile", PROFILES.values(), ids=PROFILES.keys())
 def test_exact_identity_and_capability_sources(profile):
     raw = (profile.manufacturer[0] + "," + profile.models[0] + ",SER123,FW1").encode()
+    definition = DEVICE_DEFINITIONS.get(profile.adapter_id)
+    if definition:
+        fixture = json.loads((definition.root / "tests/fixtures/control.json").read_text(encoding="utf-8"))
+        raw = fixture.get("identity_reply", raw.decode()).encode()
     if profile.identity_query == "ID?":
         raw = b"3458A"
     device, transport = adapter(profile.adapter_id, [(profile.identity_query, raw)])

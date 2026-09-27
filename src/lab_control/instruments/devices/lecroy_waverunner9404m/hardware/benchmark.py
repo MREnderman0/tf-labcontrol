@@ -123,7 +123,7 @@ def install_metadata_sinks(app, report):
         raise AssertionError("Curve export forbidden in a performance batch")
 
     def factory(mode, **options):
-        recorder = MetadataRecording(app.repository.root, mode, **options)
+        recorder = MetadataRecording(app.repository.root, mode, prepare_storage=False, **options)
 
         def append(sequence, batch):
             report.setdefault("saved_frames", []).append({"sequence": sequence, **frame_record(batch)})

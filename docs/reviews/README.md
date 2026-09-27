@@ -15,6 +15,7 @@
 - [示波器调参连续性、点数与有界接收（2026-09-26）](oscilloscope-continuity-review.md)
 - [示波器按采样率限制可行时基（2026-09-26）](oscilloscope-timebase-range-review.md)
 - [DHO924 接入与空输入功能验证（2026-09-27）](dho924-onboarding-review.md)
+- [FPH02 V1.40 接入与界面验收（2026-09-27）](fph-v140-review.md)
 - [示波器固定网格与记录状态（2026-09-27）](recording-grid-review.md)
 - [示波器粗细调、参数缓存与 Auto（2026-09-27）](scope-control-cache-review.md)
 - [桌面部署与环境修复验收（2026-09-25）](desktop-deployment-review.md)

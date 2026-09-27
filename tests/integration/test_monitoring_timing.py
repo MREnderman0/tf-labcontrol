@@ -117,7 +117,11 @@ def test_continuously_changing_frames_wait_up_to_30_seconds_without_error(tmp_pa
         assert not state["error"] and "30 秒" in state["notice"]
         assert session.state == "connected" and not session.last_error
         assert runtime.monitoring.latest(key, "spectrum") is None
-        assert not (runtime.repository.root / "data").exists()
+        recorder = runtime.monitoring.tasks[key].recorder
+        recorder.finished.result(3)
+        assert (recorder.folder / "recording.json").exists()
+        assert (recorder.folder / "summary.json").exists()
+        assert not list(recorder.folder.glob("segment-*"))
 
 
 def test_single_read_configuration_change_is_not_retried(tmp_path):
@@ -145,7 +149,7 @@ def test_settle_deadline_does_not_save_late_inflight_frame(tmp_path, monkeypatch
         future = Future()
         future.set_result(batch)
         saved = []
-        runtime.repository.export = lambda *args: saved.append(args)
+        runtime.repository.export = lambda *args, **options: saved.append(args)
         with service.lock:
             task = MonitorTask(
                 (request,),
@@ -237,7 +241,7 @@ def test_invalid_quality_is_never_sent_to_writer(tmp_path):
         future = Future()
         future.set_result(batch)
         saved = []
-        runtime.repository.export = lambda *args: saved.append(args)
+        runtime.repository.export = lambda *args, **options: saved.append(args)
         task = MonitorTask(
             (request,),
             "electronic",

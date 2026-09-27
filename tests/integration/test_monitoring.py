@@ -72,7 +72,7 @@ def test_monitor_serializes_control_shares_channels_and_records_only_on_request(
         runtime.monitoring.set_recording(device, True)
         wait_for(lambda: bool(runtime.monitoring.snapshots()[device]["last_path"]))
         runtime.monitoring.stop(device).result(timeout=3)
-        snapshots = list(runtime.repository.root.glob("data/electronic/*/segment-*.sqlite3"))
+        snapshots = list(runtime.repository.data_root.glob("单设备采集/*/*_continuous_*/segment-*.sqlite3"))
         assert snapshots
         saved = next(read_frames(snapshots[0]))
         assert saved["configuration"]["monitor_record_session"]
@@ -159,6 +159,6 @@ def test_stop_recording_drains_authorized_batch_and_releases_mode_lock(tmp_path)
         wait_for(lambda: bool(runtime.monitoring.snapshots()[device]["last_path"]))
         wait_for(lambda: not session.recording)
         runtime.monitoring.stop(device).result(timeout=3)
-        paths = list(runtime.repository.root.glob("data/optical/*/segment-*.sqlite3"))
+        paths = list(runtime.repository.data_root.glob("单设备采集/*/*_continuous_*/segment-*.sqlite3"))
         assert sum(len(list(read_frames(path))) for path in paths) == 1
         assert not (runtime.repository.root / "data/electronic").exists()

@@ -5,4 +5,4 @@
 | 型号 | 接入路线 | 文档 |
 | --- | --- | --- |
 | RIGOL DSA815 | LAN / USB；优先 PyVISA | [型号说明](rigol-dsa815.md) |
-| R&S FPH | LAN / USB VISA（核对仪器当前接口配置） | [型号说明](rs-fph.md) |
+| R&S FPH02 | LAN；优先 PyVISA | [型号说明](rs-fph.md) |

@@ -109,14 +109,6 @@ LEGACY_MODELS = [
         "附件原型号 DS1202Z 保留待补信息；仅 DS1202Z-E 身份可匹配此实现。两通道；当前读取 NORM 屏幕波形，不宣称导出全部存储深度。BYTE 缩放包含 YORigin/YREFerence。",
     ),
     (
-        "rs.fph",
-        "spectrum-analyzers/rs-fph",
-        "R&S FPH",
-        "LAN / USB VISA（核对仪器当前接口配置）",
-        "64 位 VISA Runtime",
-        "使用 FPH 手册，轨迹为 TRAC1:DATA?，不能套用 DSA815 的 TRACE1 参数。频率上限保守为 2 GHz，RBW/VBW 使用保守范围；扩展频率、前置放大和测量应用选件需现场核对后扩展。",
-    ),
-    (
         "thorlabs.pm100d",
         "measurement-analyzers/thorlabs-pm100d-s154c",
         "Thorlabs PM100D + S154C",

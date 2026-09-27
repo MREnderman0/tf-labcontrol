@@ -1,0 +1,1083 @@
+{
+  "capabilities": {
+    "category": "spectrum_analyzer",
+    "channels": [
+      1
+    ],
+    "operations": [
+      {
+        "name": "start_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0,
+            "maximum": 2000000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "SENS:FREQ:STAR",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "stop_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0,
+            "maximum": 2000000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "SENS:FREQ:STOP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "center_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0,
+            "maximum": 2000000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "SENS:FREQ:CENT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "span",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0,
+            "maximum": 2000000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "SENS:FREQ:SPAN",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "rbw",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 100,
+            "maximum": 1000000.0,
+            "choices": [
+              "100",
+              "300",
+              "1000",
+              "3000",
+              "10000",
+              "30000",
+              "100000",
+              "300000",
+              "1e+06"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "SENS:BAND:RES",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "vbw",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 10,
+            "maximum": 1000000.0,
+            "choices": [
+              "10",
+              "30",
+              "100",
+              "300",
+              "1000",
+              "3000",
+              "10000",
+              "30000",
+              "100000",
+              "300000",
+              "1e+06"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "SENS:BAND:VID",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "rbw_auto",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "SENS:BAND:RES:AUTO",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "vbw_auto",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "SENS:BAND:VID:AUTO",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "reference_level",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "dBm",
+            "minimum": -100,
+            "maximum": 30,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "DISP:TRAC1:Y:RLEV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "attenuation",
+        "parameters": {
+          "value": {
+            "kind": "integer",
+            "unit": "dB",
+            "minimum": 0,
+            "maximum": 30,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "INP:ATT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "attenuation_auto",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "INP:ATT:AUTO",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_time",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s",
+            "minimum": 0.001,
+            "maximum": 1000,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "SENS:SWE:TIME",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_time_auto",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "SENS:SWE:TIME:AUTO",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_count",
+        "parameters": {
+          "value": {
+            "kind": "integer",
+            "unit": "",
+            "minimum": 1,
+            "maximum": 999,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "SENS:SWE:COUN",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "continuous",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "INIT:CONT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "amplitude_unit",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "DBM",
+              "DBMV",
+              "DBUV",
+              "V",
+              "W"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "UNIT:POW",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "detector",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "POS",
+              "NEG",
+              "SAMP",
+              "RMS",
+              "AVER",
+              "APE"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "SENS:DET1:FUNC",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "detector_auto",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "SENS:DET1:FUNC:AUTO",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trace_mode",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "WRIT",
+              "AVER",
+              "MINH",
+              "MAXH",
+              "VIEW"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "DISP:TRAC1:MODE",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_source",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "IMM",
+              "EXT"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "TRIG:SOUR",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_enabled",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "CALC:MARK1:STAT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0,
+            "maximum": 2000000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "CALC:MARK1:X",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "options",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "*OPT?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "measurement_mode",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "INST?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "transfer_format",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "FORM?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "byte_order",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "FORM:BORD?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_points",
+        "parameters": {
+          "value": {
+            "kind": "integer",
+            "unit": "",
+            "minimum": 711,
+            "maximum": 711,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "TRACe:DATA?, p.358: fixed 711 display points",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "frequency_offset",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "SENS:FREQ:OFFS?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "reference_offset",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "DISP:TRAC1:Y:RLEV:OFFS?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "preamplifier",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "INP:GAIN:STAT?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_value",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "CALC:MARK1:Y?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_frequency_mode",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "CALC:MARK:FREQ:MODE?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "errors",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "SYST:ERR?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "single",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "INIT:IMM",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_peak",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+        "section": "CALC:MARK1:MAX",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      }
+    ]
+  },
+  "profile": {
+    "adapter_id": "rs.fph",
+    "manufacturer": [
+      "Rohde&Schwarz",
+      "Rohde-Schwarz"
+    ],
+    "models": [
+      "FPH"
+    ],
+    "category": "spectrum_analyzer",
+    "channels": [
+      1
+    ],
+    "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+    "revision": "1321.1011 revision 21; conservative FPH02 V1.40 subset",
+    "status": [
+      "start_frequency",
+      "stop_frequency",
+      "rbw",
+      "reference_level"
+    ],
+    "identity_query": "*IDN?",
+    "error_query": "SYST:ERR?",
+    "acquisition": "fph",
+    "channel_limits": {}
+  },
+  "commands": {
+    "start_frequency": {
+      "writes": [
+        "SENS:FREQ:STAR {value} Hz"
+      ],
+      "query": "SENS:FREQ:STAR?",
+      "select": [],
+      "compare": false
+    },
+    "stop_frequency": {
+      "writes": [
+        "SENS:FREQ:STOP {value} Hz"
+      ],
+      "query": "SENS:FREQ:STOP?",
+      "select": [],
+      "compare": false
+    },
+    "center_frequency": {
+      "writes": [
+        "SENS:FREQ:CENT {value} Hz"
+      ],
+      "query": "SENS:FREQ:CENT?",
+      "select": [],
+      "compare": false
+    },
+    "span": {
+      "writes": [
+        "SENS:FREQ:SPAN {value} Hz"
+      ],
+      "query": "SENS:FREQ:SPAN?",
+      "select": [],
+      "compare": false
+    },
+    "rbw": {
+      "writes": [
+        "SENS:BAND:RES {value} Hz"
+      ],
+      "query": "SENS:BAND:RES?",
+      "select": [],
+      "compare": false
+    },
+    "vbw": {
+      "writes": [
+        "SENS:BAND:VID {value} Hz"
+      ],
+      "query": "SENS:BAND:VID?",
+      "select": [],
+      "compare": false
+    },
+    "rbw_auto": {
+      "writes": [
+        "SENS:BAND:RES:AUTO {value}"
+      ],
+      "query": "SENS:BAND:RES:AUTO?",
+      "select": [],
+      "compare": false
+    },
+    "vbw_auto": {
+      "writes": [
+        "SENS:BAND:VID:AUTO {value}"
+      ],
+      "query": "SENS:BAND:VID:AUTO?",
+      "select": [],
+      "compare": false
+    },
+    "reference_level": {
+      "writes": [
+        "DISP:TRAC1:Y:RLEV {value} dBm"
+      ],
+      "query": "DISP:TRAC1:Y:RLEV?",
+      "select": [],
+      "compare": false
+    },
+    "attenuation": {
+      "writes": [
+        "INP:ATT {value} dB"
+      ],
+      "query": "INP:ATT?",
+      "select": [],
+      "compare": false
+    },
+    "attenuation_auto": {
+      "writes": [
+        "INP:ATT:AUTO {value}"
+      ],
+      "query": "INP:ATT:AUTO?",
+      "select": [],
+      "compare": false
+    },
+    "sweep_time": {
+      "writes": [
+        "SENS:SWE:TIME {value} s"
+      ],
+      "query": "SENS:SWE:TIME?",
+      "select": [],
+      "compare": false
+    },
+    "sweep_time_auto": {
+      "writes": [
+        "SENS:SWE:TIME:AUTO {value}"
+      ],
+      "query": "SENS:SWE:TIME:AUTO?",
+      "select": [],
+      "compare": false
+    },
+    "sweep_count": {
+      "writes": [
+        "SENS:SWE:COUN {value}"
+      ],
+      "query": "SENS:SWE:COUN?",
+      "select": [],
+      "compare": false
+    },
+    "continuous": {
+      "writes": [
+        "INIT:CONT {value}"
+      ],
+      "query": "INIT:CONT?",
+      "select": [],
+      "compare": false
+    },
+    "amplitude_unit": {
+      "writes": [
+        "UNIT:POW {value}"
+      ],
+      "query": "UNIT:POW?",
+      "select": [],
+      "compare": false
+    },
+    "detector": {
+      "writes": [
+        "SENS:DET1:FUNC {value}"
+      ],
+      "query": "SENS:DET1:FUNC?",
+      "select": [],
+      "compare": false
+    },
+    "detector_auto": {
+      "writes": [
+        "SENS:DET1:FUNC:AUTO {value}"
+      ],
+      "query": "SENS:DET1:FUNC:AUTO?",
+      "select": [],
+      "compare": false
+    },
+    "trace_mode": {
+      "writes": [
+        "DISP:TRAC1:MODE {value}"
+      ],
+      "query": "DISP:TRAC1:MODE?",
+      "select": [],
+      "compare": false
+    },
+    "trigger_source": {
+      "writes": [
+        "TRIG:SOUR {value}"
+      ],
+      "query": "TRIG:SOUR?",
+      "select": [],
+      "compare": false
+    },
+    "marker_enabled": {
+      "writes": [
+        "CALC:MARK1:STAT {value}"
+      ],
+      "query": "CALC:MARK1:STAT?",
+      "select": [],
+      "compare": false
+    },
+    "marker_frequency": {
+      "writes": [
+        "CALC:MARK1:X {value} Hz"
+      ],
+      "query": "CALC:MARK1:X?",
+      "select": [],
+      "compare": false
+    },
+    "options": {
+      "writes": [],
+      "query": "*OPT?",
+      "select": [],
+      "compare": false
+    },
+    "measurement_mode": {
+      "writes": [],
+      "query": "INST?",
+      "select": [],
+      "compare": false
+    },
+    "transfer_format": {
+      "writes": [],
+      "query": "FORM?",
+      "select": [],
+      "compare": false
+    },
+    "byte_order": {
+      "writes": [],
+      "query": "FORM:BORD?",
+      "select": [],
+      "compare": false
+    },
+    "sweep_points": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": false
+    },
+    "frequency_offset": {
+      "writes": [],
+      "query": "SENS:FREQ:OFFS?",
+      "select": [],
+      "compare": false
+    },
+    "reference_offset": {
+      "writes": [],
+      "query": "DISP:TRAC1:Y:RLEV:OFFS?",
+      "select": [],
+      "compare": false
+    },
+    "preamplifier": {
+      "writes": [],
+      "query": "INP:GAIN:STAT?",
+      "select": [],
+      "compare": false
+    },
+    "marker_value": {
+      "writes": [],
+      "query": "CALC:MARK1:Y?",
+      "select": [],
+      "compare": false
+    },
+    "marker_frequency_mode": {
+      "writes": [],
+      "query": "CALC:MARK:FREQ:MODE?",
+      "select": [],
+      "compare": false
+    },
+    "errors": {
+      "writes": [],
+      "query": "SYST:ERR?",
+      "select": [],
+      "compare": false
+    },
+    "single": {
+      "writes": [
+        "INIT:IMM"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "marker_peak": {
+      "writes": [
+        "CALC:MARK1:MAX"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    }
+  }
+}

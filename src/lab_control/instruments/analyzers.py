@@ -5,48 +5,9 @@ from dataclasses import replace
 from lab_control.domain.instruments import Parameter
 from lab_control.instruments.base import Profile, command, enum, parameter, read_command
 
-FPH_SOURCE = "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf"
 ZNB_SOURCE = "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1179_7491_01/ZNB3000_UserManual_en_09.pdf"
 DMM_SOURCE = "https://www.keysight.com/us/en/assets/9018-01343/user-manuals/9018-01343.pdf"
 BOOL = Parameter("boolean")
-
-
-def spectrum() -> Profile:
-    commands = {}
-    maximum = 2e9
-    for name, path, param in (
-        ("start_frequency", "SENS:FREQ:STAR", parameter("Hz", 0, maximum)),
-        ("stop_frequency", "SENS:FREQ:STOP", parameter("Hz", 0, maximum)),
-        ("center_frequency", "SENS:FREQ:CENT", parameter("Hz", 0, maximum)),
-        ("span", "SENS:FREQ:SPAN", parameter("Hz", 0, maximum)),
-        ("rbw", "SENS:BAND:RES", parameter("Hz", 100, 1e6)),
-        ("vbw", "SENS:BAND:VID", parameter("Hz", 10, 1e6)),
-        ("rbw_auto", "SENS:BAND:RES:AUTO", BOOL),
-        ("vbw_auto", "SENS:BAND:VID:AUTO", BOOL),
-        ("reference_level", "DISP:TRAC:Y:RLEV", parameter("dBm", -100, 30)),
-        ("attenuation", "INP:ATT", parameter("dB", 0, 30)),
-        ("attenuation_auto", "INP:ATT:AUTO", BOOL),
-        ("sweep_time", "SENS:SWE:TIME", parameter("s", 0.001, 1000)),
-        ("continuous", "INIT:CONT", BOOL),
-        ("marker_enabled", "CALC:MARK1:STAT", BOOL),
-        ("marker_frequency", "CALC:MARK1:X", parameter("Hz", 0, maximum)),
-    ):
-        commands[name] = command(name, path, param, scoped=False, confirm=name == "continuous")
-    commands["single"] = command("single", "INIT:IMM", read=False, scoped=False, confirm=True)
-    commands["marker_peak"] = command("marker_peak", "CALC:MARK1:MAX", read=False, scoped=False)
-    commands["marker_value"] = read_command("marker_value", "CALC:MARK1:Y?", scoped=False)
-    return Profile(
-        "rs.fph",
-        ("Rohde&Schwarz", "Rohde-Schwarz"),
-        ("FPH",),
-        "spectrum_analyzer",
-        (1,),
-        FPH_SOURCE,
-        "1321.1011 revision 21",
-        commands,
-        ("start_frequency", "stop_frequency", "rbw", "reference_level"),
-        acquisition="fph",
-    )
 
 
 def network() -> Profile:
@@ -148,4 +109,4 @@ def multimeter() -> Profile:
     )
 
 
-PROFILES = (spectrum(), network(), multimeter())
+PROFILES = (network(), multimeter())

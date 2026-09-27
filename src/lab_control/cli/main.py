@@ -267,8 +267,11 @@ def main(argv: list[str] | None = None) -> int:
                         }
                     )
                 else:
+                    context = app.repository.new_save_context(
+                        args.mode, "single_frame", device_id=device_id, identity=identity
+                    )
                     batch = sessions.submit(device_id, "acquire", request).result()
-                    path = app.repository.export(batch, args.mode)
+                    path = app.repository.export(batch, args.mode, context=context)
                     output(
                         {
                             "path": str(path),

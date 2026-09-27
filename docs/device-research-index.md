@@ -18,7 +18,6 @@
 | 示波器 | RTO64 | LAN/USB VISA/SCPI | rs.rto64；RTO6 手册，待实机 | [卡片](devices/oscilloscopes/rto64.md) |
 | 示波器 | WaveRunner 9254 | LAN VICP/VXI-11/USBTMC | lecroy.9254；待实机 | [卡片](devices/oscilloscopes/waverunner-9254.md) |
 | 示波器 | DS1202Z | 原条目待确认后缀；DS1202Z-E 为 USB/LAN VISA | 仅注册 rigol.ds1202ze；不静默改写原型号 | [共同归档](devices/oscilloscopes/rigol-ds1202z.md) |
-| 频谱仪 | R&S FPH | LAN/USB VISA（核对当前接口） | rs.fph；待实机 | [卡片](devices/spectrum-analyzers/rs-fph.md) |
 | 光功率 | PM100D + S154C | 控制台 USB + TLPMX/旧 PM100D SDK；探头接控制台 | thorlabs.pm100d；待实机 | [卡片](devices/measurement-analyzers/thorlabs-pm100d-s154c.md) |
 | 光功率 | 多通道光功率计 | 待完整型号与 SDK/协议 | 仅类别模拟 | [待补卡片](devices/measurement-analyzers/multi-channel-optical-power-meter.md) |
 | 万用表 | Keysight 3458A | GPIB 控制器/VISA，原生非 SCPI 命令 | keysight.3458a；待实机 | [卡片](devices/measurement-analyzers/keysight-3458a.md) |
@@ -47,6 +46,7 @@
 | RIGOL DSA815 | `rigol.dsa815` | LAN / USB；优先 PyVISA | [卡片](devices/spectrum-analyzers/rigol-dsa815.md) |
 | Teledyne LeCroy WaveRunner 9404M | `lecroy.9404m` | LAN PyVISA/VXI-11（仪器选择 LXI） | [卡片](devices/oscilloscopes/waverunner-9404m.md) |
 | RIGOL DHO924 | `rigol.dho924` | LAN PyVISA / VISA SOCKET | [卡片](devices/oscilloscopes/rigol-dho924.md) |
+| R&S FPH02 | `rs.fph` | LAN；优先 PyVISA | [卡片](devices/spectrum-analyzers/rs-fph.md) |
 <!-- device-modules:end -->
 
 ## 现场盘点与状态提升

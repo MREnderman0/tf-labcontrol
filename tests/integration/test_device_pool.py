@@ -12,6 +12,134 @@ from lab_control.ui.real_window import RealWindow
 from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
 
 
+@pytest.mark.parametrize("replace_binding", [False, True])
+def test_occupied_slot_is_selectable_and_requires_confirmation(workspace, qtbot, replace_binding):
+    window, runtime, previous = workspace
+    runtime.monitoring.enable_settings_sync(False)
+    qtbot.waitUntil(lambda: not runtime.sessions.sessions[previous].pending)
+    config = ConnectionConfig("mock://replacement", "rs.sma100b", "mock", expected_serial="NEW-FIXTURE")
+    key = runtime.add(config)
+    runtime.connect(key).result(3)
+    runtime.inventory.edit(previous, display_name="原设备")
+    runtime.bind_slot(previous, "signal_generator:1", "electronic")
+    runtime.bind_slot(key, "signal_generator:2", "electronic")
+    window.refresh()
+    window.open_category("signal_generator")
+    window.tree.setCurrentItem(window.rows[key])
+    seen = []
+
+    def confirm():
+        dialog = QApplication.activeModalWidget()
+        try:
+            assert dialog.windowTitle() == "替换槽位绑定"
+            buttons = dialog.findChild(QDialogButtonBox)
+            cancel = buttons.button(QDialogButtonBox.StandardButton.Cancel)
+            assert cancel.isDefault()
+            seen.append("confirm")
+            button = (
+                QDialogButtonBox.StandardButton.Ok
+                if replace_binding
+                else QDialogButtonBox.StandardButton.Cancel
+            )
+            qtbot.mouseClick(buttons.button(button), Qt.MouseButton.LeftButton)
+        finally:
+            if dialog.isVisible():
+                dialog.reject()
+
+    def choose():
+        dialog = QApplication.activeModalWidget()
+        try:
+            combo = dialog.findChild(WorkspaceComboBox)
+            assert "原设备" in combo.itemText(1) and "已绑定" in combo.itemText(1)
+            combo.setCurrentIndex(1)
+            QTimer.singleShot(0, confirm)
+            dialog.accept()
+        except Exception:
+            dialog.reject()
+            raise
+
+    QTimer.singleShot(0, choose)
+    qtbot.mouseClick(window.action_buttons["slot"], Qt.MouseButton.LeftButton)
+    assert seen == ["confirm"]
+    records = {r["id"]: r for r in runtime.inventory.all()}
+    assert records[previous]["slots"]["electronic"] == ("" if replace_binding else "signal_generator:1")
+    assert records[key]["slots"]["electronic"] == (
+        "signal_generator:1" if replace_binding else "signal_generator:2"
+    )
+    assert runtime.sessions.sessions[previous].state == "connected"
+    assert runtime.sessions.sessions[key].state == "connected"
+
+
+def test_overview_batch_shows_progress_results_and_ignores_filters(workspace, qtbot, monkeypatch):
+    import threading
+
+    from PySide6.QtWidgets import QTextBrowser
+
+    from lab_control.demo.instrument import SimulatedInstrument
+    from lab_control.domain.instruments import DeviceError
+
+    window, runtime, key = workspace
+    runtime.monitoring.enable_settings_sync(False)
+    for name, adapter in (("good", "thorlabs.pm100d"), ("bad", "rs.sma100b")):
+        config = ConnectionConfig(f"mock://{name}", adapter, "mock", expected_serial=name)
+        runtime.inventory.merge(
+            DiscoveryCandidate(config, "configured"), "scan", SimulatedInstrument(config).identify(), adapter
+        )
+    entered, release = threading.Event(), threading.Event()
+
+    class Slow(SimulatedInstrument):
+        def identify(self):
+            entered.set()
+            assert release.wait(5)
+            return super().identify()
+
+    def factory(config):
+        if config.expected_serial == "bad":
+            raise DeviceError("fixture 连接失败", "timeout")
+        return Slow(config)
+
+    monkeypatch.setattr(runtime.sessions, "factory", factory)
+    window.open_category("signal_generator")
+    window.presence_filter.setCurrentIndex(window.presence_filter.findData("history"))
+    window.device_pool.hide()
+    window.refresh()
+    qtbot.mouseClick(window.connect_all_button, Qt.MouseButton.LeftButton)
+    try:
+        assert entered.wait(2)
+        window.refresh()
+        assert "3" in window.connection_summary.text() and window.stop_connect_button.isVisible()
+        assert not window.scan_button.isEnabled() and not window.connect_all_button.isEnabled()
+        for width, height in ((1440, 900), (1000, 650)):
+            from PySide6.QtCore import QRect
+
+            window.fit_to_screen(QRect(0, 0, width, height))
+            window.resize(width - 32, height - 60)
+            qtbot.wait(10)
+            for button in (window.connect_all_button, window.stop_connect_button):
+                rect = button.rect().translated(button.mapTo(window.overview_page, QPoint()))
+                assert window.overview_page.rect().contains(rect)
+    finally:
+        release.set()
+    qtbot.waitUntil(lambda: runtime.connection_progress()["state"] == "completed")
+    window.refresh()
+    assert "成功 1" in window.connection_summary.text()
+    assert "已连接 1" in window.connection_summary.text() and "失败 1" in window.connection_summary.text()
+    assert window.connection_results_button.isVisible() and window.stop_connect_button.isHidden()
+    assert window.scan_button.isEnabled() and window.connect_all_button.isEnabled()
+    assert runtime.sessions.sessions[key].state == "connected"
+
+    def inspect():
+        dialog = QApplication.activeModalWidget()
+        try:
+            assert dialog.windowTitle() == "一键连接结果"
+            assert "fixture 连接失败" in dialog.findChild(QTextBrowser).toPlainText()
+        finally:
+            dialog.reject()
+
+    QTimer.singleShot(0, inspect)
+    qtbot.mouseClick(window.connection_results_button, Qt.MouseButton.LeftButton)
+
+
 @pytest.fixture
 def workspace(qtbot, tmp_path, qapp):
     old_style, old_font = qapp.styleSheet(), qapp.font()

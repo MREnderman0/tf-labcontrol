@@ -161,6 +161,8 @@ def test_both_curve_tool_menus_default_closed_and_keep_cadence_local(scope, qtbo
     window, page, runtime, _, adapter = scope
     monkeypatch.setattr(adapter, "apply", lambda cmd: pytest.fail("Cadence must not write to instrument"))
     assert not page.timing.isVisible()
+    assert page.timing.cadence.currentData() == "interval"
+    assert page.timing.interval.value() == 0.5 and page.timing.interval.isEnabled()
     page.timing_action.trigger()
     assert page.timing.isVisible()
     page.timing.cadence.setCurrentIndex(page.timing.cadence.findData("interval"))
@@ -279,7 +281,7 @@ def test_display_save_no_instrument_read_or_normalized_data(scope, qtbot, monkey
     old = page.plot.displayed_frame
     saved = []
     monkeypatch.setattr(adapter, "acquire", lambda req: pytest.fail("Export acquired new data"))
-    monkeypatch.setattr(runtime.repository, "export", lambda batch, mode: saved.append(batch) or "mock-path")
+    monkeypatch.setattr(runtime.repository, "export", lambda batch, mode, **options: saved.append(batch) or "mock-path")
     runtime.sessions.submit(key, "apply", DeviceCommand("scale", {"value": 0.2}, 1)).result()
     page.save()
     qtbot.waitUntil(lambda: bool(saved))

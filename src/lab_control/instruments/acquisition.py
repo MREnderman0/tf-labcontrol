@@ -88,7 +88,6 @@ def acquire(adapter: ScpiAdapter, request: AcquisitionRequest) -> tuple[Measurem
     kinds = {
         "power": "scalar",
         "dmm": "scalar",
-        "fph": "spectrum",
         "vna": "s_parameters",
         "rigol_scope": "waveform",
         "rtm": "waveform",
@@ -103,7 +102,7 @@ def acquire(adapter: ScpiAdapter, request: AcquisitionRequest) -> tuple[Measurem
             "confirmation_required",
         )
     if request.initiate and family not in {"power", "dmm"}:
-        if family in {"fph", "vna"}:
+        if family == "vna":
             continuous = adapter.apply(DeviceCommand("continuous", {"value": False}, confirmed=True))
             if continuous.outcome != "success":
                 raise DeviceError(continuous.error, "acquisition_failed")
@@ -153,22 +152,6 @@ def acquire(adapter: ScpiAdapter, request: AcquisitionRequest) -> tuple[Measurem
         for channel in request.channels:
             result.append(lecroy_waveform(transport.query(f"C{channel}:WF? ALL"), channel))
         adapter.configuration["transfer"] = "DEF9 WORD BIN; descriptor scaling"
-    elif family == "fph":
-        transport.write("FORM ASC")
-        start = number(str(adapter.read("start_frequency")))
-        stop = number(str(adapter.read("stop_frequency")))
-        values = numeric_values(transport.query("TRAC1:DATA?"))
-        amplitude_unit = transport.query("UNIT:POW?").decode("ascii").strip()
-        if values.size == 0 or stop < start:
-            raise DeviceError("Invalid spectrum axis", "parse_error")
-        if stop == start:
-            duration = number(str(adapter.read("sweep_time")))
-            axis, unit = np.linspace(0, duration, values.size), "s"
-        else:
-            axis, unit = np.linspace(start, stop, values.size), "Hz"
-        result.append(
-            Measurement("spectrum", amplitude_unit, values, axis=axis, axis_unit=unit, metadata={"trace": 1})
-        )
     elif family == "vna":
         transport.write("FORM ASC")
         result.append(complex_trace(transport.query("CALC1:DATA? SDAT"), transport.query("CALC1:DATA:STIM?")))

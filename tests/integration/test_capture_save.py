@@ -28,7 +28,7 @@ def test_adapter_diagnostics_survive_session_and_saved_frame_without_overriding_
 
         adapter.acquire = acquire
         saved = []
-        runtime.repository.export = lambda batch, mode: saved.append(batch) or "saved"
+        runtime.repository.export = lambda batch, mode, **options: saved.append(batch) or "saved"
         runtime.monitoring.capture_and_export(key, AcquisitionRequest("spectrum"), "electronic").result(3)
         performance = saved[0].performance
         assert performance["configuration_query_mode"] == "grouped" and performance["logical_queries"] == 45
@@ -75,7 +75,7 @@ def test_manual_save_queues_fresh_full_read_and_blocks_double_click(tmp_path):
             return replace(original(request), validation=request.consistency)
 
         adapter.acquire = acquire
-        runtime.repository.export = lambda batch, mode: saved.append(batch) or "saved"
+        runtime.repository.export = lambda batch, mode, **options: saved.append(batch) or "saved"
         service = runtime.monitoring
         service.start(key, (AcquisitionRequest("spectrum"),), interval=0.1)
         assert entered.wait(2)
@@ -105,7 +105,7 @@ def test_manual_failure_does_not_export_previous_frame_or_retry(tmp_path):
             raise DeviceError("truncated", "parse_error")
 
         runtime.sessions.sessions[key].adapter.acquire = fail
-        runtime.repository.export = lambda batch, mode: saved.append(batch)
+        runtime.repository.export = lambda batch, mode, **options: saved.append(batch)
         future = service.capture_and_export(key, AcquisitionRequest("spectrum"), "electronic")
         with pytest.raises(DeviceError):
             future.result(3)

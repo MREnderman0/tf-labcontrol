@@ -1,6 +1,7 @@
 {
   "fixture_origin": "authored from the linked manufacturer command reference; not a hardware recording",
   "adapter": "rs.fph",
+  "identity_reply": "Rohde&Schwarz,FPH,1321.1111K02/TEST,V1.40",
   "operation": "rbw",
   "channel": 1,
   "parameters": {
@@ -8,7 +9,15 @@
   },
   "exchanges": [
     [
-      "SENS:BAND:RES 1000",
+      "INST?",
+      "SAN"
+    ],
+    [
+      "SENS:BAND:RES:AUTO?",
+      "0"
+    ],
+    [
+      "SENS:BAND:RES 1000 Hz",
       ""
     ],
     [

@@ -6,12 +6,14 @@ import os
 import sqlite3
 import threading
 from pathlib import Path
+from tempfile import TemporaryFile
 from typing import Any
 from uuid import uuid4
 
 import numpy as np
 
-from lab_control.domain.instruments import MeasurementBatch, ValidationError, jsonable, utc_now
+from lab_control.domain.instruments import DeviceIdentity, MeasurementBatch, jsonable, utc_now
+from lab_control.storage.paths import BatchSaveContext, SaveContext, SaveKind
 
 
 def application_home() -> Path:
@@ -22,8 +24,9 @@ def application_home() -> Path:
 
 
 class Repository:
-    def __init__(self, root: Path | None = None) -> None:
+    def __init__(self, root: Path | None = None, *, simulation: bool = False) -> None:
         self.root = root or application_home()
+        self.simulation = simulation
         self.root.mkdir(parents=True, exist_ok=True)
         self.lock = threading.RLock()
         self.db = sqlite3.connect(self.root / "inventory.sqlite3", check_same_thread=False)
@@ -50,10 +53,15 @@ class Repository:
             return [json.loads(row[0]) for row in self.db.execute("SELECT document FROM inventory")]
 
     def save(self, record: dict[str, Any]) -> None:
+        self.save_many((record,))
+
+    def save_many(self, records: tuple[dict[str, Any], ...]) -> None:
+        """Commit related inventory changes together, rolling back every row on failure."""
+        rows = [(record["id"], json.dumps(jsonable(record), ensure_ascii=False)) for record in records]
         with self.lock, self.db:
-            self.db.execute(
+            self.db.executemany(
                 "INSERT OR REPLACE INTO inventory VALUES (?, ?)",
-                (record["id"], json.dumps(jsonable(record), ensure_ascii=False)),
+                rows,
             )
 
     def scan(self, record: dict[str, Any]) -> None:
@@ -81,16 +89,75 @@ class Repository:
                     + "\n"
                 )
 
-    def create_recording(self, mode: str = "electronic", **options):
+    @property
+    def data_root_base(self) -> Path:
+        value = self.load_workspace("data_storage/root")
+        return Path(value).resolve() if value else (self.root / "data").resolve()
+
+    @property
+    def data_root(self) -> Path:
+        value = self.load_workspace("data_storage/root")
+        if value:
+            return (Path(value) / "simulation" if self.simulation else Path(value)).resolve()
+        return (self.root / "data").resolve()
+
+    def set_data_root(self, root: Path) -> Path:
+        from lab_control.domain.instruments import ValidationError
+
+        root = root.expanduser()
+        if not root.is_absolute():
+            raise ValidationError("请选择数据保存目录的绝对路径")
+        root = root.resolve()
+        custom = root != (self.root / "data").resolve()
+        effective = root / "simulation" if self.simulation and custom else root
+        effective.mkdir(parents=True, exist_ok=True)
+        with TemporaryFile(dir=effective, prefix=".labcontrol-write-") as probe:
+            probe.write(b"storage-check")
+            probe.flush()
+            os.fsync(probe.fileno())
+            probe.seek(0)
+            if probe.read() != b"storage-check":
+                raise OSError("数据目录读写校验失败")
+        self.save_workspace("data_storage/root", str(root) if custom else None)
+        return effective
+
+    def new_batch_context(self) -> BatchSaveContext:
+        return BatchSaveContext(self.data_root)
+
+    def new_save_context(
+        self,
+        mode: str,
+        kind: SaveKind,
+        *,
+        device_id: str = "",
+        identity: DeviceIdentity | None = None,
+        adapter_id: str = "",
+        batch: BatchSaveContext | None = None,
+    ) -> SaveContext:
+        if device_id:
+            record = next((r for r in self.records() if r["id"] == device_id), {})
+            adapter_id = adapter_id or record.get("adapterId", "")
+            if identity is None and record.get("identity"):
+                identity = DeviceIdentity(**record["identity"])
+        return SaveContext(
+            batch.root if batch else self.data_root, mode, kind, device_id, identity, adapter_id, batch=batch
+        )
+
+    def create_recording(self, mode: str = "electronic", *, context: SaveContext | None = None, **options):
         from lab_control.storage.recording import Recording
 
-        return Recording(self.root, mode, **options)
+        return Recording(
+            self.root, mode, context=context or self.new_save_context(mode, "continuous"), **options
+        )
 
-    def export(self, batch: MeasurementBatch, mode: str = "electronic") -> Path:
-        if mode not in {"electronic", "optical"}:
-            raise ValidationError("Invalid experiment mode")
-        folder = self.root / "data" / mode / (utc_now().replace(":", "-") + "-" + uuid4().hex[:8])
-        folder.mkdir(parents=True)
+    def export(
+        self, batch: MeasurementBatch, mode: str = "electronic", *, context: SaveContext | None = None
+    ) -> Path:
+        from lab_control.domain.instruments import ValidationError
+
+        context = context or self.new_save_context(mode, "single_frame", identity=batch.identity)
+        context.validate(mode, "single_frame")
+        folder = context.prepare()
         (folder / "snapshot.json").write_text(
             json.dumps(jsonable(batch), ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8"
         )

@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMainWindow,
     QPushButton,
+    QScrollArea,
     QSizePolicy,
     QSpinBox,
     QStackedWidget,
@@ -32,6 +33,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from lab_control.application.bulk_connection import device_label
 from lab_control.application.catalog import instrument_category, mode_applicable
 from lab_control.application.config import ConnectionConfig, config_from_record
 from lab_control.application.controls import CATEGORY_LABELS, slot_label
@@ -241,21 +243,31 @@ class RealWindow(QMainWindow):
         content_layout.addWidget(self.stack, 1)
         content_layout.addWidget(self.message)
         row.addWidget(content, 1)
-        self.settings_page = QWidget()
-        settings = QVBoxLayout(self.settings_page)
+        self.settings_page = QScrollArea()
+        self.settings_page.setWidgetResizable(True)
+        self.settings_page.setFrameShape(QFrame.Shape.NoFrame)
+        settings_body = QWidget()
+        self.settings_page.setWidget(settings_body)
+        settings = QVBoxLayout(settings_body)
         heading = QLabel("软件设置")
         heading.setObjectName("pageTitle")
         settings.addWidget(heading)
         settings.addWidget(QLabel("实验模式"))
         settings.addWidget(self.mode)
         self.mode.setCurrentIndex(max(0, self.mode.findData(self.controller.mode)))
-        settings.addWidget(QLabel("模式只影响布局、槽位候选和控制适用性；设备总览保留全部设备。"))
-        directory = QLabel("数据目录：" + str(self.runtime.repository.root))
+        mode_note = QLabel("模式只影响布局、槽位候选和控制适用性；设备总览保留全部设备。")
+        mode_note.setWordWrap(True)
+        settings.addWidget(mode_note)
+        from lab_control.ui.pages.storage_settings import StorageSettingsPanel
+
+        self.storage_panel = StorageSettingsPanel(self.runtime.repository, settings_body)
+        settings.addWidget(self.storage_panel)
+        directory = QLabel("软件库存与日志目录：" + str(self.runtime.repository.root))
         directory.setWordWrap(True)
         settings.addWidget(directory)
         from lab_control.ui.pages.environment_repair import EnvironmentRepairPanel
 
-        self.environment_panel = EnvironmentRepairPanel(self.runtime, self.settings_page)
+        self.environment_panel = EnvironmentRepairPanel(self.runtime, settings_body)
         settings.addWidget(self.environment_panel, 1)
         self.stack.addWidget(self.settings_page)
         self.setCentralWidget(root)
@@ -382,7 +394,7 @@ class RealWindow(QMainWindow):
                     message = {
                         "数据采集": "在实时监测的设备类型页开启记录，可保存原始数据和配置快照。",
                         "数据处理": "数据处理工作台尚未开放。已保存数据可使用 CSV / NPZ 导出文件。",
-                        "操作日志": "设备操作、监测与异常按日保存在数据目录的 logs 文件夹。",
+                        "操作日志": "设备操作、监测与异常按日保存在软件运行目录的 logs 文件夹。",
                     }[module]
                     layout.addWidget(QLabel(message))
                     button = QPushButton("进入实时监测")
@@ -440,6 +452,16 @@ class RealWindow(QMainWindow):
         self.scan_button.clicked.connect(self.scan)
         self.cancel_button = QPushButton("取消扫描")
         self.cancel_button.clicked.connect(lambda: self.runtime.discovery.cancel())
+        self.connect_all_button = QPushButton("一键连接")
+        self.connect_all_button.setObjectName("primaryButton")
+        self.connect_all_button.clicked.connect(self.connect_all)
+        toolbar.addWidget(self.connect_all_button)
+        self.stop_connect_button = QPushButton("停止连接")
+        self.stop_connect_button.clicked.connect(self.runtime.cancel_connect_all)
+        toolbar.addWidget(self.stop_connect_button)
+        self.connection_results_button = QPushButton("连接结果")
+        self.connection_results_button.clicked.connect(self.show_connection_results)
+        toolbar.addWidget(self.connection_results_button)
         toolbar.addWidget(self.cancel_button)
         for text, action in (("添加资源", self.add_resource), ("环境诊断", self.diagnose)):
             button = QPushButton(text)
@@ -453,6 +475,10 @@ class RealWindow(QMainWindow):
         self.summary.setWordWrap(True)
         self.summary.setObjectName("overviewNote")
         layout.addWidget(self.summary)
+        self.connection_summary = QLabel()
+        self.connection_summary.setWordWrap(True)
+        self.connection_summary.setObjectName("overviewNote")
+        layout.addWidget(self.connection_summary)
         self.card_grid = CategoryCardGrid()
         self.cards = {
             category: CategoryCard(category, label, CATEGORY_DESCRIPTIONS[category], self.card_grid.widget())
@@ -680,10 +706,32 @@ class RealWindow(QMainWindow):
         }
         progress = self.runtime.discovery.progress
         running = self.runtime.discovery.is_scanning
-        self.scan_button.setEnabled(not running)
+        connection_progress = self.runtime.connection_progress()
+        connecting = connection_progress["state"] in {"running", "stopping"}
+        self.scan_button.setEnabled(not running and not connecting)
+        self.scan_button.setToolTip("正在批量连接，请等待完成或停止连接" if connecting else "")
         self.scan_button.setText("扫描中…" if running else "扫描设备")
         self.cancel_button.setEnabled(running)
         self.cancel_button.setVisible(running)
+        self.connect_all_button.setEnabled(not running and not connecting and bool(current_records))
+        self.connect_all_button.setText("连接中…" if connecting else "一键连接")
+        self.connect_all_button.setToolTip(
+            "正在扫描并核验设备，完成后可连接" if running else "连接所有当前发现的设备，已有会话保持不变"
+        )
+        self.stop_connect_button.setVisible(connecting)
+        self.stop_connect_button.setEnabled(connection_progress["state"] == "running")
+        self.connection_results_button.setVisible(bool(connection_progress["items"]) and not connecting)
+        self.connection_summary.setVisible(connection_progress["state"] != "idle")
+        if connecting:
+            prefix = (
+                "正在停止，等待当前连接完成" if connection_progress["state"] == "stopping" else "正在连接"
+            )
+            self.connection_summary.setText(
+                f"{prefix} · {connection_progress['completed']}/{connection_progress['total']}"
+                f" · {connection_progress.get('current', '')}"
+            )
+        else:
+            self.connection_summary.setText(self.connection_result_text(connection_progress))
         connected = sum(
             s["connectionState"] in {"connected", "busy", "degraded"} for s in self.states.values()
         )
@@ -843,6 +891,7 @@ class RealWindow(QMainWindow):
         state = self.states.get(self.selected_id, {})
         busy = bool(state.get("pending")) or state.get("connectionState") in {"busy", "connecting"}
         scanning = self.runtime.discovery.is_scanning
+        connecting = self.runtime.connection_progress()["state"] in {"running", "stopping"}
         for key, button in self.action_buttons.items():
             if key == "manage":
                 button.setText("设备控制")
@@ -872,8 +921,19 @@ class RealWindow(QMainWindow):
             elif key == "capabilities":
                 enabled &= bool(record and record["adapterId"])
             elif key == "slot":
-                enabled &= not busy and bool(
-                    record and applicable(record, self.mode.currentData()) and record["adapterId"]
+                enabled &= (
+                    not busy
+                    and not any(
+                        state.get(flag)
+                        for flag in ("controlsLocked", "controlPending", "controlGroup", "monitoring")
+                    )
+                    and bool(
+                        record
+                        and applicable(record, self.mode.currentData())
+                        and record["adapterId"]
+                        and not record.get("identityConflict")
+                        and record["discoveryState"] != "conflict"
+                    )
                 )
             elif key == "resource":
                 enabled &= not bool(state)
@@ -889,9 +949,13 @@ class RealWindow(QMainWindow):
                 )
             if key in {"connect", "reconnect", "resource"}:
                 enabled &= not scanning
+            if key in {"connect", "disconnect", "reconnect", "resource"}:
+                enabled &= not connecting
             button.setEnabled(enabled)
             button.setToolTip(
-                "正在扫描并核验设备，完成后可连接"
+                "正在批量连接，请等待完成或停止连接"
+                if connecting and key in {"connect", "disconnect", "reconnect", "resource"}
+                else "正在扫描并核验设备，完成后可连接"
                 if scanning and key in {"connect", "reconnect", "resource"}
                 else "请先连接设备"
                 if key in {"manage", "monitor"} and not enabled
@@ -1027,27 +1091,109 @@ class RealWindow(QMainWindow):
                 if accepted:
                     self.runtime.inventory.edit(device_id, display_name=value)
             elif key == "slot":
-                slots = [
-                    "",
-                    instrument_category(self.records[device_id]) + ":1",
-                    instrument_category(self.records[device_id]) + ":2",
-                ]
-                labels = ["解除绑定", *(slot_label(slot) for slot in slots[1:])]
-                value, accepted = choose_item(
-                    self,
-                    "功能槽位",
-                    "按能力选择槽位（空项解除绑定）",
-                    labels,
-                )
-                if accepted:
-                    self.runtime.bind_slot(device_id, slots[labels.index(value)], self.mode.currentData())
+                self.choose_slot(device_id)
         except Exception as exc:
             self._failed(str(exc))
         self.refresh()
 
+    def choose_slot(self, device_id: str) -> None:
+        mode = self.mode.currentData()
+        records = self.runtime.inventory.all()
+        record = next(r for r in records if r["id"] == device_id)
+        category = instrument_category(record)
+        slots = ["", f"{category}:1", f"{category}:2"]
+        owners = {r.get("slots", {}).get(mode): r for r in records if r.get("slots", {}).get(mode)}
+        labels = ["解除绑定"]
+        for slot in slots[1:]:
+            owner = owners.get(slot)
+            suffix = f"（已绑定：{device_label(owner)}）" if owner else "（空闲）"
+            labels.append(slot_label(slot) + suffix)
+        value, accepted = choose_item(self, "功能槽位", "选择槽位；已占用槽位可确认替换", labels)
+        if not accepted:
+            return
+        slot = slots[labels.index(value)]
+        owner = owners.get(slot)
+        replace_id = None
+        if owner and owner["id"] != device_id:
+            dialog = QDialog(self)
+            dialog.setWindowTitle("替换槽位绑定")
+            dialog.setMinimumWidth(420)
+            layout = QVBoxLayout(dialog)
+            prompt = QLabel(f"已有【{device_label(owner)}】绑定【{slot_label(slot)}】，是否替换？")
+            prompt.setWordWrap(True)
+            layout.addWidget(prompt)
+            note = QLabel("替换后，原设备保持连接，当前模式下的槽位变为未绑定。")
+            note.setWordWrap(True)
+            layout.addWidget(note)
+            buttons = QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+            )
+            confirm = buttons.button(QDialogButtonBox.StandardButton.Ok)
+            confirm.setText("替换")
+            confirm.setAutoDefault(False)
+            cancel = buttons.button(QDialogButtonBox.StandardButton.Cancel)
+            cancel.setText("取消")
+            cancel.setDefault(True)
+            cancel.setFocus()
+            buttons.accepted.connect(dialog.accept)
+            buttons.rejected.connect(dialog.reject)
+            layout.addWidget(buttons)
+            accepted = dialog.exec() == QDialog.DialogCode.Accepted
+            dialog.deleteLater()
+            if not accepted:
+                return
+            replace_id = owner["id"]
+        self.runtime.bind_slot(device_id, slot, mode, replace_device_id=replace_id)
+
+    def connect_all(self) -> None:
+        try:
+            self.bridge.watch(self.runtime.connect_all_discovered(), "connect_all")
+        except Exception as exc:
+            self._failed(str(exc))
+        self.refresh()
+
+    @staticmethod
+    def connection_result_text(progress: dict[str, Any]) -> str:
+        items = progress.get("items", [])
+        counts = {
+            status: sum(item["status"] == status for item in items)
+            for status in ("connected", "already_connected", "failed", "skipped")
+        }
+        title = {"cancelled": "连接已停止", "error": "批量连接中断"}.get(progress["state"], "连接完成")
+        return (
+            f"{title} · 成功 {counts['connected']} · 已连接 {counts['already_connected']}"
+            f" · 失败 {counts['failed']} · 跳过 {counts['skipped']}"
+        )
+
+    def show_connection_results(self) -> None:
+        progress = self.runtime.connection_progress()
+        dialog = QDialog(self)
+        dialog.setWindowTitle("一键连接结果")
+        dialog.resize(680, 440)
+        layout = QVBoxLayout(dialog)
+        summary = QLabel(self.connection_result_text(progress))
+        summary.setWordWrap(True)
+        layout.addWidget(summary)
+        text = QTextBrowser()
+        labels = {"connected": "成功", "already_connected": "已连接", "failed": "失败", "skipped": "跳过"}
+        text.setPlainText(
+            "\n\n".join(
+                f"{item['label']}\n{labels[item['status']]}：{item['reason']}" for item in progress["items"]
+            )
+        )
+        layout.addWidget(text)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.button(QDialogButtonBox.StandardButton.Close).setText("关闭")
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        dialog.exec()
+        dialog.deleteLater()
+
     def _completed(self, label: str, result: Any) -> None:
         self.message.setText(f"{label} 完成")
-        if label in {"capabilities", "diagnostics"}:
+        if label == "connect_all":
+            self.message.setText(self.connection_result_text(result))
+        elif label in {"capabilities", "diagnostics"}:
             dialog = QDialog(self)
             dialog.setWindowTitle("能力与诊断")
             dialog.resize(760, 600)
@@ -1140,6 +1286,7 @@ class RealWindow(QMainWindow):
             central.setEnabled(False)
 
         def cleanup():
+            self.storage_panel.shutdown()
             self.environment_panel.shutdown()
             self.runtime.close()
 

@@ -10082,6 +10082,1277 @@
       ]
     },
     {
+      "adapter_id": "rs.fph",
+      "model": "R&S FPH02",
+      "category": "spectrum_analyzer",
+      "control_page": "实时监测 / 频谱仪",
+      "channels": [
+        1
+      ],
+      "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+      "revision": "1321.1011 revision 21; conservative FPH02 V1.40 subset",
+      "acquisition": "fph",
+      "channel_limits": {},
+      "hardware_passed": false,
+      "operations": [
+        {
+          "name": "start_frequency",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Hz",
+              "minimum": 0,
+              "maximum": 2000000000.0,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "SENS:FREQ:STAR",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "起始频率",
+          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SENS:FREQ:STAR {value} Hz"
+            ],
+            "query": "SENS:FREQ:STAR?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "stop_frequency",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Hz",
+              "minimum": 0,
+              "maximum": 2000000000.0,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "SENS:FREQ:STOP",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "终止频率",
+          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SENS:FREQ:STOP {value} Hz"
+            ],
+            "query": "SENS:FREQ:STOP?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "center_frequency",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Hz",
+              "minimum": 0,
+              "maximum": 2000000000.0,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "SENS:FREQ:CENT",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "中心频率",
+          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SENS:FREQ:CENT {value} Hz"
+            ],
+            "query": "SENS:FREQ:CENT?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "span",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Hz",
+              "minimum": 0,
+              "maximum": 2000000000.0,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "SENS:FREQ:SPAN",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "频率跨度",
+          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SENS:FREQ:SPAN {value} Hz"
+            ],
+            "query": "SENS:FREQ:SPAN?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "rbw",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Hz",
+              "minimum": 100,
+              "maximum": 1000000.0,
+              "choices": [
+                "100",
+                "300",
+                "1000",
+                "3000",
+                "10000",
+                "30000",
+                "100000",
+                "300000",
+                "1e+06"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "SENS:BAND:RES",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": true,
+          "hardware_passed": false,
+          "ui_label": "分辨率带宽 RBW",
+          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SENS:BAND:RES {value} Hz"
+            ],
+            "query": "SENS:BAND:RES?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "vbw",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Hz",
+              "minimum": 10,
+              "maximum": 1000000.0,
+              "choices": [
+                "10",
+                "30",
+                "100",
+                "300",
+                "1000",
+                "3000",
+                "10000",
+                "30000",
+                "100000",
+                "300000",
+                "1e+06"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "SENS:BAND:VID",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "视频带宽 VBW",
+          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SENS:BAND:VID {value} Hz"
+            ],
+            "query": "SENS:BAND:VID?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "rbw_auto",
+          "parameters": {
+            "value": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "SENS:BAND:RES:AUTO",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "自动 RBW",
+          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SENS:BAND:RES:AUTO {value}"
+            ],
+            "query": "SENS:BAND:RES:AUTO?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "vbw_auto",
+          "parameters": {
+            "value": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "SENS:BAND:VID:AUTO",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "自动 VBW",
+          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SENS:BAND:VID:AUTO {value}"
+            ],
+            "query": "SENS:BAND:VID:AUTO?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "reference_level",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "dBm",
+              "minimum": -100,
+              "maximum": 30,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "DISP:TRAC1:Y:RLEV",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "参考电平",
+          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "DISP:TRAC1:Y:RLEV {value} dBm"
+            ],
+            "query": "DISP:TRAC1:Y:RLEV?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "attenuation",
+          "parameters": {
+            "value": {
+              "kind": "integer",
+              "unit": "dB",
+              "minimum": 0,
+              "maximum": 30,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "INP:ATT",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "输入衰减",
+          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "INP:ATT {value} dB"
+            ],
+            "query": "INP:ATT?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "attenuation_auto",
+          "parameters": {
+            "value": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "INP:ATT:AUTO",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "自动衰减",
+          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "INP:ATT:AUTO {value}"
+            ],
+            "query": "INP:ATT:AUTO?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "sweep_time",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "s",
+              "minimum": 0.001,
+              "maximum": 1000,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "SENS:SWE:TIME",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "扫描时间",
+          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SENS:SWE:TIME {value} s"
+            ],
+            "query": "SENS:SWE:TIME?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "sweep_time_auto",
+          "parameters": {
+            "value": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "SENS:SWE:TIME:AUTO",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "自动扫描时间",
+          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SENS:SWE:TIME:AUTO {value}"
+            ],
+            "query": "SENS:SWE:TIME:AUTO?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "sweep_count",
+          "parameters": {
+            "value": {
+              "kind": "integer",
+              "unit": "",
+              "minimum": 1,
+              "maximum": 999,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "SENS:SWE:COUN",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "单次扫描次数",
+          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SENS:SWE:COUN {value}"
+            ],
+            "query": "SENS:SWE:COUN?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "continuous",
+          "parameters": {
+            "value": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "INIT:CONT",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "仪器连续扫描",
+          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "INIT:CONT {value}"
+            ],
+            "query": "INIT:CONT?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "amplitude_unit",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "DBM",
+                "DBMV",
+                "DBUV",
+                "V",
+                "W"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "UNIT:POW",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "幅度单位",
+          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "UNIT:POW {value}"
+            ],
+            "query": "UNIT:POW?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "detector",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "POS",
+                "NEG",
+                "SAMP",
+                "RMS",
+                "AVER",
+                "APE"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "SENS:DET1:FUNC",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "检波器",
+          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SENS:DET1:FUNC {value}"
+            ],
+            "query": "SENS:DET1:FUNC?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "detector_auto",
+          "parameters": {
+            "value": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "SENS:DET1:FUNC:AUTO",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "自动检波器",
+          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SENS:DET1:FUNC:AUTO {value}"
+            ],
+            "query": "SENS:DET1:FUNC:AUTO?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "trace_mode",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "WRIT",
+                "AVER",
+                "MINH",
+                "MAXH",
+                "VIEW"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "DISP:TRAC1:MODE",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "轨迹模式",
+          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "DISP:TRAC1:MODE {value}"
+            ],
+            "query": "DISP:TRAC1:MODE?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "trigger_source",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "IMM",
+                "EXT"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "TRIG:SOUR",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "触发源",
+          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "TRIG:SOUR {value}"
+            ],
+            "query": "TRIG:SOUR?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "marker_enabled",
+          "parameters": {
+            "value": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "CALC:MARK1:STAT",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "标记开关",
+          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "CALC:MARK1:STAT {value}"
+            ],
+            "query": "CALC:MARK1:STAT?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "marker_frequency",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Hz",
+              "minimum": 0,
+              "maximum": 2000000000.0,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "CALC:MARK1:X",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "标记频率",
+          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "CALC:MARK1:X {value} Hz"
+            ],
+            "query": "CALC:MARK1:X?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "options",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "*OPT?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "已安装选件",
+          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "*OPT?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "measurement_mode",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "INST?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "测量模式",
+          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "INST?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "transfer_format",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "FORM?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "轨迹传输格式",
+          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "FORM?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "byte_order",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "FORM:BORD?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "传输字节序",
+          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "FORM:BORD?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "sweep_points",
+          "parameters": {
+            "value": {
+              "kind": "integer",
+              "unit": "",
+              "minimum": 711,
+              "maximum": 711,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "TRACe:DATA?, p.358: fixed 711 display points",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "扫描点数",
+          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "frequency_offset",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "SENS:FREQ:OFFS?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "频率显示偏移",
+          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "SENS:FREQ:OFFS?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "reference_offset",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "DISP:TRAC1:Y:RLEV:OFFS?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "参考电平偏移",
+          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "DISP:TRAC1:Y:RLEV:OFFS?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "preamplifier",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "INP:GAIN:STAT?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "前置放大",
+          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "INP:GAIN:STAT?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "marker_value",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "CALC:MARK1:Y?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "标记读数",
+          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "CALC:MARK1:Y?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "marker_frequency_mode",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "CALC:MARK:FREQ:MODE?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "标记坐标模式",
+          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "CALC:MARK:FREQ:MODE?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "errors",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "SYST:ERR?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "设备错误",
+          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "SYST:ERR?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "single",
+          "parameters": {},
+          "readable": false,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "INIT:IMM",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "仪器单次采集",
+          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "INIT:IMM"
+            ],
+            "query": "",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "marker_peak",
+          "parameters": {},
+          "readable": false,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
+          "section": "CALC:MARK1:MAX",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "搜索峰值",
+          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "CALC:MARK1:MAX"
+            ],
+            "query": "",
+            "custom_encoder": false
+          }
+        }
+      ]
+    },
+    {
       "adapter_id": "siglent.sdg6032x",
       "model": "Siglent SDG6032X",
       "category": "signal_generator",
@@ -16347,689 +17618,6 @@
             "select": [],
             "writes": [],
             "query": "TRIG:STAT?",
-            "custom_encoder": false
-          }
-        }
-      ]
-    },
-    {
-      "adapter_id": "rs.fph",
-      "model": "R&S FPH",
-      "category": "spectrum_analyzer",
-      "control_page": "实时监测 / 频谱仪",
-      "channels": [
-        1
-      ],
-      "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
-      "revision": "1321.1011 revision 21",
-      "acquisition": "fph",
-      "channel_limits": {},
-      "hardware_passed": false,
-      "operations": [
-        {
-          "name": "start_frequency",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "Hz",
-              "minimum": 0,
-              "maximum": 2000000000.0,
-              "choices": [],
-              "required": true,
-              "range_source": "model",
-              "resolution": null
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
-          "section": "SENS:FREQ:STAR",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "起始频率",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SENS:FREQ:STAR {value}"
-            ],
-            "query": "SENS:FREQ:STAR?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "stop_frequency",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "Hz",
-              "minimum": 0,
-              "maximum": 2000000000.0,
-              "choices": [],
-              "required": true,
-              "range_source": "model",
-              "resolution": null
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
-          "section": "SENS:FREQ:STOP",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "终止频率",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SENS:FREQ:STOP {value}"
-            ],
-            "query": "SENS:FREQ:STOP?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "center_frequency",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "Hz",
-              "minimum": 0,
-              "maximum": 2000000000.0,
-              "choices": [],
-              "required": true,
-              "range_source": "model",
-              "resolution": null
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
-          "section": "SENS:FREQ:CENT",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "中心频率",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SENS:FREQ:CENT {value}"
-            ],
-            "query": "SENS:FREQ:CENT?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "span",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "Hz",
-              "minimum": 0,
-              "maximum": 2000000000.0,
-              "choices": [],
-              "required": true,
-              "range_source": "model",
-              "resolution": null
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
-          "section": "SENS:FREQ:SPAN",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "频率跨度",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SENS:FREQ:SPAN {value}"
-            ],
-            "query": "SENS:FREQ:SPAN?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "rbw",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "Hz",
-              "minimum": 100,
-              "maximum": 1000000.0,
-              "choices": [],
-              "required": true,
-              "range_source": "model",
-              "resolution": null
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
-          "section": "SENS:BAND:RES",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": true,
-          "hardware_passed": false,
-          "ui_label": "分辨率带宽 RBW",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SENS:BAND:RES {value}"
-            ],
-            "query": "SENS:BAND:RES?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "vbw",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "Hz",
-              "minimum": 10,
-              "maximum": 1000000.0,
-              "choices": [],
-              "required": true,
-              "range_source": "model",
-              "resolution": null
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
-          "section": "SENS:BAND:VID",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "视频带宽 VBW",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SENS:BAND:VID {value}"
-            ],
-            "query": "SENS:BAND:VID?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "rbw_auto",
-          "parameters": {
-            "value": {
-              "kind": "boolean",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [],
-              "required": true,
-              "range_source": "model",
-              "resolution": null
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
-          "section": "SENS:BAND:RES:AUTO",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "自动 RBW",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SENS:BAND:RES:AUTO {value}"
-            ],
-            "query": "SENS:BAND:RES:AUTO?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "vbw_auto",
-          "parameters": {
-            "value": {
-              "kind": "boolean",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [],
-              "required": true,
-              "range_source": "model",
-              "resolution": null
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
-          "section": "SENS:BAND:VID:AUTO",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "自动 VBW",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SENS:BAND:VID:AUTO {value}"
-            ],
-            "query": "SENS:BAND:VID:AUTO?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "reference_level",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "dBm",
-              "minimum": -100,
-              "maximum": 30,
-              "choices": [],
-              "required": true,
-              "range_source": "model",
-              "resolution": null
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
-          "section": "DISP:TRAC:Y:RLEV",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "参考电平",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "DISP:TRAC:Y:RLEV {value}"
-            ],
-            "query": "DISP:TRAC:Y:RLEV?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "attenuation",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "dB",
-              "minimum": 0,
-              "maximum": 30,
-              "choices": [],
-              "required": true,
-              "range_source": "model",
-              "resolution": null
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
-          "section": "INP:ATT",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "输入衰减",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "INP:ATT {value}"
-            ],
-            "query": "INP:ATT?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "attenuation_auto",
-          "parameters": {
-            "value": {
-              "kind": "boolean",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [],
-              "required": true,
-              "range_source": "model",
-              "resolution": null
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
-          "section": "INP:ATT:AUTO",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "自动衰减",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "INP:ATT:AUTO {value}"
-            ],
-            "query": "INP:ATT:AUTO?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "sweep_time",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "s",
-              "minimum": 0.001,
-              "maximum": 1000,
-              "choices": [],
-              "required": true,
-              "range_source": "model",
-              "resolution": null
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
-          "section": "SENS:SWE:TIME",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "扫描时间",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "SENS:SWE:TIME {value}"
-            ],
-            "query": "SENS:SWE:TIME?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "continuous",
-          "parameters": {
-            "value": {
-              "kind": "boolean",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [],
-              "required": true,
-              "range_source": "model",
-              "resolution": null
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": true,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
-          "section": "INIT:CONT",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "仪器连续扫描",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "INIT:CONT {value}"
-            ],
-            "query": "INIT:CONT?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "marker_enabled",
-          "parameters": {
-            "value": {
-              "kind": "boolean",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [],
-              "required": true,
-              "range_source": "model",
-              "resolution": null
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
-          "section": "CALC:MARK1:STAT",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "标记开关",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "CALC:MARK1:STAT {value}"
-            ],
-            "query": "CALC:MARK1:STAT?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "marker_frequency",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "Hz",
-              "minimum": 0,
-              "maximum": 2000000000.0,
-              "choices": [],
-              "required": true,
-              "range_source": "model",
-              "resolution": null
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
-          "section": "CALC:MARK1:X",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "标记频率",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "CALC:MARK1:X {value}"
-            ],
-            "query": "CALC:MARK1:X?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "single",
-          "parameters": {},
-          "readable": false,
-          "writable": true,
-          "requires_confirmation": true,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
-          "section": "INIT:IMM",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "仪器单次采集",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "INIT:IMM"
-            ],
-            "query": "",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "marker_peak",
-          "parameters": {},
-          "readable": false,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
-          "section": "CALC:MARK1:MAX",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "搜索峰值",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "CALC:MARK1:MAX"
-            ],
-            "query": "",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "marker_value",
-          "parameters": {},
-          "readable": true,
-          "writable": false,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
-          "section": "CALC:MARK1:Y?",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "标记读数",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
-          "wire_templates": {
-            "select": [],
-            "writes": [],
-            "query": "CALC:MARK1:Y?",
             "custom_encoder": false
           }
         }

@@ -22,12 +22,12 @@ from dataclasses import fields
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterator
-from uuid import uuid4
 
 import numpy as np
 
 from lab_control.application.acquisition_pipeline import batch_bytes, validate_recorded_batch
-from lab_control.domain.instruments import MeasurementBatch, ValidationError, jsonable, utc_now
+from lab_control.domain.instruments import MeasurementBatch, ValidationError, jsonable
+from lab_control.storage.paths import SaveContext
 
 _CSV_SLOTS = threading.BoundedSemaphore(2)
 
@@ -242,11 +242,17 @@ class Recording:
         wake: Callable[[], None] = lambda: None,
         max_frames: int = 64,
         max_bytes: int = 128 * 1024 * 1024,
+        context: SaveContext | None = None,
+        prepare_storage: bool = True,
     ) -> None:
         if mode not in {"electronic", "optical"}:
             raise ValidationError("Invalid experiment mode")
         self.validate_csv_interval(csv_interval)
-        self.folder = root / "data" / mode / (utc_now().replace(":", "-") + "-" + uuid4().hex[:8])
+        self.context = context or SaveContext(root / "data", mode, "continuous")
+        self.context.validate(mode, "continuous")
+        self.folder = self.context.folder
+        if prepare_storage:
+            self.context.prepare()
         self.csv_interval, self.wake = csv_interval, wake
         self.max_frames, self.max_bytes = max_frames, max_bytes
         self.lock = threading.RLock()
@@ -331,6 +337,8 @@ class Recording:
                 csv_lag_seconds=self.csv_lag_seconds,
                 buffer_bytes=self.buffer_bytes,
                 folder=str(self.folder),
+                started_local=self.context.started_at.isoformat(),
+                started_utc=self.context.started_utc,
             )
 
     def _write_loop(self) -> None:

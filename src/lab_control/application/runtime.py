@@ -3,6 +3,7 @@ from __future__ import annotations
 import platform
 import sys
 import threading
+from concurrent.futures import Future
 from pathlib import Path
 from typing import Any
 
@@ -43,7 +44,9 @@ class ApplicationRuntime:
                 "Use --mock for simulated configurations; real inventory cannot contain simulation"
             )
         self.hardware = hardware
-        self.repository = Repository(root if hardware else (root or application_home()) / "simulation")
+        self.repository = Repository(
+            root if hardware else (root or application_home()) / "simulation", simulation=not hardware
+        )
         self.process_lease: ProcessLease | None = None
         self.closed = False
         self._close_lock = threading.Lock()
@@ -90,6 +93,9 @@ class ApplicationRuntime:
             from lab_control.application.monitoring import MonitoringService
 
             self.monitoring = MonitoringService(self.sessions, self.repository)
+            from lab_control.application.bulk_connection import BulkConnectionService
+
+            self.bulk_connection = BulkConnectionService(self)
         except Exception:
             self.repository.close()
             if self.process_lease:
@@ -126,9 +132,27 @@ class ApplicationRuntime:
 
         # Reserve the session under the scan lock, including enumeration and probe gaps.
         with self.discovery.lock:
+            self._check_connection_admission()
             if self.discovery.future and not self.discovery.future.done():
                 raise DeviceError("正在扫描并核验设备，请等待扫描完成后连接", "scan_busy")
             return self._connect(device_id, configure_acquisition=configure_acquisition)
+
+    def _check_connection_admission(self) -> None:
+        from lab_control.domain.instruments import DeviceError
+
+        if self.discovery.closing or self.closed:
+            raise DeviceError("程序正在退出", "runtime_closing")
+        if self.discovery.connection_batch_active:
+            raise DeviceError("正在批量连接，请等待完成或停止连接", "connection_batch_busy")
+
+    def connect_all_discovered(self) -> Future[dict[str, Any]]:
+        return self.bulk_connection.start()
+
+    def cancel_connect_all(self) -> None:
+        self.bulk_connection.cancel()
+
+    def connection_progress(self) -> dict[str, Any]:
+        return self.bulk_connection.snapshot()
 
     def _connect(self, device_id: str, *, configure_acquisition: bool = True):
         record = next(item for item in self.inventory.all() if item["id"] == device_id)
@@ -146,37 +170,69 @@ class ApplicationRuntime:
             device_id, config, expected_firmware=firmware, configure_acquisition=configure_acquisition
         )
 
+        saved: Future[DeviceIdentity] = Future()
+        # Opening is already submitted; cancelling this publication cannot cancel I/O.
+        saved.set_running_or_notify_cancel()
+
         def save_identity(completed):
             try:
                 identity = completed.result()
                 self.inventory.merge(
                     DiscoveryCandidate(config, "configured"), "connected", identity, config.adapter
                 )
+                saved.set_result(identity)
             except Exception as exc:
-                self.repository.audit("connection_failed", device_id=device_id, error=str(exc))
+                try:
+                    self.repository.audit("connection_failed", device_id=device_id, error=str(exc))
+                finally:
+                    saved.set_exception(exc)
 
         future.add_done_callback(save_identity)
-        return future
+        return saved
 
-    def bind_slot(self, device_id: str, slot: str, mode: str) -> None:
+    def bind_slot(
+        self, device_id: str, slot: str, mode: str, *, replace_device_id: str | None = None
+    ) -> None:
         from lab_control.application.catalog import instrument_category, mode_applicable
         from lab_control.domain.instruments import DeviceError
 
-        with self.sessions.lock:
-            session = self.sessions.sessions.get(device_id)
-            if session and (session.pending or session.state in {"busy", "connecting"}):
-                raise DeviceError("Stop the active task before changing slots", "task_busy")
+        with self.sessions.lock, self.inventory.lock:
+            for key in (device_id, replace_device_id):
+                if key is None:
+                    continue
+                session = self.sessions.sessions.get(key)
+                if session and (
+                    session.pending
+                    or session.state in {"busy", "connecting"}
+                    or session.monitoring
+                    or session.controls_locked
+                    or session.control_pending
+                    or session.control_group
+                    or session.closing
+                ):
+                    raise DeviceError("设备正在执行任务，请停止并等待完成后修改槽位", "task_busy")
             record = next(item for item in self.inventory.all() if item["id"] == device_id)
+            if mode not in {"electronic", "optical"}:
+                raise ValidationError("Unknown workspace mode")
+            if slot and (record.get("identityConflict") or record["discoveryState"] == "conflict"):
+                raise DeviceError("设备身份冲突，请先核对", "identity_conflict")
             category = instrument_category(record)
             if slot and (not mode_applicable(record, mode) or slot not in {f"{category}:1", f"{category}:2"}):
                 raise ValidationError("Slot category or mode is incompatible with this instrument")
-            self.inventory.edit(device_id, slot=slot, mode=mode)
-            self.repository.audit("slot_changed", device_id=device_id, slot=slot, mode=mode)
+            self.inventory.bind_slot(device_id, slot, mode, replace_device_id=replace_device_id)
+            self.repository.audit(
+                "slot_changed",
+                device_id=device_id,
+                slot=slot,
+                mode=mode,
+                replaced_device_id=replace_device_id,
+            )
 
     def select_resource(self, device_id: str, resource: str, *, follow_address: bool = False) -> None:
         from lab_control.domain.instruments import DeviceError
 
         with self.discovery.lock, self.sessions.lock:
+            self._check_connection_admission()
             if self.discovery.future and not self.discovery.future.done():
                 raise DeviceError("正在扫描并核验设备，请等待扫描完成后选择连接", "scan_busy")
             if device_id in self.sessions.sessions:
@@ -221,9 +277,12 @@ class ApplicationRuntime:
     def _close_once(self) -> None:
         if self.closed:
             return
+        with self.discovery.lock:
+            self.discovery.closing = True
         errors = []
         try:
             for cleanup in (
+                self.bulk_connection.close,
                 self.monitoring.close,
                 self.discovery.close,
                 self.sessions.close,
