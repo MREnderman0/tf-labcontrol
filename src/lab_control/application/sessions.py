@@ -162,13 +162,19 @@ class SessionManager:
             for reading in readings:
                 reading = replace(reading, value=deepcopy(reading.value))
                 key = (reading.channel, reading.operation)
+                previous = session.frames.get(key)
+                received_at = (
+                    previous.received_at
+                    if reading.source == "control_cache" and previous and previous.reading.timestamp == reading.timestamp
+                    else time.monotonic()
+                )
                 session.settings[key] = reading
                 session.read_sequence += 1
                 session.frames[key] = SettingsFrame(
                     session.session_id,
                     session.configuration_version,
                     session.read_sequence,
-                    time.monotonic(),
+                    received_at,
                     reading,
                 )
 
@@ -538,7 +544,9 @@ class SessionManager:
                 # before I/O, including paths where the adapter raises instead of returning.
                 with self.lock:
                     session.configuration_version += 1
-                self._invalidate_acquisition(session, "apply")
+                # Opted-in models own selective invalidation, including failure paths.
+                if not getattr(adapter, "supports_control_updates", False):
+                    self._invalidate_acquisition(session, "apply")
                 try:
                     result = adapter.apply(argument)
                 finally:
@@ -564,6 +572,10 @@ class SessionManager:
                     )
                 if result.outcome in {"uncertain", "partial"}:
                     session.state = "degraded"
+                if result.outcome == "success" and session.state != "degraded" and result.control_update:
+                    self._cache_readings(session, result.control_update.readings)
+                elif result.outcome != "success":
+                    self._invalidate_acquisition(session, "error")
             elif operation == "observe":
                 if not isinstance(argument, AcquisitionRequest):
                     raise TypeError("Expected AcquisitionRequest")

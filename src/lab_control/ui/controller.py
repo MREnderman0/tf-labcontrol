@@ -15,6 +15,8 @@ from lab_control.application.runtime import ApplicationRuntime
 from lab_control.discovery.presence import LIVE_CONNECTIONS
 from lab_control.domain.instruments import DeviceCommand, DeviceError
 
+Job = tuple[Future[Any], Callable[[Any], None] | None, Callable[[Exception], None] | None]
+
 
 class WorkspaceController(QObject):
     refreshed = Signal()
@@ -23,6 +25,7 @@ class WorkspaceController(QObject):
     settings_changed = Signal(str)
     frame_ready = Signal(str)
     _frame_wakeup = Signal()
+    _job_wakeup = Signal()
 
     def __init__(self, runtime: ApplicationRuntime, parent: QObject) -> None:
         super().__init__(parent)
@@ -36,11 +39,10 @@ class WorkspaceController(QObject):
         self._frame_lock = threading.Lock()
         self._frame_devices: set[str] = set()
         self._frame_wakeup.connect(self._deliver_frames, Qt.ConnectionType.QueuedConnection)
+        self._job_wakeup.connect(self._deliver_jobs, Qt.ConnectionType.QueuedConnection)
         self._unsubscribe_frames = runtime.monitoring.subscribe_frames(self._queue_frame)
         self.runtime.monitoring.enable_settings_sync()
-        self.jobs: list[
-            tuple[Future[Any], Callable[[Any], None] | None, Callable[[Exception], None] | None]
-        ] = []
+        self.jobs: list[Job] = []
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.poll)
         self.timer.start(100)
@@ -67,15 +69,21 @@ class WorkspaceController(QObject):
         on_error: Callable[[Exception], None] | None = None,
     ) -> None:
         self.jobs.append((future, callback, on_error))
+        future.add_done_callback(self._queue_job)
 
-    def poll(self) -> None:
+    def _queue_job(self, _future) -> None:
+        if not self.runtime.closed:
+            self._job_wakeup.emit()
+
+    def _deliver_jobs(self) -> None:
         if self.runtime.closed:
-            self.timer.stop()
             return
-        self.records = {r["id"]: r for r in self.runtime.inventory.all()}
         self.states = {s["stableDeviceId"]: s for s in self.runtime.sessions.snapshots()}
-        completed = [job for job in self.jobs if job[0].done()]
-        self.jobs = [job for job in self.jobs if not job[0].done()]
+        completed: list[Job] = []
+        pending: list[Job] = []
+        for job in self.jobs:
+            (completed if job[0].done() else pending).append(job)
+        self.jobs = pending
         for future, callback, on_error in completed:
             try:
                 value = future.result()
@@ -85,6 +93,14 @@ class WorkspaceController(QObject):
                 if on_error:
                     on_error(exc)
                 self.message.emit(str(exc))
+
+    def poll(self) -> None:
+        if self.runtime.closed:
+            self.timer.stop()
+            return
+        self.records = {r["id"]: r for r in self.runtime.inventory.all()}
+        self.states = {s["stableDeviceId"]: s for s in self.runtime.sessions.snapshots()}
+        self._deliver_jobs()
         self.refreshed.emit()
         state = self.states.get(self.sync_device, {})
         signature = (
@@ -105,10 +121,12 @@ class WorkspaceController(QObject):
         self.runtime.sessions.set_control_group(device_id, True)
         self.group_devices.add(device_id)
 
-    def end_group(self, device_id: str) -> None:
+    def end_group(self, device_id: str, *, refresh=True) -> None:
         self.group_devices.discard(device_id)
         self.runtime.sessions.set_control_group(device_id, False)
-        self.runtime.monitoring.refresh_settings(device_id)
+        if refresh:
+            self.runtime.monitoring.refresh_settings(device_id)
+        self.runtime.monitoring.wake.set()
 
     def set_mode(self, mode: str) -> None:
         if self.group_devices:

@@ -8128,6 +8128,34 @@
       "hardware_passed": false,
       "operations": [
         {
+          "name": "auto_setup",
+          "parameters": {},
+          "readable": false,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://cdn.teledynelecroy.com/files/manuals/maui-remote-control-and-automation-manual.pdf",
+          "section": "C1:ASET",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "自动设置",
+          "ui_location": "实时监测 / 示波器 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "C1:ASET"
+            ],
+            "query": "",
+            "custom_encoder": false
+          }
+        },
+        {
           "name": "channel_enabled",
           "parameters": {
             "value": {
@@ -8901,6 +8929,34 @@
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
+        {
+          "name": "auto_setup",
+          "parameters": {},
+          "readable": false,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
+          "section": ":AUToset",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "自动设置",
+          "ui_location": "实时监测 / 示波器 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              ":AUToset"
+            ],
+            "query": "",
+            "custom_encoder": false
+          }
+        },
         {
           "name": "channel_enabled",
           "parameters": {

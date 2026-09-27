@@ -51,6 +51,10 @@ TRANSFER_SETTINGS = (
 
 def profile() -> Profile:
     commands = {}
+    auto = command("auto_setup", ":AUToset", read=False, scoped=False)
+    commands["auto_setup"] = replace(
+        auto, capability=replace(auto.capability, verification="documented_pending_hardware")
+    )
     for name, path, spec, scoped in (
         ("channel_enabled", ":CHAN{ch}:DISP", Parameter("boolean"), True),
         ("scale", ":CHAN{ch}:SCAL", parameter("V/div", 0.0000002, 500000), True),

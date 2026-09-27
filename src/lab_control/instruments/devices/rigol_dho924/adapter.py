@@ -28,6 +28,7 @@ from .protocol import FRAME_BYTES_MAX, POINTS_MAX, Preamble, equivalent, numeric
 
 
 class DHO924Adapter(ScpiAdapter):
+    supports_control_updates = True
     supports_live_acquisition = True
     supports_stream_acquisition = True
     supports_memory_waveform = True
@@ -37,6 +38,7 @@ class DHO924Adapter(ScpiAdapter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._settings: dict[str, Any] = {}
+        self._stamps: dict[str, str] = {}
         self._context_cache = None
         self._ranges_dirty = True
         self._transfer: dict[str, Any] = {}
@@ -50,9 +52,24 @@ class DHO924Adapter(ScpiAdapter):
         else:
             value = super().read(operation, channel)
         key = f"{channel}.{operation}"
-        if self._settings.get(key) != value:
+        if self._settings.get(key) != value and operation in {
+            "channel_enabled",
+            "scale",
+            "offset",
+            "coupling",
+            "probe_attenuation",
+            "timebase",
+            "time_position",
+            "record_length",
+            "sample_rate",
+            "trigger_source",
+            "trigger_type",
+            "trigger_mode",
+            "roll_enabled",
+        }:
             self._ranges_dirty = True
         self._settings[key] = value
+        self._stamps[key] = utc_now()
         return value
 
     def snapshot(self) -> tuple[dict[str, Any], dict[str, str]]:
@@ -61,7 +78,7 @@ class DHO924Adapter(ScpiAdapter):
             for op in ops:
                 key = f"{ch}.{op}"
                 values[key] = self.read(op, ch)
-                stamps[key] = utc_now()
+                stamps[key] = self._stamps[key]
         return values, stamps
 
     def refresh_capabilities(self) -> None:
@@ -159,6 +176,11 @@ class DHO924Adapter(ScpiAdapter):
         return deepcopy(self.acquisition_preparation)
 
     def apply(self, command: DeviceCommand) -> ApplyResult:
+        from .control import apply_control
+
+        return apply_control(self, command)
+
+    def _apply_command(self, command: DeviceCommand) -> ApplyResult:
         spec, parameters = self.validate_command(command)
         self.refresh_capabilities()
         cap = self.capabilities_for_channel(command.channel).get(command.operation)
@@ -179,6 +201,8 @@ class DHO924Adapter(ScpiAdapter):
             )
         completed = 0
         try:
+            if op == "auto_setup" and numeric(self.transport.query(":AUToset:ENAble?")) != 1:
+                return ApplyResult("rejected", op, parameters, error="Instrument AUTO is disabled")
             for payload in writes:
                 self.transport.write(payload)
                 completed += 1
@@ -208,6 +232,15 @@ class DHO924Adapter(ScpiAdapter):
                     # Programming guide 3.12.6 explicitly returns 0 while busy.
                     # Poll only completion; the setting itself is never resent.
                     time.sleep(min(0.025, max(0, deadline - time.monotonic())))
+            if op == "auto_setup":
+                error = self.transport.query(":SYST:ERR?").decode("ascii").strip()
+                return ApplyResult(
+                    "success" if error.lstrip("+").startswith("0,") else "rejected",
+                    op,
+                    parameters,
+                    completed_steps=completed,
+                    error="" if error.lstrip("+").startswith("0,") else error,
+                )
             expected = requested if requested is not None else {"stop": "STOP", "single": "SINGLE"}.get(op)
             actual = self.read("trigger_mode" if op in {"run", "stop", "single"} else op, command.channel)
             if op in {"run", "stop", "single", "trigger_mode"}:
@@ -387,6 +420,7 @@ class DHO924Adapter(ScpiAdapter):
             if (
                 reused
                 and context is not None
+                and ch in context[3]
                 and any(not equivalent(a, b) for a, b in zip(context[3][ch], pre.signature(), strict=True))
             ):
                 raise DeviceError("Waveform descriptor changed from run snapshot", "configuration_changed")
@@ -403,6 +437,8 @@ class DHO924Adapter(ScpiAdapter):
                             before["1.timebase"],
                             before["1.time_position"],
                             unit,
+                            vertical_offset_sign=-1,
+                            horizontal_position_sign=1,
                         ).metadata(),
                     },
                 )

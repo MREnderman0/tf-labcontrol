@@ -220,6 +220,10 @@ QListWidget#spectrumMarkerList::item:selected { background: #463722; color: #f2d
 
 /* Oscilloscope: small channel cards with physical, release-to-apply sliders. */
 QFrame#scopeControls, QFrame#scopeControls QScrollArea { border: 0; background: transparent; }
+QToolButton#scopeFineButton { min-width: 52px; min-height: 26px; border: 1px solid #43504f; border-radius: 4px; color: #bcc7c4; background: #1b2325; }
+QToolButton#scopeFineButton:checked { color: #f0bc72; background: #433322; border-color: #c28a43; }
+QToolButton#scopeFineButton:hover { border-color: #deb273; }
+QToolButton#scopeFineButton:disabled { color: #788286; background: #151b1d; border-color: #354042; }
 QFrame#scopeSection { background: #1a2224; border: 1px solid #354143; border-radius: 7px; }
 QFrame#scopeSection QWidget { background: transparent; }
 QFrame#scopeSection QLabel { border: 0; padding: 0; }

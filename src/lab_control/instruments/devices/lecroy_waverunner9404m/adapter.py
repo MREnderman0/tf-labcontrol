@@ -75,6 +75,8 @@ def equivalent(expected: Any, actual: Any) -> bool:
 
 
 class WaveRunner9404MAdapter(ScpiAdapter):
+    supports_control_updates = True
+    _selective_control = False
     acquisition_revision = "waverunner9404m-context-v2"
     # Qualified with full WORD frames on firmware 9.2.0; see communication-research.md.
     supports_live_acquisition = True
@@ -90,6 +92,13 @@ class WaveRunner9404MAdapter(ScpiAdapter):
             self._ranges_dirty = True
         cached.update(values)
         self._settings = cached
+        self._stamps = {**getattr(self, "_stamps", {}), **dict.fromkeys(values, utc_now())}
+
+    def control_value(self, operation: str, channel: int = 1) -> Any:
+        key = f"{channel}.{operation}"
+        if getattr(self, "_selective_control", False) and key in self._settings:
+            return self._settings[key]
+        return self.read(operation, channel)
 
     def refresh_capabilities(self) -> None:
         if not getattr(self, "_ranges_dirty", True):
@@ -154,7 +163,9 @@ class WaveRunner9404MAdapter(ScpiAdapter):
 
     def read(self, operation: str, channel: int = 1) -> Any:
         if operation == "trigger_source":
-            return trigger_setup(self.read("trigger_setup").encode("ascii"))["SR"]
+            value = trigger_setup(self.read("trigger_setup").encode("ascii"))["SR"]
+            self.remember({"1.trigger_source": value})
+            return value
         value = super().read(operation, channel)
         self.remember({f"{channel}.{operation}": value})
         return value
@@ -216,7 +227,11 @@ class WaveRunner9404MAdapter(ScpiAdapter):
 
     def invalidate_acquisition_context(self, reason: str) -> None:
         self._acquisition_context = None
-        if reason in {"explicit_refresh", "connection_setup"}:
+        self._pending_control_keys: set[tuple[int, str]] = set()
+        if reason == "error":
+            self._settings = {}
+            self._stamps = {}
+        if reason in {"explicit_refresh", "connection_setup", "error"}:
             self._ranges_dirty = True
 
     def snapshot(self, channels: tuple[int, ...] = (1, 2, 3, 4)) -> tuple[dict[str, Any], dict[str, str]]:
@@ -237,6 +252,7 @@ class WaveRunner9404MAdapter(ScpiAdapter):
                 values[key] = self.read(operation, channel)
                 stamps[key] = utc_now()
         self.remember(values)
+        self._stamps.update(stamps)
         return values, stamps
 
     def grouped_snapshot_queries(self) -> bool:
@@ -278,18 +294,18 @@ class WaveRunner9404MAdapter(ScpiAdapter):
         if resolved is not None:
             resolved.validate(op, parameters["value"])
         if op in {"trigger_source", "trigger_level", "trigger_slope"}:
-            setup = trigger_setup(self.read("trigger_setup").encode("ascii"))
+            setup = trigger_setup(self.control_value("trigger_setup").encode("ascii"))
             if setup["type"] != "EDGE" or setup["SR"] not in {"C1", "C2", "C3", "C4"}:
                 raise Unsupported("Only analog-channel EDGE trigger editing is qualified")
         if op == "time_position":
-            timebase = self.read("timebase")
+            timebase = self.control_value("timebase")
             if not -10000 * timebase <= parameters["value"] <= 10 * timebase:
                 raise ValidationError("Horizontal position exceeds the current timebase range")
         if op in {"scale", "offset", "coupling", "probe_attenuation"}:
-            coupling = self.read("coupling", channel)
-            attenuation = self.read("probe_attenuation", channel)
-            scale = self.read("scale", channel)
-            offset = self.read("offset", channel)
+            coupling = self.control_value("coupling", channel)
+            attenuation = self.control_value("probe_attenuation", channel)
+            scale = self.control_value("scale", channel)
+            offset = self.control_value("offset", channel)
             if attenuation <= 0:
                 raise DeviceError("Invalid probe attenuation", "parse_error")
             target_coupling = parameters["value"] if op == "coupling" else coupling
@@ -310,11 +326,18 @@ class WaveRunner9404MAdapter(ScpiAdapter):
                 )
 
     def apply(self, command: DeviceCommand) -> ApplyResult:
+        from .control import apply_control
+
+        return apply_control(self, command)
+
+    def _apply_command(self, command: DeviceCommand) -> ApplyResult:
         if command.operation == "trigger_mode" and command.parameters.get("value") == "SINGLE":
             # Use the existing single-arm contract: it can already be STOP when
             # read back. This confirms the state, never the existence of a new trace.
             self.validate_command(command)
-            result = self.apply(DeviceCommand("single", channel=command.channel, confirmed=command.confirmed))
+            result = self._apply_command(
+                DeviceCommand("single", channel=command.channel, confirmed=command.confirmed)
+            )
             if result.readback is not None:
                 self.remember({"1.trigger_mode": result.readback})
             return replace(result, operation="trigger_mode", requested={"value": "SINGLE"})
@@ -445,6 +468,11 @@ class WaveRunner9404MAdapter(ScpiAdapter):
         # Parse/length failures above are never disguised as configuration changes.
         if reused and context:
             after, stamps = deepcopy(context.configuration), dict(context.timestamps)
+            for ch, name in sorted(getattr(self, "_pending_control_keys", set())):
+                setting_key = f"{ch}.{name}"
+                if setting_key in after:
+                    after[setting_key] = self.read(name, ch)
+                    stamps[setting_key] = self._stamps[setting_key]
         else:
             after, stamps = self.snapshot(request.channels)
         changes = {
@@ -482,6 +510,8 @@ class WaveRunner9404MAdapter(ScpiAdapter):
                         after["1.timebase"],
                         -after["1.time_position"],
                         m.unit,
+                        vertical_offset_sign=-1,
+                        horizontal_position_sign=-1,
                     ).metadata(),
                 },
             )
@@ -505,9 +535,11 @@ class WaveRunner9404MAdapter(ScpiAdapter):
                 key,
                 deepcopy(after),
                 dict(stamps),
-                context.descriptors if reused and context else descriptors,
+                descriptors,
                 tokens,
             )
+        pending_count = len(getattr(self, "_pending_control_keys", set())) if reused else 0
+        self._pending_control_keys = set()
         return MeasurementBatch(
             self.identity,
             tuple(values),
@@ -522,7 +554,7 @@ class WaveRunner9404MAdapter(ScpiAdapter):
                 if reused
                 else "instrument_before_and_after",
                 "acquisition_context_id": request.context_id if request.consistency == "stream" else "",
-                "logical_queries": len(values)
+                "logical_queries": len(values) + pending_count
                 if reused
                 else 2 * (1 + len(values) if self.grouped_snapshot_queries() else len(before)) + len(values),
                 "acquisition_observations": observations,

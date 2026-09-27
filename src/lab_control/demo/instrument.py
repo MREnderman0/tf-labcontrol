@@ -279,7 +279,12 @@ class SimulatedInstrument:
                     # A fixed simulated input makes instrument scale/offset changes visible.
                     values = 0.3 * np.sin(2 * np.pi * 1000 * x + channel * 0.2)
                     metadata["scope_display"] = ScopeDisplay(
-                        amplitude, -offset, duration / 10, center
+                        amplitude,
+                        -offset,
+                        duration / 10,
+                        center,
+                        vertical_offset_sign=-1,
+                        horizontal_position_sign=-1,
                     ).metadata()
             elif request.kind == "scalar" and self.caps.category == "power_supply":
                 for name, unit in (("voltage", "V"), ("current", "A")):

@@ -15,6 +15,13 @@ SPECS = "https://www.teledynelecroy.com/options/productdetails.aspx?categoryid=1
 
 def profile() -> Profile:
     commands = {}
+    commands["auto_setup"] = replace(
+        command("auto_setup", "C1:ASET", read=False, scoped=False),
+        capability=replace(
+            command("auto_setup", "C1:ASET", read=False, scoped=False).capability,
+            verification="documented_pending_hardware",
+        ),
+    )
     for name, path, param in (
         ("channel_enabled", "C{ch}:TRA", enum("ON", "OFF")),
         ("scale", "C{ch}:VDIV", parameter("V/div", 0.001, 10)),

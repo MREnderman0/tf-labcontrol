@@ -9,6 +9,20 @@
     ],
     "operations": [
       {
+        "name": "auto_setup",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://cdn.teledynelecroy.com/files/manuals/maui-remote-control-and-automation-manual.pdf",
+        "section": "C1:ASET",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
         "name": "channel_enabled",
         "parameters": {
           "value": {
@@ -21,7 +35,8 @@
               "OFF"
             ],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -45,7 +60,8 @@
             "maximum": 10,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -69,7 +85,8 @@
             "maximum": 10,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -98,7 +115,8 @@
               "GND"
             ],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -122,7 +140,8 @@
             "maximum": 10000,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -146,7 +165,8 @@
             "maximum": 10,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -173,7 +193,8 @@
               "NEG"
             ],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -197,7 +218,8 @@
             "maximum": 1000,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -221,7 +243,8 @@
             "maximum": 100,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -250,7 +273,8 @@
               "STOP"
             ],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -274,7 +298,8 @@
             "maximum": 10000000,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -443,7 +468,8 @@
               "C4"
             ],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -490,6 +516,14 @@
     "channel_limits": {}
   },
   "commands": {
+    "auto_setup": {
+      "writes": [
+        "C1:ASET"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
     "channel_enabled": {
       "writes": [
         "C{ch}:TRA {value}"

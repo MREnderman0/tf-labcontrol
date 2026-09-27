@@ -59,7 +59,7 @@ def normalized_value(value: Any, spec: Parameter) -> Any:
 
 
 def usable_reading(reading: ParameterReading, parameters: dict[str, Parameter]) -> bool:
-    if reading.error or reading.source not in {"instrument", "simulated"}:
+    if reading.error or reading.source not in {"instrument", "simulated", "control_cache"}:
         return False
     if reading.quality not in {Quality.GOOD, Quality.SIMULATED} or reading.value is None:
         return False

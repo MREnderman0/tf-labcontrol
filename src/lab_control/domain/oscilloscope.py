@@ -32,11 +32,15 @@ class ScopeDisplay:
     time_center: float
     unit: str = "V"
     version: int = 1
+    vertical_offset_sign: int | None = None
+    horizontal_position_sign: int | None = None
 
     def __post_init__(self) -> None:
         numbers = (self.units_per_div, self.reference_value, self.seconds_per_div, self.time_center)
         if (
             self.version != 1
+            or self.vertical_offset_sign not in {None, -1, 1}
+            or self.horizontal_position_sign not in {None, -1, 1}
             or not self.unit
             or not all(math.isfinite(v) for v in numbers)
             or self.units_per_div <= 0

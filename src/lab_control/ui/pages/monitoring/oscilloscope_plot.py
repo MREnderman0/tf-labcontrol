@@ -4,7 +4,8 @@ from dataclasses import replace
 
 import numpy as np
 import pyqtgraph as pg
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QTransform
 
 from lab_control.application.acquisition_pipeline import validate_displayed_batch
 from lab_control.domain.instruments import DeviceError
@@ -20,9 +21,18 @@ class OscilloscopePlot(LivePlot):
         self.instrument_view = False
         self.legend_signature: tuple | None = None
         self._restoring_grid = False
+        self.preview_targets: dict[tuple[int, str], tuple[float, int | None]] = {}
+        self.preview_session = ""
+        self.preview_timer = QTimer(self)
+        self.preview_timer.setSingleShot(True)
+        self.preview_timer.setInterval(16)
+        self.preview_timer.timeout.connect(self.render_preview)
+        self.actual_meta = ""
         self.plot.getViewBox().sigStateChanged.connect(self._keep_instrument_view)
 
     def reset(self) -> None:
+        self.preview_timer.stop()
+        self.preview_targets.clear()
         self.instrument_view = False
         self.grid_range = None
         super().reset()
@@ -69,6 +79,13 @@ class OscilloscopePlot(LivePlot):
         token = (frame.session_id, frame.sequence, frame.configuration_version, frame.received_at, channels)
         if token == self.last_token:
             return
+        if self.preview_session != frame.session_id:
+            self.preview_targets.clear()
+        self.preview_targets = {
+            key: target
+            for key, target in self.preview_targets.items()
+            if target[1] is None or target[1] > frame.configuration_version
+        }
         if not self.instrument_view:
             self.reset()
             self.instrument_view = True
@@ -121,6 +138,7 @@ class OscilloscopePlot(LivePlot):
                 curve.setClipToView(True)
                 self.curves[key] = curve
             curve = self.curves[key]
+            curve.setTransform(QTransform())
             curve.setData(
                 m.axis,
                 y,
@@ -149,6 +167,106 @@ class OscilloscopePlot(LivePlot):
             + f" · 配置 {frame.configuration_version} · {frame.batch.validation}"
         )
         self.displayed_frame = candidate
+        self.actual_meta = self.meta.text()
+        if self.preview_targets:
+            self.render_preview()
+
+    def preview_parameter(self, channel: int, operation: str, value: float) -> None:
+        """Estimated viewport only: never replace the immutable exported frame."""
+        if not self.instrument_view or self.displayed_frame is None or not np.isfinite(value):
+            return
+        if operation not in {"scale", "offset", "timebase", "time_position"}:
+            return
+        if operation in {"scale", "timebase"} and value <= 0:
+            return
+        self.preview_session = self.displayed_frame.session_id
+        self.preview_targets[channel, operation] = (value, None)
+        if not self.preview_timer.isActive():
+            self.preview_timer.start()
+
+    def commit_preview(self, version: int) -> None:
+        self.preview_targets = {
+            key: (value, version if pending is None else pending)
+            for key, (value, pending) in self.preview_targets.items()
+        }
+        self.render_preview()
+
+    def clear_preview(self) -> None:
+        if not self.preview_targets:
+            self.fit_current()
+            return
+        self.preview_timer.stop()
+        self.preview_targets.clear()
+        self.render_preview()
+
+    def render_preview(self) -> None:
+        if not self.instrument_view or self.displayed_frame is None:
+            return
+        specs = []
+        used = False
+        for measurement in self.displayed_frame.batch.measurements:
+            original = ScopeDisplay.parse(measurement.metadata["scope_display"])
+            values = {}
+            for (ch, operation), (value, _version) in self.preview_targets.items():
+                if operation == "scale" and ch == measurement.channel:
+                    values["units_per_div"] = value
+                elif operation == "offset" and ch == measurement.channel and original.vertical_offset_sign:
+                    values["reference_value"] = original.vertical_offset_sign * value
+                elif operation == "timebase":
+                    values["seconds_per_div"] = value
+                elif operation == "time_position" and original.horizontal_position_sign:
+                    values["time_center"] = original.horizontal_position_sign * value
+            used |= bool(values)
+            try:
+                spec = replace(
+                    original,
+                    units_per_div=values.get("units_per_div", original.units_per_div),
+                    reference_value=values.get("reference_value", original.reference_value),
+                    seconds_per_div=values.get("seconds_per_div", original.seconds_per_div),
+                    time_center=values.get("time_center", original.time_center),
+                )
+            except ValueError:
+                return
+            specs.append((measurement, spec))
+            curve = self.curves.get((measurement.channel, measurement.quantity))
+            if curve is not None:
+                # Affine scene transform reuses the existing curve/decimation;
+                # mouse movement does not allocate or rewrite full sample arrays.
+                transform = QTransform()
+                transform.translate(0, (original.reference_value - spec.reference_value) / spec.units_per_div)
+                transform.scale(1, original.units_per_div / spec.units_per_div)
+                curve.setTransform(transform)
+        if not specs:
+            return
+        first = specs[0][1]
+        self.grid_range = (
+            first.time_center - 5 * first.seconds_per_div,
+            first.time_center + 5 * first.seconds_per_div,
+        )
+        self.fit_current()
+        for line, x in zip(self.grid_lines[:11], np.linspace(*self.grid_range, 11), strict=True):
+            line.setPos(float(x))
+        signature = tuple((m.channel, spec.units_per_div, m.unit) for m, spec in specs)
+        if signature != self.legend_signature:
+            legend = self.plot.plotItem.legend
+            legend.clear()
+            for m, spec in specs:
+                color = COLORS[(m.channel - 1) % len(COLORS)]
+                legend.addItem(
+                    self.curves[m.channel, m.quantity],
+                    f'<span style="color:{color}">CH{m.channel}  {engineering(spec.units_per_div, m.unit, custom_scale=True)}/格</span>',
+                )
+            self.legend_signature = signature
+        self.meta.setText(
+            (
+                "拖动预览 · 估算，松手应用"
+                if any(v is None for _, v in self.preview_targets.values())
+                else "预览 · 估算，等待实测新帧"
+            )
+            + f" · {engineering(first.seconds_per_div, 's', custom_scale=True)}/格 · 基于上一帧，保存仍用原始数据"
+            if used
+            else self.actual_meta
+        )
 
     def restrict_channels(self, channels: tuple[int, ...]) -> None:
         """Drop explicitly disabled traces without changing the old frame's scales."""

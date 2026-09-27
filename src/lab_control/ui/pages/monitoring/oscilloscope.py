@@ -79,7 +79,7 @@ class OscilloscopeMonitoringPage(QWidget):
         self.pin_action = menu.addAction("添加到监测总览", self.pin)
         menu.addSeparator()
         self.refresh_action = menu.addAction("刷新参数", self.refresh_parameters)
-        self.fit_action = menu.addAction("恢复仪器视图", lambda: self.plot.fit_current())
+        self.fit_action = menu.addAction("恢复仪器视图", lambda: self.plot.clear_preview())
         self.timing_action = menu.addAction("采集节奏")
         self.timing_action.setCheckable(True)
         tools.setMenu(menu)
@@ -144,6 +144,9 @@ class OscilloscopeMonitoringPage(QWidget):
             self.right_layout.addWidget(self.controls)
             self.controls.busy_changed.connect(lambda busy: self.selector.setEnabled(not busy))
             self.controls.channels_changed.connect(self.channels_changed)
+            self.controls.preview_requested.connect(self.plot.preview_parameter)
+            self.controls.preview_cancelled.connect(self.plot.clear_preview)
+            self.controls.control_finished.connect(self.preview_finished)
         if self.isVisible():
             self.focus_settings()
         self.refresh()
@@ -162,6 +165,7 @@ class OscilloscopeMonitoringPage(QWidget):
 
     def hideEvent(self, event) -> None:  # noqa: N802
         super().hideEvent(event)
+        self.plot.clear_preview()
         if self.controller.sync_device == self.device_id:
             self.controller.focus_settings("")
 
@@ -172,6 +176,13 @@ class OscilloscopeMonitoringPage(QWidget):
             if check:
                 self.controls.scroller.ensureWidgetVisible(check)
                 check.setFocus()
+
+    def preview_finished(self, success: bool) -> None:
+        if success:
+            version = self.controller.states.get(self.device_id, {}).get("configurationVersion", 0)
+            self.plot.commit_preview(version)
+        else:
+            self.plot.clear_preview()
 
     def channels_changed(self) -> None:
         # An explicit OFF must disappear immediately, including the all-off pause.
@@ -264,6 +275,8 @@ class OscilloscopeMonitoringPage(QWidget):
             self.select_device(self.selector.device_id)
             return
         state = self.controller.states.get(self.device_id, {})
+        if state.get("controlsLocked") or state.get("connectionState") not in {"connected", "busy"}:
+            self.plot.clear_preview()
         task = self.controller.runtime.monitoring.snapshots().get(self.device_id, {})
         busy = self.memory_busy or bool(self.controls and self.controls.running)
         snapshot = self.controller.runtime.sessions.capability_snapshot(self.device_id)

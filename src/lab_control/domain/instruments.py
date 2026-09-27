@@ -174,6 +174,15 @@ class DeviceCommand:
 
 
 @dataclass(frozen=True)
+class ControlUpdate:
+    """Model-verified overlay; retained readings keep their original timestamp."""
+
+    readings: tuple[ParameterReading, ...] = ()
+    affected: tuple[tuple[int, str], ...] = ()
+    complete: bool = False
+
+
+@dataclass(frozen=True)
 class ApplyResult:
     outcome: str
     operation: str
@@ -183,6 +192,7 @@ class ApplyResult:
     error: str = ""
     timestamp: str = field(default_factory=utc_now)
     adaptation: dict[str, Any] = field(default_factory=dict)
+    control_update: ControlUpdate | None = None
 
 
 @dataclass(frozen=True)
