@@ -229,6 +229,8 @@ QFrame#scopeSection QWidget { background: transparent; }
 QFrame#scopeSection QLabel { border: 0; padding: 0; }
 QLabel#scopeControlLabel { font-size: 11px; color: #99aaa8; }
 QLabel#scopeControlValue { font-size: 12px; color: #e2d9c8; }
+QLabel#scopeSampleRate { font-size: 12px; color: #b3c1b9; }
+QLabel#scopeSampleRate[stale="true"] { color: #788286; }
 QFrame#scopeSection QCheckBox { font-size: 13px; spacing: 7px; padding: 0; }
 QFrame#scopeSection QCheckBox::indicator { width: 14px; height: 14px; border-radius: 3px; }
 QFrame#scopeControls QSlider::groove:horizontal { height: 3px; background: #3b494c; border-radius: 1px; }

@@ -1,0 +1,42 @@
+[
+  {
+    "file": "scope-rate-1280x760-1.5.png",
+    "dpr": 1.5,
+    "rate": "采样率：500 MSa/s"
+  },
+  {
+    "file": "scope-trigger-1280x760-1.5.png",
+    "dpr": 1.5,
+    "rate": "采样率：500 MSa/s"
+  },
+  {
+    "file": "scope-stale-1280x760-1.5.png",
+    "dpr": 1.5,
+    "rate": "采样率：500 MSa/s · 待更新"
+  },
+  {
+    "file": "scope-locked-1280x760-1.5.png",
+    "dpr": 1.5,
+    "rate": "采样率：500 MSa/s"
+  },
+  {
+    "file": "scope-rate-1440x900-1.5.png",
+    "dpr": 1.5,
+    "rate": "采样率：500 MSa/s"
+  },
+  {
+    "file": "scope-trigger-1440x900-1.5.png",
+    "dpr": 1.5,
+    "rate": "采样率：500 MSa/s"
+  },
+  {
+    "file": "scope-stale-1440x900-1.5.png",
+    "dpr": 1.5,
+    "rate": "采样率：500 MSa/s · 待更新"
+  },
+  {
+    "file": "scope-locked-1440x900-1.5.png",
+    "dpr": 1.5,
+    "rate": "采样率：500 MSa/s"
+  }
+]

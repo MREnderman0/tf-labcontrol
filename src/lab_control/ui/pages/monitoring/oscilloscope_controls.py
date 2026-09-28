@@ -384,6 +384,22 @@ class OscilloscopeControls(QFrame):
         self.points_range.setWordWrap(True)
         point_row.addWidget(self.points_range, 1)
         horizontal.addLayout(point_row)
+        self.sample_rate = QLabel("采样率：—")
+        self.sample_rate.setObjectName("scopeSampleRate")
+        self.sample_rate.setAccessibleName("仪器采样率（只读）")
+        self.sample_rate.setToolTip("仪器最近确认的采样率（缓存读回值）；随关联调参或主动刷新参数更新。")
+        self._sample_rate_session = None
+        self._sample_rate_value: float | None = None
+        horizontal.addWidget(self.sample_rate)
+        for ch in controller.capabilities(device_id).channels:
+            box = section("")
+            check = QCheckBox(f"CH {ch}")
+            check.setStyleSheet(f"color: {COLORS[(ch - 1) % 4]}; font-weight: 600;")
+            check.clicked.connect(lambda enabled, c=ch: self.set_channel(c, enabled))
+            box.addWidget(check)
+            self.checks[ch] = check
+            self.add_slider(box, ch, "scale", "档位", "V", coarse=True)
+            self.add_slider(box, ch, "offset", "偏移", "V")
         trigger = section("")
         row = QHBoxLayout()
         self.trigger_label = QLabel("触发 · 等待读回")
@@ -401,15 +417,6 @@ class OscilloscopeControls(QFrame):
         self.trigger_slider = ScopeSlider("电平", "V")
         self.trigger_slider.committed.connect(self.set_trigger_level)
         trigger.addWidget(self.trigger_slider)
-        for ch in controller.capabilities(device_id).channels:
-            box = section("")
-            check = QCheckBox(f"CH {ch}")
-            check.setStyleSheet(f"color: {COLORS[(ch - 1) % 4]}; font-weight: 600;")
-            check.clicked.connect(lambda enabled, c=ch: self.set_channel(c, enabled))
-            box.addWidget(check)
-            self.checks[ch] = check
-            self.add_slider(box, ch, "scale", "档位", "V", coarse=True)
-            self.add_slider(box, ch, "offset", "偏移", "V")
         stack.addStretch()
         self.scroller.setWidget(body)
         layout.addWidget(self.scroller, 1)
@@ -481,6 +488,7 @@ class OscilloscopeControls(QFrame):
 
     def refresh(self) -> None:
         state = self.controller.states.get(self.device_id, {})
+        self.refresh_sample_rate(state)
         context = (state.get("sessionId"), state.get("configurationVersion"))
         if context != self.last_context:
             self.values.clear()
@@ -575,6 +583,39 @@ class OscilloscopeControls(QFrame):
             if all((ch, "channel_enabled") in self.values for ch in self.checks)
             else "等待参数同步"
         )
+
+    def refresh_sample_rate(self, state: dict) -> None:
+        """Render the published memory snapshot, never request a parameter read."""
+        session = state.get("sessionId")
+        if session != self._sample_rate_session:
+            self._sample_rate_session = session
+            self._sample_rate_value = None
+        connected = bool(session) and state.get("connectionState") in {"connected", "busy", "degraded"}
+        snapshot = self.controller.runtime.sessions.capability_snapshot(self.device_id)
+        stale = connected and bool(
+            not snapshot
+            or snapshot.stale
+            or state.get("capabilityStale")
+            or state.get("connectionState") == "degraded"
+        )
+        if not connected:
+            self._sample_rate_value = None
+        elif snapshot and not stale and not self.running and not state.get("controlGroup"):
+            memory = snapshot.details.get("memory", {})
+            value = memory.get("sample_rate") if isinstance(memory, dict) else None
+            try:
+                rate = (
+                    float(value) if isinstance(value, (int, float)) and not isinstance(value, bool) else 0.0
+                )
+            except OverflowError:
+                rate = 0.0
+            self._sample_rate_value = rate if math.isfinite(rate) and rate > 0 else None
+        shown = engineering(self._sample_rate_value, "Sa/s") if self._sample_rate_value is not None else "—"
+        self.sample_rate.setText(f"采样率：{shown}" + (" · 待更新" if stale else ""))
+        if self.sample_rate.property("stale") != stale:
+            self.sample_rate.setProperty("stale", stale)
+            self.sample_rate.style().unpolish(self.sample_rate)
+            self.sample_rate.style().polish(self.sample_rate)
 
     def set_channel(self, channel: int, enabled: bool) -> None:
         self.preview_cancelled.emit()

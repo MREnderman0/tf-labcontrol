@@ -26,3 +26,4 @@
 - [信号源紧凑面板验收记录](signal-source-review.md)
 - [信号源自动同步验收记录](signal-sync-review.md)
 - [统一下拉菜单验收与维护](workspace-combos-review.md)
+- [示波器采样率展示与触发布局（2026-09-28）](scope-sample-rate-review.md)
