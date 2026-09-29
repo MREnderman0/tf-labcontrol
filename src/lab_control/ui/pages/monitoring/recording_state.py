@@ -14,6 +14,25 @@ def recording_phase(task: dict[str, Any]) -> str:
     return "draining" if recorder and not recorder.get("binary_done", False) else "idle"
 
 
+def recording_save_notice(task: dict[str, Any]) -> str:
+    state = task.get("recording_state", {})
+    if not state:
+        return ""
+    if state.get("error"):
+        message = "原始数据保存未完成：" + str(state["error"])
+    elif state.get("csv_error"):
+        message = "分析 CSV 生成失败（已提交的原始数据保留）：" + str(state["csv_error"])
+    elif not state.get("binary_done"):
+        message = ("记录中" if task.get("recording") else "记录收尾中") + " · 原始数据已保存 " + str(
+            state.get("committed", 0)
+        ) + " 帧 · 分析 CSV 生成中"
+    elif state.get("converted", 0) < state.get("committed", 0):
+        message = "原始数据已保存 · 分析 CSV 生成中"
+    else:
+        message = "原始数据已保存 · 分析 CSV 已完成"
+    return message + ("\n目录：" + str(state["folder"]) if state.get("folder") else "")
+
+
 def _property(widget: QWidget, name: str, value: Any) -> None:
     if widget.property(name) != value:
         widget.setProperty(name, value)
@@ -60,7 +79,8 @@ class RecordingButton(QToolButton):
         self.setObjectName("recordButton")
         self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.setIconSize(QSize(14, 14))
-        self.setFixedSize(108, 30)
+        self.setProperty("buttonSize", "compact")
+        self.setFixedWidth(108)
         self.icons = {False: _icon(False), True: _icon(True)}
         self.refresh({}, connected=False, busy=False, locked=False)
 

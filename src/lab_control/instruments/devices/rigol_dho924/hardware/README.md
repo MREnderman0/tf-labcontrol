@@ -27,4 +27,6 @@ python -m lab_control.instruments.devices.rigol_dho924.hardware.verify --config 
 
 ## 未测试范围
 
+`main_mode.verify_main(config, folder)` 是已授权 MAIN 策略的独立入口：只读连接保存完整快照，关闭后以正式初始化重连；仅当仪器已处于 ROLL 才验证自动退出，不为测试主动进入 ROLL。完成后读取三帧，恢复原传输设置并逐项保存最终差异；有意保留用户要求的 MAIN 和安全时基，不恢复原 ROLL。该批次不声称连续监测、记录或物理精度验收。调用前须核对正式路径和目标身份，结果由同一公共维护器留档。
+
 USB、VXI-11 控制、物理精度、数字/数学/分段及高级分析；空输入不属于整机性能验收。安装版仍须在干净 Windows 10/11 上完成驱动与逐设备交付验收。

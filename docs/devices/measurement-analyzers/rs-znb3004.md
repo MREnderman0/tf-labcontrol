@@ -18,7 +18,7 @@ LAN / USB VISA。接口和选件以设备背板、固件与现场盘点为准。
 
 ## 4. 资源与枚举
 
-连接模板见[config/examples](../../../config/examples/README.md)。VISA 使用扫描返回的完整资源；串口填写确认的 COM/波特率；Pico 使用 `PICO::序列号`；PM100D 使用 SDK 枚举的资源；53100A 手工填写已部署服务地址。扫描只枚举 SDK，不打开 SDK 仪器。
+连接模板见[config/examples](../../../config/examples/README.md)。VISA 使用扫描返回的完整资源；串口填写确认的 COM/波特率；Pico 使用 `PICO::序列号`；PM100D 使用 SDK 枚举的资源。扫描只枚举 SDK，不打开 SDK 仪器。
 
 ## 5. 官方命令/API 依据
 

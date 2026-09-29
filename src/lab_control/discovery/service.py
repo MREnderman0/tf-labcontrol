@@ -25,6 +25,8 @@ class DiscoveryCandidate:
     source: str
     descriptor: dict[str, Any] = field(default_factory=dict)
     safe_scpi: bool = False
+    error_code: str = ""
+    error: str = ""
 
 
 class DiscoveryProvider(Protocol):
@@ -258,7 +260,7 @@ class Inventory:
                 "id": uuid4().hex,
                 "resources": [],
                 "candidates": {},
-                "displayName": "",
+                "displayName": str(candidate.descriptor.get("display_name", "")),
                 "slots": {},
                 "identity": {},
                 "identityKey": None,
@@ -266,6 +268,8 @@ class Inventory:
             }
             if resource not in record["resources"]:
                 record["resources"].append(resource)
+            if not record["displayName"] and candidate.descriptor.get("display_name"):
+                record["displayName"] = str(candidate.descriptor["display_name"])
             previous = record["candidates"].get(resource, {})
             sources = dict(previous.get("sources", {}))
             if not sources and previous.get("source"):
@@ -298,7 +302,9 @@ class Inventory:
                 observation["scanRunId"] == scan_id and local_enumeration(source, resource)
                 for source, observation in sources.items()
             )
-            if error or reason == "probe_failed":
+            if local_seen and candidate.error_code in {"driver_missing", "driver_error"}:
+                entry.update(presenceState="present", evidenceScanRunId=scan_id)
+            elif error or reason == "probe_failed":
                 entry.update(presenceState="unreachable", evidenceScanRunId=scan_id)
             elif identity is not None or local_seen:
                 entry.update(presenceState="present", evidenceScanRunId=scan_id)
@@ -354,7 +360,7 @@ class Inventory:
                     "probeReason": reason,
                     "probeErrorCode": error_code,
                     "driverStatus": "error"
-                    if error_code == "driver_missing"
+                    if error_code in {"driver_missing", "driver_error"}
                     else "unconfirmed"
                     if error
                     else "enumerated",
@@ -563,6 +569,9 @@ class DiscoveryService:
             # Explicit connection settings win, independently of provider completion order.
             chosen = max(group, key=lambda c: (bool(c.config.adapter), c.source == "configured"))
             chosen = replace(chosen, safe_scpi=any(c.safe_scpi for c in group))
+            observation_error = next((c for c in group if c.error_code), None)
+            if observation_error is not None:
+                chosen = replace(chosen, error_code=observation_error.error_code, error=observation_error.error)
             known = self.inventory.by_resource(chosen.config.resource)
             if (
                 chosen.safe_scpi
@@ -588,6 +597,8 @@ class DiscoveryService:
             owner = "probe:" + uuid4().hex
             leased = False
             try:
+                if candidate.error_code:
+                    raise DeviceError(candidate.error, candidate.error_code)
                 with self.sessions.lock:
                     active = self.leases.owner(candidate.config.resource)
                     session = self.sessions.sessions.get(active or "")

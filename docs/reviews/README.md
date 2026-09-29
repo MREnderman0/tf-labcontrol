@@ -1,9 +1,13 @@
 # 验收记录
 
+每份报告只描述对应批次的环境、范围和证据；自动化、离屏及人工检查分开记录。截图保留 design/reviews 原位置。历史测试数量与结论仅对应各报告批次。
+
+- [相噪仪定时采集与 ADEV/MDEV 工作区（2026-09-29）](phase-workspace-review.md)
+- [53100A USB 接入与服务配置验证（2026-09-28）](53100a-usb-review.md)
+- [电源实时监测与控制整合（2026-09-28）](power-monitoring-review.md)
+- [电源配置恢复与开发遗留清理](power-restore-cleanup-review.md)
+- [启动节奏、Auto 续监测与实际时间验收](scope-timing-review.md)
 - [文档与离线台账整理验收](documentation-review.md)
-
-每份报告只描述对应批次的环境、范围和证据；自动化、离屏及人工检查分开记录。截图保留 design/reviews 原位置。
-
 - [电子学模式信号源界面验收（2026-09-24）](electronic-signal-source-review.md)
 - [后台检查静默显示验收（2026-09-24）](background-status-review.md)
 - [DSA815 软件与界面验收（2026-09-24）](dsa815-review.md)

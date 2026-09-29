@@ -31,7 +31,11 @@ from lab_control.domain.readback import boolean_value
 from lab_control.ui.controller import WorkspaceController
 from lab_control.ui.pages.monitoring.oscilloscope_plot import OscilloscopePlot
 from lab_control.ui.pages.monitoring.plot import LivePlot
-from lab_control.ui.pages.monitoring.recording_state import recording_phase, update_recording_frame
+from lab_control.ui.pages.monitoring.recording_state import (
+    recording_phase,
+    recording_save_notice,
+    update_recording_frame,
+)
 from lab_control.ui.pages.monitoring.timing import monitoring_options
 from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
 
@@ -121,7 +125,7 @@ class MonitorCard(QFrame):
         record = controller.records.get(spec["device_id"])
         scope = bool(record and instrument_category(record) == "oscilloscope")
         self.recording_frame = bool(
-            record and instrument_category(record) in {"oscilloscope", "spectrum_analyzer"}
+            record and instrument_category(record) in {"oscilloscope", "spectrum_analyzer", "power_supply"}
         )
         if self.recording_frame:
             update_recording_frame(self, {})
@@ -183,7 +187,7 @@ class MonitorCard(QFrame):
         status = (
             task.get("error")
             or task.get("recording_notice")
-            or task.get("recording_state", {}).get("csv_error")
+            or recording_save_notice(task)
             or (
                 "记录收尾中 · 正在排空已接收数据"
                 if recording_phase(task) == "draining"

@@ -10,6 +10,9 @@ def test_drag_previews_without_io_and_saves_actual_frame(page, qtbot, monkeypatc
     page, app, key, peer = page
     page.start()
     qtbot.waitUntil(lambda: page.plot.displayed_frame is not None)
+    # Idle settings synchronization after stopping is legitimate I/O and is not
+    # part of the drag preview. Disable it before draining the monitored read.
+    app.monitoring.enable_settings_sync(False)
     app.monitoring.stop(key).result(5)
     page.controller.poll()
     page.refresh_frame(key)

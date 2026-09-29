@@ -67,6 +67,7 @@ def immutable_batch(batch: MeasurementBatch) -> MeasurementBatch:
         configuration=_freeze(batch.configuration),
         settings_timestamps=_freeze(batch.settings_timestamps),
         performance=_freeze(batch.performance),
+        timing=_freeze(batch.timing),
     )
 
 

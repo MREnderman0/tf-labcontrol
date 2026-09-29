@@ -11,6 +11,7 @@ SOURCE = (
     "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf"
 )
 DEPTHS = (1000, 10000, 100000, 1000000, 5000000, 10000000)
+MAIN_TIMEBASE_MAX = 0.02  # Last 1-2-5 step below the 50 ms/div Auto ROLL threshold.
 CHANNEL_SETTINGS = (
     "channel_enabled",
     "scale",
@@ -72,7 +73,12 @@ def profile() -> Profile:
             ),
             True,
         ),
-        ("timebase", ":TIM:MAIN:SCAL", parameter("s/div", 2e-9, 500), False),
+        (
+            "timebase",
+            ":TIM:MAIN:SCAL",
+            replace(parameter("s/div", 2e-9, MAIN_TIMEBASE_MAX), range_source="software"),
+            False,
+        ),
         ("time_position", ":TIM:MAIN:OFFS", parameter("s", -5000, 5000), False),
         (
             "record_length",

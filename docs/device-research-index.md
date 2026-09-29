@@ -23,7 +23,7 @@
 | 万用表 | Keysight 3458A | GPIB 控制器/VISA，原生非 SCPI 命令 | keysight.3458a；待实机 | [卡片](devices/measurement-analyzers/keysight-3458a.md) |
 | 网络分析 | ZNB3004 | LAN/USB VISA/SCPI | rs.znb3004；ZNB3000 手册，待实机 | [卡片](devices/measurement-analyzers/rs-znb3004.md) |
 | 待确认类别 | GOCA-8-NK2603212 | 待厂家和型号/资产号划分 | 不注册真实命令 | [待补卡片](devices/measurement-analyzers/goca-8.md) |
-| 相噪候选 | 53100A | Microchip 候选：已部署 TSERVE 命令/数据端口 | microchip.53100a；现场确认身份后启用 | [卡片](devices/measurement-analyzers/phase-noise-53100a.md) |
+| 相噪仪 | 53100A | Microchip USB / TSERVE | 实现与连接路线见下方模块索引；实测按资产查证 | [模块索引](#独立型号模块自动生成) |
 | 温控 | 商用温控仪 | 待型号、串口/以太网/SDK 依据 | 仅类别模拟 | [待补卡片](devices/temperature-load-drivers/temperature-controller.md) |
 | 负载 | 电子负载 | 待型号和接口 | 仅类别模拟 | [待补卡片](devices/temperature-load-drivers/electronic-load.md) |
 | 泵浦 | 地检泵浦驱动 | 待厂家协议、型号和联锁 | 仅类别模拟 | [待补卡片](devices/temperature-load-drivers/pump-driver.md) |
@@ -47,6 +47,8 @@
 | Teledyne LeCroy WaveRunner 9404M | `lecroy.9404m` | LAN PyVISA/VXI-11（仪器选择 LXI） | [卡片](devices/oscilloscopes/waverunner-9404m.md) |
 | RIGOL DHO924 | `rigol.dho924` | LAN PyVISA / VISA SOCKET | [卡片](devices/oscilloscopes/rigol-dho924.md) |
 | R&S FPH02 | `rs.fph` | LAN；优先 PyVISA | [卡片](devices/spectrum-analyzers/rs-fph.md) |
+| Ceyear 6362D | `ceyear.6362d` | LAN Socket 10001；PyVISA | [卡片](devices/measurement-analyzers/ceyear-6362d.md) |
+| Microchip 53100A | `microchip.53100a` | USB：TimeLab 驱动与项目托管 TSERVE64；也支持已有外部 TSERVE | [卡片](devices/measurement-analyzers/phase-noise-53100a.md) |
 <!-- device-modules:end -->
 
 ## 现场盘点与状态提升

@@ -3,9 +3,11 @@
   "docs/devices/signal-sources/afg31252.md": "7c39c9c165e02e4386e13ebecb67792ce5c34fa1ddbff8f2badbeb8ab159f6d4",
   "docs/devices/signal-sources/sdg2082x.md": "12f758ae260c0437f382e3bae61cee0aa85eacbfc65d19dc936239bc2e1132b5",
   "docs/devices/signal-sources/sma100b.md": "0271f8f398ddd7919587ca235cb98e798a68dd78eefeeabcb3d490de5b924e34",
-  "docs/devices/power-supplies/gpd-4303s.md": "dd8e63b7102052a17ffe57ac5e827386b12b40aee65d7c426afff713245b2020",
+  "docs/devices/power-supplies/gpd-4303s.md": "f1f4be4f1a064692fdfbf351afeeefdb388c15c38c98f5587fe384217c660db9",
   "docs/devices/spectrum-analyzers/rigol-dsa815.md": "75d4a5ecc6b480da2ad5c136cc80d7186e4bbe512bfe759ed070b97193f2b504",
-  "docs/devices/oscilloscopes/waverunner-9404m.md": "49990c782d16aaf7656e6aa3afbef2bde71e067c51ad03769c344c79c7d2db59",
-  "docs/devices/oscilloscopes/rigol-dho924.md": "cb32eafd6314a681113de6ab770adde3dcd203ff4a48dbf8fb9caf99dfbec3c3",
-  "docs/devices/spectrum-analyzers/rs-fph.md": "42eb66d020271b98bd57247e1b8d3040c90700d72788552a97b7755cae02f81b"
+  "docs/devices/oscilloscopes/waverunner-9404m.md": "66b093f48568e35bc8ef2a0a21ef6adecbefa88041a00da7da9f1cc42b48a386",
+  "docs/devices/oscilloscopes/rigol-dho924.md": "9ba2256e9e2e8abfcefe9df2c1380a2a9100d3eb090f181fe776b191b2f7b3ff",
+  "docs/devices/spectrum-analyzers/rs-fph.md": "42eb66d020271b98bd57247e1b8d3040c90700d72788552a97b7755cae02f81b",
+  "docs/devices/measurement-analyzers/ceyear-6362d.md": "be4b7d0038a4ce8d32dcf85e3d7e02dfee28438f655bf53e1eb33324033693c3",
+  "docs/devices/measurement-analyzers/phase-noise-53100a.md": "eb17acd09bce6034f32b57b341ab17735112278481f133fa545ba385e6094e19"
 }

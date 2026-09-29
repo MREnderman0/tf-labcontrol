@@ -102,11 +102,11 @@ def run(output: Path, scale: str, benchmark: bool) -> None:
                         }
                     )
                     if fine:
-                        page.plot.preview_parameter(1, "scale", .1)
-                        page.plot.preview_parameter(2, "offset", .02)
+                        page.plot.preview_parameter(1, "scale", 0.1)
+                        page.plot.preview_parameter(2, "offset", 0.02)
                         page.plot.preview_parameter(1, "timebase", 2e-6)
                         page.plot.preview_parameter(1, "time_position", 1e-6)
-                        pump(.05)
+                        pump(0.05)
                         assert "估算" in page.plot.meta.text()
                         name = f"scope-preview-{width}x{height}-{scale}.png"
                         window.grab().save(str(output / name))

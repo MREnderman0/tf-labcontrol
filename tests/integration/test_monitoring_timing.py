@@ -119,8 +119,8 @@ def test_continuously_changing_frames_wait_up_to_30_seconds_without_error(tmp_pa
         assert runtime.monitoring.latest(key, "spectrum") is None
         recorder = runtime.monitoring.tasks[key].recorder
         recorder.finished.result(3)
-        assert (recorder.folder / "recording.json").exists()
-        assert (recorder.folder / "summary.json").exists()
+        assert (recorder.folder / "_raw" / "recording.json").exists()
+        assert (recorder.folder / "_raw" / "summary.json").exists()
         assert not list(recorder.folder.glob("segment-*"))
 
 

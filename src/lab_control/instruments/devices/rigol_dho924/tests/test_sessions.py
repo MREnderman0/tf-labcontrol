@@ -97,7 +97,7 @@ def test_recording_locks_memory_and_settings_and_drains_exact_arrays(runtime):
     status = task.recorder.snapshot()
     assert status["received"] == status["committed"] == status["converted"]
     assert status["binary_done"] and not app.sessions.snapshots()[0]["controlsLocked"]
-    saved = next(read_frames(next(task.recorder.folder.glob("segment-*.sqlite3"))))
+    saved = next(read_frames(next(task.recorder.raw_folder.glob("segment-*.sqlite3"))))
     assert saved["performance"]["waveform_extent"] == "screen"
     assert saved["measurements"][0]["metadata"]["scope_display"]["units_per_div"] == 0.05
     expected = (np.arange(1000) % 40) * (0.05 / 7500)

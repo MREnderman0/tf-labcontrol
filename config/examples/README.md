@@ -9,7 +9,8 @@
 | [tcp.toml](tcp.toml) | 厂家明确支持的普通 TCP Socket | 主机、端口、adapter；不要用于 VICP |
 | [vicp.toml](vicp.toml) | LeCroy VICP | 主机、1861 端口、准确 WaveRunner 型号 |
 | [sdk.toml](sdk.toml) | PM100D / Pico | SDK 绝对路径、transport、资源和序列号 |
-| [tserve.toml](tserve.toml) | 53100A 候选 TSERVE | 命令口、数据口、数据格式/周期、identity_confirmed |
+| [tserve.toml](tserve.toml) | 53100A 外部 TSERVE | 命令口、数据口、数据格式/周期、identity_confirmed |
+| [tserve-usb.toml](tserve-usb.toml) | 53100A 本机 USB / 托管 TSERVE | 扫描返回的 usb_instance_id、核实的铭牌序列号、可选 server_path；连接时实际读回 USB 身份 |
 | [mock.toml](mock.toml) | 完全隔离模拟 | 可直接用于 `--mock` CLI |
 
 每个 `[[devices]]` 是一个连接配置。参数不允许包含 SCPI 命令；`adapter` 只能选注册 ID。`options` 仅在现场确认选件后填写，不会自动购买、安装或启用选件。`limits` 只能收紧型号已有数值边界，不能扩大；限制键使用能力名（例如 voltage/current）。不能用 IP/COM 号作为物理身份。

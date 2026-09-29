@@ -1,3 +1,5 @@
+import threading
+
 import pytest
 
 from lab_control.domain.instruments import DeviceCommand
@@ -54,7 +56,7 @@ def test_auto_refreshes_channels_and_resumes_only_previous_monitor(page, qtbot, 
         qtbot.waitUntil(lambda: not app.sessions.snapshots()[0]["controlsLocked"])
 
 
-def test_failed_auto_stops_without_retry(page, qtbot):
+def test_rejected_auto_verifies_and_resumes_without_retry(page, qtbot):
     page, app, key, peer = page
     prepare_auto(peer, enabled=False)
     page.start()
@@ -62,9 +64,53 @@ def test_failed_auto_stops_without_retry(page, qtbot):
     previous = page.plot.displayed_frame
     page.controls.auto_button.click()
     qtbot.waitUntil(lambda: not page.controls.running)
-    assert not app.monitoring.snapshots()[key]["running"]
+    assert app.monitoring.snapshots()[key]["running"]
     assert ":AUToset" not in peer.history and "未完成" in page.controls.status.text()
-    assert page.plot.displayed_frame.configuration_version == previous.configuration_version
-    retained = page.plot.displayed_frame
-    qtbot.wait(100)
-    assert page.plot.displayed_frame is retained
+    qtbot.waitUntil(lambda: page.plot.displayed_frame.configuration_version > previous.configuration_version)
+    assert "实际参数已核对" in page.controls.status.text()
+
+
+@pytest.mark.parametrize("cancel", [False, True])
+def test_executed_auto_rejection_reads_actual_state_and_respects_stop(page, qtbot, monkeypatch, cancel):
+    page, app, key, peer = page
+    prepare_auto(peer)
+    original = peer.query
+    entered, release = threading.Event(), threading.Event()
+
+    def query(command):
+        if command == ":SYST:ERR?":
+            entered.set()
+            assert release.wait(4)
+            return b'-200,"Command execute failed"'
+        return original(command)
+
+    page.start()
+    qtbot.waitUntil(lambda: page.plot.displayed_frame is not None)
+    peer.history.clear()
+    monkeypatch.setattr(peer, "query", query)
+    page.controls.auto_button.click()
+    try:
+        qtbot.waitUntil(entered.is_set)
+        if cancel:
+            page.toggle_monitoring()
+    finally:
+        release.set()
+    qtbot.waitUntil(lambda: not page.controls.running)
+    assert peer.history.count(":AUToset") == 1
+    assert page.controls.values[1, "timebase"] == 2e-6
+    assert app.monitoring.snapshots()[key]["running"] is not cancel
+    assert "Command execute failed" in page.controls.status.text()
+
+
+def test_auto_transport_failure_does_not_resume(page, qtbot):
+    page, app, key, peer = page
+    prepare_auto(peer)
+    page.start()
+    qtbot.waitUntil(lambda: page.plot.displayed_frame is not None)
+    peer.history.clear()
+    peer.fail = "*OPC?"
+    page.controls.auto_button.click()
+    qtbot.waitUntil(lambda: not page.controls.running)
+    assert not app.monitoring.snapshots()[key]["running"]
+    assert peer.history.count(":AUToset") == 1
+    assert "timeout" in page.controls.status.text()

@@ -5,6 +5,7 @@ import json
 import os
 import sqlite3
 import threading
+from dataclasses import fields
 from pathlib import Path
 from tempfile import TemporaryFile
 from typing import Any
@@ -13,6 +14,7 @@ from uuid import uuid4
 import numpy as np
 
 from lab_control.domain.instruments import DeviceIdentity, MeasurementBatch, jsonable, utc_now
+from lab_control.storage.frame_timing import TIMING_COLUMNS, timing_columns
 from lab_control.storage.paths import BatchSaveContext, SaveContext, SaveKind
 
 
@@ -158,10 +160,49 @@ class Repository:
         context = context or self.new_save_context(mode, "single_frame", identity=batch.identity)
         context.validate(mode, "single_frame")
         folder = context.prepare()
-        (folder / "snapshot.json").write_text(
+        raw = context.raw_folder
+        (raw / "snapshot.json").write_text(
             json.dumps(jsonable(batch), ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8"
         )
         arrays: dict[str, Any] = {}
+        for index, measurement in enumerate(batch.measurements):
+            values = np.asarray(measurement.values).reshape(-1)
+            axis = np.asarray(measurement.axis) if measurement.axis is not None else np.arange(values.size)
+            if axis.size != values.size:
+                raise ValidationError("Axis/data length mismatch")
+            arrays[f"values_{index}"] = values
+            arrays[f"axis_{index}"] = axis
+        if context.layout_version == 1:
+            self._export_legacy_csv(batch, raw)
+        # A unicode scalar loads without pickle and travels with the arrays.
+        document = jsonable(
+            {f.name: getattr(batch, f.name) for f in fields(batch) if f.name != "measurements"}
+        )
+        document["measurements"] = [
+            jsonable(
+                {f.name: getattr(sample, f.name) for f in fields(sample) if f.name not in {"values", "axis"}}
+            )
+            for sample in batch.measurements
+        ]
+        arrays["metadata_json"] = np.asarray(json.dumps(document, ensure_ascii=False, allow_nan=False))
+        np.savez_compressed(raw / "samples.npz", **arrays)
+        if context.layout_version == 2:
+            from lab_control.domain.instruments import DeviceError
+            from lab_control.storage.analysis import convert_analysis, write_description
+
+            try:
+                convert_analysis(folder)
+                write_description(folder, "原始数据已保存；分析 CSV 已完成")
+            except Exception as exc:
+                try:
+                    write_description(folder, "分析 CSV 生成失败", error=str(exc))
+                except OSError:
+                    pass
+                raise DeviceError(f"原始数据已保存至 {folder}；分析 CSV 生成失败：{exc}", "export_failed") from exc
+        return folder
+
+    @staticmethod
+    def _export_legacy_csv(batch: MeasurementBatch, folder: Path) -> None:
         with (folder / "samples.csv").open("w", newline="", encoding="utf-8-sig") as stream:
             writer = csv.writer(stream)
             writer.writerow(
@@ -175,6 +216,7 @@ class Repository:
                     "axis_unit",
                     "real",
                     "imaginary",
+                    *TIMING_COLUMNS,
                 ]
             )
             for index, measurement in enumerate(batch.measurements):
@@ -182,10 +224,7 @@ class Repository:
                 axis = (
                     np.asarray(measurement.axis) if measurement.axis is not None else np.arange(values.size)
                 )
-                if axis.size != values.size:
-                    raise ValidationError("Axis/data length mismatch")
-                arrays[f"values_{index}"] = values
-                arrays[f"axis_{index}"] = axis
+                sample_timing = timing_columns(batch.timing, measurement.metadata, batch.time_basis)
                 for x, y in zip(axis, values, strict=True):
                     writer.writerow(
                         [
@@ -198,11 +237,9 @@ class Repository:
                             measurement.axis_unit,
                             np.real(y),
                             np.imag(y),
+                            *sample_timing,
                         ]
                     )
-        np.savez_compressed(folder / "samples.npz", **arrays)
-        return folder
-
     def report(self, report: dict[str, Any]) -> Path:
         folder = self.root / "reports"
         folder.mkdir(exist_ok=True)

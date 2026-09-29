@@ -120,6 +120,7 @@ class MonitoringService:
         self.sessions, self.repository = sessions, repository
         self.lock = threading.RLock()
         self.tasks: dict[str, MonitorTask] = {}
+        self.stop_revisions: dict[str, int] = {}
         self.capture_saves: dict[str, CaptureSave] = {}
         self.display_exports: dict[str, Future[Any]] = {}
         self.save_seconds: dict[str, float] = {}
@@ -418,8 +419,14 @@ class MonitoringService:
                 del self.capture_saves[device_id]
                 self.repository.audit("capture_save_failed", device_id=device_id, error=str(exc))
 
-    def stop(self, device_id: str) -> Future[Any]:
+    def stop_revision(self, device_id: str) -> int:
         with self.lock:
+            return self.stop_revisions.get(device_id, 0)
+
+    def stop(self, device_id: str, *, preserve_intent: bool = False) -> Future[Any]:
+        with self.lock:
+            if not preserve_intent:
+                self.stop_revisions[device_id] = self.stop_revisions.get(device_id, 0) + 1
             task = self.tasks.get(device_id)
             result: Future[Any] = Future()
             if not task:

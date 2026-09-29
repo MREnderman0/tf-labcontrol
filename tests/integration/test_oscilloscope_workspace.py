@@ -72,14 +72,12 @@ def test_fixed_slider_endpoints_and_points_continue_monitoring(scope, qtbot, mon
     assert (field.low, field.high) == (low, high)
     assert abs(field.slider.value() - position) <= 1
     assert runtime.monitoring.snapshots()[key]["running"]
-    page.controls.points.setText("2500")
-    page.controls.points.editingFinished.emit()
+    page.controls.points.committed.emit(2500)
     qtbot.waitUntil(lambda: len(writes) == 2 and not page.controls.running)
     assert writes[-1].operation == "record_length" and adapter._value(1, "record_length") == 2500
     assert "1,000" in page.controls.points_range.text() and "软件" in page.controls.points_range.text()
     assert runtime.monitoring.snapshots()[key]["running"]
-    page.controls.points.setText("999")
-    page.controls.points.editingFinished.emit()
+    page.controls.points.committed.emit(999)
     assert len(writes) == 2 and "未写入" in page.controls.status.text()
 
 
@@ -88,7 +86,8 @@ def test_point_original_outside_range_is_shown_without_write(scope, qtbot):
     adapter.values["1.record_length"] = {"value": 64_000_000}
     page.controls.refresh_parameters()
     qtbot.waitUntil(lambda: not page.controls.running)
-    assert page.controls.points.text() == "64000000"
+    assert page.controls.points.currentData() == 64000000
+    assert "超出范围" in page.controls.points.currentText()
     assert adapter._value(1, "record_length") == 64_000_000
 
 
@@ -152,7 +151,7 @@ def test_smaller_point_limit_clamps_once_in_control_group_and_preserves_monitor_
         assert "timeout" in page.controls.status.text()
     else:
         assert runtime.monitoring.snapshots()[key]["running"]
-        assert page.controls.points.text() == "2500"
+        assert page.controls.points.currentData() == 2500
         assert adapter._value(1, "record_length") == 2500
     assert not runtime.sessions.snapshots()[0]["controlGroup"]
 
@@ -198,7 +197,7 @@ def test_smaller_point_limit_preserves_already_valid_value(scope, qtbot, monkeyp
     monkeypatch.setattr(adapter, "apply", lambda _: pytest.fail("In-range points must remain unchanged"))
     page.controls.refresh_parameters()
     qtbot.waitUntil(lambda: not page.controls.running)
-    assert page.controls.points.text() == "2000"
+    assert page.controls.points.currentData() == 2000
 
 
 def test_drag_release_and_keyboard_gesture_write_once(scope, qtbot, monkeypatch):
@@ -281,7 +280,9 @@ def test_display_save_no_instrument_read_or_normalized_data(scope, qtbot, monkey
     old = page.plot.displayed_frame
     saved = []
     monkeypatch.setattr(adapter, "acquire", lambda req: pytest.fail("Export acquired new data"))
-    monkeypatch.setattr(runtime.repository, "export", lambda batch, mode, **options: saved.append(batch) or "mock-path")
+    monkeypatch.setattr(
+        runtime.repository, "export", lambda batch, mode, **options: saved.append(batch) or "mock-path"
+    )
     runtime.sessions.submit(key, "apply", DeviceCommand("scale", {"value": 0.2}, 1)).result()
     page.save()
     qtbot.waitUntil(lambda: bool(saved))

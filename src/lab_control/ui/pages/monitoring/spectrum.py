@@ -27,6 +27,7 @@ from lab_control.ui.controller import state_label
 from lab_control.ui.pages.monitoring.recording_state import (
     RecordingButton,
     recording_phase,
+    recording_save_notice,
     update_recording_frame,
 )
 from lab_control.ui.pages.monitoring.spectrum_controls import SpectrumControls
@@ -81,7 +82,7 @@ class SpectrumMonitoringPage(QWidget):
         toolbar.addWidget(self.record_button)
         tools = QToolButton(chart)
         tools.setObjectName("curveTools")
-        tools.setFixedHeight(30)
+        tools.setProperty("buttonSize", "compact")
         tools.setText("曲线工具")
         tools.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         menu = QMenu(tools)
@@ -236,7 +237,7 @@ class SpectrumMonitoringPage(QWidget):
                     self.controller.runtime.monitoring.export_displayed_frame(
                         self.device_id, frame, self.mode
                     ),
-                    lambda path: self.controller.message.emit(f"已保存当前帧：{path}"),
+                    lambda path: self.controller.message.emit(f"原始数据已保存 · 分析 CSV 已完成：{path}"),
                 )
                 self.refresh()
             except Exception as exc:
@@ -342,7 +343,7 @@ class SpectrumMonitoringPage(QWidget):
         text = (
             task.get("error")
             or task.get("recording_notice")
-            or task.get("recording_state", {}).get("csv_error")
+            or recording_save_notice(task)
             or task.get("notice")
             or (
                 "设置中 · 曲线读取暂停"

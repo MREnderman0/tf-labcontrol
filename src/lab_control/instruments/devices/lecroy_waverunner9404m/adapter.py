@@ -462,9 +462,22 @@ class WaveRunner9404MAdapter(ScpiAdapter):
                 if callable(bounded)
                 else self.transport.query(f"C{channel}:WF? ALL")
             )
+            received_at = utc_now()
             with parsing():
                 measured = waveform(raw, channel)
-            values.append(replace(measured, metadata={**measured.metadata, "received_at": utc_now()}))
+            values.append(
+                replace(
+                    measured,
+                    metadata={
+                        **measured.metadata,
+                        "received_at": received_at,
+                        "received_time_source": "host_utc_at_waveform_reply",
+                        "trigger_time_source": "instrument_local_timezone_unknown"
+                        if measured.metadata.get("trigger_time_local")
+                        else "unavailable",
+                    },
+                )
+            )
         # Parse/length failures above are never disguised as configuration changes.
         if reused and context:
             after, stamps = deepcopy(context.configuration), dict(context.timestamps)

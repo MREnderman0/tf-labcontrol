@@ -185,10 +185,10 @@ def test_chinese_config_and_export(tmp_path):
     device = SimulatedInstrument(config)
     batch = device.acquire(AcquisitionRequest("waveform", points=20))
     target = repo.export(batch, "optical")
-    assert "测试" in (target / "snapshot.json").read_text(encoding="utf-8")
-    assert (target / "samples.csv").read_text(encoding="utf-8-sig").startswith("timestamp,")
+    assert "测试" in (target / "_raw" / "snapshot.json").read_text(encoding="utf-8")
+    assert (target / "数据_00001.csv").read_text(encoding="utf-8-sig").startswith("帧号,点序号,")
     assert (
-        json.loads((target / "snapshot.json").read_text(encoding="utf-8"))["measurements"][0]["quality"]
+        json.loads((target / "_raw" / "snapshot.json").read_text(encoding="utf-8"))["measurements"][0]["quality"]
         == "simulated"
     )
     repo.close()

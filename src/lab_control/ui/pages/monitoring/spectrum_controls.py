@@ -134,7 +134,7 @@ class SpectrumControls(QFrame):
         self.apply_button.setObjectName("primaryButton")
         self.auto_button = QPushButton("自动设置", self)
         for button in (self.apply_button, self.auto_button):
-            button.setFixedHeight(36)
+            button.setProperty("buttonSize", "panel")
             buttons.addWidget(button, 1)
         layout.addLayout(buttons)
         self.apply_button.clicked.connect(self.apply)

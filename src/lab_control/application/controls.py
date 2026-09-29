@@ -56,6 +56,18 @@ sweep=扫频状态
 sweep_time=扫描时间
 sweep_time_auto=自动扫描时间
 sweep_points=扫描点数
+points_auto=自动采样点数
+center_wavelength=中心波长
+wavelength_span=波长跨度
+sensitivity=灵敏度
+repeat=启动重复扫描
+stop=停止扫描
+axis_mode=横轴模式
+trace_points=轨迹实际点数
+active_trace=当前轨迹
+wavelength_medium=波长介质
+wavelength_offset=波长偏置
+marker_scan_range=标记限制扫描范围
 sweep_count=单次扫描次数
 sweep_current=已完成扫描次数
 transfer_format=轨迹传输格式
@@ -256,6 +268,7 @@ reference_frequency=参考频率
 phase_noise=相位噪声
 am_noise=AM 噪声
 stability=稳定度
+timed_phase=定时相位采集与稳定度
 data_stream=相位 / 频率数据流
 setpoint=温度设定值
 ramp=温度斜坡
@@ -426,7 +439,8 @@ def data_sources(config: ConnectionConfig) -> tuple[DataSource, ...]:
             result.append(DataSource("data_stream", "相位 / 频率流", "streaming"))
         return tuple(result)
     if category == "optical_spectrometer":
-        return (DataSource("spectrum", "光谱曲线（模拟）", "spectrum"),)
+        label = "光谱曲线（模拟）" if config.transport == "mock" else "光谱曲线"
+        return (DataSource("spectrum", label, "spectrum"),)
     return (
         DataSource(
             "reading",

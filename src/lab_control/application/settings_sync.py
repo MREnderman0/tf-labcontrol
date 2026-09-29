@@ -77,9 +77,7 @@ class SettingsSync:
             "power_supply": POWER_BASE,
             "spectrum_analyzer": SPECTRUM_SETTINGS,
             "oscilloscope": SCOPE_SETTINGS,
-        }.get(category)
-        if base is None:
-            return {}
+        }.get(category, ())
         requested = set(self.advanced) if device_id == self.focus else set()
         result = {}
         for channel, schema in snapshot.channels.items():

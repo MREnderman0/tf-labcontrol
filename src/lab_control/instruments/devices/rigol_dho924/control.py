@@ -22,7 +22,8 @@ def affected(adapter: "DHO924Adapter", command: DeviceCommand) -> set[tuple[int,
     elif op in {"timebase", "time_position", "record_length", "channel_enabled"}:
         keys.update((1, name) for name in ("timebase", "time_position", "record_length", "sample_rate"))
         if op == "timebase":
-            keys.add((1, "roll_enabled"))
+            # Auto ROLL may change the actual MAIN/ROLL mode with the scale.
+            keys.update((1, name) for name in ("roll_enabled", "timebase_mode"))
         if op == "channel_enabled":
             keys.update((ch, name) for name in ("scale", "offset", "coupling", "probe_attenuation"))
             keys.update((1, name) for name in ("trigger_source", "trigger_level", "trigger_slope"))
@@ -60,6 +61,10 @@ def apply_control(adapter: "DHO924Adapter", command: DeviceCommand) -> ApplyResu
                     "sample_rate": adapter._settings["1.sample_rate"],
                 },
             )
+        if adapter.acquisition_setup_needed():
+            adapter.prepare_acquisition_state()
+            keys = {tuple_key(key) for key in adapter._settings}
+            context = None
         if context:
             values, stamps, signatures = deepcopy(context[1]), dict(context[2]), dict(context[3])
             for ch, name in keys:

@@ -20,6 +20,8 @@ DEVICE_MODULES = (
     "lab_control.instruments.devices.lecroy_waverunner9404m",
     "lab_control.instruments.devices.rigol_dho924",
     "lab_control.instruments.devices.rs_fph",
+    "lab_control.instruments.devices.ceyear_6362d",
+    "lab_control.instruments.devices.microchip_53100a",
 )
 
 

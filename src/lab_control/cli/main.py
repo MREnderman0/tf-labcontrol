@@ -29,6 +29,9 @@ def parser() -> argparse.ArgumentParser:
         "--mock", action="store_true", help="Isolated simulation; never opens physical transports"
     )
     sub = root.add_subparsers(dest="action", required=True)
+    analysis = sub.add_parser("export-analysis", help="Offline Excel/Origin export; no instrument access")
+    analysis.add_argument("source", type=Path, help="Existing recording or snapshot directory")
+    analysis.add_argument("--output", type=Path, required=True, help="Separate new output directory")
     environment = sub.add_parser("environment", help="Inspect environment without instrument access")
     environment.add_argument("--report", type=Path)
     environment.add_argument("--repair-plan", action="store_true")
@@ -97,6 +100,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     app: ApplicationRuntime | None = None
     try:
+        if args.action == "export-analysis":
+            from lab_control.storage.analysis import export_analysis
+
+            output({"folder": str(export_analysis(args.source, args.output))})
+            return 0
         if args.action == "environment":
             from lab_control.deployment.environment import export_report, inspect_environment, plan_repair
             from lab_control.discovery.lan import load_lan_settings

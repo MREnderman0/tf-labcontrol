@@ -123,7 +123,8 @@ class SourceSettingsDialog(QDialog):
         self.apply_button.setObjectName("primaryButton")
         self.apply_button.clicked.connect(self.apply)
         for button in (self.cancel_button, self.apply_button):
-            button.setFixedSize(84, 38)
+            button.setProperty("buttonSize", "dialog")
+            button.setFixedWidth(84)
         footer.addWidget(self.cancel_button)
         footer.addWidget(self.apply_button)
         layout.addLayout(footer)

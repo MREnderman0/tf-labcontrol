@@ -132,14 +132,6 @@ LEGACY_MODELS = [
         "64 位 VISA Runtime",
         "使用 ZNB3000 手册。当前实现两端口逻辑 S11/S21/S12/S22；s_parameter 显式创建并选择 LabControl 轨迹。读取复数 SDAT 和 STIM 频率轴，保存修正状态；不执行校准向导。四条同频率轴轨迹才能导出 .s2p。",
     ),
-    (
-        "microchip.53100a",
-        "measurement-analyzers/phase-noise-53100a",
-        "53100A（Microchip 候选）",
-        "仪器由已配置 TimeLab/TSERVE 服务控制；电脑连接其命令端口 1299 / 数据端口 1298",
-        "厂家 TimeLab/TSERVE；本应用不安装或启动服务",
-        "需现场确认厂家、型号、序列号和 TSERVE 控制权，并设置 identity_confirmed=true。频率公共单位 Hz，命令单位 MHz。相噪/AM/ADEV 经命令口读取；数据口仅接收已配置 P/F 格式，timestamp=0，stream_interval 与服务一致。",
-    ),
 ]
 
 
@@ -172,7 +164,8 @@ def render(definitions=None) -> dict[Path, str]:
         definition = definitions.get(adapter)
         profile = definition.profile if definition else PROFILES.get(adapter)
         caps = (
-            ScpiAdapter(MockTransport([]), profile, config).capabilities() if definition else describe(config)
+            definition.capability_schema(config) if definition and definition.capability_schema
+            else ScpiAdapter(MockTransport([]), profile, config).capabilities() if definition else describe(config)
         )
         page = (
             ("实时监测" if caps.category in MEASUREMENT_CATEGORIES else "设备管理")
@@ -192,13 +185,12 @@ def render(definitions=None) -> dict[Path, str]:
             "control_page": page,
             "channels": caps.channels,
             "source": profile.source if profile else caps.operations[0].source,
-            "revision": profile.revision if profile else "SDK headers/examples or 53100A DS50002991G",
+            "revision": profile.revision if profile else "SDK headers/examples",
             "acquisition": profile.acquisition
             if profile
             else {
                 "pico.6404e": "block/streaming",
                 "thorlabs.pm100d": "scalar",
-                "microchip.53100a": "phase_noise/am_noise/stability/streaming",
             }[adapter],
             "channel_limits": profile.channel_limits if profile else {},
             "hardware_passed": False,
@@ -262,7 +254,7 @@ def render(definitions=None) -> dict[Path, str]:
 
 ## 4. 资源与枚举
 
-连接模板见[config/examples](../../../config/examples/README.md)。VISA 使用扫描返回的完整资源；串口填写确认的 COM/波特率；Pico 使用 `PICO::序列号`；PM100D 使用 SDK 枚举的资源；53100A 手工填写已部署服务地址。扫描只枚举 SDK，不打开 SDK 仪器。
+连接模板见[config/examples](../../../config/examples/README.md)。VISA 使用扫描返回的完整资源；串口填写确认的 COM/波特率；Pico 使用 `PICO::序列号`；PM100D 使用 SDK 枚举的资源。扫描只枚举 SDK，不打开 SDK 仪器。
 
 ## 5. 官方命令/API 依据
 

@@ -97,7 +97,9 @@ def test_save_displayed_frame_without_reading_and_preserve_draft(spectrum, qtbot
         return replace(original(request), validation=request.consistency)
 
     monkeypatch.setattr(adapter, "acquire", acquire)
-    monkeypatch.setattr(runtime.repository, "export", lambda batch, mode, **options: saved.append(batch) or "mock-path")
+    monkeypatch.setattr(
+        runtime.repository, "export", lambda batch, mode, **options: saved.append(batch) or "mock-path"
+    )
     page.toggle_monitoring()
     qtbot.waitUntil(lambda: page.plot.displayed_frame is not None)
     runtime.monitoring.stop(key).result(3)
@@ -136,7 +138,9 @@ def test_save_old_display_after_parameter_change_and_single_row(spectrum, qtbot,
     assert runtime.monitoring.latest(key, "spectrum") is None
     assert page.save_action.isEnabled()
     saved = []
-    monkeypatch.setattr(runtime.repository, "export", lambda batch, mode, **options: saved.append(batch) or "mock-path")
+    monkeypatch.setattr(
+        runtime.repository, "export", lambda batch, mode, **options: saved.append(batch) or "mock-path"
+    )
     page.save_action.trigger()
     qtbot.waitUntil(lambda: bool(saved))
     assert saved[0] is displayed.batch

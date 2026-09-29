@@ -10,6 +10,7 @@ from lab_control.app import load_stylesheet, load_ui_font
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.runtime import ApplicationRuntime
 from lab_control.domain.instruments import ApplyResult, DeviceError, ParameterReading, Quality
+from lab_control.ui.pages.device_control.power_supply import PowerSupplyPage
 from lab_control.ui.real_window import RealWindow
 
 
@@ -25,8 +26,12 @@ def power(qapp, qtbot, tmp_path):
     window = RealWindow(runtime)
     qtbot.addWidget(window)
     window.show()
-    window.navigate("设备管理", "power_supply", key)
-    page = window.stack.currentWidget()
+    # Retain regression coverage for the importable legacy control widget.
+    # Public navigation is covered by test_power_workspace.
+    page = PowerSupplyPage(window.controller)
+    window.stack.addWidget(page)
+    window.stack.setCurrentWidget(page)
+    page.selector.select(key)
     with runtime.monitoring.lock:
         runtime.monitoring.settings_sync.foreground_interval = 0.1
     qtbot.waitUntil(lambda: all(p.count.text() == "正常" for p in page.panels.values()), timeout=6000)

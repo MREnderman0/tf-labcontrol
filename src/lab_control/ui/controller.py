@@ -38,15 +38,31 @@ class WorkspaceController(QObject):
         self._sync_signature: tuple[Any, ...] = ()
         self._frame_lock = threading.Lock()
         self._frame_devices: set[str] = set()
+        self.recorded_frames: dict[str, dict[str, Any]] = {}
         self._frame_wakeup.connect(self._deliver_frames, Qt.ConnectionType.QueuedConnection)
         self._job_wakeup.connect(self._deliver_jobs, Qt.ConnectionType.QueuedConnection)
         self._unsubscribe_frames = runtime.monitoring.subscribe_frames(self._queue_frame)
+        self._unsubscribe_recorded = runtime.sessions.subscribe(self._recorded_frame)
         self.runtime.monitoring.enable_settings_sync()
         self.jobs: list[Job] = []
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.poll)
         self.timer.start(100)
         self.poll()
+
+    def _recorded_frame(self, event: dict[str, Any]) -> None:
+        if event["event"] == "measurement":
+            with self._frame_lock:
+                self.recorded_frames[event["device_id"]] = event
+            self._queue_frame(event["device_id"])
+
+    def recorded_frame(self, device_id: str) -> dict[str, Any] | None:
+        with self._frame_lock:
+            return self.recorded_frames.get(device_id)
+
+    def clear_recorded_frame(self, device_id: str) -> None:
+        with self._frame_lock:
+            self.recorded_frames.pop(device_id, None)
 
     def _queue_frame(self, device_id: str) -> None:
         with self._frame_lock:
@@ -183,6 +199,7 @@ class WorkspaceController(QObject):
     def close(self) -> None:
         self.timer.stop()
         self._unsubscribe_frames()
+        self._unsubscribe_recorded()
         self.runtime.monitoring.enable_settings_sync(False)
 
 

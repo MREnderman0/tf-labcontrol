@@ -362,7 +362,7 @@
     },
     {
       "id": "tserve",
-      "name": "TSERVE",
+      "name": "TimeLab / TSERVE64 / 53100A USB driver",
       "purpose": "53100A command/data server",
       "transports": [
         "tserve"
@@ -371,45 +371,73 @@
         "microchip.53100a"
       ],
       "sdk": "",
-      "vendor": "",
-      "version": null,
+      "vendor": "Miles Design LLC / Microchip",
+      "version": "1.780A (2025-12-04); USB 3.4.7.1",
       "architecture": "x64",
       "systems": [
         "Windows 10 x64",
         "Windows 11 x64"
       ],
       "source_page": "https://www.microchip.com/en-us/product/53100A",
-      "url": null,
-      "filename": null,
-      "sha256": null,
+      "url": "https://www.miles.io/timelab/mchp/setup.exe",
+      "filename": "timelab-1.780a.exe",
+      "sha256": "a4eac3cace9eb52f648ea5b25d0c8e5ae5d02874429e33fc3215b8b6e33dc538",
       "signature": {
         "policy": "authenticode",
-        "publisher": null,
+        "publisher": "Miles Design LLC",
         "member": null,
-        "evidence": null
+        "evidence": "src/lab_control/instruments/devices/microchip_53100a/deployment.md"
       },
       "redistribution": {
         "state": "pending",
-        "evidence": null
+        "evidence": "Redistribution permission pending; see src/lab_control/instruments/devices/microchip_53100a/deployment.md"
       },
       "detection": {
-        "kind": "pending",
-        "detail": "Requires verified component-specific detection"
+        "kind": "files_usb",
+        "executables": [
+          "%ProgramFiles%/Microchip/TimeLab/tserve64.exe",
+          "%ProgramFiles%/Miles Design/TimeLab/tserve64.exe"
+        ],
+        "files": [
+          {
+            "name": "tserve64.exe",
+            "sha256": "05469f84d78c6cd9c2988feb7a9a5cf3577404091cf4704ee7716d6a8b0f1504"
+          },
+          {
+            "name": "PhaseStation_64.tll",
+            "sha256": "53b21d8b4ad8194cdb795fa998af3d413ceb9555197562f9d16be1dffc436947"
+          }
+        ],
+        "usb_vendor": "16D0",
+        "usb_product": "05B8",
+        "detail": "Read-only installed-file hashes and selected USB PnP problem codes; no service startup or hardware identity claim"
       },
       "installation": {
-        "state": "pending",
-        "arguments": null,
+        "state": "verified",
+        "arguments": [
+          "/VERYSILENT",
+          "/SUPPRESSMSGBOXES",
+          "/NORESTART",
+          "/SP-",
+          "/NOCLOSEAPPLICATIONS",
+          "/NORESTARTAPPLICATIONS",
+          "/RESTARTEXITCODE=3010"
+        ],
         "order": 70,
-        "success_codes": null,
-        "reboot_codes": null,
+        "success_codes": [
+          0
+        ],
+        "reboot_codes": [
+          3010
+        ],
         "requires_admin": true,
         "reboot": "possible",
-        "evidence": null
+        "evidence": "src/lab_control/instruments/devices/microchip_53100a/deployment.md"
       },
       "recovery": "Preserve compatible shared drivers and user data; restore only changes owned by this application.",
       "validation": {
         "state": "pending",
-        "evidence": null
+        "evidence": "Development installer and signature checks only; driver binding and clean Windows acceptance tracked separately. src/lab_control/instruments/devices/microchip_53100a/deployment.md"
       }
     },
     {

@@ -1,0 +1,641 @@
+{
+  "capabilities": {
+    "category": "optical_spectrometer",
+    "channels": [
+      1
+    ],
+    "operations": [
+      {
+        "name": "start_wavelength",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "nm",
+            "minimum": 600,
+            "maximum": 1700,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":SENSE:WAVELENGTH:START",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "stop_wavelength",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "nm",
+            "minimum": 600,
+            "maximum": 1700,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":SENSE:WAVELENGTH:STOP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "center_wavelength",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "nm",
+            "minimum": 600,
+            "maximum": 1700,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":SENSE:WAVELENGTH:CENTER",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "wavelength_span",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "nm",
+            "minimum": 0.001,
+            "maximum": 1100,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":SENSE:WAVELENGTH:SPAN",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "rbw",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "nm",
+            "minimum": 0.02,
+            "maximum": 2,
+            "choices": [
+              "0.02",
+              "0.05",
+              "0.1",
+              "0.2",
+              "0.5",
+              "1.0",
+              "2.0"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":SENSE:BANDWIDTH:RESOLUTION",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sensitivity",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "MID",
+              "HIGH1",
+              "HIGH2",
+              "HIGH3",
+              "NORMAL"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":SENSE:SENSE",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_points",
+        "parameters": {
+          "value": {
+            "kind": "integer",
+            "unit": "point",
+            "minimum": 101,
+            "maximum": 50001,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":SENSE:SWEEP:POINTS",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "points_auto",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":SENSE:SWEEP:POINTS:AUTO",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_mode",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "SINGLE",
+              "REPEAT",
+              "SEGMENT"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":INITIATE:SMODE",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "transfer_format",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":FORMAT:DATA?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "axis_mode",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":UNIT:X?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "amplitude_unit",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":DISPLAY:TRACE:Y1:UNIT?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trace_mode",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":TRACE:ATTRIBUTE:TRA?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trace_points",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":TRACE:DATA:SNUMBER? TRA",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "active_trace",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":TRACE:ACTIVE?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "operation_condition",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":STATUS:OPERATION:CONDITION?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "wavelength_medium",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":SENSE:CORRECTION:RVELOCITY:MEDIUM?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "wavelength_offset",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":SENSE:CORRECTION:WAVELENGTH:SHIFT?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "reference_offset",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":SENSE:CORRECTION:LEVEL:SHIFT?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "marker_scan_range",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":SENSE:WAVELENGTH:SRANGE?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "single",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":INITIATE",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "repeat",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":INITIATE",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "stop",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+        "section": ":ABORT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      }
+    ]
+  },
+  "profile": {
+    "adapter_id": "ceyear.6362d",
+    "manufacturer": [
+      "Ceyear"
+    ],
+    "models": [
+      "6362D"
+    ],
+    "category": "optical_spectrometer",
+    "channels": [
+      1
+    ],
+    "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+    "revision": "6362 series Programming Manual B.11, 2025-08; software >=2.1.0; pp.5,17,88-101,105-114",
+    "status": [
+      "start_wavelength",
+      "stop_wavelength",
+      "rbw",
+      "sensitivity",
+      "sweep_mode"
+    ],
+    "identity_query": "*IDN?",
+    "error_query": "",
+    "acquisition": "ceyear_6362d",
+    "channel_limits": {}
+  },
+  "commands": {
+    "start_wavelength": {
+      "writes": [
+        ":SENSE:WAVELENGTH:START {value}NM"
+      ],
+      "query": ":SENSE:WAVELENGTH:START?",
+      "select": [],
+      "compare": false
+    },
+    "stop_wavelength": {
+      "writes": [
+        ":SENSE:WAVELENGTH:STOP {value}NM"
+      ],
+      "query": ":SENSE:WAVELENGTH:STOP?",
+      "select": [],
+      "compare": false
+    },
+    "center_wavelength": {
+      "writes": [
+        ":SENSE:WAVELENGTH:CENTER {value}NM"
+      ],
+      "query": ":SENSE:WAVELENGTH:CENTER?",
+      "select": [],
+      "compare": false
+    },
+    "wavelength_span": {
+      "writes": [
+        ":SENSE:WAVELENGTH:SPAN {value}NM"
+      ],
+      "query": ":SENSE:WAVELENGTH:SPAN?",
+      "select": [],
+      "compare": false
+    },
+    "rbw": {
+      "writes": [
+        ":SENSE:BANDWIDTH:RESOLUTION {value}NM"
+      ],
+      "query": ":SENSE:BANDWIDTH:RESOLUTION?",
+      "select": [],
+      "compare": false
+    },
+    "sensitivity": {
+      "writes": [
+        ":SENSE:SENSE {value}"
+      ],
+      "query": ":SENSE:SENSE?",
+      "select": [],
+      "compare": false
+    },
+    "sweep_points": {
+      "writes": [
+        ":SENSE:SWEEP:POINTS {value}"
+      ],
+      "query": ":SENSE:SWEEP:POINTS?",
+      "select": [],
+      "compare": false
+    },
+    "points_auto": {
+      "writes": [
+        ":SENSE:SWEEP:POINTS:AUTO {value}"
+      ],
+      "query": ":SENSE:SWEEP:POINTS:AUTO?",
+      "select": [],
+      "compare": false
+    },
+    "sweep_mode": {
+      "writes": [
+        ":INITIATE:SMODE {value}"
+      ],
+      "query": ":INITIATE:SMODE?",
+      "select": [],
+      "compare": false
+    },
+    "transfer_format": {
+      "writes": [],
+      "query": ":FORMAT:DATA?",
+      "select": [],
+      "compare": false
+    },
+    "axis_mode": {
+      "writes": [],
+      "query": ":UNIT:X?",
+      "select": [],
+      "compare": false
+    },
+    "amplitude_unit": {
+      "writes": [],
+      "query": ":DISPLAY:TRACE:Y1:UNIT?",
+      "select": [],
+      "compare": false
+    },
+    "trace_mode": {
+      "writes": [],
+      "query": ":TRACE:ATTRIBUTE:TRA?",
+      "select": [],
+      "compare": false
+    },
+    "trace_points": {
+      "writes": [],
+      "query": ":TRACE:DATA:SNUMBER? TRA",
+      "select": [],
+      "compare": false
+    },
+    "active_trace": {
+      "writes": [],
+      "query": ":TRACE:ACTIVE?",
+      "select": [],
+      "compare": false
+    },
+    "operation_condition": {
+      "writes": [],
+      "query": ":STATUS:OPERATION:CONDITION?",
+      "select": [],
+      "compare": false
+    },
+    "wavelength_medium": {
+      "writes": [],
+      "query": ":SENSE:CORRECTION:RVELOCITY:MEDIUM?",
+      "select": [],
+      "compare": false
+    },
+    "wavelength_offset": {
+      "writes": [],
+      "query": ":SENSE:CORRECTION:WAVELENGTH:SHIFT?",
+      "select": [],
+      "compare": false
+    },
+    "reference_offset": {
+      "writes": [],
+      "query": ":SENSE:CORRECTION:LEVEL:SHIFT?",
+      "select": [],
+      "compare": false
+    },
+    "marker_scan_range": {
+      "writes": [],
+      "query": ":SENSE:WAVELENGTH:SRANGE?",
+      "select": [],
+      "compare": false
+    },
+    "single": {
+      "writes": [
+        ":INITIATE:SMODE SINGLE",
+        ":INITIATE"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "repeat": {
+      "writes": [
+        ":INITIATE:SMODE REPEAT",
+        ":INITIATE"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "stop": {
+      "writes": [
+        ":ABORT"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    }
+  }
+}

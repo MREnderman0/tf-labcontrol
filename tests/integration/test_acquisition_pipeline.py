@@ -91,7 +91,7 @@ def test_buffer_pause_keeps_monitoring_and_releases_lock_after_binary_drain(tmp_
         service.stop(key).result(5)
         recorder = service.tasks[key].recorder
         assert recorder.received == recorder.committed == recorder.converted == 2
-        assert sum(len(list(read_frames(path))) for path in recorder.folder.glob("segment-*.sqlite3")) == 2
+        assert sum(len(list(read_frames(path))) for path in recorder.raw_folder.glob("segment-*.sqlite3")) == 2
 
 
 @pytest.mark.parametrize("cadence,interval", [("bad", 1), ("interval", 0.1), ("fastest", 0)])
@@ -177,8 +177,8 @@ def test_unified_recording_saves_each_submitted_frame_and_not_inflight_monitor(t
                 entered.set()
                 assert release.wait(4)
             time.sleep(0.01)
-            batch = replace(original(request), timestamp=f"2026-09-25T00:00:{len(batches):02d}+00:00")
-            batches.append((request.context_id, batch.timestamp))
+            batch = replace(original(request), performance={"fixture_frame_id": len(batches)})
+            batches.append((request.context_id, len(batches)))
             return batch
 
         adapter.acquire = read
@@ -194,8 +194,8 @@ def test_unified_recording_saves_each_submitted_frame_and_not_inflight_monitor(t
         service.stop(key).result(5)
         recorder = service.tasks[key].recorder
         saved = [
-            meta["timestamp"]
-            for path in recorder.folder.glob("segment-*.sqlite3")
+            meta["performance"]["fixture_frame_id"]
+            for path in recorder.raw_folder.glob("segment-*.sqlite3")
             for meta in read_frames(path)
         ]
         expected = [stamp for ctx, stamp in batches if ctx == context]

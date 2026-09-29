@@ -22,7 +22,7 @@ def test_local_start_date_names_and_original_metadata_are_fixed(tmp_path, kind):
     with pytest.raises(FrozenInstanceError):
         context.mode = "electronic"
     folder = context.prepare()
-    metadata = json.loads((folder / "recording.json").read_text(encoding="utf-8"))
+    metadata = json.loads((folder / "_raw" / "recording.json").read_text(encoding="utf-8"))
     assert metadata["identity"]["serial"] == "SN:1/?"
     assert metadata["identity"]["model"] == "Model/Pro"
     assert metadata["started_local"] == START.isoformat()
@@ -152,9 +152,9 @@ def test_unwritable_root_does_not_replace_saved_setting(tmp_path, monkeypatch):
 def test_empty_continuous_recording_keeps_manifest_and_zero_summary(tmp_path):
     context = SaveContext(tmp_path, "electronic", "continuous", "fixture", started_at=START)
     recording = Recording(tmp_path, "electronic", context=context)
-    assert (context.folder / "recording.json").is_file()
+    assert (context.folder / "_raw" / "recording.json").is_file()
     assert recording.finish().result(5) == []
-    summary = json.loads((context.folder / "summary.json").read_text(encoding="utf-8"))
+    summary = json.loads((context.folder / "_raw" / "summary.json").read_text(encoding="utf-8"))
     assert summary["received"] == summary["committed"] == 0
     assert summary["started_local"] == START.isoformat()
 

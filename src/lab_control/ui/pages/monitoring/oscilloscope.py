@@ -22,6 +22,7 @@ from lab_control.ui.pages.monitoring.oscilloscope_plot import OscilloscopePlot
 from lab_control.ui.pages.monitoring.recording_state import (
     RecordingButton,
     recording_phase,
+    recording_save_notice,
     update_recording_frame,
 )
 from lab_control.ui.pages.monitoring.timing import MonitoringTiming
@@ -69,7 +70,7 @@ class OscilloscopeMonitoringPage(QWidget):
         tools_row.addWidget(self.record_button)
         tools = QToolButton()
         tools.setObjectName("curveTools")
-        tools.setFixedHeight(30)
+        tools.setProperty("buttonSize", "compact")
         tools.setText("曲线工具")
         tools.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         menu = QMenu(tools)
@@ -210,6 +211,11 @@ class OscilloscopeMonitoringPage(QWidget):
 
     def toggle_monitoring(self) -> None:
         service = self.controller.runtime.monitoring
+        if self.controls and self.controls.running:
+            self.controls.restart = False
+            self.controller.watch(service.stop(self.device_id))
+            self.refresh()
+            return
         if service.snapshots().get(self.device_id, {}).get("running"):
             self.controller.watch(service.stop(self.device_id))
         else:
@@ -234,7 +240,7 @@ class OscilloscopeMonitoringPage(QWidget):
                     self.controller.runtime.monitoring.export_displayed_frame(
                         self.device_id, self.plot.displayed_frame, self.mode
                     ),
-                    lambda path: self.controller.message.emit(f"已保存当前帧：{path}"),
+                    lambda path: self.controller.message.emit(f"原始数据已保存 · 分析 CSV 已完成：{path}"),
                 )
                 self.refresh()
             except Exception as exc:
@@ -301,6 +307,9 @@ class OscilloscopeMonitoringPage(QWidget):
                 and not (task.get("pending") and not task.get("running"))
             )
         )
+        if self.controls and self.controls.running and self.controls.restart:
+            self.start_button.setText("取消续监测")
+            self.start_button.setEnabled(bool(connected))
         self.record_button.refresh(
             task, connected=connected, busy=busy, locked=bool(state.get("controlsLocked"))
         )
@@ -322,7 +331,7 @@ class OscilloscopeMonitoringPage(QWidget):
         self.status.setText(
             task.get("error")
             or task.get("recording_notice")
-            or task.get("recording_state", {}).get("csv_error")
+            or recording_save_notice(task)
             or task.get("notice")
             or (
                 "完整波形读取中 · 完成后自动续采"

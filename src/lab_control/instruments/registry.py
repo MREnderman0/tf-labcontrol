@@ -47,7 +47,6 @@ PROFILES = collect_profiles(
 SDK_ADAPTERS = {
     "thorlabs.pm100d": "optical_power_meter",
     "pico.6404e": "oscilloscope",
-    "microchip.53100a": "phase_noise_analyzer",
 }
 PENDING = {
     "PSW160": "Manufacturer and complete suffix required",
@@ -57,7 +56,7 @@ PENDING = {
     "temperature_controller": "Model and protocol required",
     "electronic_load": "Model and protocol required",
     "pump_driver": "Model, protocol and interlocks required",
-    "optical_spectrometer": "Model and protocol required",
+    "other optical_spectrometers": "Exact model and protocol required; Ceyear 6362D has an independent module",
 }
 
 
@@ -68,18 +67,22 @@ def describe(config: ConnectionConfig, channel: int | None = None) -> Capability
 
         return SimulatedInstrument(config).capabilities()
     if config.adapter in PROFILES:
+        definition = DEVICE_DEFINITIONS.get(config.adapter)
+        if definition and definition.capability_schema:
+            caps = definition.capability_schema(config)
+            if channel is not None and channel not in caps.channels:
+                raise Unsupported(f"Invalid channel {channel}")
+            return caps
         if channel is None:
             return ScpiAdapter(MockTransport([]), PROFILES[config.adapter], config).capabilities()
         adapter = build_scpi_adapter(config, MockTransport([]))
         return adapter.capabilities_for_channel(channel)
     from lab_control.instruments.optical import PowerMeterAdapter
-    from lab_control.instruments.phase_noise import PhaseNoiseAdapter
     from lab_control.instruments.pico import PicoAdapter
 
     schemas = {
         "thorlabs.pm100d": PowerMeterAdapter.capability_schema,
         "pico.6404e": PicoAdapter.capability_schema,
-        "microchip.53100a": PhaseNoiseAdapter.capability_schema,
     }
     if config.adapter not in schemas:
         raise Unsupported(f"设备适配器不可用或已移除：{config.adapter}")
@@ -167,10 +170,9 @@ def create_adapter(config: ConnectionConfig, runtime: VisaRuntime) -> Instrument
         from lab_control.instruments.pico import PicoAdapter
 
         return PicoAdapter(config)
-    if config.adapter == "microchip.53100a" and config.transport == "tserve":
-        from lab_control.instruments.phase_noise import PhaseNoiseAdapter
-
-        return PhaseNoiseAdapter(config)
+    definition = DEVICE_DEFINITIONS.get(config.adapter)
+    if definition and definition.factory:
+        return definition.factory(config)
     if config.adapter not in PROFILES:
         raise Unsupported(f"设备适配器不可用或已移除：{config.adapter}")
     transport = transport_for(config, runtime)

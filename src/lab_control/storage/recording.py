@@ -18,15 +18,17 @@ import threading
 import time
 from collections import deque
 from concurrent.futures import Future
-from dataclasses import fields
+from dataclasses import fields, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterator
 
 import numpy as np
 
-from lab_control.application.acquisition_pipeline import batch_bytes, validate_recorded_batch
+from lab_control.application.acquisition_pipeline import FrozenDict, batch_bytes, validate_recorded_batch
 from lab_control.domain.instruments import MeasurementBatch, ValidationError, jsonable
+from lab_control.storage.frame_timing import TIMING_COLUMNS, timing_columns
+from lab_control.storage.layout import manifest, raw_folder
 from lab_control.storage.paths import SaveContext
 
 _CSV_SLOTS = threading.BoundedSemaphore(2)
@@ -125,7 +127,11 @@ class SegmentWriter:
 
 def read_frames(path: Path, after: int = 0) -> Iterator[dict[str, Any]]:
     """Read committed version-one frames, preserving dtype and array shape."""
-    connection = sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)
+    # Closed segments have checkpointed their WAL. Immutable reads avoid SQLite
+    # creating new -wal/-shm files in historical (possibly read-only) folders.
+    # An active writer retains these sidecars and requires normal WAL visibility.
+    closed = not any(Path(str(path) + suffix).exists() for suffix in ("-wal", "-shm"))
+    connection = sqlite3.connect(path.as_uri() + "?mode=ro" + ("&immutable=1" if closed else ""), uri=True)
     try:
         if connection.execute("PRAGMA user_version").fetchone()[0] != 1:
             raise ValidationError("Unsupported recording version")
@@ -153,6 +159,10 @@ def read_frames(path: Path, after: int = 0) -> Iterator[dict[str, Any]]:
 
 def convert_csv(folder: Path) -> dict[str, Any]:
     """Checkpoint only after a complete frame is durable; truncate any uncommitted tail."""
+    if manifest(folder).get("layout_version", 1) == 2:
+        from lab_control.storage.analysis import convert_analysis
+
+        return convert_analysis(folder)
     started = time.perf_counter()
     converted = 0
     maximum_lag = 0.0
@@ -161,8 +171,13 @@ def convert_csv(folder: Path) -> dict[str, Any]:
         state = (
             json.loads(checkpoint.read_text(encoding="utf-8"))
             if checkpoint.exists()
-            else {"sequence": 0, "offset": 0, "frames": 0}
+            else {"sequence": 0, "offset": 0, "frames": 0, "csv_format_version": 2}
         )
+        # Existing checkpoints describe legacy headers. Never append a different
+        # column layout to a previously committed CSV.
+        csv_version = state.get("csv_format_version", 1)
+        if csv_version not in (1, 2):
+            raise ValidationError("Unsupported CSV format version")
         output_path = path.with_suffix(".csv")
         with output_path.open("a+b") as output:
             if output.seek(0, 2) < state["offset"]:
@@ -185,12 +200,22 @@ def convert_csv(folder: Path) -> dict[str, Any]:
                             "axis_unit",
                             "real",
                             "imaginary",
+                            *(TIMING_COLUMNS if csv_version == 2 else ()),
                         ]
                     )
                 for sample in frame["measurements"]:
                     values = sample["values"].reshape(-1)
                     axis = sample["axis"]
                     axis = np.arange(values.size) if axis is None else axis.reshape(-1)
+                    sample_timing = (
+                        timing_columns(
+                            frame.get("timing", {}),
+                            sample.get("metadata", {}),
+                            frame.get("time_basis", ""),
+                        )
+                        if csv_version == 2
+                        else ()
+                    )
                     for x, value in zip(axis, values, strict=True):
                         writer.writerow(
                             [
@@ -205,6 +230,7 @@ def convert_csv(folder: Path) -> dict[str, Any]:
                                 sample["axis_unit"],
                                 np.real(value),
                                 np.imag(value),
+                                *sample_timing,
                             ]
                         )
                 output.write(text.getvalue().encode("utf-8"))
@@ -214,6 +240,7 @@ def convert_csv(folder: Path) -> dict[str, Any]:
                     "sequence": frame["sequence"],
                     "offset": output.tell(),
                     "frames": state["frames"] + 1,
+                    "csv_format_version": csv_version,
                 }
                 _atomic_json(checkpoint, state)
                 try:
@@ -248,9 +275,11 @@ class Recording:
         if mode not in {"electronic", "optical"}:
             raise ValidationError("Invalid experiment mode")
         self.validate_csv_interval(csv_interval)
+        self.started_monotonic = time.perf_counter()
         self.context = context or SaveContext(root / "data", mode, "continuous")
         self.context.validate(mode, "continuous")
         self.folder = self.context.folder
+        self.raw_folder = self.context.raw_folder
         if prepare_storage:
             self.context.prepare()
         self.csv_interval, self.wake = csv_interval, wake
@@ -266,7 +295,7 @@ class Recording:
         self.csv_lag_seconds = 0.0
         self.accepting, self.binary_done = True, False
         self.finished: Future[list[str]] = Future()
-        self.segments = SegmentWriter(self.folder)
+        self.segments = SegmentWriter(self.raw_folder)
         self.thread = threading.Thread(target=self._write_loop, name="binary-recording", daemon=True)
         self.csv_thread = threading.Thread(target=self._csv_loop, name="csv-supervisor", daemon=True)
         self.thread.start()
@@ -296,6 +325,17 @@ class Recording:
 
     def submit(self, batch: MeasurementBatch) -> bool:
         validate_recorded_batch(batch)
+        completed = batch.performance.get("received_at_monotonic")
+        if batch.timing.get("version") == 1 and isinstance(completed, (float, int)):
+            batch = replace(
+                batch,
+                timing=FrozenDict(
+                    {
+                        **batch.timing,
+                        "recording_elapsed_seconds": completed - self.started_monotonic,
+                    }
+                ),
+            )
         size = batch_bytes(batch)
         with self.lock:
             if not self.reserved:
@@ -339,6 +379,8 @@ class Recording:
                 folder=str(self.folder),
                 started_local=self.context.started_at.isoformat(),
                 started_utc=self.context.started_utc,
+                analysis_state=("failed" if self.csv_error else "complete" if self.binary_done
+                                and self.converted >= self.committed else "generating"),
             )
 
     def _write_loop(self) -> None:
@@ -390,7 +432,7 @@ class Recording:
                 if process is not None and process.poll() is not None:
                     completed, process = process, None
                     try:
-                        status_path = self.folder / "csv-status.json"
+                        status_path = self.raw_folder / "csv-status.json"
                         status = json.loads(status_path.read_text(encoding="utf-8"))
                     finally:
                         _CSV_SLOTS.release()
@@ -438,9 +480,10 @@ class Recording:
                 self.csv_event.wait(0.1 if process else min(0.25, max(0.01, next_at - time.monotonic())))
             if self.folder.exists():
                 _atomic_json(
-                    self.folder / "summary.json",
+                    self.raw_folder / "summary.json",
                     self.snapshot() | {"version": 1, "segments": self.segments.paths},
                 )
+                self._describe()
             self.finished.set_result(list(self.segments.paths))
         except Exception as exc:
             with self.lock:
@@ -450,14 +493,23 @@ class Recording:
             if self.folder.exists():
                 try:
                     _atomic_json(
-                        self.folder / "summary.json",
+                        self.raw_folder / "summary.json",
                         self.snapshot() | {"version": 1, "segments": self.segments.paths},
                     )
+                    self._describe()
                 except OSError:
                     pass  # The in-memory error/counts remain available if the disk itself failed.
             self.finished.set_result(list(self.segments.paths))
         finally:
             self.wake()
+
+    def _describe(self) -> None:
+        if self.context.layout_version == 2:
+            from lab_control.storage.analysis import write_description
+
+            error = self.error or self.csv_error
+            write_description(self.folder, "保存未完整完成" if error else "原始数据已保存；分析 CSV 已完成",
+                              error=error)
 
 
 def csv_worker(folder: Path) -> int:
@@ -468,8 +520,15 @@ def csv_worker(folder: Path) -> int:
         result = convert_csv(target)
     except Exception as failure:
         result = {"error": str(failure)}
+        try:
+            if manifest(target).get("layout_version", 1) == 2:
+                from lab_control.storage.analysis import write_description
+
+                write_description(target, "分析 CSV 生成失败", error=str(failure))
+        except (OSError, ValueError):
+            pass
     try:
-        _atomic_json(target / "csv-status.json", result)
+        _atomic_json(raw_folder(target) / "csv-status.json", result)
     except OSError:
         return 2
     return 1 if result.get("error") else 0

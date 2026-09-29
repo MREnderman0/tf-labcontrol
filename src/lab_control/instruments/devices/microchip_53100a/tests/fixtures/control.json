@@ -1,0 +1,10 @@
+{
+  "adapter": "microchip.53100a",
+  "identity_reply": "Microchip,53100A,TEST123,TEST-FIRMWARE",
+  "identity_exchanges": [["show version", "Model: Microchip 53100A\r\nSoftware: Version 1.78"], ["show serial", "Serial number: TEST123"], ["show state", "Ready\r\nTime Constant: Infinite"]],
+  "operation": "input_frequency",
+  "parameters": {"value": 10000000},
+  "channel": 1,
+  "exchanges": [["show state", "Ready"], ["set inputfreq 10", ""], ["show inputfreq", "10 MHz"]],
+  "evidence": "Document-derived, sanitized protocol fixture; not a hardware capture"
+}

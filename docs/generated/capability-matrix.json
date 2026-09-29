@@ -9188,10 +9188,10 @@
               "kind": "number",
               "unit": "s/div",
               "minimum": 2e-09,
-              "maximum": 500,
+              "maximum": 0.02,
               "choices": [],
               "required": true,
-              "range_source": "model",
+              "range_source": "software",
               "resolution": null
             }
           },
@@ -11346,6 +11346,1101 @@
             "writes": [
               "CALC:MARK1:MAX"
             ],
+            "query": "",
+            "custom_encoder": false
+          }
+        }
+      ]
+    },
+    {
+      "adapter_id": "ceyear.6362d",
+      "model": "Ceyear 6362D",
+      "category": "optical_spectrometer",
+      "control_page": "实时监测 / 光谱仪",
+      "channels": [
+        1
+      ],
+      "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+      "revision": "6362 series Programming Manual B.11, 2025-08; software >=2.1.0; pp.5,17,88-101,105-114",
+      "acquisition": "ceyear_6362d",
+      "channel_limits": {},
+      "hardware_passed": false,
+      "operations": [
+        {
+          "name": "start_wavelength",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "nm",
+              "minimum": 600,
+              "maximum": 1700,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":SENSE:WAVELENGTH:START",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "起始波长",
+          "ui_location": "实时监测 / 光谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              ":SENSE:WAVELENGTH:START {value}NM"
+            ],
+            "query": ":SENSE:WAVELENGTH:START?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "stop_wavelength",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "nm",
+              "minimum": 600,
+              "maximum": 1700,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":SENSE:WAVELENGTH:STOP",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "终止波长",
+          "ui_location": "实时监测 / 光谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              ":SENSE:WAVELENGTH:STOP {value}NM"
+            ],
+            "query": ":SENSE:WAVELENGTH:STOP?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "center_wavelength",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "nm",
+              "minimum": 600,
+              "maximum": 1700,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":SENSE:WAVELENGTH:CENTER",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "中心波长",
+          "ui_location": "实时监测 / 光谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              ":SENSE:WAVELENGTH:CENTER {value}NM"
+            ],
+            "query": ":SENSE:WAVELENGTH:CENTER?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "wavelength_span",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "nm",
+              "minimum": 0.001,
+              "maximum": 1100,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":SENSE:WAVELENGTH:SPAN",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "波长跨度",
+          "ui_location": "实时监测 / 光谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              ":SENSE:WAVELENGTH:SPAN {value}NM"
+            ],
+            "query": ":SENSE:WAVELENGTH:SPAN?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "rbw",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "nm",
+              "minimum": 0.02,
+              "maximum": 2,
+              "choices": [
+                "0.02",
+                "0.05",
+                "0.1",
+                "0.2",
+                "0.5",
+                "1.0",
+                "2.0"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":SENSE:BANDWIDTH:RESOLUTION",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "分辨率带宽 RBW",
+          "ui_location": "实时监测 / 光谱仪 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              ":SENSE:BANDWIDTH:RESOLUTION {value}NM"
+            ],
+            "query": ":SENSE:BANDWIDTH:RESOLUTION?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "sensitivity",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "MID",
+                "HIGH1",
+                "HIGH2",
+                "HIGH3",
+                "NORMAL"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":SENSE:SENSE",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": true,
+          "hardware_passed": false,
+          "ui_label": "灵敏度",
+          "ui_location": "实时监测 / 光谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              ":SENSE:SENSE {value}"
+            ],
+            "query": ":SENSE:SENSE?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "sweep_points",
+          "parameters": {
+            "value": {
+              "kind": "integer",
+              "unit": "point",
+              "minimum": 101,
+              "maximum": 50001,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":SENSE:SWEEP:POINTS",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "扫描点数",
+          "ui_location": "实时监测 / 光谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              ":SENSE:SWEEP:POINTS {value}"
+            ],
+            "query": ":SENSE:SWEEP:POINTS?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "points_auto",
+          "parameters": {
+            "value": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":SENSE:SWEEP:POINTS:AUTO",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "自动采样点数",
+          "ui_location": "实时监测 / 光谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              ":SENSE:SWEEP:POINTS:AUTO {value}"
+            ],
+            "query": ":SENSE:SWEEP:POINTS:AUTO?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "sweep_mode",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "SINGLE",
+                "REPEAT",
+                "SEGMENT"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":INITIATE:SMODE",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "扫描运行方式",
+          "ui_location": "实时监测 / 光谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              ":INITIATE:SMODE {value}"
+            ],
+            "query": ":INITIATE:SMODE?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "transfer_format",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":FORMAT:DATA?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "轨迹传输格式",
+          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": ":FORMAT:DATA?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "axis_mode",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":UNIT:X?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "横轴模式",
+          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": ":UNIT:X?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "amplitude_unit",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":DISPLAY:TRACE:Y1:UNIT?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "幅度单位",
+          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": ":DISPLAY:TRACE:Y1:UNIT?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "trace_mode",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":TRACE:ATTRIBUTE:TRA?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "轨迹模式",
+          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": ":TRACE:ATTRIBUTE:TRA?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "trace_points",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":TRACE:DATA:SNUMBER? TRA",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "轨迹实际点数",
+          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": ":TRACE:DATA:SNUMBER? TRA",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "active_trace",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":TRACE:ACTIVE?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "当前轨迹",
+          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": ":TRACE:ACTIVE?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "operation_condition",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":STATUS:OPERATION:CONDITION?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "扫描运行状态",
+          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": ":STATUS:OPERATION:CONDITION?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "wavelength_medium",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":SENSE:CORRECTION:RVELOCITY:MEDIUM?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "波长介质",
+          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": ":SENSE:CORRECTION:RVELOCITY:MEDIUM?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "wavelength_offset",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":SENSE:CORRECTION:WAVELENGTH:SHIFT?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "波长偏置",
+          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": ":SENSE:CORRECTION:WAVELENGTH:SHIFT?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "reference_offset",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":SENSE:CORRECTION:LEVEL:SHIFT?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "参考电平偏移",
+          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": ":SENSE:CORRECTION:LEVEL:SHIFT?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "marker_scan_range",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":SENSE:WAVELENGTH:SRANGE?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "标记限制扫描范围",
+          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": ":SENSE:WAVELENGTH:SRANGE?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "single",
+          "parameters": {},
+          "readable": false,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":INITIATE",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "仪器单次采集",
+          "ui_location": "实时监测 / 光谱仪 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              ":INITIATE:SMODE SINGLE",
+              ":INITIATE"
+            ],
+            "query": "",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "repeat",
+          "parameters": {},
+          "readable": false,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":INITIATE",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "启动重复扫描",
+          "ui_location": "实时监测 / 光谱仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              ":INITIATE:SMODE REPEAT",
+              ":INITIATE"
+            ],
+            "query": "",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "stop",
+          "parameters": {},
+          "readable": false,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": false,
+          "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
+          "section": ":ABORT",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "停止仪器",
+          "ui_location": "实时监测 / 光谱仪 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              ":ABORT"
+            ],
+            "query": "",
+            "custom_encoder": false
+          }
+        }
+      ]
+    },
+    {
+      "adapter_id": "microchip.53100a",
+      "model": "Microchip 53100A",
+      "category": "phase_noise_analyzer",
+      "control_page": "实时监测 / 相噪仪",
+      "channels": [
+        1
+      ],
+      "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+      "revision": "DS50002991G; TimeLab 1.780A release notes",
+      "acquisition": "phase_noise/am_noise/stability/streaming/timed_phase",
+      "channel_limits": {},
+      "hardware_passed": false,
+      "operations": [
+        {
+          "name": "sample_rate",
+          "parameters": {
+            "value": {
+              "kind": "integer",
+              "unit": "samples/s",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "1",
+                "10",
+                "100",
+                "1000"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+          "section": "8.3 set/show phaserate",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "实际采样率",
+          "ui_location": "实时监测 / 相噪仪 / 高级",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "show phaserate",
+            "custom_encoder": true
+          }
+        },
+        {
+          "name": "timed_phase",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+          "section": "8.2 /format:P /timestamp:s /phasedec:2",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": false,
+          "reason": "Requires managed USB TSERVE with verified timestamped phase format",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "定时相位采集与稳定度",
+          "ui_location": "实时监测 / 相噪仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "start",
+          "parameters": {},
+          "readable": false,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": false,
+          "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+          "section": "8.3 start",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "开始仪器测量",
+          "ui_location": "实时监测 / 相噪仪 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "start"
+            ],
+            "query": "",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "stop",
+          "parameters": {},
+          "readable": false,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": false,
+          "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+          "section": "8.3 stop",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "停止仪器",
+          "ui_location": "实时监测 / 相噪仪 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "stop"
+            ],
+            "query": "",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "input_frequency",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Hz",
+              "minimum": 1000000.0,
+              "maximum": 200000000.0,
+              "choices": [],
+              "required": false,
+              "range_source": "model",
+              "resolution": null
+            },
+            "automatic": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": false,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+          "section": "8.3 set/show inputfreq",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": true,
+          "hardware_passed": false,
+          "ui_label": "输入频率",
+          "ui_location": "实时监测 / 相噪仪 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "show inputfreq",
+            "custom_encoder": true
+          }
+        },
+        {
+          "name": "reference_frequency",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Hz",
+              "minimum": 1000000.0,
+              "maximum": 200000000.0,
+              "choices": [],
+              "required": false,
+              "range_source": "model",
+              "resolution": null
+            },
+            "automatic": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": false,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+          "section": "8.3 set/show referencefreq",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "参考频率",
+          "ui_location": "实时监测 / 相噪仪 / 常用",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "show referencefreq",
+            "custom_encoder": true
+          }
+        },
+        {
+          "name": "phase_noise",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+          "section": "8.3 show spectrum",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "相位噪声",
+          "ui_location": "实时监测 / 相噪仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "show spectrum",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "am_noise",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+          "section": "8.3 show amspectrum",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "AM 噪声",
+          "ui_location": "实时监测 / 相噪仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "show amspectrum",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "stability",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+          "section": "8.3 show adev",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "稳定度",
+          "ui_location": "实时监测 / 相噪仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "show adev",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "data_stream",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+          "section": "8.2 /format /timestamp /phaserate /phasedec",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": false,
+          "reason": "Requires explicit data_resource, P/F format, timestamp off and matching stream_interval",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "相位 / 频率数据流",
+          "ui_location": "实时监测 / 相噪仪 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
             "query": "",
             "custom_encoder": false
           }
@@ -14569,7 +15664,7 @@
         4
       ],
       "source": "https://www.picotech.com/helpfiles/6000a-api/",
-      "revision": "SDK headers/examples or 53100A DS50002991G",
+      "revision": "SDK headers/examples",
       "acquisition": "block/streaming",
       "channel_limits": {},
       "hardware_passed": false,
@@ -17632,7 +18727,7 @@
         1
       ],
       "source": "https://github.com/Thorlabs/Light_Analysis_Examples/blob/main/Python/Thorlabs%20PMxxx%20Power%20Meters/TLPMX_dll/TLPMX.py",
-      "revision": "SDK headers/examples or 53100A DS50002991G",
+      "revision": "SDK headers/examples",
       "acquisition": "scalar",
       "channel_limits": {},
       "hardware_passed": false,
@@ -19002,204 +20097,6 @@
           }
         }
       ]
-    },
-    {
-      "adapter_id": "microchip.53100a",
-      "model": "53100A（Microchip 候选）",
-      "category": "phase_noise_analyzer",
-      "control_page": "实时监测 / 相噪仪",
-      "channels": [
-        1
-      ],
-      "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
-      "revision": "SDK headers/examples or 53100A DS50002991G",
-      "acquisition": "phase_noise/am_noise/stability/streaming",
-      "channel_limits": {},
-      "hardware_passed": false,
-      "operations": [
-        {
-          "name": "start",
-          "parameters": {},
-          "readable": false,
-          "writable": true,
-          "requires_confirmation": true,
-          "channel_scoped": false,
-          "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
-          "section": "8.3 start",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": false,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "开始仪器测量",
-          "ui_location": "实时监测 / 相噪仪 / 常用"
-        },
-        {
-          "name": "stop",
-          "parameters": {},
-          "readable": false,
-          "writable": true,
-          "requires_confirmation": true,
-          "channel_scoped": false,
-          "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
-          "section": "8.3 stop",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": false,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "停止仪器",
-          "ui_location": "实时监测 / 相噪仪 / 常用"
-        },
-        {
-          "name": "input_frequency",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "Hz",
-              "minimum": 1,
-              "maximum": 200000000.0,
-              "choices": [],
-              "required": true,
-              "range_source": "model",
-              "resolution": null
-            }
-          },
-          "readable": false,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
-          "section": "8.3 set inputfreq",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": false,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "输入频率",
-          "ui_location": "实时监测 / 相噪仪 / 常用"
-        },
-        {
-          "name": "reference_frequency",
-          "parameters": {
-            "value": {
-              "kind": "number",
-              "unit": "Hz",
-              "minimum": 1,
-              "maximum": 200000000.0,
-              "choices": [],
-              "required": true,
-              "range_source": "model",
-              "resolution": null
-            }
-          },
-          "readable": false,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
-          "section": "8.3 set referencefreq",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": false,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "参考频率",
-          "ui_location": "实时监测 / 相噪仪 / 常用"
-        },
-        {
-          "name": "phase_noise",
-          "parameters": {},
-          "readable": true,
-          "writable": false,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
-          "section": "8.3 show spectrum",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": false,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "相位噪声",
-          "ui_location": "实时监测 / 相噪仪 / 状态与诊断"
-        },
-        {
-          "name": "am_noise",
-          "parameters": {},
-          "readable": true,
-          "writable": false,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
-          "section": "8.3 show amspectrum",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": false,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "AM 噪声",
-          "ui_location": "实时监测 / 相噪仪 / 状态与诊断"
-        },
-        {
-          "name": "stability",
-          "parameters": {},
-          "readable": true,
-          "writable": false,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
-          "section": "8.3 show adev",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": false,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "稳定度",
-          "ui_location": "实时监测 / 相噪仪 / 状态与诊断"
-        },
-        {
-          "name": "data_stream",
-          "parameters": {},
-          "readable": true,
-          "writable": false,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
-          "section": "8.1 /data_port /format /timestamp",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": false,
-          "reason": "Requires explicit TSERVE data_resource, stream_format P/F, stream_interval and server /timestamp:0",
-          "implementation": "implemented",
-          "schema_tested": false,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "相位 / 频率数据流",
-          "ui_location": "实时监测 / 相噪仪 / 状态与诊断"
-        }
-      ]
     }
   ],
   "pending": {
@@ -19210,6 +20107,6 @@
     "temperature_controller": "Model and protocol required",
     "electronic_load": "Model and protocol required",
     "pump_driver": "Model, protocol and interlocks required",
-    "optical_spectrometer": "Model and protocol required"
+    "other optical_spectrometers": "Exact model and protocol required; Ceyear 6362D has an independent module"
   }
 }

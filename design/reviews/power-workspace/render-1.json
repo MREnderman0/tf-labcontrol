@@ -1,0 +1,38 @@
+[
+  {
+    "logical_size": [
+      1280,
+      760
+    ],
+    "dpr": 1.0,
+    "options": {
+      "interval": 1.0,
+      "record_interval": null,
+      "cadence": "interval",
+      "csv_interval": 5
+    },
+    "no_horizontal_scroll": true,
+    "popup_within_work_area": true,
+    "timing_collapsed_by_default": true,
+    "time_axis": "elapsed_from_first_valid_frame",
+    "draft_focus_preserved": true
+  },
+  {
+    "logical_size": [
+      1440,
+      900
+    ],
+    "dpr": 1.0,
+    "options": {
+      "interval": 1.0,
+      "record_interval": null,
+      "cadence": "interval",
+      "csv_interval": 5
+    },
+    "no_horizontal_scroll": true,
+    "popup_within_work_area": true,
+    "timing_collapsed_by_default": true,
+    "time_axis": "elapsed_from_first_valid_frame",
+    "draft_focus_preserved": true
+  }
+]

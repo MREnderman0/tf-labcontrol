@@ -18,11 +18,11 @@ PicoSDK 64 位、ps6000a.dll 和 USB 驱动。安装步骤见[实机测试指南
 
 ## 4. 资源与枚举
 
-连接模板见[config/examples](../../../config/examples/README.md)。VISA 使用扫描返回的完整资源；串口填写确认的 COM/波特率；Pico 使用 `PICO::序列号`；PM100D 使用 SDK 枚举的资源；53100A 手工填写已部署服务地址。扫描只枚举 SDK，不打开 SDK 仪器。
+连接模板见[config/examples](../../../config/examples/README.md)。VISA 使用扫描返回的完整资源；串口填写确认的 COM/波特率；Pico 使用 `PICO::序列号`；PM100D 使用 SDK 枚举的资源。扫描只枚举 SDK，不打开 SDK 仪器。
 
 ## 5. 官方命令/API 依据
 
-[厂家资料](https://www.picotech.com/helpfiles/6000a-api/)；版本：SDK headers/examples or 53100A DS50002991G。逐操作命令定位、参数和模板见[自动生成能力清单](../../generated/capability-matrix.json)。测试样本是按手册编写的夹具，尚非实机抓包。
+[厂家资料](https://www.picotech.com/helpfiles/6000a-api/)；版本：SDK headers/examples。逐操作命令定位、参数和模板见[自动生成能力清单](../../generated/capability-matrix.json)。测试样本是按手册编写的夹具，尚非实机抓包。
 
 ## 6. 当前统一能力
 

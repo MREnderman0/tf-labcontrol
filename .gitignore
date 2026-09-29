@@ -29,3 +29,4 @@ build/
 *.suo
 .DS_Store
 .tools/
+.local/

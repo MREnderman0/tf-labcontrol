@@ -35,11 +35,11 @@ def test_display_snapshot_preserves_data_and_provenance_without_io(tmp_path, val
 
         adapter.acquire = adapter.apply = adapter.read_settings = forbidden
         folder = service.export_displayed_frame(key, frame, "electronic").result(3)
-        saved = json.loads((folder / "snapshot.json").read_text(encoding="utf-8"))
+        saved = json.loads((folder / "_raw" / "snapshot.json").read_text(encoding="utf-8"))
         assert saved["timestamp"] == batch.timestamp and saved["validation"] == validation
         assert saved["settings_timestamps"] == batch.settings_timestamps
         assert saved["configuration"] == batch.configuration
-        with np.load(folder / "samples.npz") as arrays:
+        with np.load(folder / "_raw" / "samples.npz") as arrays:
             np.testing.assert_array_equal(arrays["values_0"], batch.measurements[0].values)
             np.testing.assert_array_equal(arrays["axis_0"], batch.measurements[0].axis)
 
@@ -92,4 +92,4 @@ def test_close_drains_display_export_and_rejects_invalid_samples(tmp_path):
         runtime.monitoring.export_displayed_frame(key, MonitorFrame(1, 0, request, bad), "electronic")
     future = runtime.monitoring.export_displayed_frame(key, MonitorFrame(1, 0, request, batch), "electronic")
     runtime.close()
-    assert future.done() and (future.result() / "samples.csv").exists()
+    assert future.done() and (future.result() / "数据_00001.csv").exists()

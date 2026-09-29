@@ -171,7 +171,7 @@ def test_final_summary_and_segment_config_dedup(tmp_path):
         assert recording.reserve(8192)
         recording.submit(immutable_batch(frame()))
     paths = recording.finish().result(8)
-    summary = json.loads((recording.folder / "summary.json").read_text(encoding="utf-8"))
+    summary = json.loads((recording.folder / "_raw" / "summary.json").read_text(encoding="utf-8"))
     assert summary["received"] == summary["committed"] == summary["converted"] == 3
     assert summary["version"] == 1 and summary["segments"] == paths
     assert len({f["config_id"] for f in read_frames(Path(paths[0]))}) == 1

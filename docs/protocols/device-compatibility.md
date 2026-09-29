@@ -12,7 +12,7 @@
 | Parameter / Capability / CapabilitySet | 类型、单位、范围、枚举、通道作用域、选件、确认要求和资料来源 |
 | DeviceCommand | 操作名、受校验参数、通道、显式 confirmed |
 | ApplyResult | success / rejected / partial / uncertain，步骤数、读回、错误 |
-| AcquisitionRequest | 数据类型、通道、点数、quantity、是否发起采集及确认 |
+| AcquisitionRequest | 数据类型、通道、点数、quantity、是否发起采集及确认，可选时长与采样率 |
 | Measurement / MeasurementBatch | 标量、波形、频谱、复数轨迹、坐标轴、质量、配置、时间戳 |
 | DeviceStatus / DeviceError | 状态读回和带错误码的异常 |
 | ParameterReading | 操作、通道、值、来源、UTC 时间、质量和错误 |
@@ -23,13 +23,13 @@ InstrumentAdapter 提供 identify/capabilities/read_status/read_settings/apply/a
 def read_settings(self, operations: tuple[str, ...], channel: int = 1) -> tuple[ParameterReading, ...]: ...
 ```
 
-来源为 instrument（已核实查询/API）、session_cache（本会话设置记录）、simulated 或 unavailable；未知值为 None/quality=stale，不补零。SCPI 复用 Profile 查询；SDK 没有核实 getter 时仅回报缓存，禁止猜测 API。UI 同时展示来源和 UTC 时间，且不会用新读回覆盖用户草稿。时间表示本次读取/缓存报告时间，不代表设备硬件时钟。
+来源包括 instrument（已核实查询/API）、service_readback（服务配置实际查询）、session_cache（本会话设置记录）、control_cache（已确认控制结果）、simulated 与 unavailable；服务配置读回不能作为物理频率或性能测量。未知值为 None/quality=stale，不补零；自动模式的结构化读回可保留可选数值字段为空，不将其误判为整个设置未知。SCPI 复用 Profile 查询；SDK 没有核实 getter 时仅回报缓存，禁止猜测 API。UI 同时展示来源和 UTC 时间，且不会用新读回覆盖用户草稿。时间表示本次读取/缓存报告时间，不代表设备硬件时钟。
 
 ## 注册与型号
 
-instruments/registry.py 提供 match、describe、create_adapter。describe 只读能力元数据，不打开设备、不加载 DLL。SCPI 型号由独立 Profile 记录厂家、精确型号、通道、命令模板、读回、错误查询、手册版本及采集路线；同类别共享实现，差异留在 Profile 或类别编码器。
+instruments/registry.py 提供 match、describe、create_adapter。describe 只读能力元数据，不打开设备、不加载 DLL。注册统一来自 devices/catalog.py；已迁移型号的 Profile、协议、编码器、范围及文档留在独立包，公共层仅复用通用会话与传输。非 SCPI 型号通过适配器工厂、能力描述和只读发现入口接入，扫描不启动服务。扩展约束见[模块维护规范](../architecture/device-modules.md)。
 
-AFG31252 使用 AFG31000 手册；ZNB3004 使用 ZNB3000 手册。DS1202Z 不自动变成 DS1202Z-E；PSW160 不推定厂家/后缀。53100A 是 Microchip 候选，须现场确认后连接 TSERVE。未知型号只保留库存元数据，UnknownDeviceAdapter 拒绝控制和采集。
+AFG31252 使用 AFG31000 手册；ZNB3004 使用 ZNB3000 手册。DS1202Z 不自动变成 DS1202Z-E；PSW160 不推定厂家/后缀。Microchip 53100A 使用独立 TSERVE 模块，本机连接时实际读回 USB 身份描述符，来源独立标记；系统枚举缓存、铭牌输入和可修改服务标题不替代实际读回，服务配置与测量验收分开。未知型号只保留库存元数据，UnknownDeviceAdapter 拒绝控制和采集。
 
 模拟设备使用独立 SimulatedInstrument；待定温控、负载、泵浦、光谱和光功率类别提供模拟参数，不注册为真实设备。
 
@@ -56,6 +56,8 @@ success 表示本次传输/设备响应通过相应检查；无读回能力只�
 ## 采集与任务
 
 SessionManager.submit 返回 Future。start_acquisition 在同一 worker 上重复采集并导出批次，stop_acquisition 设置停止事件，当前 I/O 返回后停止。subscribe 接收连接、任务、结果、测量和错误事件。
+
+有限任务由适配器声明 `recorded_run_kinds`，提供 `validate_recorded_run(request)` 和 `run_acquisition(request, stop)`；公共会话复用同一 worker、有界逐帧保存与收尾。`AcquisitionRequest.duration` 和 `sample_rate` 分别为秒与 samples/s，型号负责范围和结束条件，不能另传 count 或抽帧保存间隔。自然结束、主动停止和异常均释放任务；硬件停止失败报告未知状态，仍排空已提交数据，后台 CSV 不延长参数锁。未支持有限任务的适配器拒绝这些字段，旧请求保持原行为。
 
 GUI 的纯监测使用独立 MonitoringService，避免沿用 CLI start_acquisition 的默认落盘语义：
 
@@ -85,7 +87,7 @@ SessionManager 独占设备/别名租约。扫描、连接共享原子检查；�
 
 1. 先取得准确型号与厂家命令/API 依据；补型号卡片和版本。
 2. 复用 Parameter/Capability/Measurement，注册真实支持的操作，注明选件及作用域。
-3. 将型号差异写入所属类别模块；SDK 独立模块，延迟加载。
+3. 将型号协议和差异写入独立型号包，仅通过设备目录注册；SDK 延迟加载。
 4. 增加按型号归档的协议夹具、异常路径和有效采集测试；测试不能打开默认硬件。
 5. 运行 Ruff、mypy、pytest，重新生成能力矩阵与卡片；实机报告另行验收。
 

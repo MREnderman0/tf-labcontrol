@@ -31,3 +31,17 @@ def test_enum_and_readback_quality():
     assert not usable_reading(
         ParameterReading("output", 1, 0, "instrument", quality=Quality.STALE), {"value": Parameter("boolean")}
     )
+
+
+def test_optional_auto_values_and_service_readback_still_reject_invalid_numbers():
+    parameters = {"automatic": Parameter("boolean"), "value": Parameter(required=False)}
+    assert usable_reading(
+        ParameterReading("frequency", 1, {"automatic": True, "value": None}, "service_readback"), parameters
+    )
+    assert not usable_reading(
+        ParameterReading("frequency", 1, {"automatic": True, "value": float("nan")}, "service_readback"),
+        parameters,
+    )
+    assert not usable_reading(
+        ParameterReading("frequency", 1, {"value": None}, "service_readback"), parameters
+    )

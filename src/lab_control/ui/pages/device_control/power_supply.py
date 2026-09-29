@@ -29,10 +29,13 @@ from lab_control.ui.widgets.device_selector import DeviceSelector
 
 
 class PowerOutput(QWidget):
-    def __init__(self, controller, device_id: str, operation: str, channel: int, parent=None):
+    def __init__(
+        self, controller, device_id: str, operation: str, channel: int, parent=None, *, allow_cached=False
+    ):
         super().__init__(parent)
         self.controller, self.device_id = controller, device_id
         self.operation, self.channel = operation, channel
+        self.allow_cached = allow_cached
         self.value: bool | None = None
         self.busy = False
         row = QHBoxLayout(self)
@@ -42,7 +45,8 @@ class PowerOutput(QWidget):
         self.state.setWordWrap(True)
         self.button = QPushButton("输出未知", self)
         self.button.setObjectName("powerOutputButton")
-        self.button.setFixedSize(112, 36)
+        self.button.setProperty("buttonSize", "panel")
+        self.button.setFixedWidth(112)
         self.button.clicked.connect(self.toggle)
         row.addWidget(self.state)
         row.addWidget(self.button)
@@ -91,7 +95,7 @@ class PowerOutput(QWidget):
                 cap
                 and cap.available
                 and cap.writable
-                and health == "正常"
+                and (health == "正常" or (self.allow_cached and health == "同步已暂停"))
                 and self.value is not None
                 and not self.busy
                 and not state.get("controlPending")
@@ -133,14 +137,12 @@ class PowerOutput(QWidget):
         self.busy = True
         self.refresh()
         try:
-            self.controller.apply(
-                self.device_id,
-                DeviceCommand(self.operation, {"value": target}, self.channel, True),
-                self.completed,
-                self.failed,
-            )
+            self.submit(DeviceCommand(self.operation, {"value": target}, self.channel, True))
         except Exception as exc:
             self.failed(exc)
+
+    def submit(self, command: DeviceCommand) -> None:
+        self.controller.apply(self.device_id, command, self.completed, self.failed)
 
     def completed(self, result) -> None:
         if not shiboken6.isValid(self):
@@ -201,7 +203,7 @@ class PowerChannel(ParameterGroup):
         self.output = PowerOutput(controller, device_id, "output", channel, self) if channel_output else None
         if self.output:
             self.footer_layout.addWidget(self.output, 0, 0)
-        self.apply_button.setFixedSize(110, 36)
+        self.apply_button.setProperty("buttonSize", "panel")
         self.reflow_fields()
         self.refresh()
 

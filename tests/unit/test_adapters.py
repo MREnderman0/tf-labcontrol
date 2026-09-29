@@ -44,19 +44,23 @@ def test_parameter_reading_uses_verified_query_and_write_only_cache():
 @pytest.mark.parametrize("profile", PROFILES.values(), ids=PROFILES.keys())
 def test_exact_identity_and_capability_sources(profile):
     raw = (profile.manufacturer[0] + "," + profile.models[0] + ",SER123,FW1").encode()
+    fixture = {}
     definition = DEVICE_DEFINITIONS.get(profile.adapter_id)
     if definition:
         fixture = json.loads((definition.root / "tests/fixtures/control.json").read_text(encoding="utf-8"))
         raw = fixture.get("identity_reply", raw.decode()).encode()
     if profile.identity_query == "ID?":
         raw = b"3458A"
-    device, transport = adapter(profile.adapter_id, [(profile.identity_query, raw)])
+    exchanges = [
+        (command, reply.encode()) for command, reply in fixture.get("identity_exchanges", [])
+    ] or [(profile.identity_query, raw)]
+    device, transport = adapter(profile.adapter_id, exchanges)
     for payload in reversed(device.connection_commands):
         transport.exchanges.appendleft((payload, b""))
     identity = device.identify()
     assert match(identity) == profile.adapter_id
     assert all(cap.source and cap.section for cap in device.capabilities().operations)
-    assert transport.history == [*device.connection_commands, profile.identity_query]
+    assert transport.history == [*device.connection_commands, *(command for command, _ in exchanges)]
     assert not any(command in transport.history for command in ("*RST", "OUTP ON"))
 
 

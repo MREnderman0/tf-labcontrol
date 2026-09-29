@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from lab_control.application.config import ConnectionConfig
-from lab_control.discovery.service import DiscoveryCandidate
+from lab_control.discovery.service import DiscoveryCandidate, Inventory
 from lab_control.domain.instruments import DeviceError, ValidationError
 from lab_control.transport.visa import VisaRuntime
 
@@ -106,6 +106,84 @@ def interface_networks(interfaces: tuple[str, ...]) -> tuple[str, ...]:
     )
 
 
+def discovery_networks(
+    settings: LanDiscoverySettings,
+) -> tuple[tuple[ipaddress.IPv4Network, ...], tuple[ipaddress.IPv4Network, ...]]:
+    attached = ethernet_networks() if settings.auto_ethernet else interface_networks(settings.interfaces)
+    use_attached = settings.auto_ethernet or bool(settings.interfaces)
+    networks = tuple(
+        ipaddress.IPv4Network(value, strict=False)
+        for value in (attached if use_attached else settings.networks)
+    )
+    restriction = tuple(ipaddress.IPv4Network(value, strict=False) for value in settings.networks)
+    if not networks and not settings.auto_ethernet:
+        raise DeviceError("Selected lab Ethernet interface has no usable IPv4 address", "network_unavailable")
+    return networks, restriction
+
+
+class RememberedLanDiscoveryProvider:
+    """Recheck a verified primary address even when its service does not advertise.
+
+    A saved address is a query target, never fresh presence evidence. Only the
+    common scanner's identity query can make it current; no historical aliases
+    or speculative socket ports are added.
+    """
+
+    name = "remembered_lan"
+
+    def __init__(self, inventory: Inventory, settings: LanDiscoverySettings):
+        self.inventory, self.settings = inventory, settings
+
+    def enumerate(self) -> tuple[DiscoveryCandidate, ...]:
+        if not self.settings.enabled:
+            return ()
+        networks, restriction = discovery_networks(self.settings)
+        if not networks:
+            return ()
+        found = []
+        for record in self.inventory.all():
+            config = record.get("config", {})
+            resource = config.get("resource", "")
+            entry = record.get("candidates", {}).get(resource, {})
+            identity_key = record.get("identityKey")
+            if (
+                not identity_key
+                or record.get("identityConflict")
+                or record.get("discoveryState") == "conflict"
+                or entry.get("retired")
+                or entry.get("verifiedIdentityKey") != identity_key
+                or config.get("transport") != "visa"
+                or not config.get("adapter")
+                or not resource.upper().startswith("TCPIP")
+                or not resource.upper().endswith(("::INSTR", "::SOCKET"))
+            ):
+                continue
+            try:
+                addresses = {
+                    ipaddress.IPv4Address(row[4][0])
+                    for row in socket.getaddrinfo(resource.split("::")[1], None, socket.AF_INET)
+                }
+            except (OSError, ValueError, IndexError):
+                continue
+            if not addresses or not all(
+                any(address in net for net in networks)
+                and (not restriction or any(address in net for net in restriction))
+                for address in addresses
+            ):
+                continue
+            # DHCP may now assign this address to another instrument. Carry no
+            # prior model, serial, limits or aliases into the identity probe.
+            found.append(
+                DiscoveryCandidate(
+                    ConnectionConfig(resource, timeout=config.get("timeout", self.settings.timeout)),
+                    self.name,
+                    {"saved_primary": True, "scope": [str(net) for net in networks]},
+                    safe_scpi=True,
+                )
+            )
+        return tuple(found)
+
+
 class LanDiscoveryProvider:
     name = "lan"
 
@@ -115,24 +193,9 @@ class LanDiscoveryProvider:
     def enumerate(self) -> tuple[DiscoveryCandidate, ...]:
         if not self.settings.enabled:
             return ()
-        attached = (
-            ethernet_networks()
-            if self.settings.auto_ethernet
-            else interface_networks(self.settings.interfaces)
-        )
-        use_attached = self.settings.auto_ethernet or bool(self.settings.interfaces)
-        networks = tuple(
-            ipaddress.IPv4Network(value, strict=False)
-            for value in (attached if use_attached else self.settings.networks)
-        )
-        restriction = tuple(ipaddress.IPv4Network(value, strict=False) for value in self.settings.networks)
+        networks, restriction = discovery_networks(self.settings)
         if not networks:
-            if self.settings.auto_ethernet:
-                # An unplugged NIC is an ordinary empty discovery, not a VISA driver error.
-                return ()
-            raise DeviceError(
-                "Selected lab Ethernet interface has no usable IPv4 address", "network_unavailable"
-            )
+            return ()
         found: dict[str, DiscoveryCandidate] = {}
         for resource in self.runtime.discover_lan(self.settings.timeout):
             parts = resource.split("::")

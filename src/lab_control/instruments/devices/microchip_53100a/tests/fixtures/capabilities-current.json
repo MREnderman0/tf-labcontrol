@@ -1,0 +1,293 @@
+{
+  "capabilities": {
+    "category": "phase_noise_analyzer",
+    "channels": [
+      1
+    ],
+    "operations": [
+      {
+        "name": "sample_rate",
+        "parameters": {
+          "value": {
+            "kind": "integer",
+            "unit": "samples/s",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "1",
+              "10",
+              "100",
+              "1000"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+        "section": "8.3 set/show phaserate",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "timed_phase",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+        "section": "8.2 /format:P /timestamp:s /phasedec:2",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": false,
+        "reason": "Requires managed USB TSERVE with verified timestamped phase format"
+      },
+      {
+        "name": "start",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+        "section": "8.3 start",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "stop",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+        "section": "8.3 stop",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "input_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 1000000.0,
+            "maximum": 200000000.0,
+            "choices": [],
+            "required": false,
+            "range_source": "model",
+            "resolution": null
+          },
+          "automatic": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": false,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+        "section": "8.3 set/show inputfreq",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "reference_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 1000000.0,
+            "maximum": 200000000.0,
+            "choices": [],
+            "required": false,
+            "range_source": "model",
+            "resolution": null
+          },
+          "automatic": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": false,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+        "section": "8.3 set/show referencefreq",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "phase_noise",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+        "section": "8.3 show spectrum",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "am_noise",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+        "section": "8.3 show amspectrum",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "stability",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+        "section": "8.3 show adev",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "data_stream",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+        "section": "8.2 /format /timestamp /phaserate /phasedec",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": false,
+        "reason": "Requires explicit data_resource, P/F format, timestamp off and matching stream_interval"
+      }
+    ]
+  },
+  "profile": {
+    "adapter_id": "microchip.53100a",
+    "manufacturer": [
+      "Microchip",
+      "PhaseStation"
+    ],
+    "models": [
+      "53100A"
+    ],
+    "category": "phase_noise_analyzer",
+    "channels": [
+      1
+    ],
+    "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
+    "revision": "DS50002991G; TimeLab 1.780A release notes",
+    "acquisition": "phase_noise/am_noise/stability/streaming/timed_phase",
+    "identity_query": "show serial",
+    "error_query": ""
+  },
+  "commands": {
+    "sample_rate": {
+      "writes": [],
+      "query": "show phaserate",
+      "select": [],
+      "compare": true
+    },
+    "timed_phase": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "start": {
+      "writes": [
+        "start"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "stop": {
+      "writes": [
+        "stop"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "input_frequency": {
+      "writes": [],
+      "query": "show inputfreq",
+      "select": [],
+      "compare": true
+    },
+    "reference_frequency": {
+      "writes": [],
+      "query": "show referencefreq",
+      "select": [],
+      "compare": true
+    },
+    "phase_noise": {
+      "writes": [],
+      "query": "show spectrum",
+      "select": [],
+      "compare": true
+    },
+    "am_noise": {
+      "writes": [],
+      "query": "show amspectrum",
+      "select": [],
+      "compare": true
+    },
+    "stability": {
+      "writes": [],
+      "query": "show adev",
+      "select": [],
+      "compare": true
+    },
+    "data_stream": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": true
+    }
+  }
+}

@@ -53,6 +53,8 @@ from lab_control.ui.pages.device_control.signal_source import SignalSourcePage
 from lab_control.ui.pages.monitoring.dashboard import MonitoringDashboard
 from lab_control.ui.pages.monitoring.oscilloscope import OscilloscopeMonitoringPage
 from lab_control.ui.pages.monitoring.page import MonitoringPage
+from lab_control.ui.pages.monitoring.phase_noise import PhaseNoiseMonitoringPage
+from lab_control.ui.pages.monitoring.power import PowerMonitoringPage
 from lab_control.ui.pages.monitoring.spectrum import SpectrumMonitoringPage
 from lab_control.ui.widgets.category_cards import CategoryCard, CategoryCardGrid
 from lab_control.ui.widgets.device_pool import DeviceDetails, DevicePool, DeviceRowDelegate
@@ -218,7 +220,7 @@ class RealWindow(QMainWindow):
         header_heading.addWidget(self.breadcrumb)
         top.addLayout(header_heading)
         top.addStretch()
-        self.scan_button.setFixedHeight(30)
+        self.scan_button.setProperty("buttonSize", "compact")
         top.addWidget(self.scan_button)
         self.clock_label = QLabel()
         self.clock_label.setObjectName("commandEyebrow")
@@ -323,11 +325,18 @@ class RealWindow(QMainWindow):
 
     def focus_card(self, spec: dict) -> None:
         page = self.stack.currentWidget()
-        if isinstance(page, (MonitoringPage, SpectrumMonitoringPage, OscilloscopeMonitoringPage)):
+        if isinstance(
+            page, (MonitoringPage, SpectrumMonitoringPage, OscilloscopeMonitoringPage, PowerMonitoringPage)
+        ):
             page.focus_card(spec)
 
     def navigate(self, module: str, category: str = "", device_id: str = "") -> None:
-        if module == "设备管理" and category in {"spectrum_analyzer", "oscilloscope"}:
+        if module == "设备管理" and category in {
+            "spectrum_analyzer",
+            "oscilloscope",
+            "power_supply",
+            "phase_noise_analyzer",
+        }:
             module = "实时监测"
         if module not in self.nav_buttons:
             return
@@ -343,7 +352,12 @@ class RealWindow(QMainWindow):
             self.submenu.addTab("总览")
             self.submenu.setTabData(0, "")
             for value, label in CATEGORY_LABELS.items():
-                if module == "设备管理" and value in {"spectrum_analyzer", "oscilloscope"}:
+                if module == "设备管理" and value in {
+                    "spectrum_analyzer",
+                    "oscilloscope",
+                    "power_supply",
+                    "phase_noise_analyzer",
+                }:
                     continue
                 index = self.submenu.addTab(label)
                 self.submenu.setTabData(index, value)
@@ -383,6 +397,10 @@ class RealWindow(QMainWindow):
                         if category == "spectrum_analyzer"
                         else OscilloscopeMonitoringPage(self.controller, self.dashboard.add)
                         if category == "oscilloscope"
+                        else PowerMonitoringPage(self.controller, self.dashboard.add)
+                        if category == "power_supply"
+                        else PhaseNoiseMonitoringPage(self.controller)
+                        if category == "phase_noise_analyzer"
                         else MonitoringPage(self.controller, category, self.dashboard.add)
                     )
                 else:
@@ -411,6 +429,8 @@ class RealWindow(QMainWindow):
                 MonitoringPage,
                 SpectrumMonitoringPage,
                 OscilloscopeMonitoringPage,
+                PowerMonitoringPage,
+                PhaseNoiseMonitoringPage,
                 SignalSourcePage,
                 PowerSupplyPage,
             ),
@@ -574,7 +594,7 @@ class RealWindow(QMainWindow):
             self.tree.header().setSectionResizeMode(column, QHeaderView.ResizeMode.Interactive)
             self.tree.setColumnWidth(column, width)
         self.tree.header().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-        # The delegate presents name, model and state in one selectable device card.
+        # The delegate presents name, model, state and slot in one selectable device card.
         for column in (1, 2, 3, 4, 5):
             self.tree.setColumnHidden(column, True)
         self.tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
@@ -597,7 +617,7 @@ class RealWindow(QMainWindow):
         self.pool_more = QPushButton("更多  ···")
         self.pool_more.setObjectName("poolMore")
         self.pool_more.setProperty("poolAction", True)
-        self.pool_more.setFixedHeight(36)
+        self.pool_more.setProperty("buttonSize", "panel")
         self.pool_menu = WorkspaceMenu(self.pool_more)
         self.pool_menu.setMinimumWidth(196)
         self.pool_more.setMenu(self.pool_menu)
@@ -620,7 +640,7 @@ class RealWindow(QMainWindow):
             if key in {"connect", "disconnect", "stop", "slot", "manage", "monitor"}:
                 control = QPushButton(title)
                 control.setProperty("poolAction", True)
-                control.setFixedHeight(36)
+                control.setProperty("buttonSize", "panel")
                 control.clicked.connect(lambda _checked=False, key=key: self.action(key))
             else:
                 control = self.pool_menu.addAction(title)
@@ -837,6 +857,7 @@ class RealWindow(QMainWindow):
                 ),
                 slot_label(record.get("slots", {}).get(self.mode.currentData(), "")),
             ]
+            badges_changed = row.text(3) != texts[3] or row.text(4) != texts[4]
             for index, text in enumerate(texts):
                 if row.text(index) != text:
                     row.setText(index, text)
@@ -845,7 +866,17 @@ class RealWindow(QMainWindow):
             row.setForeground(3, QColor(colors.get(connection, fallback_color)))
             task = display_task(state)
             row.setToolTip(3, texts[3] + (" / " + task if task else ""))
-            row.setToolTip(0, texts[0] + "\n" + record["identity"].get("serial", ""))
+            row.setToolTip(
+                0,
+                texts[0]
+                + "\n"
+                + record["identity"].get("serial", "")
+                + f"\n连接状态：{row.toolTip(3).removeprefix('● ')}"
+                + f"\n工作模式：{self.mode.currentText()}\n功能槽位：{texts[4]}",
+            )
+            if badges_changed:
+                # Both badges come from hidden columns; invalidate the visible card too.
+                self.tree.viewport().update(self.tree.visualItemRect(row))
             show = not self.active_category or category_for(record) == self.active_category
             if presence_scope == "current":
                 show &= device_id in current_records
@@ -896,7 +927,11 @@ class RealWindow(QMainWindow):
             if key == "manage":
                 button.setText("设备控制")
                 button.setVisible(
-                    not bool(record and instrument_category(record) in {"spectrum_analyzer", "oscilloscope"})
+                    not bool(
+                        record
+                        and instrument_category(record)
+                        in {"spectrum_analyzer", "oscilloscope", "power_supply"}
+                    )
                 )
             enabled = bool(record)
             if key == "connect":
@@ -1049,6 +1084,16 @@ class RealWindow(QMainWindow):
         device_id = self.selected_id
         try:
             if key == "connect":
+                config = config_from_record(self.records[device_id])
+                if config.usb_instance_id and not config.expected_serial:
+                    serial, accepted = QInputDialog.getText(
+                        self, "核对设备序列号", "请输入设备铭牌序列号；连接后将与设备实际读回再次核对"
+                    )
+                    if not accepted or not serial.strip():
+                        return
+                    from dataclasses import replace
+
+                    self.runtime.add(replace(config, expected_serial=serial.strip()))
                 self.bridge.watch(self.runtime.connect(device_id), "connect")
             elif key in {"disconnect", "reconnect"}:
 

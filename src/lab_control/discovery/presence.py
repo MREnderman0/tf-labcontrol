@@ -38,7 +38,7 @@ def presence_label(record: dict[str, Any], session: dict[str, Any] | None = None
 def local_enumeration(source: str, resource: str) -> bool:
     # VISA can retain configured LAN/GPIB addresses even with no responding instrument.
     return (
-        source in {"serial", "lan"}
+        source in {"serial", "lan", "usb_pnp"}
         or source.startswith("sdk:")
         or (source == "visa" and resource.strip().upper().startswith(("USB", "ASRL", "PXI")))
     )

@@ -383,8 +383,12 @@ class Exercises:
 
 
 def verify_saved_samples(folder):
+    from lab_control.storage.analysis import verify_analysis
+    from lab_control.storage.layout import manifest
     from lab_control.storage.recording import read_frames
 
+    if manifest(folder).get("layout_version", 1) == 2:
+        return verify_analysis(folder)
     frames = samples = 0
     for path in sorted(folder.glob("segment-*.sqlite3")):
         with path.with_suffix(".csv").open(encoding="utf-8", newline="") as stream:

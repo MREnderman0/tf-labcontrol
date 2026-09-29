@@ -53,7 +53,8 @@ def run(destination: Path) -> int:
             paths = recording.finish().result(30)
             assert recording.snapshot()["converted"] == 1, recording.snapshot()
             assert len(list(read_frames(Path(paths[0])))) == 1
-            assert Path(paths[0]).with_suffix(".csv").is_file()
+            assert (recording.folder / "数据_00001.csv").is_file()
+            assert (recording.raw_folder / "recording.json").is_file()
             result["recording"] = {"committed": 1, "converted": 1}
             from PySide6.QtGui import QFont
             from PySide6.QtWidgets import QApplication

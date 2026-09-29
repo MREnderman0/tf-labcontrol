@@ -155,16 +155,30 @@ def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
                     assert names == {c.name for c in caps.operations if c.name in common}
                     assert not page.advanced_groups and page.tabs.count() == 0
                 elif category == "power_supply":
-                    assert set(page.panels) == set(caps.channels)
-                    assert all(set(panel.editors) == {"voltage", "current"} for panel in page.panels.values())
+                    assert set(page.controls.panels) == set(caps.channels)
+                    assert all(
+                        set(panel.editors) == {"voltage", "current"}
+                        for panel in page.controls.panels.values()
+                    )
                 else:
                     assert set(page.form.editors) == {c.name for c in caps.operations}
             window.navigate("实时监测", category)
             monitor = window.stack.currentWidget()
             from lab_control.ui.pages.monitoring.oscilloscope import OscilloscopeMonitoringPage
+            from lab_control.ui.pages.monitoring.phase_noise import PhaseNoiseMonitoringPage
+            from lab_control.ui.pages.monitoring.power import PowerMonitoringPage
             from lab_control.ui.pages.monitoring.spectrum import SpectrumMonitoringPage
 
-            assert isinstance(monitor, (MonitoringPage, SpectrumMonitoringPage, OscilloscopeMonitoringPage))
+            assert isinstance(
+                monitor,
+                (
+                    MonitoringPage,
+                    SpectrumMonitoringPage,
+                    OscilloscopeMonitoringPage,
+                    PowerMonitoringPage,
+                    PhaseNoiseMonitoringPage,
+                ),
+            )
             if category == "spectrum_analyzer":
                 assert set(monitor.controls.editors) == {
                     "start_frequency",
@@ -184,6 +198,10 @@ def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
                     window.controller.capabilities(monitor.device_id).channels
                 )
                 assert not hasattr(monitor, "form")
+            elif category == "phase_noise_analyzer":
+                assert not hasattr(monitor, "form")
+                assert monitor.duration.value() == 60
+                assert not runtime.monitoring.snapshots()
             elif category in MEASUREMENT_CATEGORIES:
                 caps = window.controller.capabilities(monitor.selector.device_id)
                 assert set(monitor.form.editors) == {c.name for c in caps.operations}

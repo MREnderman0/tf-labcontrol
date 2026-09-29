@@ -286,19 +286,30 @@ class DeviceRowDelegate(QStyledItemDelegate):
         status = str(status_index.data() or "").removeprefix("● ")
         foreground = status_index.data(Qt.ItemDataRole.ForegroundRole)
         color = foreground.color() if foreground else QColor("#97a3a6")
-        pill = QRect(
-            rect.x() + 12,
-            rect.y() + 53,
-            min(rect.width() - 24, painter.fontMetrics().horizontalAdvance(status) + 18),
-            22,
-        )
-        fill = QColor(color)
-        fill.setAlpha(22)
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(fill)
-        painter.drawRoundedRect(pill, 4, 4)
-        painter.setPen(color)
-        painter.drawText(pill, Qt.AlignmentFlag.AlignCenter, status)
+        badges = [(status, color, 22)]
+        slot = str(index.siblingAtColumn(4).data() or "")
+        if slot and slot != "未绑定":
+            badges.append((slot, QColor("#efbd84"), 35))
+        left, available = rect.x() + 12, max(0, rect.width() - 24)
+        metrics = painter.fontMetrics()
+        for text, color, alpha in badges:
+            width = min(available, metrics.horizontalAdvance(text) + 18)
+            if width <= 18:
+                break
+            pill = QRect(left, rect.y() + 53, width, 22)
+            fill = QColor(color)
+            fill.setAlpha(alpha)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(fill)
+            painter.drawRoundedRect(pill, 4, 4)
+            painter.setPen(color)
+            painter.drawText(
+                pill.adjusted(9, 0, -9, 0),
+                Qt.AlignmentFlag.AlignCenter,
+                metrics.elidedText(text, Qt.TextElideMode.ElideRight, width - 18),
+            )
+            left += width + 6
+            available -= width + 6
         if option.state & QStyle.StateFlag.State_HasFocus:
             painter.setPen(QColor("#e3a252"))
             painter.drawLine(rect.left() + 1, rect.top() + 15, rect.left() + 1, rect.bottom() - 15)

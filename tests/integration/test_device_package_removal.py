@@ -36,7 +36,16 @@ def test_removed_package_keeps_old_inventory_cli_scan_and_ui_usable(
         records = {record["id"]: record for record in runtime.inventory.all()}
         assert old in records and category_for(records[old]) == "unknown"
         category = registry.describe(configs[1]).category
-        assert category_for(records[other]) == category
+        # The approved cards group several instrument categories into shared pools.
+        card_category = {
+            "optical_spectrometer": "optical_power_meter",
+            "multimeter": "measurement_analyzers",
+            "network_analyzer": "measurement_analyzers",
+            "phase_noise_analyzer": "measurement_analyzers",
+            "electronic_load": "load_drivers",
+            "pump_driver": "load_drivers",
+        }.get(category, category)
+        assert category_for(records[other]) == card_category
         window = RealWindow(runtime)
         qtbot.addWidget(window)
         window.show()

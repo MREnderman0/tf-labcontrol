@@ -224,8 +224,19 @@ class AcquisitionRequest:
     consistency: str = "full"
     context_id: str = ""
     waveform_extent: str = "default"
+    duration: float | None = None
+    sample_rate: float | None = None
 
     def validate(self) -> None:
+        for name in ("duration", "sample_rate"):
+            value = getattr(self, name)
+            if value is not None and (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+                or value <= 0
+            ):
+                raise ValidationError(f"{name} must be finite and positive")
         if self.waveform_extent not in {"default", "screen", "memory"}:
             raise ValidationError("waveform_extent must be default, screen or memory")
         if self.waveform_extent != "default" and self.kind != "waveform":
@@ -269,6 +280,7 @@ class MeasurementBatch:
     validation: str = "legacy"
     settings_timestamps: dict[str, str] = field(default_factory=dict)
     performance: dict[str, Any] = field(default_factory=dict)
+    timing: dict[str, Any] = field(default_factory=dict)
 
 
 class InstrumentAdapter(Protocol):

@@ -1,0 +1,9 @@
+{
+  "fixture_origin": "Synthetic protocol example from manufacturer B.11; not a hardware record",
+  "adapter": "ceyear.6362d",
+  "identity_reply": "Ceyear Technologies,6362D,TEST-6362D,2.1.0",
+  "operation": "sensitivity",
+  "channel": 1,
+  "parameters": {"value": "MID"},
+  "exchanges": [[":INITIATE:SMODE?", "1"], [":SENSE:SENSE MID", ""], [":SENSE:SENSE?", "2"]]
+}

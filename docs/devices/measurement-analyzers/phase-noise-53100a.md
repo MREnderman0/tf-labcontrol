@@ -1,62 +1,100 @@
-<!-- Generated from scripts/generate_device_docs.py legacy metadata. -->
+<!-- Generated from an independent device package; edit its README.md. -->
 
-# 53100A（Microchip 候选）
+维护源：[包内 README](../../../src/lab_control/instruments/devices/microchip_53100a/README.md)。修改维护源后重新生成。
 
-维护源：[旧型号文档元数据](../../../scripts/generate_device_docs.py)。本型号尚未迁入独立包，能力来自注册表；不要直接修改本页。
+# Microchip 53100A
 
-## 1. 型号与可信度
+注册标识 `microchip.53100a`；逻辑测量通道 1。本包是型号协议、范围、测试和文档的唯一维护源。
 
-注册 ID：`microchip.53100a`。型号精确匹配；软件实现与具体资产的实测结果分别记录。附件简写和身份别名见本卡片说明。软件连接成功不等于验收通过。
+## 能力与协议
 
-## 2. 电脑物理连接
+USB 使用厂家 TimeLab 驱动，项目通过 TSERVE64 访问；不发送 VISA/SCPI 命令。支持身份与状态、输入/参考标称频率和相位采样率读写、定时相位采集、相噪、重叠 ADEV 与 MDEV。旧接口仍支持显式开始/停止、AM 噪声、服务 ADEV 和外部 P/F 数据流。
 
-仪器由已配置 TimeLab/TSERVE 服务控制；电脑连接其命令端口 1299 / 数据端口 1298。接口和选件以设备背板、固件与现场盘点为准。
+依据：[Microchip DS50002991G](https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf) §1.5、§8；[TimeLab 正式版说明](https://www.miles.io/timelab/readme.htm) 1.730 的 `show serial`、1.780A 的空闲状态修复。`show message` 会清除消息，因此常规状态与只读入口不使用该查询。
 
-## 3. Windows 前置条件
+外部服务的 `show serial` 必须返回真实序列号并匹配预期目标。本机托管服务允许独立读回所选 USB 的标准身份描述符，来源标为 `usb_descriptor`；不以配置值、系统枚举缓存或可修改的服务标题证明身份。服务版本独立保存；未能解析硬件固件时保持未知。
 
-厂家 TimeLab/TSERVE；本应用不安装或启动服务。安装步骤见[实机测试指南](../../testing/hardware-testing.md)；DLL 放在厂商安装位置，通过绝对路径加载，不复制进源码。
+## 连接与驱动
 
-## 4. 资源与枚举
+Windows 10/11 x64；组件 ID `tserve`，详见[组件台账](../../../deployment/components.json)及[材料与安装依据](../../../src/lab_control/instruments/devices/microchip_53100a/deployment.md)。材料为 Miles Design 官方 TimeLab 1.780A 正式版，下载缓存及安装包签名/哈希已登记；安装结果、驱动签名及设备条件以运行目录为准。分发许可和干净目标电脑验收仍须核实，不将开发机结果视为发布通过。
 
-连接模板见[config/examples](../../../config/examples/README.md)。VISA 使用扫描返回的完整资源；串口填写确认的 COM/波特率；Pico 使用 `PICO::序列号`；PM100D 使用 SDK 枚举的资源；53100A 手工填写已部署服务地址。扫描只枚举 SDK，不打开 SDK 仪器。
+扫描用系统 PnP 枚举 `VID_16D0&PID_05B8`，缺驱动仍显示候选；不打开设备、不启动服务。首次连接填写核实的仪器序列号，连接配置保存 `usb_instance_id`；`server_path` 可覆盖标准目录的 TSERVE64 绝对路径。程序取得设备锁后启动独占子进程，以 `/serial` 绑定目标并校验监听 PID，不添加 `/start`。只清理本次创建的服务，外部程序占用不强制解除。
 
-## 5. 官方命令/API 依据
+旧 `transport="tserve"`、`resource="tcp://host:1299"` 配置继续连接已有服务，要求 `identity_confirmed=true` 确认控制权；断开外部服务不会发送 shutdown。托管模式分配两个不同的临时 TCP 端口，分别核对命令和数据监听 PID，客户端仅连接 127.0.0.1；不修改网卡或防火墙。安装需要的管理员操作独立进行，不自动重启或降级共享驱动。
 
-[厂家资料](https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf)；版本：SDK headers/examples or 53100A DS50002991G。逐操作命令定位、参数和模板见[自动生成能力清单](../../generated/capability-matrix.json)。测试样本是按手册编写的夹具，尚非实机抓包。
+## 定时采集与结果
 
-## 6. 当前统一能力
+正式入口“实时监测 → 相噪仪”（设备管理同类别也跳转此页）提供采样率、时长、输入/参考自动或手动频率、开始/停止、进度和数据目录。开始按钮授权一次测量，切页或连接不会启动；其他高级项目暂不加入页面。界面上方为相噪，下方共轴显示 ADEV/MDEV，均保留结束结果。
 
-逻辑类别 `phase_noise_analyzer`；通道 `(1,)`。`None` 表示该侧未在通用参数层给出数值边界；适配器仍执行关联参数与通道校验。未列出的操作返回 `unsupported`。
+采样率可选 **1、10、100、1000 samples/s**，开始前 `set phaserate` 后以 `show phaserate` 实际核对；频率设置先应用并读回。时长 **10～86400 s**，且 `采样率 × 时长 + 1 ≤ 4,000,000`。时长按首末有效样本时间差定义，不含初始化；初始化最多等待首点 30 秒。采集时不能修改设置。正常测量设置保留用户所选值，不自动恢复为测试前配置。
+
+托管启动固定 `/format:P /timestamp:s /phasedec:2 /sep:32 /ch:3-1 /notify /smooth:0`，不加 `/start`。相位单位秒、单路 J3−J1、时间轴为 TSERVE 相位样本计数对应秒数，既不是主机收包时间，也不是 UTC 硬件时标。默认 decimation=2 时有效采样率即所选 phaserate。采样率控制低频相位流及稳定度最小 τ，不限制仪器相噪频谱的偏移频率上限。`show phasediff` 只有每秒一点，因此不用于这条采集链路。
+
+每次使用一个持久数据连接，逐段检查时间戳间隔；缺点、重复、通知告警、非有限值和格式错误立即中止，不补零/插值/自动重连。首次有效段再次用活动采集 `show serial` 核对硬件。逐段核对状态和配置；每五个采样秒及最终段读取 `show spectrum`，接受官方表头，空结果标为未就绪，不制造曲线。频谱未平滑、不移除杂散。相噪频谱是仪器截至查询时的累计结果，其时间窗口不等同于主机的相位样本裁剪窗口。
+
+采满 N 点后停止 TSERVE 并核对 Ready，再输出计算结果。提前停止保留实际取得的连续片段，明确标为部分时段。停止不确认时报告最终仪器状态未知，不发送第二次 stop/start。通信超时不重放设置；停止失败与原错误都保留异常链。
+
+`stability.py` 独立实现 [NIST SP 1065](https://tf.nist.gov/general/pdf/2220.pdf) 的相位数据重叠 Allan/modified Allan 方差公式，参考 [AllanTools 统计量说明](https://allantools.readthedocs.io/en/stable/functions.html)的接口解释，不引入或复制其代码。τ 使用 1、2、4、8…个采样间隔，每点至少两个有效求和项，保存项数；不去趋势、不估计置信区间。数据不足时不生成该曲线；零偏差保留在文件，因对数坐标不绘制零点。
+
+原始相位分段、相噪、最终 ADEV/MDEV 和配置进入公共有界保存流水线，后台生成 CSV；“打开数据目录”进入本批分析目录。失败保留已提交片段，未达时长不标完成。外部 TSERVE 未核验时间戳和流格式，因此新定时能力仅在本机托管 USB 连接开放，旧外部 API 保留。
+
+每批配置保存 `sample_rate`、`requested_duration`、实际 `samples`、`elapsed` 和 `first_timestamp`；相位坐标保留服务原时间戳，`elapsed` 为实际连续样本覆盖的时长。正常收尾结果为 `final=true`、`stopped=true`、`stop_state="Ready"`，只有达到目标点数才有 `complete=true`；提前停止为 `complete=false`，停止失败不产生成功收尾结果。相噪仅在实际查询时加入过程帧，元数据 `queried_at` 与 `phase_samples_at_query` 保存该次查询的主机 UTC 时间和相位点数；最终结果携带最近频谱时保留原查询时间，不冒充最终时刻重新测得。
+
+## 单位与限制
+
+输入/参考频率单位 Hz，范围 **1 MHz～200 MHz**，命令单位 MHz；`automatic=true` 恢复厂家 `auto` 模式。未给 `automatic` 时按手动值处理，必须提供 `value`。仅 Ready 状态允许频率修改，每次写入后 `show inputfreq/referencefreq` 实际读回；读回来源为服务配置，不是物理频率测量。
+
+开始/停止必须显式确认。传输超时关闭连接、不重发写入；恢复前重新核对实际状态。空闲、缺信号、非有限值、轴异常或不完整帧均不得产生有效测量批次。采集使用厂家确认的 ASCII TSERVE 接口；没有已验证的二进制替代格式，不猜测二进制协议。外部数据流仅支持已明确配置的 P/F 单列、无时间戳和一致采样周期。
+
+TimeLab 1.780A 的服务报告版本为 1.78，两者分别登记。空闲 `show serial` 返回无活动连接；Ready 只检查 VID/PID 存在。已验证的本机解法是在显式连接并持有资产锁时，通过 Windows 标准 GET_DESCRIPTOR 读取选定端口的厂家、型号和序列号。先比对端口驱动键及 VID/PID，再按官方随包 `timelab.cpp` 的 `USBDEVICE::serial` 规则去除序列号冒号或空格后的附加字段，与铭牌预期值比较。连接前和身份确认时分别读回；扫描仍只查 PnP。
+
+该路径允许核实 USB 设备并连接空闲的自有 TSERVE，记录 `hardware_acquisition_open=false`，不声称 TSERVE 已打开硬件采集。外部服务、描述符读取失败或目标不匹配不采用此后备方式。初期只有服务配置验证的历史批次保留原结论；最新只读批次已通过 USB 身份、兼容层连接及重连。原始 USB 请求/回包和厂商源码哈希留在运行目录。实际测量仍需另行明确接线与启动授权。
+
+## 文件与公共依赖
+
+`adapter.py`、`profile.py`、`transport.py` 维护协议；`discovery.py`、`server.py` 维护设备发现与服务生命周期；`tests/fixtures` 保留迁移前与当前契约。公共层只提供会话、设备锁、PnP 元数据、存储及非 SCPI 工厂钩子。
+
+## 测试入口与实机状态
+
+软件：`python -m pytest src/lab_control/instruments/devices/microchip_53100a/tests`。实机入口和授权范围见[测试计划](../../../src/lab_control/instruments/devices/microchip_53100a/hardware/README.md)。原始身份、地址、通信和参数状态只保存运行目录。
+
+| 功能 | 接口及条件 | 验证范围 / 状态 | 证据位置 |
+| --- | --- | --- | --- |
+| 枚举与驱动 | USB / 仅电源 | 2026-09-28：从代码 28 缺驱动恢复到代码 0；驱动 3.4.7.1 | hardware-tests 的安装与绑定批次 |
+| USB 身份、兼容层连接及重连 | USB + 本机 TSERVE | 2026-09-28 新只读批次通过；身份来自实际 USB 描述符，采集未打开 | 原始 results.json、summary.json 与 USB 应答 |
+| TSERVE 直接硬件身份、固件 | TSERVE Ready | 服务不能在空闲返回硬件序列号，固件未知 | 单列 tserve_hardware_identity 受阻 |
+| 服务连接、重连和退出 | TSERVE 1.78 / Ready | 新只读批次和新控制批次通过，正常退出自有服务 | 通信与服务进程日志 |
+| 标称频率配置 | TSERVE Ready | 新控制批次通过：两项分别设置 10 MHz、实际读回、确认另一项不变、恢复 auto；仅服务配置验证 | 通信与恢复快照 |
+| 采样率、定时采集、相噪、ADEV/MDEV | 缺 DUT / 参考信号 | 软件协议、数值算法、公共收尾与界面回归；带信号实机 not_tested | [软件报告](../../reviews/phase-workspace-review.md) |
+| AM、旧外部数据流 | 缺 DUT / 参考信号 | 保留接口；本轮实机 not_tested | 资产功能覆盖表 |
+
+## 已知限制与待测
+
+| 功能或问题 | 限制 / 原因 | 后续验证 |
+| --- | --- | --- |
+| 完整测量与性能 | 本轮只有 USB 和电源 | 明确 DUT/参考频率、电平与接法后独立补测 |
+| 托管定时测量 | 连续时间戳相位流已实现，物理信号尚未测试 | 四档采样率、连续性、定时停止、与 TimeLab/NIST 数据交叉核验 |
+| 首次身份 | 本机通过标准 USB 描述符实际读回；TSERVE 直接身份在空闲不可用 | 采集时再比对 show serial、固件和输入状态；远程服务不能借本机 USB 身份通过 |
+| 提示符边界 | TSERVE 提示符的末尾空格必须一起读取，设置命令可能返回空正文 | 已补空应答和分帧回归；原失败批次保留，恢复结论按批次查询 |
+| 范围契约 | 修正旧实现 1 Hz 下限为厂家 1 MHz；增加 auto 和查询 | 旧非法范围现在明确拒绝；迁移基线保留 |
+
+## 扩展与移除
+
+只修改本包和唯一注册目录，通过生成器刷新派生说明；撤销注册后旧配置应提示型号不可用，保留用户配置和全部实机历史。
+
+## 注册能力（自动生成）
+
+范围、单位及命令来自当前注册定义；资产级实测结果见运行目录。
 
 | 操作 | 参数 / 单位 / 范围 | 作用域 | 方向 | 额外确认 | 状态 |
 | --- | --- | --- | --- | --- | --- |
+| `sample_rate` | value: integer samples/s 1/10/100/1000 | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `timed_phase` | 无 | 整机 | 读 | 无需 | 缺选件/配置 |
 | `start` | 无 | 整机 | /写 | 需要 | 软件已实现；实测按资产查证 |
 | `stop` | 无 | 整机 | /写 | 需要 | 软件已实现；实测按资产查证 |
-| `input_frequency` | value: number Hz [1, 200000000.0] | 整机 | /写 | 无需 | 软件已实现；实测按资产查证 |
-| `reference_frequency` | value: number Hz [1, 200000000.0] | 整机 | /写 | 无需 | 软件已实现；实测按资产查证 |
+| `input_frequency` | value: number Hz [1000000.0, 200000000.0]; automatic: boolean  [None, None] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `reference_frequency` | value: number Hz [1000000.0, 200000000.0]; automatic: boolean  [None, None] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
 | `phase_noise` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
 | `am_noise` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
 | `stability` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
 | `data_stream` | 无 | 整机 | 读 | 无需 | 缺选件/配置 |
-
-## 7. 控制、读回与采集
-
-页面入口：**实时监测 / 相噪仪**。参数由当前注册能力生成；常用、高级、状态与诊断分组。只读采集能力通过监测页的单次/开始操作使用；缺选件项显示原因且禁用。详细操作见[控制与监测指南](../../guides/control-and-monitoring.md)。
-
-采集路线：`phase_noise/am_noise/stability/streaming`。`apply` 返回成功、拒绝、部分执行或不确定；只有提供读回命令的操作才有硬件读回，不能将 SDK 已接收设置描述成测量值。`status` 显式读取，扫描和总览定时刷新不会额外采集。
-
-需现场确认厂家、型号、序列号和 TSERVE 控制权，并设置 identity_confirmed=true。频率公共单位 Hz，命令单位 MHz。相噪/AM/ADEV 经命令口读取；数据口仅接收已配置 P/F 格式，timestamp=0，stream_interval 与服务一致。
-
-## 8. 限制和故障处理
-
-单设备单 worker 串行执行。数值范围是软件保守边界，仍需核对负载、频率、探头和接线条件。输出/触发等动作要求明确确认；超时不重发、不自动回滚，先诊断再重连。断开软件连接不表示输出关闭。错误数据使用质量标记，不能以零值代替。
-
-## 9. Python 落点
-
-通过 `ApplicationRuntime` → `SessionManager.submit()` → 注册表 `microchip.53100a` 调用；SCPI 型号共用所属类别的实现和独立 `Profile`，不创建空壳同名类。源码见 [instruments](../../../src/lab_control/instruments/)；示例见 [examples](../../../examples/README.md)。
-
-## 10. Mock 与实机验收
-
-软件：身份精确匹配、参数越界、未知能力和控制夹具；SDK 使用函数替身验证参数/句柄/缓冲区。完整结果以 `pytest` 报告为准，不能从该表推断全部高级命令已逐项验证。
-
-现场按[统一验收步骤](../../testing/hardware-testing.md)记录完整身份、固件、驱动、资源、每个测试操作、请求、读回、原始错误、数据文件和恢复结果。按授权范围先只读，再控制/采集和恢复。`hardware_passed=false` 是保留的型号级兼容字段，不代表具体资产失败或尚未测试；逐项结论见运行目录摘要。

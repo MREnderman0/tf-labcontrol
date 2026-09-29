@@ -107,6 +107,35 @@ def test_local_enumeration_and_config_keep_both_sources_and_one_probe(store):
     assert set(record["candidates"][config.resource]["sources"]) == {"visa", "configured"}
 
 
+@pytest.mark.parametrize("failure", ["", "timeout", "identity_conflict"])
+def test_restored_serial_config_merges_unknown_alias_once_without_retries(store, failure):
+    repo, inventory, scan = store
+    com = DiscoveryCandidate(ConnectionConfig("COM7", transport="serial"), "serial")
+    visa = DiscoveryCandidate(ConnectionConfig("ASRL7::INSTR"), "visa")
+    original = inventory.merge(com, "previous", reason="metadata_only")["id"]
+    config = ConnectionConfig("ASRL7::INSTR", "gwinstek.gpd4303s", expected_serial="TEST")
+    calls = []
+
+    def probe(candidate):
+        calls.append(candidate.config)
+        if failure:
+            raise DeviceError("Fixture failed identification", failure)
+        return DeviceIdentity("GW INSTEK", "GPD-4303S", "TEST", "V2.12"), config.adapter
+
+    report = scan([Provider(com, visa), ConfiguredDiscoveryProvider((config,))], probe)
+    assert calls == [config]
+    assert len(inventory.all()) == len(repo.records()) == 1
+    record = inventory.all()[0]
+    assert record["id"] == original and set(record["resources"]) == {"COM7", "ASRL7::INSTR"}
+    assert record["config"]["expected_serial"] == "TEST"
+    if failure:
+        assert not record["identity"]
+        assert report["items"][0]["errorCode"] == failure
+    else:
+        assert record["identity"]["model"] == "GPD-4303S"
+        assert record["discoveryState"] == "identified"
+
+
 @pytest.mark.parametrize("explicit_timeout", [None, 7])
 @pytest.mark.parametrize("replacement", [False, True])
 def test_known_lan_probe_uses_saved_timeout_but_rechecks_identity(store, explicit_timeout, replacement):

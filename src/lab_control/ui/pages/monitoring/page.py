@@ -21,6 +21,7 @@ from lab_control.application.controls import CATEGORY_LABELS, MEASUREMENT_CATEGO
 from lab_control.ui.controller import WorkspaceController
 from lab_control.ui.pages.device_control.form import ControlForm
 from lab_control.ui.pages.monitoring.plot import LivePlot
+from lab_control.ui.pages.monitoring.recording_state import recording_save_notice
 from lab_control.ui.pages.monitoring.timing import MonitoringTiming
 from lab_control.ui.widgets.device_selector import DeviceSelector
 from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
@@ -288,7 +289,7 @@ class MonitoringPage(QWidget):
                 service = self.controller.runtime.monitoring
                 future = service.export_displayed_frame(self.selector.device_id, frame, self.controller.mode)
                 self.controller.watch(
-                    future, lambda path: self.controller.message.emit(f"已保存当前帧：{path}")
+                    future, lambda path: self.controller.message.emit(f"原始数据已保存 · 分析 CSV 已完成：{path}")
                 )
                 self.refresh()
             except Exception as exc:
@@ -325,7 +326,7 @@ class MonitoringPage(QWidget):
         text = (
             task.get("error")
             or task.get("recording_notice")
-            or task.get("recording_state", {}).get("csv_error")
+            or recording_save_notice(task)
             or task.get("notice")
             or (
                 "正在记录原始数据"

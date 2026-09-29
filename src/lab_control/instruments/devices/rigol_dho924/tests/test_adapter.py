@@ -18,6 +18,17 @@ def ready():
     return obj, peer
 
 
+def test_channel_receive_time_is_captured_before_post_descriptor_read(monkeypatch):
+    obj, peer = ready()
+    monkeypatch.setattr(
+        "lab_control.instruments.devices.rigol_dho924.adapter.utc_now",
+        lambda: "after:" + peer.history[-1],
+    )
+    batch = obj.acquire(AcquisitionRequest("waveform", (1, 2)))
+    assert all(m.metadata["received_at"] == "after::WAV:DATA?" for m in batch.measurements)
+    assert all(m.metadata["trigger_time_source"] == "unavailable" for m in batch.measurements)
+
+
 def test_identity_exact_and_readonly_has_no_setting_writes():
     obj, peer = adapter()
     obj.refresh_capabilities()
@@ -53,7 +64,7 @@ def test_corrupt_and_changed_descriptors_do_not_return_frames():
     assert error.value.code == "configuration_changed" and obj._context_cache is None
     peer.change_pre = False
     peer.state[":ACQ:TYPE"] = "ULTR"
-    with pytest.raises(DeviceError, match="segmented"):
+    with pytest.raises(DeviceError, match="超快分段采集.*ULTR"):
         obj.acquire(req)
 
 

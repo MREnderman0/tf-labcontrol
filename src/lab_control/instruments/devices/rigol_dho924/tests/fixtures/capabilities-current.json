@@ -185,10 +185,10 @@
             "kind": "number",
             "unit": "s/div",
             "minimum": 2e-09,
-            "maximum": 500,
+            "maximum": 0.02,
             "choices": [],
             "required": true,
-            "range_source": "model",
+            "range_source": "software",
             "resolution": null
           }
         },

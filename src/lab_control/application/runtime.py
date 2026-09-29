@@ -7,7 +7,7 @@ from concurrent.futures import Future
 from pathlib import Path
 from typing import Any
 
-from lab_control.application.config import ConnectionConfig
+from lab_control.application.config import ConnectionConfig, canonical_resource
 from lab_control.application.leases import ProcessLease, ResourceLeases
 from lab_control.application.sessions import SessionManager
 from lab_control.discovery.service import (
@@ -44,6 +44,9 @@ class ApplicationRuntime:
                 "Use --mock for simulated configurations; real inventory cannot contain simulation"
             )
         self.hardware = hardware
+        # UI choices live for this launch. Scope/spectrum never restore a prior
+        # launch's fastest cadence; all pages share the same per-device choices.
+        self.monitoring_preferences: dict[str, dict[str, Any]] = {}
         self.repository = Repository(
             root if hardware else (root or application_home()) / "simulation", simulation=not hardware
         )
@@ -68,6 +71,7 @@ class ApplicationRuntime:
             from lab_control.discovery.lan import (
                 LanDiscoveryProvider,
                 LanDiscoverySettings,
+                RememberedLanDiscoveryProvider,
                 load_lan_settings,
             )
 
@@ -80,8 +84,18 @@ class ApplicationRuntime:
                     VisaDiscoveryProvider(self.visa),
                     SerialDiscoveryProvider(),
                 )
+                from lab_control.instruments.registry import DEVICE_DEFINITIONS
+
+                providers += tuple(
+                    definition.discovery_factory()
+                    for definition in DEVICE_DEFINITIONS.values()
+                    if definition.discovery_factory is not None
+                )
                 if self.lan_settings.enabled:
-                    providers += (LanDiscoveryProvider(self.visa, self.lan_settings),)
+                    providers += (
+                        LanDiscoveryProvider(self.visa, self.lan_settings),
+                        RememberedLanDiscoveryProvider(self.inventory, self.lan_settings),
+                    )
                 sdk_groups: dict[tuple[str, str], list[ConnectionConfig]] = {}
                 for config in configurations:
                     if config.transport in {"tlpmx", "pico"}:
@@ -103,8 +117,13 @@ class ApplicationRuntime:
             raise
 
     def probe(self, candidate: DiscoveryCandidate) -> tuple[DeviceIdentity, str]:
+        from lab_control.instruments.registry import DEVICE_DEFINITIONS
+
         config = candidate.config
-        if config.adapter and not candidate.safe_scpi:
+        definition = DEVICE_DEFINITIONS.get(config.adapter)
+        if config.adapter and (
+            not candidate.safe_scpi or (definition is not None and definition.identity_requires_adapter)
+        ):
             adapter = create_adapter(config, self.visa)
             try:
                 return adapter.identify(), config.adapter
@@ -113,7 +132,27 @@ class ApplicationRuntime:
         transport = transport_for(config, self.visa)
         try:
             transport.open()
-            identity = identity_from_scpi(transport.query("*IDN?"))
+            identity_probe = None
+            if not config.adapter and candidate.safe_scpi and config.resource.upper().startswith("TCPIP"):
+                known = self.inventory.by_resource(config.resource)
+                if (
+                    known
+                    and known.get("identityKey")
+                    and not known.get("identityConflict")
+                    and known.get("discoveryState") != "conflict"
+                    and canonical_resource(known["config"]["resource"]) == canonical_resource(config.resource)
+                ):
+                    entry = known["candidates"].get(known["config"]["resource"], {})
+                    if not entry.get("retired") and entry.get("verifiedIdentityKey") == known["identityKey"]:
+                        definition = DEVICE_DEFINITIONS.get(known["config"].get("adapter", ""))
+                        identity_probe = definition.discovery_identity if definition else None
+            # A verified address supplies only its identity handshake. The hook
+            # receives this fresh config, without past serial, options or limits.
+            identity = (
+                identity_probe(transport, config)
+                if identity_probe
+                else identity_from_scpi(transport.query("*IDN?"))
+            )
             return identity, match(identity)
         finally:
             transport.close()

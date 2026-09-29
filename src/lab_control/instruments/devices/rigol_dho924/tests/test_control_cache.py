@@ -54,7 +54,14 @@ def test_offset_and_next_frame_read_only_dependencies_and_keep_times():
         (
             "timebase",
             2e-6,
-            {"1.timebase", "1.time_position", "1.sample_rate", "1.record_length", "1.roll_enabled"},
+            {
+                "1.timebase",
+                "1.time_position",
+                "1.sample_rate",
+                "1.record_length",
+                "1.roll_enabled",
+                "1.timebase_mode",
+            },
         ),
         (
             "trigger_source",

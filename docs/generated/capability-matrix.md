@@ -17,6 +17,8 @@ JSON 保留 hardware_tested/hardware_passed 兼容字段；固定 false 不代�
 | Teledyne LeCroy WaveRunner 9404M | `lecroy.9404m` | 23 | lecroy | [型号卡片](../devices/oscilloscopes/waverunner-9404m.md) |
 | RIGOL DHO924 | `rigol.dho924` | 36 | dho924 | [型号卡片](../devices/oscilloscopes/rigol-dho924.md) |
 | R&S FPH02 | `rs.fph` | 35 | fph | [型号卡片](../devices/spectrum-analyzers/rs-fph.md) |
+| Ceyear 6362D | `ceyear.6362d` | 23 | ceyear_6362d | [型号卡片](../devices/measurement-analyzers/ceyear-6362d.md) |
+| Microchip 53100A | `microchip.53100a` | 10 | phase_noise/am_noise/stability/streaming/timed_phase | [型号卡片](../devices/measurement-analyzers/phase-noise-53100a.md) |
 | Siglent SDG6032X | `siglent.sdg6032x` | 36 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/sdg6032x.md) |
 | Keithley 2231A-30-3 | `keithley.2231a` | 15 | power | [型号卡片](../devices/power-supplies/keithley-2231a.md) |
 | Siglent SPD4306X | `siglent.spd4306x` | 22 | power | [型号卡片](../devices/power-supplies/spd4306x.md) |
@@ -29,7 +31,6 @@ JSON 保留 hardware_tested/hardware_passed 兼容字段；固定 false 不代�
 | Thorlabs PM100D + S154C | `thorlabs.pm100d` | 8 | scalar | [型号卡片](../devices/measurement-analyzers/thorlabs-pm100d-s154c.md) |
 | Keysight / Agilent / HP 3458A | `keysight.3458a` | 16 | dmm | [型号卡片](../devices/measurement-analyzers/keysight-3458a.md) |
 | R&S ZNB3004 | `rs.znb3004` | 14 | vna | [型号卡片](../devices/measurement-analyzers/rs-znb3004.md) |
-| 53100A（Microchip 候选） | `microchip.53100a` | 8 | phase_noise/am_noise/stability/streaming | [型号卡片](../devices/measurement-analyzers/phase-noise-53100a.md) |
 
 ## 未实现 / 待补项
 
@@ -52,4 +53,4 @@ JSON 保留 hardware_tested/hardware_passed 兼容字段；固定 false 不代�
 | temperature_controller | 待补信息：Model and protocol required |
 | electronic_load | 待补信息：Model and protocol required |
 | pump_driver | 待补信息：Model, protocol and interlocks required |
-| optical_spectrometer | 待补信息：Model and protocol required |
+| other optical_spectrometers | 待补信息：Exact model and protocol required; Ceyear 6362D has an independent module |

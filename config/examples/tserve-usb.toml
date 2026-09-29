@@ -1,0 +1,11 @@
+# Illustrative identifiers only. Copy the exact selected USB instance from the scan.
+# Never interpret its suffix as a verified instrument serial.
+[[devices]]
+resource = 'USBPNP::USB\VID_16D0&PID_05B8\REPLACE_USB_INSTANCE'
+adapter = 'microchip.53100a'
+transport = 'tserve'
+usb_instance_id = 'USB\VID_16D0&PID_05B8\REPLACE_USB_INSTANCE'
+expected_serial = 'REPLACE_NAMEPLATE_SERIAL'
+timeout = 10.0
+# server_path = 'C:\Program Files\Microchip\TimeLab\tserve64.exe'
+# Owned idle TSERVE uses independently read USB descriptors; no automatic measurement start.

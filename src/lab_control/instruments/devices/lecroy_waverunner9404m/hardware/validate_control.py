@@ -29,8 +29,12 @@ from .records import publish_report
 
 def verify_saved_samples(folder: Path) -> dict[str, Any]:
     """Compare every converted coordinate/sample against committed binary frames."""
+    from lab_control.storage.analysis import verify_analysis
+    from lab_control.storage.layout import manifest
     from lab_control.storage.recording import read_frames
 
+    if manifest(folder).get("layout_version", 1) == 2:
+        return verify_analysis(folder)
     frames = samples = cached = 0
     contexts: set[str] = set()
     timestamps: set[str] = set()

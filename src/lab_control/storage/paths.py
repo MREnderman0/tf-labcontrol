@@ -68,6 +68,7 @@ class SaveContext:
     started_at: datetime = field(default_factory=lambda: local_now())
     run_id: str = field(default_factory=lambda: uuid4().hex[:12])
     batch: BatchSaveContext | None = None
+    layout_version: int = 2
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "root", self.root.resolve())
@@ -77,6 +78,12 @@ class SaveContext:
             object.__setattr__(self, "root", self.batch.root)
             object.__setattr__(self, "started_at", self.batch.started_at)
         _validate_time(self.started_at)
+        if self.layout_version not in (1, 2):
+            raise ValidationError("Unsupported recording layout version")
+
+    @property
+    def raw_folder(self) -> Path:
+        return self.folder / "_raw" if self.layout_version == 2 else self.folder
 
     @property
     def started_utc(self) -> str:
@@ -110,8 +117,10 @@ class SaveContext:
         """Reserve a new leaf exclusively. Existing data is never overwritten."""
         folder = self.folder
         folder.mkdir(parents=True, exist_ok=False)
+        self.raw_folder.mkdir(exist_ok=True)
         metadata = {
             "version": 1,
+            "layout_version": self.layout_version,
             "run_id": self.run_id,
             "kind": self.kind,
             "mode": self.mode,
@@ -123,6 +132,10 @@ class SaveContext:
             "adapter_id": self.adapter_id,
             "identity": jsonable(self.identity),
         }
-        with (folder / "recording.json").open("x", encoding="utf-8") as stream:
+        with (self.raw_folder / "recording.json").open("x", encoding="utf-8") as stream:
             json.dump(metadata, stream, ensure_ascii=False, indent=2, allow_nan=False)
+        if self.layout_version == 2:
+            from lab_control.storage.analysis import write_description
+
+            write_description(folder, "准备保存数据")
         return folder

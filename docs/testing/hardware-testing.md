@@ -19,7 +19,7 @@
 | LeCroy VICP | 设备允许 VICP，通常 1861 | 使用 vicp transport，不使用普通 tcp 替代 |
 | Pico | PicoSDK、ps6000a.dll、USB 驱动 x64 | 厂家示例能枚举和打开准确序列号 |
 | Thorlabs | OPM、匹配的 TLPMX/旧 PM100D DLL 和驱动 | Driver Switcher 当前选择、位数、探头身份 |
-| Microchip 53100A 候选 | 已配置的 TimeLab/TSERVE 服务 | 现场确认仪器/服务控制权，命令 1299、数据 1298 |
+| Microchip 53100A | TimeLab 驱动 + 托管本机 TSERVE64，或已有外部服务 | USB 扫描仅枚举；本机连接实际读回 USB 身份；服务配置、直接硬件身份与测量分开留档，见[型号计划](../../src/lab_control/instruments/devices/microchip_53100a/hardware/README.md) |
 
 DLL 使用绝对路径和厂家安装目录；应用不下载、切换驱动或复位设备。[Thorlabs 驱动迁移说明](https://www.thorlabs.com/software/MUC/OPM/v5.0/TL_OPM_V5.2.pdf)说明旧版驱动与新驱动的差异，不能只替换 DLL 文件名。32 位库不能由本版 x64 进程加载；尚未提供 32 位代理进程。
 
@@ -54,7 +54,7 @@ uv run lab-control-cli --config $cfg --resource $resource status
 uv run lab-control-cli --config $cfg --resource $resource test
 ```
 
-预期：厂家、型号、序列号/可信度与面板一致；未发送复位、输出或采集启动命令；报告路径在控制台显示。无序列号（例如 3458A）保持型号级身份。53100A 的型号/序列号仍依赖现场确认及 TSERVE 信息，不能用自定义服务标题伪装自动硬件确认。
+预期：厂家、型号、序列号/可信度与面板一致；未发送复位、输出或采集启动命令；报告路径在控制台显示。无序列号（例如 3458A）保持型号级身份。53100A 本机空闲连接使用独立 USB 描述符读回，外部 TSERVE 要求 show serial；不能用自定义服务标题伪装硬件确认。
 
 每次真实进程退出会释放软件连接，但不宣称关闭输出。只读 test 保存身份、能力、状态及硬件未验收标记。失败的 test/set/acquire/stream 也保存错误报告。
 

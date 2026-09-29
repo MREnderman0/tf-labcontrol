@@ -59,12 +59,13 @@ def normalized_value(value: Any, spec: Parameter) -> Any:
 
 
 def usable_reading(reading: ParameterReading, parameters: dict[str, Parameter]) -> bool:
-    if reading.error or reading.source not in {"instrument", "simulated", "control_cache"}:
+    if reading.error or reading.source not in {"instrument", "simulated", "control_cache", "service_readback"}:
         return False
     if reading.quality not in {Quality.GOOD, Quality.SIMULATED} or reading.value is None:
         return False
     values = reading.value if isinstance(reading.value, dict) else {"value": reading.value}
     return all(
-        name in values and normalized_value(values[name], spec) is not None
+        (not spec.required and values.get(name) is None)
+        or (name in values and normalized_value(values[name], spec) is not None)
         for name, spec in parameters.items()
     )

@@ -27,6 +27,8 @@ class ConnectionConfig:
     data_resource: str = ""
     stream_format: str = ""
     stream_interval: float = 0.01
+    usb_instance_id: str = ""
+    server_path: str = ""
 
     def __post_init__(self) -> None:
         if self.transport not in {
@@ -105,3 +107,60 @@ def canonical_resource(resource: str) -> str:
 
 def config_from_record(record: dict[str, Any]) -> ConnectionConfig:
     return ConnectionConfig(**record["config"])
+
+
+def save_startup_device(config: ConnectionConfig, path: Path) -> None:
+    """Persist one explicitly selected asset, retaining unrelated manifest text.
+
+    The caller verifies the instrument identity. This function does no hardware I/O.
+    Ambiguous resource ownership and unsupported TOML layouts fail without replacement.
+    """
+    import json
+    import os
+    import tempfile
+    from dataclasses import asdict
+
+    from lab_control.application.leases import FileLease
+
+    if not config.adapter or not config.expected_serial:
+        raise ValidationError("Persist an exact adapter and expected instrument serial")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lease = FileLease(path.with_suffix(path.suffix + ".lock"))
+    try:
+        original = path.read_text(encoding="utf-8") if path.exists() else ""
+        existing = load_config(path) if original else ()
+        headers = list(re.finditer(r"(?m)^\s*\[\[devices\]\][ \t]*(?:#[^\n]*)?$", original))
+        if len(headers) != len(existing):
+            raise ValidationError("Unsupported devices manifest layout; original retained")
+        retained = original[: headers[0].start()] if headers else original
+        expected = []
+        for index, item in enumerate(existing):
+            same_asset = (item.adapter, item.expected_serial) == (config.adapter, config.expected_serial)
+            same_address = canonical_resource(item.resource) == canonical_resource(config.resource)
+            if same_address and not same_asset:
+                raise ValidationError("Configured resource belongs to another asset; original retained")
+            if not same_asset:
+                end = headers[index + 1].start() if index + 1 < len(headers) else len(original)
+                retained += original[headers[index].start() : end]
+                expected.append(item)
+
+        def literal(value: Any) -> str:
+            if isinstance(value, dict):
+                return "{ " + ", ".join(f"{json.dumps(k)} = {literal(v)}" for k, v in value.items()) + " }"
+            return json.dumps(value, ensure_ascii=False, allow_nan=False)
+
+        block = "[[devices]]\n" + "".join(f"{k} = {literal(v)}\n" for k, v in asdict(config).items())
+        result = retained.rstrip() + "\n\n" + block
+        fd, temporary = tempfile.mkstemp(prefix=path.name + ".", suffix=".tmp", dir=path.parent)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as stream:
+                stream.write(result)
+                stream.flush()
+                os.fsync(stream.fileno())
+            if load_config(Path(temporary)) != (*expected, config):
+                raise ValidationError("Manifest round-trip differs; original retained")
+            os.replace(temporary, path)
+        finally:
+            Path(temporary).unlink(missing_ok=True)
+    finally:
+        lease.close()

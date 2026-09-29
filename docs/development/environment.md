@@ -41,6 +41,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-dev.ps1 -Mirro
 .venv-dev\Scripts\uv.exe build --python .venv-dev\Scripts\python.exe --no-python-downloads --default-index https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/
 ```
 
+## 开发产物清理
+
+清理前保存未提交修改并生成按路径、大小、哈希及理由列出的清单。缓存、旧构建包和与 Git 历史／当前源码内容相同的隔离副本可以清理；递归目标必须位于项目内，不跟随目录联接或符号链接。不要整目录删除 `.tools`：其中包含离线驱动、厂家资料、唯一实机证据和被文档引用的验收材料。安装环境、当前有效构建、正式库存及采集数据保留。
+
+一次性迁移／提交整理脚本须确认任务已完成且没有入口、动态注册或文档依赖后再删除；无法确认用途或恢复来源的内容保留。旧卡片版窗口、主题及其依赖按 `direction-approved.md` 保留，不能仅以“不由当前入口导入”为依据删除。
+
 ## 多设备优先 PyVISA
 
 支持 VISA/SCPI 的 USB、LAN、GPIB 和串口设备优先 `transport="visa"`，通过 PyVISA 和已安装的 Windows x64 VISA 后端接入。LAN 优先仪器提供的 `TCPIP0::地址::inst0::INSTR` 或 HiSLIP 资源；仅有原始端口时也可使用 `TCPIP0::地址::5025::SOCKET`。串口可用 `ASRL…::INSTR`，波特率以设备配置为准。

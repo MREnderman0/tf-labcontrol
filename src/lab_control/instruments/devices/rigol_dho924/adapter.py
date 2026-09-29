@@ -11,6 +11,7 @@ from typing import Any
 from lab_control.domain.instruments import (
     AcquisitionRequest,
     ApplyResult,
+    ControlUpdate,
     DeviceCommand,
     DeviceError,
     MeasurementBatch,
@@ -43,6 +44,8 @@ class DHO924Adapter(ScpiAdapter):
         self._ranges_dirty = True
         self._transfer: dict[str, Any] = {}
         self.acquisition_preparation: dict[str, Any] = {}
+        self._auto_main_enabled = False
+        self._main_recovery_failed = False
 
     def read(self, operation: str, channel: int = 1):
         if operation == "trigger_mode":
@@ -138,8 +141,6 @@ class DHO924Adapter(ScpiAdapter):
                     # verified memory bounds, do not invent a writable stopped range.
                     if s.get("1.trigger_mode") == "STOP":
                         cap = replace(cap, writable=False, reason="停止状态的水平偏移范围未验证；运行后可调")
-                elif cap.name == "timebase" and s.get("1.roll_enabled", False):
-                    spec = replace(spec, maximum=0.02)
                 elif cap.name == "trigger_level" and edge:
                     div, off = s[f"{source_ch}.scale"], s[f"{source_ch}.offset"]
                     spec = replace(spec, minimum=-4.5 * div - off, maximum=4.5 * div - off)
@@ -173,7 +174,53 @@ class DHO924Adapter(ScpiAdapter):
             "before": before,
             "after": {**before, "transfer_format": "WORD"},
         }
+        self._auto_main_enabled = True
+        self.read("timebase_mode")
+        if self.acquisition_setup_needed():
+            try:
+                self.prepare_acquisition_state()
+            except Exception:
+                self.acquisition_preparation["state"] = "failed"
+                raise
+            finally:
+                self.acquisition_preparation["mode_adjustment"] = deepcopy(
+                    self.capability_details.get("acquisition_setup", {})
+                )
         return deepcopy(self.acquisition_preparation)
+
+    def acquisition_setup_needed(self) -> bool:
+        """Inspect already-read state; never poll from the steady frame path."""
+        return self._auto_main_enabled and self._settings.get("1.timebase_mode") == "ROLL"
+
+    def prepare_acquisition_state(self) -> ControlUpdate:
+        from .main_mode import prepare_main
+
+        if not self._auto_main_enabled:
+            raise Unsupported("只读连接不自动修改采集模式")
+        return prepare_main(self)
+
+    def wait_setting_completion(self) -> None:
+        # This firmware's query reads the completion marker; an idle
+        # query alone can stay at 0. *OPC queues that marker after the
+        # preceding setting (PG 3.12.6; separately hardware-qualified).
+        self.transport.write("*OPC")
+        bounded = getattr(self.transport, "query_timeout", None)
+        deadline = time.monotonic() + min(30, max(self.config.timeout, 5))
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise DeviceError("Setting completion not confirmed within deadline", "readback_mismatch")
+            raw = (
+                bounded("*OPC?", max(0.1, remaining)) if callable(bounded) else self.transport.query("*OPC?")
+            )
+            status = numeric(raw)
+            if status == 1:
+                break
+            if status != 0:
+                raise DeviceError("Invalid setting completion response", "parse_error")
+            # Programming guide 3.12.6 explicitly returns 0 while busy.
+            # Poll only completion; the setting itself is never resent.
+            time.sleep(min(0.025, max(0, deadline - time.monotonic())))
 
     def apply(self, command: DeviceCommand) -> ApplyResult:
         from .control import apply_control
@@ -207,31 +254,7 @@ class DHO924Adapter(ScpiAdapter):
                 self.transport.write(payload)
                 completed += 1
             if op not in {"run", "stop", "single", "trigger_mode"}:
-                # This firmware's query reads the completion marker; an idle
-                # query alone can stay at 0. *OPC queues that marker after the
-                # preceding setting (PG 3.12.6; separately hardware-qualified).
-                self.transport.write("*OPC")
-                bounded = getattr(self.transport, "query_timeout", None)
-                deadline = time.monotonic() + min(30, max(self.config.timeout, 5))
-                while True:
-                    remaining = deadline - time.monotonic()
-                    if remaining <= 0:
-                        raise DeviceError(
-                            "Setting completion not confirmed within deadline", "readback_mismatch"
-                        )
-                    raw = (
-                        bounded("*OPC?", max(0.1, remaining))
-                        if callable(bounded)
-                        else self.transport.query("*OPC?")
-                    )
-                    status = numeric(raw)
-                    if status == 1:
-                        break
-                    if status != 0:
-                        raise DeviceError("Invalid setting completion response", "parse_error")
-                    # Programming guide 3.12.6 explicitly returns 0 while busy.
-                    # Poll only completion; the setting itself is never resent.
-                    time.sleep(min(0.025, max(0, deadline - time.monotonic())))
+                self.wait_setting_completion()
             if op == "auto_setup":
                 error = self.transport.query(":SYST:ERR?").decode("ascii").strip()
                 return ApplyResult(
@@ -357,6 +380,30 @@ class DHO924Adapter(ScpiAdapter):
         if not 1 <= points <= POINTS_MAX or points * 16 * channels > FRAME_BYTES_MAX:
             raise DeviceError("完整存储超出软件点数/帧预算，请降低采集点数", "acquisition_budget_exceeded")
 
+    @staticmethod
+    def _check_acquisition_mode(settings: dict[str, Any]) -> None:
+        reasons = []
+        acquisition = settings["1.acquisition_type"]
+        if acquisition not in {"NORM", "AVER"}:
+            label = {"PEAK": "峰值检测", "ULTR": "超快分段采集"}.get(acquisition, "未支持的采集方式")
+            reasons.append(f"{label}（{acquisition}）；请切换为普通 NORM 或平均 AVER 采集")
+        mode = settings["1.timebase_mode"]
+        if mode == "ROLL":
+            reason = f"ROLL 滚动模式（当前时基 {settings['1.timebase']:g} s/格）"
+            if settings["1.roll_enabled"]:
+                reason += "；Auto ROLL 已开启，时基达到 50 ms/格会进入滚动模式，请将时基调至 20 ms/格或更短"
+            else:
+                reason += "；请在仪器上切回 MAIN 主时基"
+            reasons.append(reason)
+        elif mode != "MAIN":
+            reasons.append(f"时基模式 {mode}；请在仪器上切回 MAIN 主时基")
+        if settings["1.xy_enabled"]:
+            reasons.append("XY 显示已开启；请在仪器上关闭 XY")
+        if settings["1.delay_enabled"]:
+            reasons.append("延迟扫描已开启；请在仪器上关闭延迟扫描")
+        if reasons:
+            raise Unsupported("DHO924 当前设置不支持波形读取：" + "；".join(reasons))
+
     def _read_frame(self, request: AcquisitionRequest, *, memory: bool) -> MeasurementBatch:
         cached_mode = request.consistency in {"live", "stream"}
         if cached_mode and not request.context_id:
@@ -369,15 +416,11 @@ class DHO924Adapter(ScpiAdapter):
             before, stamps = deepcopy(context[1]), dict(context[2])
         else:
             before, stamps = self.snapshot()
-        if (
-            before["1.acquisition_type"] not in {"NORM", "AVER"}
-            or before["1.timebase_mode"] != "MAIN"
-            or before["1.xy_enabled"]
-            or before["1.delay_enabled"]
-        ):
-            raise Unsupported(
-                "Only normal/averaged MAIN analog acquisition is qualified; no roll, XY, peak or segmented modes"
-            )
+        if before["1.timebase_mode"] == "ROLL" and self._auto_main_enabled:
+            # No waveform query or setting has been sent. The session may perform
+            # the model-owned setup once, under its control/recording reservation.
+            raise DeviceError("DHO924 需要退出 ROLL 后读取波形", "acquisition_setup_required")
+        self._check_acquisition_mode(before)
         if any(not before[f"{ch}.channel_enabled"] for ch in request.channels):
             raise Unsupported("Selected channel is disabled")
         points = int(before["1.record_length"]) if memory else 1000
@@ -408,6 +451,7 @@ class DHO924Adapter(ScpiAdapter):
             raw = (
                 bounded(":WAV:DATA?", points * 2) if callable(bounded) else self.transport.query(":WAV:DATA?")
             )
+            received_at = utc_now()
             unit = {"VOLT": "V", "AMP": "A", "WATT": "W"}.get(before[f"{ch}.channel_unit"])
             if unit is None:
                 raise Unsupported("Unqualified channel unit")
@@ -429,7 +473,9 @@ class DHO924Adapter(ScpiAdapter):
                     measured,
                     metadata={
                         **measured.metadata,
-                        "received_at": utc_now(),
+                        "received_at": received_at,
+                        "received_time_source": "host_utc_at_waveform_reply",
+                        "trigger_time_source": "unavailable",
                         "waveform_extent": "memory" if memory else "screen",
                         "scope_display": ScopeDisplay(
                             before[f"{ch}.scale"],

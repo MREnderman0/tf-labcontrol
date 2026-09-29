@@ -282,7 +282,16 @@ def inspect_environment(
             )
             continue
         state, reason = "unknown", "已记录需求；安装检测与目标版本兼容性尚待核实"
-        if key == "rs-visa":
+        if component["detection"].get("kind") == "files_usb":
+            try:
+                from lab_control.deployment.file_components import inspect_files_usb
+
+                state, reason = inspect_files_usb(component["detection"], tuple(
+                    c for c in configs if c.adapter in component["adapters"]
+                ))
+            except Exception as exc:
+                state, reason = "error", str(exc)
+        elif key == "rs-visa":
             # PyVISA ResourceManager may be shared with active sessions: do not create/close one.
             try:
                 from pyvisa.ctwrapper.highlevel import IVIVisaLibrary

@@ -30,7 +30,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-dev.ps1
 
 前端固定为用户确认的[历史深色琥珀分类卡片版](direction-approved.md)：左侧导航、顶部分类、三列分类卡片，点击卡片展开该类设备池。正式界面与内部预览共用唯一主题。数值输入下方显示范围和来源，在失焦、回车或应用时自动修正到最近边界，修正不发送设备命令。仪器读回保留原值；后端拒绝超界请求。SMA100B 连接后读取实机可设范围，RF 输出限幅单列显示，实验限制可进一步收紧。详见[输入范围规则](docs/guides/input-ranges.md)。
 
-信号源/电源在设备管理调节，示波器/频谱及测量类参数放在实时监测。设备与监测总览卡片随窗口排版，电子学/光学分别保存布局。仅监测不写实验数据，显式开始记录后才保存原始批次。完整操作见[分类控制与监测指南](docs/guides/control-and-monitoring.md)。
+信号源在设备管理调节，电源、示波器、频谱及测量类参数放在实时监测。设备与监测总览卡片随窗口排版，电子学/光学分别保存布局。普通监测不写实验数据，显式开始记录后逐帧保存；相噪仪定时采集在开始后自动保存原始相位、相噪及最终 ADEV/MDEV。完整操作见[分类控制与监测指南](docs/guides/control-and-monitoring.md)。
 
 文档按任务导航见[文档总入口](docs/README.md)；后续设备统一按[新设备接入流程](docs/testing/onboarding.md)执行，历史实测通过[离线台账](docs/testing/records.md)查询。
 
@@ -56,7 +56,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-dev.ps1
 | 实际注册能力 | [能力矩阵](docs/generated/capability-matrix.md)与 [JSON](docs/generated/capability-matrix.json) |
 | 文档入口 | [docs/README.md](docs/README.md) |
 
-库存 SQLite、日志、报告和采集文件默认放在 `%LOCALAPPDATA%\TF-LabControl`；通过 `LAB_CONTROL_HOME` 可改数据根目录。数据按 `data/electronic`、`data/optical` 分开。模拟数据另存 `simulation`。SDK DLL、临时下载和实测文件不进入源码目录。
+库存 SQLite、日志、报告和采集文件默认放在 `%LOCALAPPDATA%\TF-LabControl`；通过 `LAB_CONTROL_HOME` 可改运行目录。设置中的“数据保存一级目录”只影响新采集数据，按单设备采集、日期、开始时间与设备身份分层；电子学/光学保存在元数据中，历史 `data/electronic`、`data/optical` 保留原样。模拟数据另存 `simulation`。详细结构见[数据模型](docs/data/data-model.md)。SDK DLL、临时下载和实测文件不进入源码目录。
 
 ## 开发检查
 

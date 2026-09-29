@@ -7,7 +7,7 @@ import re
 from typing import Any
 
 from PySide6.QtCore import QRectF, QSize, Qt, QTimer, Signal
-from PySide6.QtGui import QColor, QIcon, QIntValidator, QPainter, QPixmap
+from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -16,7 +16,6 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QPushButton,
     QScrollArea,
     QSlider,
@@ -28,6 +27,7 @@ from PySide6.QtWidgets import (
 from lab_control.domain.instruments import DeviceCommand, DeviceError, Parameter
 from lab_control.domain.oscilloscope import COLORS, CONTROL_NAMES, coarse_steps, engineering
 from lab_control.domain.readback import boolean_value, normalized_value, usable_reading
+from lab_control.ui.pages.monitoring.scope_points import ScopePoints
 from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
 
 
@@ -341,6 +341,8 @@ class OscilloscopeControls(QFrame):
         self.point_limit_before: float | None = None
         self.point_clamp_attempted = False
         self.control_complete = False
+        self.auto_notice = ""
+        self.stop_revision = 0
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(6)
@@ -373,11 +375,11 @@ class OscilloscopeControls(QFrame):
         self.add_slider(horizontal, 1, "time_position", "偏移", "s")
         point_row = QHBoxLayout()
         point_row.addWidget(QLabel("采集点数"))
-        self.points = QLineEdit()
+        self.points = ScopePoints()
         self.points.setAccessibleName("采集点数")
-        self.points.setValidator(QIntValidator(1, 2_147_483_647, self.points))
-        self.points.setMaximumWidth(100)
-        self.points.editingFinished.connect(self.set_points)
+        self.points.setMinimumWidth(115)
+        self.points.setMaximumWidth(160)
+        self.points.committed.connect(self.set_points)
         point_row.addWidget(self.points)
         self.points_range = QLabel("等待读回")
         self.points_range.setObjectName("rangeHint")
@@ -423,6 +425,7 @@ class OscilloscopeControls(QFrame):
         actions = QHBoxLayout()
         self.fine_button = QToolButton()
         self.fine_button.setObjectName("scopeFineButton")
+        self.fine_button.setProperty("buttonSize", "panel")
         self.fine_button.setText("微调")
         self.fine_button.setCheckable(True)
         self.fine_button.setToolTip("偏移和触发电平：普通 0.1 格，微调 0.01 格；微调拖动减速")
@@ -434,6 +437,7 @@ class OscilloscopeControls(QFrame):
         actions.addWidget(self.fine_button)
         self.auto_button = QPushButton("Auto 自动设置")
         self.auto_button.setObjectName("primaryButton")
+        self.auto_button.setProperty("buttonSize", "panel")
         self.auto_button.clicked.connect(self.auto_setup)
         actions.addWidget(self.auto_button, 1)
         layout.addLayout(actions)
@@ -515,8 +519,8 @@ class OscilloscopeControls(QFrame):
         )
         point_cap = self.capabilities().get("record_length")
         point_value = self.values.get((1, "record_length"))
-        if point_value is not None and not self.points.hasFocus():
-            self.points.setText(str(int(point_value)))
+        if point_value is not None and point_cap and "value" in point_cap.parameters:
+            self.points.configure(int(point_value), point_cap.parameters["value"])
         self.points.setEnabled(
             bool(available and point_cap and point_cap.writable and point_value is not None)
         )
@@ -623,11 +627,10 @@ class OscilloscopeControls(QFrame):
         value = enabled if cap.parameters["value"].kind == "boolean" else ("ON" if enabled else "OFF")
         self.submit([DeviceCommand("channel_enabled", {"value": value}, channel)], channels=True)
 
-    def set_points(self) -> None:
+    def set_points(self, value: int) -> None:
         if self.running or not self.points.isEnabled():
             return
         try:
-            value = int(self.points.text())
             if value != self.values.get((1, "record_length")):
                 self.capabilities()["record_length"].validate({"value": value})
                 self.submit([DeviceCommand("record_length", {"value": value})])
@@ -655,6 +658,8 @@ class OscilloscopeControls(QFrame):
             self.point_limit_before = point_cap.parameters["value"].maximum if point_cap else None
             self.point_clamp_attempted = False
             self.control_complete = False
+            self.auto_notice = ""
+            self.stop_revision = self.controller.runtime.monitoring.stop_revision(self.device_id)
             self.session_id = self.controller.states[self.device_id]["sessionId"]
             self.running, self.channel_change = True, channels
             self.pending = list(commands)
@@ -665,7 +670,7 @@ class OscilloscopeControls(QFrame):
             self.refresh()
             if channels:
                 self.controller.watch(
-                    self.controller.runtime.monitoring.stop(self.device_id),
+                    self.controller.runtime.monitoring.stop(self.device_id, preserve_intent=True),
                     lambda _: self.next_command(),
                     self.failed,
                 )
@@ -704,6 +709,26 @@ class OscilloscopeControls(QFrame):
 
     def applied(self, result) -> None:
         if result.outcome != "success":
+            if result.outcome == "rejected" and result.operation == "auto_setup" and self.valid_session():
+                state = next(
+                    s
+                    for s in self.controller.runtime.sessions.snapshots()
+                    if s["stableDeviceId"] == self.device_id
+                )
+                if state["connectionState"] in {"connected", "busy"}:
+                    self.auto_notice = f"Auto 未完成：{result.error or result.outcome}"
+                    self.status.setText(self.auto_notice + " · 正在核对实际参数")
+                    self.pending.clear()
+                    self.control_complete = False
+                    # Recovery from a rejection is strictly read-only. In particular,
+                    # never clamp a memory length as a side effect of this check.
+                    self.point_limit_before = None
+                    self.controller.watch(
+                        self.controller.runtime.sessions.submit(self.device_id, "refresh_capabilities"),
+                        lambda _: self.next_command(),
+                        self.failed,
+                    )
+                    return
             self.failed(DeviceError(result.error or result.outcome))
             return
         self.pending.pop(0)
@@ -722,6 +747,19 @@ class OscilloscopeControls(QFrame):
             )
         else:
             try:
+                if self.auto_notice:
+                    frames = self.controller.runtime.sessions.readback_frames(self.device_id)
+                    for ch, name in self.keys():
+                        frame = frames.get((ch, name))
+                        cap = self.capabilities(ch)[name]
+                        if (
+                            frame is None
+                            or frame.session_id != self.session_id
+                            or not usable_reading(
+                                frame.reading, {} if name == "trigger_source" else cap.parameters
+                            )
+                        ):
+                            raise DeviceError(f"Auto 后 {ch}.{name} 未可靠读回，监测未恢复")
                 if not self.clamp_points_after_range_change():
                     self.finish()
             except Exception as exc:
@@ -768,7 +806,12 @@ class OscilloscopeControls(QFrame):
             self.refresh()
 
     def finish(self, *, success=True) -> None:
-        restart = self.restart and success
+        restart = (
+            self.restart
+            and success
+            and self.valid_session()
+            and self.stop_revision == self.controller.runtime.monitoring.stop_revision(self.device_id)
+        )
         self.running, self.restart = False, False
         self.pending.clear()
         self.controller.end_group(self.device_id, refresh=not (success and self.control_complete))
@@ -780,10 +823,8 @@ class OscilloscopeControls(QFrame):
         self.refresh()
         self.control_finished.emit(success)
         if success:
-            if (1, "record_length") in self.values:
-                self.points.setText(str(int(self.values[1, "record_length"])))
             self.status.setText(
-                "已核对实际参数"
+                (self.auto_notice + " · 实际参数已核对" if self.auto_notice else "已核对实际参数")
                 + (" · 单次模式：等待新波形" if self.values.get((1, "trigger_mode")) == "SINGLE" else "")
             )
             if self.channel_change:

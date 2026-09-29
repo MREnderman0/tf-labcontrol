@@ -14,6 +14,7 @@ from lab_control.application.leases import ResourceLeases
 from lab_control.domain.instruments import (
     AcquisitionRequest,
     CapabilitySnapshot,
+    ControlUpdate,
     DeviceCommand,
     DeviceError,
     DeviceIdentity,
@@ -67,6 +68,7 @@ class DeviceSession:
     capability_snapshot: CapabilitySnapshot | None = None
     acquisition_statistics: AcquisitionStatistics = field(default_factory=AcquisitionStatistics)
     acquisition_preparation: dict[str, Any] = field(default_factory=dict)
+    acquisition_setup_enabled: bool = False
     direct_recording: Recording | None = None
 
     @property
@@ -165,7 +167,9 @@ class SessionManager:
                 previous = session.frames.get(key)
                 received_at = (
                     previous.received_at
-                    if reading.source == "control_cache" and previous and previous.reading.timestamp == reading.timestamp
+                    if reading.source == "control_cache"
+                    and previous
+                    and previous.reading.timestamp == reading.timestamp
                     else time.monotonic()
                 )
                 session.settings[key] = reading
@@ -284,6 +288,7 @@ class SessionManager:
             resources = (
                 config.resource,
                 *config.aliases,
+                *(("USBPNP::" + config.usb_instance_id,) if config.usb_instance_id else ()),
                 *((config.data_resource,) if config.data_resource else ()),
                 *((f"asset:{config.adapter}:{config.expected_serial}",) if config.expected_serial else ()),
             )
@@ -312,6 +317,7 @@ class SessionManager:
                         device_id, (f"identity:{identity.key}", f"asset:{config.adapter}:{identity.serial}")
                     )
                 prepare = getattr(adapter, "prepare_acquisition", None)
+                session.acquisition_setup_enabled = configure_acquisition
                 if configure_acquisition and callable(prepare):
                     # Explicit connection only, after identity/ownership checks;
                     # discovery and read-only hardware preflight never run setup.
@@ -415,6 +421,47 @@ class SessionManager:
         if callable(invalidate):
             invalidate(reason)
 
+    def _prepare_acquisition_state(self, session: DeviceSession) -> bool:
+        """Optional model setup, serialized with controls and forbidden while recording."""
+        adapter = session.adapter
+        needed = getattr(adapter, "acquisition_setup_needed", None)
+        prepare = getattr(adapter, "prepare_acquisition_state", None)
+        if not session.acquisition_setup_enabled or not callable(needed) or not needed():
+            return False
+        if not callable(prepare):
+            return False
+        with self.lock:
+            if session.controls_locked or session.closing:
+                raise DeviceError("采集模式需要调整；请先停止记录并等待收尾，再开始监测", "unsupported")
+            session.control_pending += 1
+            session.configuration_version += 1
+        self.repository.audit("acquisition_setup_started", device_id=session.device_id)
+        try:
+            update = prepare()
+            if not isinstance(update, ControlUpdate) or not update.complete:
+                raise DeviceError("采集模式调整未返回完整核验结果", "acquisition_setup_failed")
+            self._cache_readings(session, update.readings)
+            self._refresh_capabilities(session, query=False)
+            self.repository.audit(
+                "acquisition_setup_completed",
+                device_id=session.device_id,
+                update=update,
+                details=getattr(adapter, "capability_details", {}),
+            )
+            return True
+        except Exception as exc:
+            self._invalidate_acquisition(session, "error")
+            self.repository.audit(
+                "acquisition_setup_failed",
+                device_id=session.device_id,
+                error=str(exc),
+                details=getattr(adapter, "capability_details", {}),
+            )
+            raise
+        finally:
+            with self.lock:
+                session.control_pending -= 1
+
     def _acquire(
         self, session: DeviceSession, request: AcquisitionRequest, submitted_at: float | None = None
     ) -> MeasurementBatch:
@@ -433,9 +480,19 @@ class SessionManager:
         ):
             request = replace(request, consistency="full")
         started = time.perf_counter()
+        started_utc = utc_now()
         with capture_io() as capture:
             try:
-                batch = session.adapter.acquire(request)
+                try:
+                    batch = session.adapter.acquire(request)
+                except DeviceError as exc:
+                    if exc.code != "acquisition_setup_required" or not self._prepare_acquisition_state(
+                        session
+                    ):
+                        raise
+                    # Only this explicit, pre-waveform setup condition permits a
+                    # second read. Transport/parser failures never enter this path.
+                    batch = session.adapter.acquire(request)
             except Exception as exc:
                 self.repository.audit(
                     "acquisition_transition_timing"
@@ -447,11 +504,13 @@ class SessionManager:
                 )
                 self._invalidate_acquisition(session, "error")
                 raise
+        completed = time.perf_counter()
+        completed_utc = utc_now()
         performance = {
             **batch.performance,
             **capture.summary(),
-            "acquisition_seconds": time.perf_counter() - started,
-            "received_at_monotonic": time.perf_counter(),
+            "acquisition_seconds": completed - started,
+            "received_at_monotonic": completed,
             "queue_seconds": max(0, started - submitted_at) if submitted_at is not None else 0,
         }
         with self.lock:
@@ -464,6 +523,15 @@ class SessionManager:
             )
         return replace(
             batch,
+            timestamp=completed_utc,
+            time_basis="host_utc_at_read_completed; waveform axes from instrument",
+            timing={
+                "version": 1,
+                "host_read_started_at": started_utc,
+                "host_read_completed_at": completed_utc,
+                "read_duration_seconds": completed - started,
+                "clock_source": "host_utc; durations=monotonic",
+            },
             performance=performance,
             configuration={
                 **batch.configuration,
@@ -521,6 +589,8 @@ class SessionManager:
             elif operation == "refresh_capabilities":
                 self._invalidate_acquisition(session, "explicit_refresh")
                 result = self._refresh_capabilities(session)
+                if self._prepare_acquisition_state(session):
+                    result = session.capability_snapshot
             elif operation == "read_settings":
                 if not quiet:
                     self._invalidate_acquisition(session, "explicit_read")
@@ -647,6 +717,7 @@ class SessionManager:
                 "confirmation_required",
                 "missing_option",
                 "acquisition_budget_exceeded",
+                "acquisition_setup_required",
             }:
                 session.state = "degraded"
             session.last_error = str(exc)
@@ -725,6 +796,19 @@ class SessionManager:
                 identity=session.identity,
                 adapter_id=session.config.adapter,
             )
+            run_factory = None
+            if request.kind in getattr(session.adapter, "recorded_run_kinds", ()):
+                if record_interval is not None or count is not None:
+                    raise DeviceError(
+                        "Finite instrument runs record every frame and manage their own end",
+                        "invalid_parameter",
+                    )
+                getattr(session.adapter, "validate_recorded_run")(request)
+                run_factory = getattr(session.adapter, "run_acquisition")
+                session.configuration_version += 1
+                self._invalidate_acquisition(session, "recorded_run")
+            elif request.duration is not None or request.sample_rate is not None:
+                raise DeviceError("Adapter does not support finite instrument runs", "unsupported")
             recording = self.repository.create_recording(mode, context=context, csv_interval=csv_interval)
             session.direct_recording = recording
             self.recordings.append(recording)
@@ -734,6 +818,7 @@ class SessionManager:
             session.state = "busy"
 
         def stream() -> list[str]:
+            run = None
             stream_request = replace(
                 request,
                 consistency="stream"
@@ -750,9 +835,10 @@ class SessionManager:
                 mode=mode,
             )
             try:
+                run = run_factory(request, session.stop) if run_factory else None
                 index = 0
                 next_save = 0.0
-                while not session.stop.is_set() and (count is None or index < count):
+                while run is not None or (not session.stop.is_set() and (count is None or index < count)):
                     if session.adapter is None:
                         break
                     started = time.monotonic()
@@ -760,20 +846,39 @@ class SessionManager:
                     if save_due and not recording.reserve(
                         max(65536, request.points * len(request.channels) * 32 + 4096)
                     ):
+                        if run is not None:
+                            raise DeviceError(
+                                recording.pause_reason or "Recording buffer full; instrument run stopped",
+                                "recording_paused",
+                            )
                         break
-                    batch = immutable_batch(self._acquire(session, stream_request))
+                    try:
+                        batch = immutable_batch(
+                            next(run) if run is not None else self._acquire(session, stream_request)
+                        )
+                    except StopIteration:
+                        recording.cancel_reservation()
+                        break
                     if save_due:
                         if not recording.submit(batch):
+                            if run is not None:
+                                raise DeviceError(
+                                    recording.pause_reason
+                                    or "Recording rejected frame; instrument run stopped",
+                                    "recording_paused",
+                                )
                             break
                         next_save = started + (record_interval or 0)
                     self.emit("measurement", device_id, batch=batch, path=recording.last_path)
                     index += 1
-                    if session.stop.wait(
+                    if run is None and session.stop.wait(
                         0 if cadence == "fastest" else max(0, started + interval - time.monotonic())
                     ):
                         break
                 recording.finish()
                 recording.thread.join()
+                if run is not None and recording.error:
+                    raise DeviceError(recording.error, "recording_failed")
                 return list(recording.segments.paths)
             except Exception as exc:
                 session.last_error, session.state = str(exc), "degraded"
@@ -781,9 +886,19 @@ class SessionManager:
                 self.emit("error", device_id, error=str(exc))
                 raise
             finally:
-                recording.cancel_reservation()
-                recording.finish()
-                recording.thread.join()
+                cleanup_error = None
+                try:
+                    if run is not None:
+                        run.close()
+                except Exception as exc:
+                    session.last_error, session.state = str(exc), "degraded"
+                    self.repository.audit("stream_cleanup_failed", device_id=device_id, error=str(exc))
+                    self.emit("error", device_id, error=str(exc))
+                    cleanup_error = exc
+                finally:
+                    recording.cancel_reservation()
+                    recording.finish()
+                    recording.thread.join()
                 self.repository.audit(
                     "stream_stopped",
                     device_id=device_id,
@@ -795,6 +910,8 @@ class SessionManager:
                     if session.state == "busy":
                         session.state = "connected"
                 self.emit("task_finished", device_id)
+                if cleanup_error is not None:
+                    raise cleanup_error
 
         with self.lock:
             session.stream_future = session.worker.submit(stream)
@@ -803,7 +920,10 @@ class SessionManager:
             def completed(worker: Future[Any]) -> None:
                 def converted(_finished: Future[Any]) -> None:
                     try:
-                        result.set_result(worker.result())
+                        paths = worker.result()
+                        if run_factory and (recording.error or recording.csv_error):
+                            raise DeviceError(recording.error or recording.csv_error, "recording_failed")
+                        result.set_result(paths)
                     except Exception as exc:
                         result.set_exception(exc)
 

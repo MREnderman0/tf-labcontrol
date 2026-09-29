@@ -101,8 +101,10 @@ def test_disconnect_clears_open_popup_and_page_without_switch(workspace, qtbot, 
         assert page.tabs.isHidden() and page.empty.isVisible()
         assert not page.monitor_button.isEnabled()
         assert window.controller.sync_device == ""
-    elif module == "设备管理" and category == "power_supply":
-        assert not page.panels and page.output is None
+    elif category == "power_supply":
+        assert window.current_module == "实时监测"
+        assert page.controls is None and not page.channel_checks
+        assert page.splitter.isHidden()
         assert page.empty.isVisible() and window.controller.sync_device == ""
     else:
         assert not page.form.editors and page.form.device_id == ""

@@ -71,7 +71,9 @@ def test_dsa_page_controls_drafts_passive_monitor_manual_save_and_disconnect(qtb
         qtbot.waitUntil(lambda: app.monitoring.tasks[key].sequence >= 2)
         assert not (app.repository.root / "data").exists()
         page.save()
-        qtbot.waitUntil(lambda: bool(list(app.repository.data_root.glob("单设备采集/*/*_single_frame_*/samples.npz"))))
+        qtbot.waitUntil(
+            lambda: bool(list(app.repository.data_root.glob("单设备采集/*/*_single_frame_*/_raw/samples.npz")))
+        )
         app.monitoring.stop(key).result(3)
         editor.editors["value"].set_value(120e6)
         editor.save_draft()

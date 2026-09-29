@@ -102,6 +102,13 @@ def test_record_button_card_outline_switching_and_real_binary_drain(
         card.refresh()
         assert page.chart.property("recordingPhase") == card.property("recordingPhase") == "idle"
         assert page.record_button.text() == "开始记录" and page.record_button.isEnabled()
+        recorder = runtime.monitoring.tasks[key].recorder
+        qtbot.waitUntil(recorder.finished.done, timeout=10000)
+        window.controller.poll()
+        card.refresh()
+        assert "分析 CSV 已完成" in page.status.text() and "分析 CSV 已完成" in card.state.text()
+        assert str(recorder.folder) in page.status.text()
+        assert (recorder.folder / "数据_00001.csv").is_file()
         runtime.monitoring.stop(key).result(5)
     finally:
         release.set()

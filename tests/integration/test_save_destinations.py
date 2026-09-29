@@ -42,10 +42,10 @@ def test_cli_uses_persisted_data_root_and_shared_naming(tmp_path, capsys, monkey
         args += ["--count", "1"]
     assert main(args) == 0
     result = json.loads(capsys.readouterr().out)
-    folder = Path(result["path"]) if action == "acquire" else Path(result["paths"][0]).parent
+    folder = Path(result["path"]) if action == "acquire" else Path(result["paths"][0]).parent.parent
     assert folder.is_relative_to(chosen / "simulation" / "单设备采集" / "2026-09-27")
     assert f"_{kind}_" in folder.name
-    metadata = json.loads((folder / "recording.json").read_text(encoding="utf-8"))
+    metadata = json.loads((folder / "_raw" / "recording.json").read_text(encoding="utf-8"))
     assert metadata["mode"] == "optical" and metadata["identity"]["model"] == "DSA815"
     assert Path(result["report"]).is_relative_to(tmp_path / "simulation" / "reports")
 
@@ -97,12 +97,17 @@ def test_queued_single_save_pins_root_and_start_but_preserves_frame_time(tmp_pat
         folder = future.result(5)
         assert folder.is_relative_to(original_root / "单设备采集" / "2026-09-27")
         assert folder.name.startswith("23-59-59-999_") and "_single_frame_" in folder.name
-        manifest = json.loads((folder / "recording.json").read_text(encoding="utf-8"))
-        saved = json.loads((folder / "snapshot.json").read_text(encoding="utf-8"))
+        manifest = json.loads((folder / "_raw" / "recording.json").read_text(encoding="utf-8"))
+        saved = json.loads((folder / "_raw" / "snapshot.json").read_text(encoding="utf-8"))
         assert manifest["started_local"] == START.isoformat() and manifest["mode"] == "optical"
         assert manifest["identity"]["serial"] == old.identity.serial
-        assert saved["timestamp"] == old.timestamp and saved["identity"] == manifest["identity"]
-        assert old.timestamp in (folder / "samples.csv").read_text(encoding="utf-8-sig")
+        assert saved["identity"] == manifest["identity"]
+        if entry == "fresh_read":
+            assert saved["timestamp"] == saved["timing"]["host_read_completed_at"]
+            assert saved["timestamp"] != old.timestamp
+        else:
+            assert saved["timestamp"] == old.timestamp
+        assert saved["timestamp"] in (folder / "记录说明.txt").read_text(encoding="utf-8-sig")
         assert not list(repo.data_root.rglob("recording.json"))
         wait_for(lambda: not service.capture_saves and not service.display_exports)
 
@@ -117,7 +122,7 @@ def test_continuous_start_pins_destination_and_repeat_start_keeps_same_run(tmp_p
         service.start(key, (REQUEST,), interval=0.05)
         service.set_recording(key, True, mode="optical")
         first = service.tasks[key].recorder
-        assert (first.folder / "recording.json").is_file()
+        assert (first.folder / "_raw" / "recording.json").is_file()
         wait_for(lambda: first.snapshot()["committed"] >= 1)
         clock[0] += timedelta(seconds=2)
         repo.set_data_root(tmp_path / "new-root")
@@ -128,7 +133,7 @@ def test_continuous_start_pins_destination_and_repeat_start_keeps_same_run(tmp_p
         wait_for(lambda: first.snapshot()["committed"] > before)
         service.stop(key).result(5)
         first.finished.result(5)
-        assert list(first.folder.glob("segment-*.sqlite3")) and list(first.folder.glob("segment-*.csv"))
+        assert list(first.raw_folder.glob("segment-*.sqlite3")) and list(first.folder.glob("数据_*.csv"))
         assert not runtime.sessions.snapshots()[0]["controlsLocked"]
         service.start(key, (REQUEST,), interval=0.05)
         service.set_recording(key, True)
