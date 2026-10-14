@@ -21,9 +21,8 @@ from lab_control.domain.instruments import (
 )
 from lab_control.instruments.base import ScpiAdapter
 
-from .profile import capability_schema
+from .profile import capability_schema, configured_channels
 from .protocol import (
-    CHANNELS,
     DEFAULT_ADDRESS,
     MAX_DISPLAY_WAVELENGTHS,
     build_frame,
@@ -49,9 +48,7 @@ DISPLAY_WAVELENGTHS_SET_COMMAND = 0x0732
 
 def _module_id(config: ConnectionConfig) -> int:
     values = [
-        item.split("=", 1)[1]
-        for item in config.options
-        if item.lower().startswith(("module=", "module_id="))
+        item.split("=", 1)[1] for item in config.options if item.lower().startswith(("module=", "module_id="))
     ]
     if not values:
         return DEFAULT_ADDRESS
@@ -72,13 +69,17 @@ class Jw8105Adapter(ScpiAdapter):
     def __init__(self, transport, profile, config: ConnectionConfig) -> None:
         super().__init__(transport, profile, config)
         self.module_id = _module_id(config)
+        self.channels = configured_channels(config)
         self.connection_data = b""
 
     def capabilities(self) -> CapabilitySet:
         return capability_schema(self.config)
 
-    def _query(self, command: int, data: bytes = b"", response: int | None = None):
-        payload = build_frame(self.module_id, command, data)
+    def _query(
+        self, command: int, data: bytes = b"", response: int | None = None, *, module_id: int | None = None
+    ):
+        address = self.module_id if module_id is None else module_id
+        payload = build_frame(address, command, data)
         query_frame = getattr(self.transport, "query_frame", None)
         if callable(query_frame):
             raw = query_frame(payload)
@@ -94,14 +95,18 @@ class Jw8105Adapter(ScpiAdapter):
                 try:
                     raw = bytes.fromhex(raw.decode("ascii"))
                 except (UnicodeDecodeError, ValueError) as exc:
-                    raise DeviceError("JW8105 mock response is not a hexadecimal frame", "parse_error") from exc
+                    raise DeviceError(
+                        "JW8105 mock response is not a hexadecimal frame", "parse_error"
+                    ) from exc
         expected = response if response is not None else command + 1
-        return parse_frame(raw, address=self.module_id, command=expected)
+        return parse_frame(raw, address=address, command=expected)
 
     def identify(self) -> DeviceIdentity:
         frame = self._query(CONNECTION_COMMAND, response=CONNECTION_COMMAND + 1)
         if len(frame.data) != 4:
-            raise DeviceError("JW8105 connection response must contain four configuration bytes", "parse_error")
+            raise DeviceError(
+                "JW8105 connection response must contain four configuration bytes", "parse_error"
+            )
         self.connection_data = frame.data
         # The protocol has no serial-number or firmware query.  Model identity
         # is therefore protocol-level only and never substitutes a serial.
@@ -115,49 +120,59 @@ class Jw8105Adapter(ScpiAdapter):
         return identity
 
     def _channel(self, channel: int) -> int:
-        if type(channel) is not int or channel not in CHANNELS:
-            raise ValidationError(f"JW8105 channel must be one of {CHANNELS}")
+        if type(channel) is not int or channel not in self.channels:
+            raise ValidationError(f"JW8105 channel must be one of {self.channels}")
         return channel
 
-    def _powers(self, *, display: bool) -> tuple[float, ...]:
+    def _module_channel(self, channel: int) -> tuple[int, int]:
+        self._channel(channel)
+        if len(self.channels) == 16:
+            return (channel - 1) // 8 + 1, (channel - 1) % 8 + 1
+        return self.module_id, channel
+
+    def _powers(self, *, display: bool, module_id: int | None = None) -> tuple[float, ...]:
         command = DISPLAY_POWER_COMMAND if display else POWER_COMMAND
-        frame = self._query(command)
+        frame = self._query(command, module_id=module_id)
         expected = 0x0163 if display else 0x0143
         if frame.command != expected:
             raise DeviceError("JW8105 power response command mismatch", "parse_error")
         return powers_32(frame.data) if display else powers_16(frame.data)
 
     def read(self, operation: str, channel: int = 1) -> Any:
-        channel = self._channel(channel)
+        module_id, local_channel = self._module_channel(channel)
         if operation == "power":
-            return self._powers(display=False)[channel - 1]
+            return self._powers(display=False, module_id=module_id)[local_channel - 1]
         if operation == "display_power":
-            return self._powers(display=True)[channel - 1]
+            return self._powers(display=True, module_id=module_id)[local_channel - 1]
         if operation == "wavelength":
             frame = self._query(WAVELENGTH_READ_COMMAND)
             return signed_le(frame.data, scale=100, width=4)
         if operation == "sampling_rate":
-            frame = self._query(SAMPLING_READ_COMMAND, bytes((8,)))
+            frame = self._query(SAMPLING_READ_COMMAND, bytes((8,)), module_id=module_id)
             if len(frame.data) != 9:
-                raise DeviceError("JW8105 sampling-rate response must contain 8 rates and PDL time", "parse_error")
-            return frame.data[channel - 1]
+                raise DeviceError(
+                    "JW8105 sampling-rate response must contain 8 rates and PDL time",
+                    "parse_error",
+                )
+            return frame.data[local_channel - 1]
         if operation == "display_wavelengths":
             frame = self._query(DISPLAY_WAVELENGTHS_READ_COMMAND)
             return wavelengths(frame.data)
         if operation == "pdl":
-            frame = self._query(PDL_READ_COMMAND)
+            frame = self._query(PDL_READ_COMMAND, module_id=module_id)
             if len(frame.data) != 64:
                 raise DeviceError("JW8105 PDL response must contain 8 max/min pairs", "parse_error")
-            offset = (channel - 1) * 8
+            offset = (local_channel - 1) * 8
             maximum = signed_le(frame.data[offset : offset + 4], scale=1000, width=4)
             minimum = signed_le(frame.data[offset + 4 : offset + 8], scale=1000, width=4)
             return {"maximum_dbm": maximum, "minimum_dbm": minimum, "pdl_db": maximum - minimum}
         raise Unsupported(f"JW8105 operation is not implemented: {operation}")
 
     def read_status(self) -> DeviceStatus:
+        modules = (1, 2) if len(self.channels) == 16 else (self.module_id,)
+        powers = tuple(value for module in modules for value in self._powers(display=False, module_id=module))
         values: dict[str, Any] = {
-            f"{channel}.power": value
-            for channel, value in zip(CHANNELS, self._powers(display=False), strict=True)
+            f"{channel}.power": value for channel, value in zip(self.channels, powers, strict=True)
         }
         values["module.wavelength"] = self.read("wavelength")
         values["module.connection_data"] = self.connection_data.hex(" ")
@@ -179,6 +194,7 @@ class Jw8105Adapter(ScpiAdapter):
         try:
             self._confirmed(command)
             channel = self._channel(command.channel)
+            module_id, local_channel = self._module_channel(channel)
             value = parameters.get("value")
             if command.operation == "wavelength":
                 if isinstance(value, bool) or not isinstance(value, (int, float)):
@@ -189,7 +205,12 @@ class Jw8105Adapter(ScpiAdapter):
             elif command.operation == "sampling_rate":
                 if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 8:
                     raise ValidationError("JW8105 sampling_rate value must be an integer code in [0, 8]")
-                self._query(SAMPLING_SET_COMMAND, bytes((channel, value)), SAMPLING_SET_COMMAND + 1)
+                self._query(
+                    SAMPLING_SET_COMMAND,
+                    bytes((local_channel, value)),
+                    SAMPLING_SET_COMMAND + 1,
+                    module_id=module_id,
+                )
                 readback = self.read("sampling_rate", channel)
             elif command.operation == "display_wavelengths":
                 if not isinstance(value, (list, tuple)) or not 1 <= len(value) <= MAX_DISPLAY_WAVELENGTHS:
@@ -201,7 +222,9 @@ class Jw8105Adapter(ScpiAdapter):
                     except (TypeError, ValueError) as exc:
                         raise ValidationError("JW8105 display wavelengths must be numeric") from exc
                     if not 850 <= numeric <= 1625 or numeric != round(numeric):
-                        raise ValidationError("JW8105 display wavelengths must be integral nanometres in [850, 1625]")
+                        raise ValidationError(
+                            "JW8105 display wavelengths must be integral nanometres in [850, 1625]"
+                        )
                     encoded.append(int(numeric).to_bytes(2, "little"))
                 payload = bytes((len(value),)) + b"".join(encoded)
                 self._query(DISPLAY_WAVELENGTHS_SET_COMMAND, payload, DISPLAY_WAVELENGTHS_SET_COMMAND + 1)
@@ -211,19 +234,24 @@ class Jw8105Adapter(ScpiAdapter):
             self.configuration[f"{command.channel}.{command.operation}"] = {"value": value}
             return ApplyResult("success", command.operation, {"value": value}, readback, 1)
         except DeviceError as exc:
-            return ApplyResult(
-                "uncertain", command.operation, parameters, completed_steps=0, error=str(exc)
-            )
+            return ApplyResult("uncertain", command.operation, parameters, completed_steps=0, error=str(exc))
 
     def acquire(self, request: AcquisitionRequest) -> MeasurementBatch:
         request.validate()
         if self.identity is None:
             raise DeviceError("Identify the instrument before acquisition", "identity_required")
-        if any(channel not in CHANNELS for channel in request.channels):
-            raise ValidationError(f"JW8105 channels must be one of {CHANNELS}")
-        values = self._powers(display=False)
+        if any(channel not in self.channels for channel in request.channels):
+            raise ValidationError(f"JW8105 channels must be one of {self.channels}")
+        addresses = {self._module_channel(channel)[0] for channel in request.channels}
+        # Read each required module once; publish only after every reply validates.
+        values = {address: self._powers(display=False, module_id=address) for address in sorted(addresses)}
         measurements = tuple(
-            Measurement("power", "dBm", values[channel - 1], channel=channel)
+            Measurement(
+                "power",
+                "dBm",
+                values[self._module_channel(channel)[0]][self._module_channel(channel)[1] - 1],
+                channel=channel,
+            )
             for channel in request.channels
         )
         return MeasurementBatch(

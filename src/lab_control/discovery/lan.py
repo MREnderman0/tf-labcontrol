@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from lab_control.application.config import ConnectionConfig
+from lab_control.application.static_addresses import StaticAddressStore
 from lab_control.discovery.service import DiscoveryCandidate, Inventory
 from lab_control.domain.instruments import DeviceError, ValidationError
 from lab_control.transport.visa import VisaRuntime
@@ -225,3 +226,43 @@ class LanDiscoveryProvider:
                     safe_scpi=True,
                 )
         return tuple(found.values())
+
+
+class StaticAddressDiscoveryProvider:
+    """Probe only the exact endpoints saved by the operator.
+
+    This provider intentionally does not inspect interfaces, expand subnets,
+    or try adjacent ports.  A targeted provider is created for the address
+    dialog's one-shot scan while the regular provider is included in every
+    normal scan.
+    """
+
+    name = "static_addresses"
+
+    def __init__(self, store: StaticAddressStore, ids: tuple[str, ...] | None = None):
+        self.store = store
+        self.ids = None if ids is None else frozenset(str(value) for value in ids)
+
+    def for_ids(self, ids: tuple[str, ...] | list[str] | set[str]) -> "StaticAddressDiscoveryProvider":
+        return type(self)(self.store, tuple(str(value) for value in ids))
+
+    def enumerate(self) -> tuple[DiscoveryCandidate, ...]:
+        entries = self.store.entries()
+        if self.ids is not None:
+            entries = tuple(entry for entry in entries if entry.id in self.ids)
+        return tuple(
+            DiscoveryCandidate(
+                entry.config(),
+                self.name,
+                {
+                    "address": entry.address,
+                    "kind": entry.kind,
+                    "port": entry.port,
+                    "adapter": entry.adapter,
+                    "label": entry.label,
+                    "static_address_id": entry.id,
+                },
+                safe_scpi=not bool(entry.adapter),
+            )
+            for entry in entries
+        )

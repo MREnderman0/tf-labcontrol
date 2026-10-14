@@ -248,10 +248,10 @@ def run(resource: str, asset_name: str) -> Path:
                 readings[operation] = jsonable(call("read_settings", ((operation,), 1)))
             readings["sampling_rate"] = {
                 str(channel): jsonable(call("read_settings", (("sampling_rate",), channel)))
-                for channel in range(1, 9)
+                for channel in range(1, 17)
             }
             readings["pdl"] = {
-                str(channel): jsonable(call("read_settings", (("pdl",), channel))) for channel in range(1, 9)
+                str(channel): jsonable(call("read_settings", (("pdl",), channel))) for channel in range(1, 17)
             }
             report["initial_snapshot"] = readings
             report["stages"]["parameter_read"] = {

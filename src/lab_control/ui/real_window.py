@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+import re
 from concurrent.futures import Future, ThreadPoolExecutor
-from typing import Any
+from typing import Any, Callable
 
 from PySide6.QtCore import QDateTime, QObject, QRect, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QAction, QColor, QScreen
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QCheckBox,
     QDialog,
     QDialogButtonBox,
@@ -19,6 +21,8 @@ from PySide6.QtWidgets import (
     QLabel,
     QLayout,
     QLineEdit,
+    QListWidget,
+    QListWidgetItem,
     QMainWindow,
     QPushButton,
     QScrollArea,
@@ -40,7 +44,7 @@ from lab_control.application.controls import CATEGORY_LABELS, slot_label
 from lab_control.application.runtime import ApplicationRuntime
 from lab_control.discovery.presence import LIVE_CONNECTIONS, is_current, presence_label
 from lab_control.domain.instruments import DeviceError, jsonable
-from lab_control.instruments.registry import PROFILES, SDK_ADAPTERS, describe
+from lab_control.instruments.registry import DEVICE_DEFINITIONS, PROFILES, SDK_ADAPTERS, describe
 from lab_control.ui.controller import (
     WorkspaceController,
     background_read_only,
@@ -146,6 +150,9 @@ class RealWindow(QMainWindow):
         self._watched_screen: QScreen | None = None
         self._screen_connected = False
         self._submenu_signature: tuple[str, tuple[str, ...]] = ("", ())
+        self._static_address_dialog: QDialog | None = None
+        self._static_address_status: QLabel | None = None
+        self._refresh_static_address_dialog: Callable[[], None] | None = None
         self.setWindowTitle("TF LabControl · 分类卡片 · " + ("真实设备" if runtime.hardware else "模拟演示"))
         self.resize(1440, 900)
         self.setMinimumSize(1280, 760)
@@ -553,7 +560,10 @@ class RealWindow(QMainWindow):
         self.connection_results_button.clicked.connect(self.show_connection_results)
         toolbar.addWidget(self.connection_results_button)
         toolbar.addWidget(self.cancel_button)
-        for text, action in (("添加资源", self.add_resource), ("环境诊断", self.diagnose)):
+        self.address_list_button = QPushButton("地址列表")
+        self.address_list_button.clicked.connect(self.show_static_addresses)
+        toolbar.addWidget(self.address_list_button)
+        for text, action in (("环境诊断", self.diagnose),):
             button = QPushButton(text)
             button.clicked.connect(action)
             toolbar.addWidget(button)
@@ -1330,10 +1340,26 @@ class RealWindow(QMainWindow):
             self.message.setText(
                 "扫描完成；" + (json.dumps(failures, ensure_ascii=False) if failures else "已有会话保持不变")
             )
+        elif label == "address_scan":
+            failures = {name: data for name, data in result["providers"].items() if data["state"] == "error"}
+            failed_items = [item for item in result.get("items", ()) if item.get("error")]
+            if self._static_address_status is not None:
+                if failures or failed_items:
+                    detail = {"providers": failures, "items": failed_items}
+                    self._static_address_status.setText(
+                        "地址扫描完成，但有失败：" + json.dumps(detail, ensure_ascii=False)
+                    )
+                else:
+                    self._static_address_status.setText("地址扫描完成；已更新设备池")
+            self.message.setText("地址列表扫描完成")
+            if self._refresh_static_address_dialog is not None:
+                self._refresh_static_address_dialog()
         self.refresh()
 
     def _failed(self, message: str) -> None:
         self.message.setText(message)
+        if self._static_address_status is not None:
+            self._static_address_status.setText(message)
         if self.runtime.closed:
             self.closing = True
             self.bridge.worker.shutdown(wait=False)
@@ -1343,55 +1369,204 @@ class RealWindow(QMainWindow):
         self.navigate("系统设置")
         self.environment_panel.start()
 
-    def add_resource(self) -> None:
+    def show_static_addresses(self) -> None:
+        """Open the compact model-and-endpoint dialog."""
+        if self._static_address_dialog is not None:
+            self._static_address_dialog.raise_()
+            self._static_address_dialog.activateWindow()
+            return
+
         dialog = QDialog(self)
-        dialog.setWindowTitle("添加已确认的设备资源")
-        form = QFormLayout(dialog)
-        resource, sdk = QLineEdit(), QLineEdit()
-        serial = QLineEdit()
-        baud, timeout = QSpinBox(), QDoubleSpinBox()
-        baud.setRange(300, 3000000)
+        dialog.setObjectName("staticAddressDialog")
+        dialog.setWindowTitle("添加设备与地址列表")
+        dialog.resize(760, 560)
+        self._static_address_dialog = dialog
+        root = QVBoxLayout(dialog)
+
+        title = QLabel("添加设备")
+        title.setObjectName("panelTitle")
+        root.addWidget(title)
+        description = QLabel(
+            "只需要选择型号并填写 IP 或 COM 口。端口、超时和备注已放入高级选项。"
+        )
+        description.setObjectName("pageDescription")
+        description.setWordWrap(True)
+        root.addWidget(description)
+
+        form = QFormLayout()
+        model = WorkspaceComboBox()
+        model.addItem("自动识别（只读探测）", "")
+        for adapter_id, profile in sorted(PROFILES.items()):
+            manufacturer = profile.manufacturer[0] if profile.manufacturer else "未知厂家"
+            models = "/".join(profile.models[:2]) or adapter_id
+            model.addItem(f"{manufacturer} {models} · {adapter_id}", adapter_id)
+        default_model = model.findData("ceyear.6362d")
+        if default_model >= 0:
+            model.setCurrentIndex(default_model)
+        endpoint = QLineEdit()
+        endpoint.setObjectName("staticAddressInput")
+        endpoint.setPlaceholderText("例如 192.168.5.241 或 COM3")
+        form.addRow("设备型号", model)
+        form.addRow("IP / COM 口", endpoint)
+        root.addLayout(form)
+
+        advanced_toggle = QCheckBox("显示高级连接选项")
+        root.addWidget(advanced_toggle)
+        advanced = QWidget()
+        advanced_form = QFormLayout(advanced)
+        port = QSpinBox()
+        port.setRange(1, 65535)
+        port.setValue(10001)
+        baud = QSpinBox()
+        baud.setRange(300, 3_000_000)
         baud.setValue(9600)
+        timeout = QDoubleSpinBox()
         timeout.setRange(0.1, 60)
         timeout.setValue(3)
-        confirmed = QCheckBox("已核对 53100A 身份及 TSERVE 服务独占权")
-        adapter, transport = WorkspaceComboBox(), WorkspaceComboBox()
-        adapter.addItems(["", *PROFILES, *SDK_ADAPTERS])
-        transport.addItems(["visa", "serial", "tcp", "vicp", "tlpmx", "pm100d", "pico", "tserve"])
-        resource.setPlaceholderText("优先 PyVISA：TCPIP0::地址::inst0::INSTR / USB… / GPIB… / ASRL…")
-        transport.setToolTip("支持 VISA 的设备优先 visa；专用 SDK/TSERVE 仅用于相应厂商协议。")
-        form.addRow("资源地址", resource)
-        form.addRow("准确型号适配器", adapter)
-        form.addRow("传输方式", transport)
-        form.addRow("SDK DLL 绝对路径", sdk)
-        form.addRow("预期序列号（可选）", serial)
-        form.addRow("串口波特率", baud)
-        form.addRow(QLabel("可输入范围：300 ～ 3000000 baud（整数） · 软件通信限制"))
-        form.addRow("通信超时（秒）", timeout)
-        form.addRow(QLabel("可输入范围：0.1 ～ 60 s · 软件通信限制"))
-        form.addRow(confirmed)
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
-        buttons.accepted.connect(dialog.accept)
-        buttons.rejected.connect(dialog.reject)
-        form.addRow(buttons)
-        if dialog.exec():
+        label = QLineEdit()
+        label.setPlaceholderText("可选，例如实验室光谱仪")
+        source_address = QLineEdit()
+        source_address.setObjectName("staticSourceAddressInput")
+        source_address.setPlaceholderText("可选，填写实验网卡的 IPv4；留空使用系统路由")
+        advanced_form.addRow("Socket 端口（IP）", port)
+        advanced_form.addRow("串口波特率（COM）", baud)
+        advanced_form.addRow("通信超时（秒）", timeout)
+        advanced_form.addRow("备注（可选）", label)
+        advanced_form.addRow("本地网卡地址（可选）", source_address)
+        advanced.setVisible(False)
+        advanced_toggle.toggled.connect(advanced.setVisible)
+        root.addWidget(advanced)
+
+        def update_model_defaults() -> None:
+            definition = DEVICE_DEFINITIONS.get(str(model.currentData() or ""))
+            if definition and definition.socket_port:
+                port.setValue(definition.socket_port)
+
+        model.currentIndexChanged.connect(update_model_defaults)
+        update_model_defaults()
+
+        address_count = QLabel()
+        address_count.setObjectName("overviewNote")
+        root.addWidget(address_count)
+        address_list = QListWidget()
+        address_list.setObjectName("staticAddressList")
+        address_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        root.addWidget(address_list, 1)
+
+        actions = QHBoxLayout()
+        save_scan = QPushButton("保存并扫描")
+        save_scan.setObjectName("primaryButton")
+        remove = QPushButton("删除选中")
+        scan_selected = QPushButton("扫描选中")
+        scan_all = QPushButton("扫描全部")
+        actions.addWidget(save_scan)
+        actions.addWidget(remove)
+        actions.addWidget(scan_selected)
+        actions.addWidget(scan_all)
+        actions.addStretch()
+        root.addLayout(actions)
+        status = QLabel()
+        status.setObjectName("overviewNote")
+        status.setWordWrap(True)
+        root.addWidget(status)
+
+        def refresh_addresses() -> None:
+            entries = self.runtime.static_addresses.entries()
+            selected = {
+                str(item.data(Qt.ItemDataRole.UserRole)) for item in address_list.selectedItems()
+            }
+            address_list.blockSignals(True)
+            address_list.clear()
+            for entry in entries:
+                kind = "COM" if entry.kind == "serial" else "IP"
+                model_name = entry.adapter or "自动识别"
+                suffix = f" · {entry.label}" if entry.label else ""
+                source_suffix = f" · 源 {entry.source_address}" if entry.source_address else ""
+                item = QListWidgetItem(f"{kind} {entry.address} · {model_name}{suffix}{source_suffix}")
+                item.setData(Qt.ItemDataRole.UserRole, entry.id)
+                item.setSelected(entry.id in selected)
+                address_list.addItem(item)
+            address_list.blockSignals(False)
+            address_count.setText(f"已保存 {len(entries)} 个设备地址")
+            has_selection = bool(address_list.selectedItems())
+            has_items = bool(entries)
+            busy = self.runtime.discovery.is_scanning
+            remove.setEnabled(has_selection)
+            scan_selected.setEnabled(has_selection and not busy)
+            scan_all.setEnabled(has_items and not busy)
+            save_scan.setEnabled(not busy)
+
+        self._refresh_static_address_dialog = refresh_addresses
+
+        def selected_ids() -> tuple[str, ...]:
+            return tuple(
+                str(item.data(Qt.ItemDataRole.UserRole)) for item in address_list.selectedItems()
+            )
+
+        def scan_addresses(ids: tuple[str, ...]) -> None:
+            if not ids:
+                status.setText("请先选择至少一个设备地址。")
+                return
             try:
-                config = ConnectionConfig(
-                    resource.text().strip(),
-                    adapter.currentText(),
-                    transport.currentText(),
-                    sdk_path=sdk.text(),
-                    expected_serial=serial.text().strip(),
-                    baud_rate=baud.value(),
-                    timeout=timeout.value(),
-                    identity_confirmed=confirmed.isChecked(),
-                )
-                self.selected_id = self.runtime.add(config)
-                self.refresh()
+                self.bridge.watch(self.runtime.scan_static_addresses(ids), "address_scan")
+                status.setText("正在扫描所选设备地址…")
+                refresh_addresses()
             except (DeviceError, ValueError) as exc:
-                self._failed(str(exc))
+                status.setText(str(exc))
+
+        def save_endpoint() -> None:
+            value = endpoint.text().strip()
+            kind = "serial" if re.fullmatch(r"(?:COM|ASRL)\s*\d+(?:::INSTR)?", value, re.I) else "ip"
+            try:
+                entry = self.runtime.static_addresses.add(
+                    value,
+                    kind=kind,
+                    port=port.value(),
+                    adapter=str(model.currentData() or ""),
+                    timeout=timeout.value(),
+                    label=label.text(),
+                    baud_rate=baud.value(),
+                    source_address=source_address.text(),
+                )
+                endpoint.clear()
+                label.clear()
+                source_address.clear()
+                refresh_addresses()
+                if self.runtime.hardware:
+                    scan_addresses((entry.id,))
+                else:
+                    status.setText("已保存；模拟模式不会访问真实设备。")
+            except (DeviceError, ValueError) as exc:
+                status.setText(str(exc))
+
+        save_scan.clicked.connect(save_endpoint)
+        def remove_selected() -> None:
+            self.runtime.static_addresses.remove(set(selected_ids()))
+            refresh_addresses()
+
+        remove.clicked.connect(remove_selected)
+        scan_selected.clicked.connect(lambda: scan_addresses(selected_ids()))
+        scan_all.clicked.connect(
+            lambda: scan_addresses(tuple(entry.id for entry in self.runtime.static_addresses.entries()))
+        )
+        address_list.itemSelectionChanged.connect(refresh_addresses)
+        refresh_addresses()
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.button(QDialogButtonBox.StandardButton.Close).setText("关闭")
+        buttons.rejected.connect(dialog.reject)
+        root.addWidget(buttons)
+        self._static_address_status = status
+
+        def clear_dialog() -> None:
+            if self._static_address_dialog is dialog:
+                self._static_address_dialog = None
+                self._static_address_status = None
+                self._refresh_static_address_dialog = None
+
+        dialog.finished.connect(lambda _result: clear_dialog())
+        dialog.exec()
+        dialog.deleteLater()
 
     def configure_adapter(self, device_id: str) -> None:
         """Let the user bind a known protocol to one enumerated resource."""
@@ -1411,7 +1586,7 @@ class RealWindow(QMainWindow):
         adapter.addItems([*PROFILES, *SDK_ADAPTERS])
         if current.adapter:
             adapter.setCurrentText(current.adapter)
-        transport.addItems(["visa", "serial", "tcp", "vicp", "tlpmx", "pm100d", "pico", "tserve"])
+        transport.addItems(["visa", "serial", "tcp", "vicp", "tlpmx", "pm100d", "pico", "tserve", "kplusk"])
         transport.setCurrentText(current.transport)
         resource.setReadOnly(False)
         form.addRow("资源地址", resource)

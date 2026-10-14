@@ -17,7 +17,15 @@
       5,
       6,
       7,
-      8
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
     ],
     "source": "https://www.joinwit.com/pro-info/638.html",
     "revision": "V23.02.02 user-supplied protocol evidence; 115200 8-bit no parity; stop bit unspecified",
@@ -40,7 +48,15 @@
       5,
       6,
       7,
-      8
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
     ],
     "operations": [
       {

@@ -86,7 +86,12 @@ def test_record_button_card_outline_switching_and_real_binary_drain(
         assert runtime.monitoring.snapshots()[key]["running"]
         assert page.chart.property("recordingPhase") == card.property("recordingPhase") == "draining"
         assert page.record_button.text() == "收尾中…" and not page.record_button.isEnabled()
-        assert "收尾中" in page.status.text() and "收尾中" in card.state.text()
+        assert "收尾中" in page.status.text()
+        assert card.state.text() == "收尾中"
+        assert "收尾中" in card.detail_state.text()
+        assert (
+            str(runtime.monitoring.snapshots()[key]["recording_state"]["folder"]) in card.detail_path.text()
+        )
         assert next(s for s in runtime.sessions.snapshots() if s["stableDeviceId"] == key)["controlsLocked"]
         release.set()
         qtbot.waitUntil(lambda: not runtime.monitoring.snapshots()[key]["recording_state"]["pending"])
@@ -106,7 +111,11 @@ def test_record_button_card_outline_switching_and_real_binary_drain(
         qtbot.waitUntil(recorder.finished.done, timeout=10000)
         window.controller.poll()
         card.refresh()
-        assert "分析 CSV 已完成" in page.status.text() and "分析 CSV 已完成" in card.state.text()
+        assert "分析 CSV 已完成" in page.status.text()
+        assert card.state.text() == "待处理"
+        assert "分析 CSV 已完成" in card.detail_state.text()
+        assert str(recorder.folder) in card.detail_path.text()
+        assert "已保存帧数" in card.detail_frames.text()
         assert str(recorder.folder) in page.status.text()
         assert (recorder.folder / "数据_00001.csv").is_file()
         runtime.monitoring.stop(key).result(5)

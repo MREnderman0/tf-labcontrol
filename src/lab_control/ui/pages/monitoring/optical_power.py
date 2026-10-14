@@ -201,7 +201,9 @@ class OpticalPowerPlot(QWidget):
 
 
 class PowerMeterReadoutCard(QFrame):
-    WIDTH = 184
+    # Two cards must fit in the compact readout pane, including the grid gap
+    # and the scroll area's margins.
+    WIDTH = 168
     HEIGHT = 96
 
     def __init__(self, channel: int, parent=None) -> None:
@@ -357,6 +359,7 @@ class OpticalPowerMonitoringPage(QWidget):
             dict(stored_channels) if isinstance(stored_channels, dict) else {}
         )
         self.latest_frame: MonitorFrame | None = None
+        self.monitoring_context_id = ""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(14, 10, 14, 12)
         layout.setSpacing(8)
@@ -535,6 +538,7 @@ class OpticalPowerMonitoringPage(QWidget):
         self.controller.focus_settings(device_id, self._background_sync_keys(device_id))
         self.generation += 1
         self.latest_frame = None
+        self.monitoring_context_id = ""
         self.plot.reset()
         self.timing.bind(device_id, self.mode)
         self.empty.setVisible(not device_id)
@@ -629,26 +633,51 @@ class OpticalPowerMonitoringPage(QWidget):
             self.controller.message.emit(str(exc))
 
     def refresh_frame(self, device_id: str) -> None:
-        if (
-            device_id != self.device_id
-            or not self.isVisible()
-            or not self.channels()
-        ):
+        if device_id != self.device_id or not self.isVisible() or not self.channels():
             return
-        frame = self.controller.runtime.monitoring.latest(device_id, "scalar", "power")
-        if not frame or not self.plot.show_frame(frame, self.channels()):
+        service = self.controller.runtime.monitoring
+        frames = service.recent(device_id, "scalar", "power")
+        last_token = self.plot.last_token
+        if last_token and frames:
+            # The service keeps the complete bounded replay window. Only feed
+            # frames that arrived after the last painted one; this keeps the
+            # normal frame-ready path O(1) while still catching up after a
+            # hidden page becomes visible.
+            frames = tuple(
+                frame
+                for frame in frames
+                if frame.session_id != last_token[0] or frame.sequence > last_token[1]
+            )
+        if not frames:
+            latest = service.latest(device_id, "scalar", "power")
+            frames = (latest,) if latest else ()
+        accepted = False
+        for frame in frames:
+            accepted = self.plot.show_frame(frame, self.channels()) or accepted
+        if not accepted:
             return
-        self.latest_frame = frame
-        self.controller.runtime.monitoring.displayed(device_id, frame)
-        measurements = {m.channel: m for m in frame.batch.measurements}
+        displayed_frame = self.plot.displayed_frame
+        if displayed_frame is None:
+            return
+        self.latest_frame = displayed_frame
+        service.displayed(device_id, displayed_frame)
+        measurements = {m.channel: m for m in displayed_frame.batch.measurements}
         for channel, card in self.cards.items():
             if channel in self.channels():
-                card.update_measurement(measurements.get(channel), frame.batch.timestamp)
+                card.update_measurement(measurements.get(channel), displayed_frame.batch.timestamp)
 
     def refresh(self) -> None:
         device_id = self.device_id
         state = self.controller.states.get(device_id, {})
         task = self.controller.runtime.monitoring.snapshots().get(device_id, {})
+        context_id = task.get("monitoring_context_id", "")
+        if context_id and context_id != self.monitoring_context_id:
+            # A stopped task is replaced with a fresh monitoring context on
+            # restart. Start its elapsed-time axis from zero instead of
+            # appending the new run to the previous run's trend.
+            self.plot.reset()
+            self.latest_frame = None
+            self.monitoring_context_id = context_id
         draining = recording_phase(task) == "draining"
         self.timing.bind(device_id, "optical")
         self.timing.refresh(task)

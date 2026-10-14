@@ -4,7 +4,7 @@
 
 | 检查项 | 结果 |
 | --- | --- |
-| 8 个通道默认出现并选中 | `tests/integration/test_optical_power_workspace.py` 通过 |
+| 16 个通道默认出现并选中 | `tests/integration/test_optical_power_workspace.py` 通过；8 通道资产仍可通过配置显式切换 |
 | 复选框过滤采集请求、曲线和读数卡片 | 通过；变更通道只丢弃在途帧并刷新请求，监测任务保持运行 |
 | 0.5～60 秒采样间隔 | 共享 `MonitoringTiming` 固定间隔控件，通过 |
 | 开始监测与开始记录分离 | 开始监测不创建记录，开始记录使用 `record_interval=None` 逐帧提交 |

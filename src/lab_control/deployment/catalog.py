@@ -67,6 +67,11 @@ def validate_manifest(value: dict) -> list[str]:
         filename = item.get("filename")
         if filename and (Path(filename).name != filename or re.search(r"[\\/:]", filename)):
             errors.append(f"{key}: filename must be a cache basename")
+        cache_subdirectory = item.get("cache_subdirectory", "")
+        if cache_subdirectory:
+            relative = Path(cache_subdirectory)
+            if relative.is_absolute() or ".." in relative.parts:
+                errors.append(f"{key}: cache_subdirectory must stay inside the offline cache")
         digest = item.get("sha256")
         if digest and not re.fullmatch(r"[0-9a-fA-F]{64}", digest):
             errors.append(f"{key}: invalid SHA256")
@@ -84,6 +89,7 @@ def cache_directories() -> tuple[Path, ...]:
         # Keep verified installers in the repository so a fresh clone can use
         # them without downloading again.  The temporary .tools cache remains
         # as a fallback for files that have not yet been promoted here.
+        folders.append(Path(__file__).resolve().parents[3] / "deployment/packages")
         folders.append(Path(__file__).resolve().parents[3] / "deployment/packages/installers")
         folders.append(Path(__file__).resolve().parents[3] / ".tools/installers")
     else:
@@ -99,7 +105,8 @@ def payload_status(component: dict, caches: tuple[Path, ...], cancel=None) -> di
         return {"state": "unknown", "reason": "安装材料尚未登记完整"}
     failures = []
     for folder in caches:
-        path = folder / filename
+        relative_folder = component.get("cache_subdirectory", "")
+        path = folder / relative_folder / filename if relative_folder else folder / filename
         if not path.is_file():
             continue
         try:

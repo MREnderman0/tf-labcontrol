@@ -12460,7 +12460,15 @@
         5,
         6,
         7,
-        8
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
       ],
       "source": "https://www.joinwit.com/pro-info/638.html",
       "revision": "V23.02.02 user-supplied protocol evidence; 115200 8-bit no parity; stop bit unspecified",
@@ -12650,6 +12658,76 @@
           "hardware_passed": false,
           "ui_label": "偏振相关损耗",
           "ui_location": "实时监测 / 光功率计 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "",
+            "custom_encoder": false
+          }
+        }
+      ]
+    },
+    {
+      "adapter_id": "coremorrow.xmt",
+      "model": "芯明天 XMT（完整型号待核）",
+      "category": "multimeter",
+      "control_page": "实时监测 / 万用表",
+      "channels": [
+        1,
+        2,
+        3
+      ],
+      "source": "https://www.coremorrow.com/",
+      "revision": "XMT serial frame observed from vendor DLL 25.09.26; exact model/E09 applicability pending",
+      "acquisition": "",
+      "channel_limits": {},
+      "hardware_passed": false,
+      "operations": [
+        {
+          "name": "power_config",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.coremorrow.com/",
+          "section": "XMT_COMMAND_ReadPowerConfig(B3=80,B4=0)",
+          "verification": "protocol_verified_read_only",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": true,
+          "hardware_passed": false,
+          "ui_label": "控制器配置",
+          "ui_location": "实时监测 / 万用表 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "raw_channel_data",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://www.coremorrow.com/",
+          "section": "XMT_COMMAND_ReadData(B3=5,B4=0)",
+          "verification": "protocol_verified_read_only",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "原始通道数据",
+          "ui_location": "实时监测 / 万用表 / 状态与诊断",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -13148,6 +13226,100 @@
             "select": [],
             "writes": [],
             "query": "SYST:CTYP? 500",
+            "custom_encoder": false
+          }
+        }
+      ]
+    },
+    {
+      "adapter_id": "kplusk.fxe",
+      "model": "K+K FXE",
+      "category": "multimeter",
+      "control_page": "实时监测 / 万用表",
+      "channels": [
+        1
+      ],
+      "source": "https://kplusk-messtechnik.de/downloads/index.html",
+      "revision": "K+K Library 21.2.2 / Python wrapper 2.1; read-only compatibility subset",
+      "acquisition": "",
+      "channel_limits": {},
+      "hardware_passed": false,
+      "operations": [
+        {
+          "name": "report",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://kplusk-messtechnik.de/downloads/files/Manual_KK-Library_MultiSource_Ver_21.1.0_25-06-03.pdf",
+          "section": "Multi_GetReport",
+          "verification": "protocol_verified_read_only",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": true,
+          "hardware_passed": false,
+          "ui_label": "原始协议报告",
+          "ui_location": "实时监测 / 万用表 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "firmware_version",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://kplusk-messtechnik.de/downloads/files/Manual_KK-Library_MultiSource_Ver_21.1.0_25-06-03.pdf",
+          "section": "Multi_GetFirmwareVersion",
+          "verification": "protocol_verified_read_only",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "固件版本",
+          "ui_location": "实时监测 / 万用表 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "user_id",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://kplusk-messtechnik.de/downloads/files/Manual_KK-Library_MultiSource_Ver_21.1.0_25-06-03.pdf",
+          "section": "Multi_GetUserID",
+          "verification": "protocol_verified_read_only",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "K+K 用户号",
+          "ui_location": "实时监测 / 万用表 / 状态与诊断",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "",
             "custom_encoder": false
           }
         }

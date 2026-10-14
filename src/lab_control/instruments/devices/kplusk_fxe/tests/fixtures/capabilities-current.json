@@ -1,0 +1,97 @@
+{
+  "profile": {
+    "adapter_id": "kplusk.fxe",
+    "manufacturer": [
+      "K+K",
+      "K+K Messtechnik"
+    ],
+    "models": [
+      "FXE",
+      "FXE-compatible K+K counter"
+    ],
+    "category": "multimeter",
+    "channels": [
+      1
+    ],
+    "source": "https://kplusk-messtechnik.de/downloads/index.html",
+    "revision": "K+K Library 21.2.2 / Python wrapper 2.1; read-only compatibility subset",
+    "identity_query": "KPLUSK_LIBRARY_IDENTITY",
+    "error_query": "",
+    "status": [
+      "firmware_version",
+      "user_id",
+      "report"
+    ],
+    "acquisition": ""
+  },
+  "capabilities": {
+    "category": "multimeter",
+    "channels": [
+      1
+    ],
+    "operations": [
+      {
+        "name": "report",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://kplusk-messtechnik.de/downloads/files/Manual_KK-Library_MultiSource_Ver_21.1.0_25-06-03.pdf",
+        "section": "Multi_GetReport",
+        "verification": "protocol_verified_read_only",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "firmware_version",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://kplusk-messtechnik.de/downloads/files/Manual_KK-Library_MultiSource_Ver_21.1.0_25-06-03.pdf",
+        "section": "Multi_GetFirmwareVersion",
+        "verification": "protocol_verified_read_only",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "user_id",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://kplusk-messtechnik.de/downloads/files/Manual_KK-Library_MultiSource_Ver_21.1.0_25-06-03.pdf",
+        "section": "Multi_GetUserID",
+        "verification": "protocol_verified_read_only",
+        "option": "",
+        "available": true,
+        "reason": ""
+      }
+    ]
+  },
+  "commands": {
+    "report": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "firmware_version": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "user_id": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": true
+    }
+  }
+}

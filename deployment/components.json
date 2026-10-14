@@ -361,6 +361,187 @@
       }
     },
     {
+      "id": "kplusk-config-tool",
+      "name": "K+K FXE Firmware Upload and Configuration Tool",
+      "purpose": "USB configuration of K+K FXE static IP, subnet, gateway and device configuration",
+      "transports": [
+        "kplusk-config"
+      ],
+      "adapters": [],
+      "sdk": "",
+      "vendor": "K+K Messtechnik GmbH",
+      "version": "5.1.0 (2025-11-28)",
+      "architecture": "x64",
+      "systems": [
+        "Windows 10 x64",
+        "Windows 11 x64"
+      ],
+      "source_page": "https://kplusk-messtechnik.de/downloads/index.html",
+      "url": "https://kplusk-messtechnik.de/downloads/files/KK_FirmwareUpload_Win_Ver_5.1.0_25-11-28.zip",
+      "filename": "KK_FirmwareUpload_Win_Ver_5.1.0_25-11-28.zip",
+      "cache_subdirectory": "tools/kplusk",
+      "sha256": "95AA33D15C8E13FD8B16075482222BCD9AC2D0D774670B3DAAD5CE4FD8F52D2C",
+      "signature": {
+        "policy": "authenticode",
+        "publisher": "K+K Messtechnik GmbH",
+        "member": "KK_FirmwareUpload_Win32_Ver_5.1.0_25-11-28.exe",
+        "evidence": "Get-AuthenticodeSignature: NotSigned; official package retained with Terms_of_use.pdf"
+      },
+      "redistribution": {
+        "state": "pending",
+        "evidence": "K+K Terms of Use 2025-08-07 allow integration into distributed products; release-owner confirmation remains pending"
+      },
+      "detection": {
+        "kind": "files",
+        "files": [
+          {
+            "name": "tools/kplusk/KK_FirmwareUpload_Win_Ver_5.1.0_25-11-28.zip",
+            "sha256": "95AA33D15C8E13FD8B16075482222BCD9AC2D0D774670B3DAAD5CE4FD8F52D2C"
+          }
+        ],
+        "detail": "Portable Win32 tool; runs on Windows x64 and must be launched only after the user confirms the intended USB device"
+      },
+      "installation": {
+        "state": "verified",
+        "arguments": [],
+        "order": 75,
+        "success_codes": [
+          0
+        ],
+        "reboot_codes": [],
+        "requires_admin": false,
+        "reboot": "no",
+        "evidence": "Portable executable launched on the development host; no installer, driver or system setting is used"
+      },
+      "recovery": "Remove only the bundled portable tool; preserve device settings and user data. Device IP changes are a separate, user-approved maintenance action.",
+      "validation": {
+        "state": "pending",
+        "evidence": "Official FXE configuration and post-change LAN verification are recorded in runtime hardware-tests; clean Windows 10/11 package acceptance remains pending"
+      }
+    },
+    {
+      "id": "kplusk-library-win",
+      "name": "K+K KK Library for Windows",
+      "purpose": "K+K FXE Ethernet/USB protocol library and native development files",
+      "transports": [
+        "kplusk"
+      ],
+      "adapters": [
+        "kplusk.fxe"
+      ],
+      "sdk": "kplusk",
+      "vendor": "K+K Messtechnik GmbH",
+      "version": "21.2.2 (2025-11-28)",
+      "architecture": "x64",
+      "systems": [
+        "Windows 10 x64",
+        "Windows 11 x64"
+      ],
+      "source_page": "https://kplusk-messtechnik.de/downloads/index.html",
+      "url": "https://kplusk-messtechnik.de/downloads/files/KK-Library_Win_Ver_21.2.2_25-11-28.zip",
+      "filename": "KK-Library_Win_Ver_21.2.2_25-11-28.zip",
+      "cache_subdirectory": "tools/kplusk",
+      "sha256": "7F457FA4039B3C4F0B6E16C096650419BEB33ED9115F5A548D3FB7A438EEDB2F",
+      "signature": {
+        "policy": "authenticode",
+        "publisher": "K+K Messtechnik GmbH",
+        "member": "KK_Library_64.dll",
+        "evidence": "DLL is retained from the official archive; Authenticode status is NotSigned"
+      },
+      "redistribution": {
+        "state": "pending",
+        "evidence": "K+K Terms of Use 2025-08-07 allow integration into distributed products; release-owner confirmation remains pending"
+      },
+      "detection": {
+        "kind": "files",
+        "files": [
+          {
+            "name": "tools/kplusk/KK-Library_Win_Ver_21.2.2_25-11-28.zip",
+            "sha256": "7F457FA4039B3C4F0B6E16C096650419BEB33ED9115F5A548D3FB7A438EEDB2F"
+          }
+        ],
+        "detail": "Archive contains KK_Library_64.dll, KK_FX80E.dll, kk_library.h and official terms"
+      },
+      "installation": {
+        "state": "verified",
+        "arguments": [],
+        "order": 76,
+        "success_codes": [
+          0
+        ],
+        "reboot_codes": [],
+        "requires_admin": false,
+        "reboot": "no",
+        "evidence": "Archive extracted to a controlled temporary directory and direct Multi_OpenConnection/Report read verified against the current FXE"
+      },
+      "recovery": "Remove only the bundled portable library files; preserve user configuration and hardware records.",
+      "validation": {
+        "state": "pending",
+        "evidence": "Official protocol connection passed on the current FXE; project adapter and clean Windows package acceptance remain pending"
+      }
+    },
+    {
+      "id": "kplusk-python-wrapper",
+      "name": "K+K Python Native Access Modules",
+      "purpose": "Official Python wrapper and examples for KK Library",
+      "transports": [
+        "kplusk"
+      ],
+      "adapters": [
+        "kplusk.fxe"
+      ],
+      "sdk": "kplusk",
+      "vendor": "K+K Messtechnik GmbH",
+      "version": "2.1",
+      "architecture": "x64",
+      "systems": [
+        "Windows 10 x64",
+        "Windows 11 x64"
+      ],
+      "source_page": "https://kplusk-messtechnik.de/downloads/index.html",
+      "url": "https://kplusk-messtechnik.de/downloads/files/PythonModules_2.1.zip",
+      "filename": "PythonModules_2.1.zip",
+      "cache_subdirectory": "tools/kplusk",
+      "sha256": "56C2BBFD51320F593DCC92429706D2B2DE0A91A715D38026102B123587646EB0",
+      "signature": {
+        "policy": "authenticode",
+        "publisher": "K+K Messtechnik GmbH",
+        "member": null,
+        "evidence": "Official source archive; archive has no Authenticode member"
+      },
+      "redistribution": {
+        "state": "pending",
+        "evidence": "K+K Terms of Use 2025-08-07 allow integration into distributed products; release-owner confirmation remains pending"
+      },
+      "detection": {
+        "kind": "files",
+        "files": [
+          {
+            "name": "tools/kplusk/PythonModules_2.1.zip",
+            "sha256": "56C2BBFD51320F593DCC92429706D2B2DE0A91A715D38026102B123587646EB0"
+          }
+        ],
+        "detail": "Official wrapper archive; native DLL remains a separate KK Library payload"
+      },
+      "installation": {
+        "state": "verified",
+        "arguments": [],
+        "order": 77,
+        "success_codes": [
+          0
+        ],
+        "reboot_codes": [],
+        "requires_admin": false,
+        "reboot": "no",
+        "evidence": "Archive extracted for the official read-only probe; no Python package installation or system setting change"
+      },
+      "recovery": "Remove only the bundled wrapper archive or extracted copy; preserve project environment and user data.",
+      "validation": {
+        "state": "pending",
+        "evidence": "Wrapper used for the official read-only report probe; project adapter integration remains pending"
+      }
+    },
+    {
       "id": "tserve",
       "name": "TimeLab / TSERVE64 / 53100A USB driver",
       "purpose": "53100A command/data server",

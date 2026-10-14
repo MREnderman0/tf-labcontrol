@@ -67,6 +67,7 @@ def follow_verified_address(
             "resource": resource,
             "transport": config.transport,
             "expected_serial": identity.serial,
+            "source_address": config.source_address,
         }
 
 

@@ -16,6 +16,8 @@
 
 VISA Runtime、USB/GPIB/串口驱动、PicoSDK、Thorlabs Optical Power Monitor、RIGOL Ultra Sigma、R&S VISA/工具和 LeCroy 远程组件都属于部署前置条件。每个型号卡片记录所需版本和安装验证方式。
 
+K+K FXE 的官方资料和离线软件由[实验网络部署与换电脑](../guides/lab-network-deployment.md)维护：设备使用静态 IP，USB 配置工具用于首次配置和换机，KK Library 通过 `<IP>[:<Port>]` 直连并读取报告。官方来源为[下载页](https://kplusk-messtechnik.de/downloads/index.html)、[Getting Started](https://kplusk-messtechnik.de/downloads/files/Getting_Started.pdf)、[KK Library manual](https://kplusk-messtechnik.de/downloads/files/Manual_KK-Library_MultiSource_Ver_21.1.0_25-06-03.pdf)和[FXE Firmware Upload manual](https://kplusk-messtechnik.de/downloads/files/KK_FirmwareUpload%20-%20users%20manual.pdf)。
+
 ## 资料入口与后续候选
 
 型号手册由[各型号说明](../devices/README.md)维护；厂商驱动按[开发环境](environment.md)和[实机指南](../testing/hardware-testing.md)配置。Python 实际依赖以 pyproject.toml 与 uv.lock 为准。
