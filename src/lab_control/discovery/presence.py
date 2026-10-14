@@ -10,17 +10,21 @@ LIVE_CONNECTIONS = {"connected", "busy", "degraded"}
 def is_current(record: dict[str, Any], session: dict[str, Any] | None = None) -> bool:
     if (session or {}).get("connectionState") in LIVE_CONNECTIONS | {"connecting"}:
         return True
-    if record.get("presenceState") == "present":
-        return True
-    # A fresh physical announcement remains visible when identity/open fails.
-    # Saved configured addresses and previous-process evidence are not sightings.
-    return record.get("presenceState") == "unreachable" and any(
-        not candidate.get("retired")
-        and any(
-            observation.get("scanRunId") == record.get("scanRunId") and local_enumeration(source, resource)
-            for source, observation in candidate.get("sources", {}).items()
-        )
-        for resource, candidate in record.get("candidates", {}).items()
+    # A failed identity/open probe is never current, even when the scan
+    # enumerated a local bridge.  Enumeration proves that the bridge exists,
+    # not that the configured instrument answered as this device.  Keep failed
+    # probes in history/all so their error remains actionable without
+    # advertising them as devices or sending them through one-click connection
+    # again.
+    if record.get("presenceState") != "present":
+        return False
+    # A bare COM/USB resource is a repair/configuration candidate, not a
+    # discovered instrument.  Keep it in history/all until a model is
+    # selected or an identity probe succeeds.
+    return not (
+        record.get("probeReason") == "metadata_only"
+        and not record.get("identity")
+        and not record.get("adapterId")
     )
 
 
@@ -45,8 +49,27 @@ def local_enumeration(source: str, resource: str) -> bool:
 
 
 def update_record_presence(record: dict[str, Any]) -> None:
-    states = {c.get("presenceState", "unknown") for c in record["candidates"].values()}
-    presence = next((s for s in ("present", "unreachable", "unknown", "not_seen") if s in states), "unknown")
+    candidates = [candidate for candidate in record["candidates"].values() if not candidate.get("retired")]
+    # Only evidence from the latest scan can establish the record's current
+    # state.  A serial port often has a matching VISA ASRL alias; that alias
+    # is published before probing and must not turn a timed-out known model
+    # back into a current device.
+    current_scan = record.get("scanRunId")
+    current = [candidate for candidate in candidates if candidate.get("scanRunId") == current_scan]
+    evidence = current or candidates
+    successful_probe = any(
+        candidate.get("presenceState") == "present"
+        and candidate.get("probeReason") in {"identified", "cached_active_session"}
+        for candidate in evidence
+    )
+    states = {candidate.get("presenceState", "unknown") for candidate in evidence}
+    if successful_probe:
+        presence = "present"
+    else:
+        presence = next(
+            (state for state in ("unreachable", "present", "unknown", "not_seen") if state in states),
+            "unknown",
+        )
     record["presenceState"] = presence
     if record.get("discoveryState") == "conflict" or record.get("identityConflict"):
         record["discoveryState"] = "conflict"

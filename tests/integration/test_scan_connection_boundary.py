@@ -96,7 +96,15 @@ def test_failed_fresh_lan_probe_keeps_row_selection_and_error(qtbot, tmp_path):
         runtime.inventory.merge(candidate, "new", error="VISA open failed", reason="probe_failed")
         runtime.inventory.stale("new", {"lan"})
         window.refresh()
-        assert window.rows[key] is row and not row.isHidden() and window.selected_id == key
+        # The failed probe is hidden from the current-device scope.  It remains
+        # available in history so the operator can inspect and repair it.
+        assert window.rows[key] is row and row.isHidden()
+        window.presence_filter.setCurrentIndex(window.presence_filter.findData("history"))
+        window.refresh()
+        window.tree.setCurrentItem(row)
+        window.selected_id = key
+        window.refresh_details()
+        assert not row.isHidden() and window.selected_id == key
         assert "探测失败" in row.text(3)
         assert window.details.values["error"].text() == "VISA open failed"
         assert window.details.problem.text() == "异常：VISA open failed"
@@ -107,7 +115,9 @@ def test_failed_fresh_lan_probe_keeps_row_selection_and_error(qtbot, tmp_path):
         window.refresh()
         assert window.details.values["driver"].text() == "待核对（探测失败）"
         assert not window.action_buttons["monitor"].isEnabled()
-        assert is_current(runtime.inventory.all()[0])
+        # A fresh probe failure is retained for diagnosis but is not a current
+        # device: COM/USB or LAN enumeration alone is not discovery.
+        assert not is_current(runtime.inventory.all()[0])
         # Restart and later absent scans must not retain stale announcements as current.
         assert not is_current(Inventory(runtime.repository).all()[0])
         runtime.inventory.stale("later", {"lan"})

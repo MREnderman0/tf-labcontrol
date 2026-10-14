@@ -2,11 +2,9 @@
 
 import pytest
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QDialogButtonBox
 
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.runtime import ApplicationRuntime
-from lab_control.ui.pages.monitoring.dashboard import AddCardDialog
 from lab_control.ui.real_window import RealWindow
 
 
@@ -68,9 +66,9 @@ def test_all_selectors_share_cached_session_filter(workspace, qtbot, monkeypatch
         assert all("未绑定" not in selector.combo.itemText(i) for i in range(selector.combo.count()))
         if state == "degraded":
             assert "需要检查" in selector.combo.itemText(selector.combo.findData(ids["first"]))
-    dialog = AddCardDialog(controller, window)
-    qtbot.addWidget(dialog)
-    assert keys(dialog.device) == expected | {ids["power"]}
+    window.navigate("实时监测")
+    window.dashboard.refresh()
+    assert set(window.dashboard.cards) == expected | {ids["power"]}
 
 
 @pytest.mark.parametrize(
@@ -81,7 +79,7 @@ def test_all_selectors_share_cached_session_filter(workspace, qtbot, monkeypatch
         ("实时监测", "power_supply", "power"),
     ],
 )
-def test_disconnect_clears_open_popup_and_page_without_switch(workspace, qtbot, module, category, target):
+def test_disconnect_clears_open_popup_and_returns_to_overview(workspace, qtbot, module, category, target):
     window, runtime, ids = workspace
     key = ids[target]
     window.navigate(module, category, key)
@@ -113,11 +111,77 @@ def test_disconnect_clears_open_popup_and_page_without_switch(workspace, qtbot, 
             assert page.splitter.isHidden()
         else:
             assert page.form.isHidden()
+    window.refresh()
+    if category == "signal_generator":
+        # A second signal source is still connected in this fixture, so its
+        # category remains available and the current page is preserved.
+        assert window.submenu.tabData(window.submenu.currentIndex()) == "signal_generator"
+        assert window.stack.currentWidget() is page
+    else:
+        assert window.submenu.tabData(window.submenu.currentIndex()) == ""
+        assert window.stack.currentWidget() is (
+            window.overview_page if window.current_module == "设备管理" else window.dashboard
+        )
     for _ in range(3):
         window.controller.poll()
         assert page.selector.device_id == ""
-    qtbot.mouseClick(page.selector.connect_button, Qt.MouseButton.LeftButton)
-    assert window.stack.currentWidget() is window.overview_page
+    if window.stack.currentWidget() is page:
+        qtbot.mouseClick(page.selector.connect_button, Qt.MouseButton.LeftButton)
+        assert window.stack.currentWidget() is window.overview_page
+
+
+def test_submenus_only_show_connected_categories_and_restore_after_reconnect(
+    workspace, monkeypatch
+):
+    window, runtime, ids = workspace
+
+    def tabs(module):
+        window.navigate(module)
+        return [window.submenu.tabData(index) for index in range(window.submenu.count())]
+
+    assert tabs("设备管理") == ["", "signal_generator"]
+    assert tabs("实时监测") == ["", "signal_generator", "power_supply"]
+
+    original_snapshots = runtime.sessions.snapshots
+
+    def with_states(changes):
+        def snapshots():
+            return [
+                dict(snapshot, connectionState=changes[snapshot["stableDeviceId"]])
+                if snapshot["stableDeviceId"] in changes
+                else snapshot
+                for snapshot in original_snapshots()
+            ]
+
+        return snapshots
+
+    for state in ("busy", "degraded"):
+        monkeypatch.setattr(runtime.sessions, "snapshots", with_states({ids["first"]: state}))
+        window.refresh()
+        assert "signal_generator" in tabs("实时监测")
+
+    window.navigate("实时监测", "signal_generator", ids["first"])
+    monkeypatch.setattr(
+        runtime.sessions,
+        "snapshots",
+        with_states({ids["first"]: "connecting", ids["second"]: "connecting"}),
+    )
+    window.refresh()
+    assert "signal_generator" not in [
+        window.submenu.tabData(index) for index in range(window.submenu.count())
+    ]
+    assert window.stack.currentWidget() is window.dashboard
+
+    window.navigate("实时监测", "oscilloscope", ids["offline"])
+    assert window.stack.currentWidget() is window.dashboard
+
+    monkeypatch.setattr(
+        runtime.sessions,
+        "snapshots",
+        with_states({ids["first"]: "connected", ids["second"]: "connected"}),
+    )
+    window.refresh()
+    assert "signal_generator" in tabs("实时监测")
 
 
 @pytest.mark.parametrize("module", ["设备管理", "实时监测"])
@@ -136,28 +200,22 @@ def test_invalid_navigation_never_focuses_another_device(workspace, monkeypatch,
     assert page.selector.device_id == ""
 
 
-def test_monitor_dialog_disconnect_preserves_saved_cards_and_slots(workspace, qtbot):
+def test_monitor_overview_disconnect_preserves_slot_preference(workspace, qtbot):
     window, runtime, ids = workspace
-    window.dashboard.add(ids["first"], "frequency", (1,))
-    saved = runtime.repository.load_workspace("monitor_layout/electronic")
+    window.navigate("实时监测")
+    card = window.dashboard.cards[ids["first"]]
+    card.enabled.setChecked(False)
+    saved = runtime.repository.load_workspace("monitor_overview/all")
     slots = window.controller.records[ids["first"]]["slots"]
-    dialog = AddCardDialog(window.controller, window)
-    qtbot.addWidget(dialog)
-    dialog.show()
-    dialog.device.setCurrentIndex(dialog.device.findData(ids["first"]))
-    dialog.device.showPopup()
     runtime.sessions.disconnect(ids["first"])
     window.controller.poll()
-    assert dialog.device.currentIndex() == -1 and not dialog.device.view().isVisible()
-    assert not dialog.checks and dialog.source.count() == dialog.view.count() == 0
-    assert not dialog.buttons.button(QDialogButtonBox.StandardButton.Ok).isEnabled()
-    dialog.accept()
-    assert dialog.isVisible()
-    assert runtime.repository.load_workspace("monitor_layout/electronic") == saved
-    assert window.dashboard.specs == saved
+    assert ids["first"] not in window.dashboard.cards
+    assert runtime.repository.load_workspace("monitor_overview/all") == saved
     assert window.controller.records[ids["first"]]["slots"] == slots
-    dialog.device.setCurrentIndex(dialog.device.findData(ids["second"]))
-    assert dialog.buttons.button(QDialogButtonBox.StandardButton.Ok).isEnabled()
+    runtime.connect(ids["first"]).result(3)
+    window.controller.poll()
+    assert ids["first"] in window.dashboard.cards
+    assert not window.dashboard.cards[ids["first"]].enabled.isChecked()
 
 
 def test_offline_pool_actions_require_connection(workspace):

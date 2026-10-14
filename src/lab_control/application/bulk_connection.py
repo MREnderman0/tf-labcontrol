@@ -18,7 +18,17 @@ if TYPE_CHECKING:
 
 def device_label(record: dict[str, Any]) -> str:
     identity = record.get("identity", {})
-    parts = (record.get("displayName"), identity.get("model"), identity.get("serial"))
+    config = record.get("config", {})
+    # Model-only protocols may not be able to read an instrument serial.  Keep a
+    # configured asset serial visible for selection; fall back to the concrete
+    # resource so two identical units never collapse into one indistinguishable
+    # label.
+    serial = identity.get("serial") or config.get("expected_serial")
+    stable_hint = config.get("usb_instance_id", "")
+    if stable_hint and "\\" in stable_hint:
+        stable_hint = stable_hint.rsplit("\\", 1)[-1]
+    resource_hint = "" if serial or stable_hint else config.get("resource")
+    parts = (record.get("displayName"), identity.get("model"), serial or stable_hint or resource_hint)
     return " / ".join(dict.fromkeys(part for part in parts if part)) or record["config"]["resource"]
 
 

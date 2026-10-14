@@ -28,6 +28,18 @@ from lab_control.deployment.catalog import (
 STATES = {"ok", "missing", "incompatible", "unknown", "not_required", "error"}
 
 
+def _version_tuple(value: Any) -> tuple[int, ...] | None:
+    """Parse Windows package versions without adding a runtime dependency."""
+    if value is None:
+        return None
+    text = str(value).strip().lstrip("vV")
+    parts = text.split(".")
+    if not parts or any(not part.isdigit() for part in parts):
+        return None
+    numbers = [int(part) for part in parts]
+    return tuple(numbers + [0] * max(0, 4 - len(numbers)))
+
+
 def export_report(report: dict, path: Path) -> None:
     """Atomically export an explicitly chosen report. No repair is performed."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -320,7 +332,16 @@ def inspect_environment(
         elif key == "msvc-runtime":
             vc = windows.get("vc_runtime") or {}
             if vc.get("Installed") == 1:
-                state, reason = "unknown", f"检测到 VC++ {vc.get('Version')}；目标运行库版本约束待核实"
+                actual = _version_tuple(vc.get("Version"))
+                minimum = _version_tuple(component.get("version") or component["detection"].get("minimum_version"))
+                if actual and minimum:
+                    state = "ok" if actual >= minimum else "incompatible"
+                    comparator = "不低于" if state == "ok" else "低于"
+                    reason = f"检测到 VC++ {vc.get('Version')}；要求版本 {component.get('version')}，已安装版本{comparator}要求"
+                else:
+                    state, reason = "unknown", f"检测到 VC++ {vc.get('Version')}；版本格式或目标约束待核实"
+            elif vc:
+                state, reason = "missing", vc.get("vc_runtime_error", "未检测到已安装的 VC++ x64 运行库")
             else:
                 state, reason = "unknown", windows.get("vc_runtime_error", "无法核实 VC++ 运行库")
         elif key in {"ftdi-vcp", "keithley-usb", "serial-interface", "gpib-interface"}:
@@ -329,15 +350,22 @@ def inspect_environment(
         payload = payload_status(component, caches if caches is not None else cache_directories(), cancel)
         if cancel.is_set():
             return finish()
+        action = "使用离线维护组件检测并准备匹配版本；当前不执行安装"
+        requires_admin = component["installation"]["requires_admin"]
+        reboot = component["installation"]["reboot"]
+        if key == "msvc-runtime" and state == "ok":
+            action = "已安装不低于要求版本；跳过安装并禁止降级"
+            requires_admin = False
+            reboot = "no"
         add(
             key,
             component["name"],
             state,
             reason,
-            "使用离线维护组件检测并准备匹配版本；当前不执行安装",
+            action,
             affected,
             payload=payload,
-            requires_admin=component["installation"]["requires_admin"],
-            reboot=component["installation"]["reboot"],
+            requires_admin=requires_admin,
+            reboot=reboot,
         )
     return finish()

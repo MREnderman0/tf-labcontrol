@@ -101,3 +101,15 @@ os._exit(0)
 """
     subprocess.run([sys.executable, "-c", code, str(tmp_path)], check=True, timeout=15)
     assert child(tmp_path, ("asset:scope:TEST-1",)) == "acquired"
+
+
+def test_exclusive_process_lease_reports_holder_and_cleans_advisory_metadata(tmp_path):
+    first = ProcessLease(tmp_path)
+    metadata = tmp_path / "hardware.lock.owner.json"
+    try:
+        assert metadata.exists()
+        with pytest.raises(DeviceError, match=r"PID \d+"):
+            ProcessLease(tmp_path)
+    finally:
+        first.close()
+    assert not metadata.exists()

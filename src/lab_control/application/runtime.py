@@ -60,7 +60,14 @@ class ApplicationRuntime:
                 import os
 
                 lock_root = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "TF-LabControl"
-                self.process_lease = ProcessLease(lock_root, shared=True)
+                # A real runtime is a single process per user.  Opening this
+                # compatibility gate shared allowed a GUI and an external
+                # PowerShell/CLI launch to enter discovery at the same time;
+                # they then collided later on aliases.lock with a misleading
+                # identity-probe error.  Keep the process gate exclusive so
+                # the second launch fails at the boundary with the holder
+                # details, before either process touches an instrument.
+                self.process_lease = ProcessLease(lock_root, shared=False)
             self.visa = visa or VisaRuntime()
             self.leases = ResourceLeases(lock_root)
             self.inventory = Inventory(self.repository)
@@ -165,6 +172,30 @@ class ApplicationRuntime:
         return self.inventory.merge(
             DiscoveryCandidate(config, "configured"), "manual", adapter=config.adapter
         )["id"]
+
+    def configure_device(self, device_id: str, config: ConnectionConfig) -> None:
+        """Apply an explicitly selected adapter to an existing inventory row."""
+        from lab_control.domain.instruments import DeviceError
+
+        if not self.hardware and config.transport != "mock":
+            raise ValidationError("Simulation runtime accepts mock transports only")
+        if self.hardware and config.transport == "mock":
+            raise ValidationError("Mock resources cannot be added to real inventory")
+        with self.discovery.lock, self.sessions.lock:
+            self._check_connection_admission()
+            if self.discovery.future and not self.discovery.future.done():
+                raise DeviceError("正在扫描并核验设备，请等待扫描完成后配置适配器", "scan_busy")
+            session = self.sessions.sessions.get(device_id)
+            if session and (session.pending or session.state in {"busy", "connecting"}):
+                raise DeviceError("设备正在执行任务，请先停止并断开连接", "task_busy")
+            self.inventory.configure(device_id, config)
+            self.repository.audit(
+                "device_adapter_configured",
+                device_id=device_id,
+                resource=config.resource,
+                adapter=config.adapter,
+                transport=config.transport,
+            )
 
     def connect(self, device_id: str, *, configure_acquisition: bool = True):
         from lab_control.domain.instruments import DeviceError

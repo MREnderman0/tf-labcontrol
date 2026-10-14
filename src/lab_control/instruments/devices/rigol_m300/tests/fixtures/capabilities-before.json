@@ -1,0 +1,429 @@
+{
+  "capabilities": {
+    "category": "multimeter",
+    "channels": [
+      1
+    ],
+    "operations": [
+      {
+        "name": "trigger_source",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "IMM",
+              "TIM",
+              "BUS",
+              "EXT",
+              "ALAR1",
+              "ALAR2",
+              "ALAR3",
+              "ALAR4",
+              "ABS"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
+        "section": "TRIG:SOUR",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_interval",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s",
+            "minimum": 0,
+            "maximum": 359999.999,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
+        "section": "TRIG:TIM",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "monitor_state",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
+        "section": "ROUT:MON:STAT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "dmm_state",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
+        "section": "INST:DMM",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "scan_list",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
+        "section": "ROUT:SCAN?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "scan_size",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
+        "section": "ROUT:SCAN:SIZE?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "dmm_installed",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
+        "section": "INST:DMM:INST?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "configuration",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
+        "section": "CONF?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "errors",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
+        "section": "SYST:ERR?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "system_version",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
+        "section": "SYST:VERS?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "measurements",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
+        "section": "READ?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "slot_100",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
+        "section": "SYST:CTYP? 100",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "slot_200",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
+        "section": "SYST:CTYP? 200",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "slot_300",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
+        "section": "SYST:CTYP? 300",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "slot_400",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
+        "section": "SYST:CTYP? 400",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "slot_500",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
+        "section": "SYST:CTYP? 500",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      }
+    ]
+  },
+  "profile": {
+    "adapter_id": "rigol.m300",
+    "manufacturer": [
+      "RIGOL",
+      "RIGOL TECHNOLOGIES"
+    ],
+    "models": [
+      "M300"
+    ],
+    "category": "multimeter",
+    "channels": [
+      1
+    ],
+    "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
+    "revision": "M300 Programming Guide v2.0; chapters 2-21, 2-61, 2-101..105, 2-191..194, 4",
+    "status": [
+      "scan_list",
+      "scan_size",
+      "dmm_installed",
+      "dmm_state",
+      "trigger_source",
+      "trigger_interval",
+      "monitor_state",
+      "slot_100",
+      "slot_200",
+      "slot_300",
+      "slot_400",
+      "slot_500",
+      "errors"
+    ],
+    "identity_query": "*IDN?",
+    "error_query": "SYST:ERR?",
+    "acquisition": "scalar",
+    "channel_limits": {}
+  },
+  "commands": {
+    "trigger_source": {
+      "writes": [
+        "TRIG:SOUR {value}"
+      ],
+      "query": "TRIG:SOUR?",
+      "select": [],
+      "compare": true
+    },
+    "trigger_interval": {
+      "writes": [
+        "TRIG:TIM {value}"
+      ],
+      "query": "TRIG:TIM?",
+      "select": [],
+      "compare": true
+    },
+    "monitor_state": {
+      "writes": [
+        "ROUT:MON:STAT {value}"
+      ],
+      "query": "ROUT:MON:STAT?",
+      "select": [],
+      "compare": true
+    },
+    "dmm_state": {
+      "writes": [
+        "INST:DMM {value}"
+      ],
+      "query": "INST:DMM?",
+      "select": [],
+      "compare": true
+    },
+    "scan_list": {
+      "writes": [],
+      "query": "ROUT:SCAN?",
+      "select": [],
+      "compare": false
+    },
+    "scan_size": {
+      "writes": [],
+      "query": "ROUT:SCAN:SIZE?",
+      "select": [],
+      "compare": false
+    },
+    "dmm_installed": {
+      "writes": [],
+      "query": "INST:DMM:INST?",
+      "select": [],
+      "compare": false
+    },
+    "configuration": {
+      "writes": [],
+      "query": "CONF?",
+      "select": [],
+      "compare": false
+    },
+    "errors": {
+      "writes": [],
+      "query": "SYST:ERR?",
+      "select": [],
+      "compare": false
+    },
+    "system_version": {
+      "writes": [],
+      "query": "SYST:VERS?",
+      "select": [],
+      "compare": false
+    },
+    "measurements": {
+      "writes": [],
+      "query": "READ?",
+      "select": [],
+      "compare": false
+    },
+    "slot_100": {
+      "writes": [],
+      "query": "SYST:CTYP? 100",
+      "select": [],
+      "compare": false
+    },
+    "slot_200": {
+      "writes": [],
+      "query": "SYST:CTYP? 200",
+      "select": [],
+      "compare": false
+    },
+    "slot_300": {
+      "writes": [],
+      "query": "SYST:CTYP? 300",
+      "select": [],
+      "compare": false
+    },
+    "slot_400": {
+      "writes": [],
+      "query": "SYST:CTYP? 400",
+      "select": [],
+      "compare": false
+    },
+    "slot_500": {
+      "writes": [],
+      "query": "SYST:CTYP? 500",
+      "select": [],
+      "compare": false
+    }
+  }
+}

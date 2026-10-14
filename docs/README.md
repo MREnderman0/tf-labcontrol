@@ -7,6 +7,7 @@
 - [安装与启动](../README.md)
 - [控制与监测](guides/control-and-monitoring.md)、[输入范围规则](guides/input-ranges.md)
 - [相噪定时采集与 ADEV/MDEV](requirements/realtime-monitoring.md#相噪仪定时采集)：采样率、时长、自动保存及实测边界
+- [光功率计全通道实时监测](guides/control-and-monitoring.md#光功率计全通道监测)：通道筛选、W 显示与自动连续记录
 - [连接与实机操作](testing/hardware-testing.md)、[实验网发现](architecture/lan-discovery.md)
 - [实验网络部署与换电脑](guides/lab-network-deployment.md)：通用 DHCP 地址池及本机配置准备
 - [配置示例](../config/examples/README.md)、[Python 示例](../examples/README.md)

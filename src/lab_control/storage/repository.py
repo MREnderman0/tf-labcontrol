@@ -7,7 +7,7 @@ import sqlite3
 import threading
 from dataclasses import fields
 from pathlib import Path
-from tempfile import TemporaryFile
+from tempfile import TemporaryFile, mkstemp
 from typing import Any
 from uuid import uuid4
 
@@ -52,7 +52,17 @@ class Repository:
 
     def records(self) -> list[dict[str, Any]]:
         with self.lock:
-            return [json.loads(row[0]) for row in self.db.execute("SELECT document FROM inventory")]
+            # A damaged historical database may expose a scan document through
+            # a stale SQLite primary-key index.  Keep the inventory boundary
+            # strict so one malformed row cannot prevent the application from
+            # opening the remaining device records; the original row remains
+            # untouched for offline repair.
+            result = []
+            for row in self.db.execute("SELECT document FROM inventory"):
+                document = json.loads(row[0])
+                if isinstance(document, dict) and isinstance(document.get("candidates"), dict):
+                    result.append(document)
+            return result
 
     def save(self, record: dict[str, Any]) -> None:
         self.save_many((record,))
@@ -185,7 +195,22 @@ class Repository:
             for sample in batch.measurements
         ]
         arrays["metadata_json"] = np.asarray(json.dumps(document, ensure_ascii=False, allow_nan=False))
-        np.savez_compressed(raw / "samples.npz", **arrays)
+        # Publish the archive only after NumPy has closed and flushed it.  A
+        # direct write to the final name lets a concurrent UI reader observe
+        # the zero-length/partial ZIP between file creation and completion.
+        temporary_fd, temporary_name = mkstemp(prefix=".samples-", suffix=".npz", dir=raw)
+        try:
+            with os.fdopen(temporary_fd, "wb") as stream:
+                np.savez_compressed(stream, **arrays)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary_name, raw / "samples.npz")
+        except Exception:
+            try:
+                os.unlink(temporary_name)
+            except OSError:
+                pass
+            raise
         if context.layout_version == 2:
             from lab_control.domain.instruments import DeviceError
             from lab_control.storage.analysis import convert_analysis, write_description

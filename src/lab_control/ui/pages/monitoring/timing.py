@@ -49,6 +49,7 @@ class MonitoringTiming(QWidget):
         self.controller = controller
         self.device_id, self.mode = "", ""
         self.power = False
+        self.fixed_interval = False
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(10)
@@ -75,6 +76,7 @@ class MonitoringTiming(QWidget):
         self.interval.setToolTip("相邻采集请求的目标开始间隔，范围 0.5～60 秒；不改变仪器扫描时间。")
         self.interval.editingFinished.connect(self.commit)
         label = QLabel("采集间隔", self)
+        self.interval_label = label
         label.setObjectName("mutedText")
         label.setBuddy(self.interval)
         layout.addWidget(label)
@@ -93,16 +95,31 @@ class MonitoringTiming(QWidget):
         self.actual.setObjectName("rangeHint")
         layout.addWidget(self.actual)
 
+    def set_fixed_interval(self, fixed: bool = True) -> None:
+        """Use the shared 0.5–60 second interval control without a cadence selector."""
+        self.fixed_interval = fixed
+        self._update_visibility()
+
+    def _update_visibility(self) -> None:
+        self.cadence_label.setVisible(not self.power and not self.fixed_interval)
+        self.cadence.setVisible(not self.power and not self.fixed_interval)
+        self.interval_label.setVisible(not self.power or self.fixed_interval)
+        self.interval.setVisible(not self.power or self.fixed_interval)
+        self.presets.setVisible(self.power and not self.fixed_interval)
+        self.interval.setEnabled(self.fixed_interval or self.cadence.currentData() == "interval")
+
     def options(self) -> dict:
         return dict(
-            interval=float(self.presets.currentData()) if self.power else self.interval.value(),
+            interval=float(self.presets.currentData())
+            if self.power and not self.fixed_interval
+            else self.interval.value(),
             record_interval=None,
-            cadence="interval" if self.power else self.cadence.currentData(),
+            cadence="interval" if self.power or self.fixed_interval else self.cadence.currentData(),
             csv_interval=5,
         )
 
     def change_cadence(self) -> None:
-        self.interval.setEnabled(self.cadence.currentData() == "interval")
+        self.interval.setEnabled(self.fixed_interval or self.cadence.currentData() == "interval")
         self.commit()
 
     @property
@@ -114,16 +131,13 @@ class MonitoringTiming(QWidget):
             return
         self.device_id, self.mode = device_id, mode
         self.power = instrument_category(self.controller.records.get(device_id, {})) == "power_supply"
-        self.cadence_label.setVisible(not self.power)
-        self.cadence.setVisible(not self.power)
-        self.interval.setVisible(not self.power)
-        self.presets.setVisible(self.power)
+        self._update_visibility()
         self.setEnabled(bool(device_id))
         options = monitoring_options(self.controller, device_id, mode)
         self.cadence.blockSignals(True)
         self.cadence.setCurrentIndex(self.cadence.findData(options["cadence"]))
         self.cadence.blockSignals(False)
-        self.interval.setEnabled(options["cadence"] == "interval")
+        self.interval.setEnabled(self.fixed_interval or options["cadence"] == "interval")
         self.interval.setValue(options["interval"])
         self.presets.blockSignals(True)
         self.presets.setCurrentIndex(max(0, self.presets.findData(options["interval"])))
@@ -153,7 +167,7 @@ class MonitoringTiming(QWidget):
             self.interval.blockSignals(True)
             self.cadence.setCurrentIndex(self.cadence.findData(options["cadence"]))
             self.interval.setValue(options["interval"])
-            self.interval.setEnabled(options["cadence"] == "interval")
+            self.interval.setEnabled(self.fixed_interval or options["cadence"] == "interval")
             self.presets.blockSignals(True)
             self.presets.setCurrentIndex(max(0, self.presets.findData(options["interval"])))
             self.presets.blockSignals(False)

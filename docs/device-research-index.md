@@ -49,6 +49,8 @@
 | R&S FPH02 | `rs.fph` | LAN；优先 PyVISA | [卡片](devices/spectrum-analyzers/rs-fph.md) |
 | Ceyear 6362D | `ceyear.6362d` | LAN Socket 10001；PyVISA | [卡片](devices/measurement-analyzers/ceyear-6362d.md) |
 | Microchip 53100A | `microchip.53100a` | USB：TimeLab 驱动与项目托管 TSERVE64；也支持已有外部 TSERVE | [卡片](devices/measurement-analyzers/phase-noise-53100a.md) |
+| Joinwit JW8105 | `joinwit.jw8105` | RS232；RJ45 选件待核对 | [卡片](devices/measurement-analyzers/joinwit-jw8105.md) |
+| RIGOL M300 | `rigol.m300` | LAN / USB VISA；优先 PyVISA | [卡片](devices/measurement-analyzers/rigol-m300.md) |
 <!-- device-modules:end -->
 
 ## 现场盘点与状态提升

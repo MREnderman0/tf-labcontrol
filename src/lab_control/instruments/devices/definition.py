@@ -28,6 +28,9 @@ class DeviceDefinition:
     socket_port: int | None = None
     deployment_components: tuple[str, ...] = ()
     factory: Callable[[ConnectionConfig], InstrumentAdapter] | None = None
+    # Model-owned transport selection keeps framing and serial defaults beside
+    # the model protocol while the registry remains the single dispatch point.
+    transport_factory: Callable[[ConnectionConfig, Any], Any] | None = None
     capability_schema: Callable[[ConnectionConfig], CapabilitySet] | None = None
     discovery_factory: Callable[[], Any] | None = None
     identity_requires_adapter: bool = False

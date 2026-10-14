@@ -118,6 +118,20 @@ def test_inspection_reports_optional_driver_unknown_and_storage_failure(tmp_path
     assert json.loads(path.read_text(encoding="utf-8")) == report
 
 
+@pytest.mark.parametrize(
+    ("version", "expected"),
+    [("v14.51.36247.0", "ok"), ("v14.34.31823.03", "incompatible")],
+)
+def test_vc_runtime_detection_never_accepts_an_older_version(tmp_path, monkeypatch, version, expected):
+    monkeypatch.setattr(
+        "lab_control.deployment.windows.inspect_windows",
+        lambda cancel: {"vc_runtime": {"Installed": 1, "Version": version}},
+    )
+    report = environment.inspect_environment(tmp_path, caches=(tmp_path,))
+    item = next(item for item in report["items"] if item["id"] == "msvc-runtime")
+    assert item["state"] == expected
+
+
 def test_frozen_worker_command_and_dispatch_before_qt(tmp_path, monkeypatch):
     monkeypatch.setattr(sys, "frozen", True, raising=False)
     command = worker_command(tmp_path)

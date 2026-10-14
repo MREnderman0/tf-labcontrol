@@ -3,6 +3,7 @@
 每份报告只描述对应批次的环境、范围和证据；自动化、离屏及人工检查分开记录。截图保留 design/reviews 原位置。历史测试数量与结论仅对应各报告批次。
 
 - [相噪仪定时采集与 ADEV/MDEV 工作区（2026-09-29）](phase-workspace-review.md)
+- [光功率计全通道实时监测验收](optical-power-monitoring-review.md)
 - [53100A USB 接入与服务配置验证（2026-09-28）](53100a-usb-review.md)
 - [电源实时监测与控制整合（2026-09-28）](power-monitoring-review.md)
 - [电源配置恢复与开发遗留清理](power-restore-cleanup-review.md)

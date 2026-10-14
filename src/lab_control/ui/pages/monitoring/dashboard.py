@@ -1,21 +1,17 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import replace
 from typing import Any
-from uuid import uuid4
 
 from PySide6.QtCore import QEvent, Qt, QTimer, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
-    QDialog,
-    QDialogButtonBox,
-    QFormLayout,
+    QDoubleSpinBox,
     QFrame,
     QGridLayout,
     QHBoxLayout,
-    QInputDialog,
     QLabel,
-    QLineEdit,
     QMessageBox,
     QPushButton,
     QScrollArea,
@@ -24,9 +20,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from lab_control.application.bulk_connection import device_label
 from lab_control.application.catalog import instrument_category, mode_applicable
 from lab_control.application.config import config_from_record
-from lab_control.application.controls import data_sources, slot_label
+from lab_control.application.controls import CATEGORY_LABELS, data_sources, slot_label
+from lab_control.domain.instruments import AcquisitionRequest, DeviceError
 from lab_control.domain.readback import boolean_value
 from lab_control.ui.controller import WorkspaceController
 from lab_control.ui.pages.monitoring.oscilloscope_plot import OscilloscopePlot
@@ -36,8 +34,7 @@ from lab_control.ui.pages.monitoring.recording_state import (
     recording_save_notice,
     update_recording_frame,
 )
-from lab_control.ui.pages.monitoring.timing import monitoring_options
-from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
+from lab_control.ui.pages.monitoring.timing import POWER_INTERVALS, monitoring_options
 
 
 def scope_channels(controller, device_id: str, channels) -> tuple[int, ...]:
@@ -77,9 +74,10 @@ class ResponsiveGrid(QScrollArea):
             QTimer.singleShot(0, self.reflow)
         return super().eventFilter(obj, event)
 
-    def set_items(self, items: list[QWidget]) -> None:
-        self.items = items
+    def set_items(self, items: Sequence[QWidget]) -> None:
+        self.items = list(items)
         self.reflow(force=True)
+        QTimer.singleShot(0, self.reflow)
 
     def reflow(self, force: bool = False) -> None:
         columns = max(1, (self.viewport().width() + 16) // 376)
@@ -96,228 +94,192 @@ class ResponsiveGrid(QScrollArea):
             self.grid.addWidget(item, index // columns, index % columns)
 
 
-class MonitorCard(QFrame):
-    action = Signal(str, str)
+class RecordingDeviceCard(QFrame):
+    """One connected, recordable device in the monitoring overview."""
+
+    changed = Signal()
+    open_requested = Signal(str)
 
     def __init__(self, controller: WorkspaceController, spec: dict[str, Any], parent=None) -> None:
         super().__init__(parent)
+        self.controller = controller
+        self.spec = spec
         self.setObjectName("monitorCard")
         self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
-        self.setFixedHeight(340 if spec.get("view") == "number" else 370)
-        self.controller, self.spec = controller, spec
+        self.setMinimumHeight(176)
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(16, 14, 16, 14)
         heading = QHBoxLayout()
-        self.title = QPushButton(spec["title"])
+        self.title = QPushButton()
         self.title.setObjectName("cardLink")
-        self.title.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
-        self.title.clicked.connect(lambda: self.action.emit("open", spec["id"]))
+        self.title.clicked.connect(lambda: self.open_requested.emit(self.spec["device_id"]))
         heading.addWidget(self.title, 1)
-        for key, label in (("up", "↑"), ("down", "↓"), ("rename", "⋯"), ("remove", "×")):
-            button = QPushButton(label)
-            button.setMaximumWidth(30)
-            button.clicked.connect(lambda _checked=False, action=key: self.action.emit(action, spec["id"]))
-            heading.addWidget(button)
+        self.category = QLabel()
+        self.category.setObjectName("eyebrow")
+        heading.addWidget(self.category)
         layout.addLayout(heading)
-        self.subtitle = QLabel()
-        self.subtitle.setWordWrap(True)
-        self.subtitle.setObjectName("mutedText")
-        layout.addWidget(self.subtitle)
-        record = controller.records.get(spec["device_id"])
-        scope = bool(record and instrument_category(record) == "oscilloscope")
-        self.recording_frame = bool(
-            record and instrument_category(record) in {"oscilloscope", "spectrum_analyzer", "power_supply"}
-        )
-        if self.recording_frame:
-            update_recording_frame(self, {})
-        self.plot = OscilloscopePlot() if scope else LivePlot()
+        self.identity = QLabel()
+        self.identity.setObjectName("mutedText")
+        layout.addWidget(self.identity)
+        self.slot = QLabel()
+        self.slot.setObjectName("monitorSlot")
+        layout.addWidget(self.slot)
+        # Keep the cached graph available on overview cards.  The overview is
+        # device based now, but existing callers and the approved workspace
+        # still use the card as a quick preview after a page switch.
+        category = spec.get("category", "")
+        self.plot = OscilloscopePlot() if category == "oscilloscope" else LivePlot()
+        self.plot.setMinimumHeight(120)
         layout.addWidget(self.plot, 1)
-        self.state = QLabel("未开始监测")
+        controls = QHBoxLayout()
+        self.enabled = QCheckBox("参与采样")
+        self.enabled.toggled.connect(self._changed)
+        controls.addWidget(self.enabled)
+        controls.addStretch()
+        controls.addWidget(QLabel("采样间隔"))
+        self.interval = QDoubleSpinBox()
+        self.interval.setRange(0.5, 60.0)
+        self.interval.setSingleStep(0.5)
+        self.interval.setDecimals(2)
+        self.interval.setSuffix(" 秒")
+        self.interval.valueChanged.connect(self._changed)
+        controls.addWidget(self.interval)
+        layout.addLayout(controls)
+        self.state = QLabel()
+        self.state.setObjectName("mutedText")
         self.state.setWordWrap(True)
-        footer = QHBoxLayout()
-        footer.addWidget(self.state, 1)
-        self.fit_button = QPushButton("恢复仪器视图" if scope else "适应曲线")
-        self.fit_button.clicked.connect(self.plot.fit_current)
-        self.fit_button.setVisible(spec.get("view") != "number")
-        footer.addWidget(self.fit_button)
-        layout.addLayout(footer)
+        layout.addWidget(self.state)
         controller.frame_ready.connect(self.refresh_frame)
+        self.set_spec(spec)
 
-    def refresh_frame(self, device_id: str) -> None:
-        if device_id == self.spec["device_id"] and self.isVisible():
-            self.refresh(plot_only=True)
+    def _changed(self, *_args) -> None:
+        self.spec["enabled"] = self.enabled.isChecked()
+        self.spec["interval"] = self.interval.value()
+        self.changed.emit()
 
-    def showEvent(self, event) -> None:  # noqa: N802
-        super().showEvent(event)
-        self.refresh_frame(self.spec["device_id"])
+    def set_spec(self, spec: dict[str, Any]) -> None:
+        self.spec = spec
+        self.title.setText(spec["title"])
+        self.category.setText(spec["category_label"])
+        self.identity.setText(spec["identity"])
+        self.slot.setText(f"功能槽位：{spec['slot_label']}")
+        self.setToolTip(f"本设备：{spec['title']}\n{spec['identity']}")
+        self.enabled.blockSignals(True)
+        self.enabled.setChecked(bool(spec.get("enabled", True)))
+        self.enabled.blockSignals(False)
+        self.interval.blockSignals(True)
+        self.interval.setValue(float(spec.get("interval", 0.5)))
+        self.interval.blockSignals(False)
+        self.refresh()
 
-    def refresh(self, plot_only: bool = False) -> None:
+    def refresh(self) -> None:
         device_id = self.spec["device_id"]
         record = self.controller.records.get(device_id)
-        if not record:
-            if self.recording_frame:
-                update_recording_frame(self, {})
-            self.subtitle.setText("设备记录暂不可用 · 保留卡片配置")
+        if not record or not self.controller.has_connected_session(device_id):
+            self.hide()
             return
-        slot = record.get("slots", {}).get(self.controller.mode, "")
-        name = record["displayName"] or record["identity"].get("model") or record["adapterId"]
-        if not plot_only:
-            self.subtitle.setText(
-                f"{slot_label(slot)} · {name} · CH {', '.join(map(str, self.spec['channels']))}"
-            )
-        source = next(
-            (s for s in data_sources(config_from_record(record)) if s.key == self.spec["source"]), None
-        )
+        self.show()
         task = self.controller.runtime.monitoring.snapshots().get(device_id, {})
-        if self.recording_frame:
-            update_recording_frame(self, task)
-        channels = tuple(self.spec["channels"])
+        phase = recording_phase(task)
+        self.setProperty("recordingPhase", phase)
+        self.style().unpolish(self)
+        self.style().polish(self)
+        if task.get("error"):
+            status = task["error"]
+        elif recording_save_notice(task):
+            status = recording_save_notice(task)
+        elif task.get("recording"):
+            status = "采样中 · 数据正在记录"
+        elif task.get("running"):
+            status = "监视中 · 尚未记录"
+        else:
+            status = "待开始采样"
+        self.state.setText(status)
+        update_recording_frame(self, task)
+        self.refresh_frame(device_id)
+
+    def refresh_frame(self, device_id: str) -> None:
+        if device_id != self.spec.get("device_id") or not self.isVisible():
+            return
+        record = self.controller.records.get(device_id)
+        if not record:
+            return
+        source = next(
+            (item for item in data_sources(config_from_record(record)) if item.key == self.spec.get("source")),
+            None,
+        )
+        channels = tuple(self.spec.get("channels", (1,)))
+        if not source or not channels:
+            return
         if isinstance(self.plot, OscilloscopePlot):
             channels = scope_channels(self.controller, device_id, channels)
             self.plot.restrict_channels(channels)
-        if source:
-            source = replace(source, view=self.spec.get("view", source.view))
-            frame = self.controller.runtime.monitoring.latest(
-                device_id, source.kind, source.quantity, channels[0] if channels else 1
-            )
-            if frame and plot_only and self.isVisible():
-                self.plot.show_frame(frame, source, channels)
-                self.controller.runtime.monitoring.displayed(device_id, frame)
-        if plot_only:
-            return
-        status = (
-            task.get("error")
-            or task.get("recording_notice")
-            or recording_save_notice(task)
-            or (
-                "记录收尾中 · 正在排空已接收数据"
-                if recording_phase(task) == "draining"
-                else "监测中 · 记录中"
-                if task.get("recording")
-                else "监测中 · 未保存数据"
-                if task.get("running")
-                else "未开始 / 已停止监测"
-            )
+        frame = self.controller.runtime.monitoring.latest(
+            device_id, source.kind, source.quantity, channels[0] if channels else 1
         )
-        self.state.setText(status)
+        if not frame:
+            return
+        source = replace(source, view=self.spec.get("view", source.view))
+        self.plot.show_frame(frame, source, channels)
+        self.controller.runtime.monitoring.displayed(device_id, frame)
+
+    def showEvent(self, event) -> None:  # noqa: N802
+        super().showEvent(event)
+        self.refresh_frame(self.spec.get("device_id", ""))
 
 
-class AddCardDialog(QDialog):
-    def __init__(self, controller: WorkspaceController, parent=None) -> None:
+class DeviceCategoryGroup(QFrame):
+    def __init__(self, title: str, parent=None) -> None:
         super().__init__(parent)
-        self.controller = controller
-        self.setWindowTitle("添加监测项目")
-        self.resize(520, 330)
-        form = QFormLayout(self)
-        self.device, self.source, self.view = WorkspaceComboBox(), WorkspaceComboBox(), WorkspaceComboBox()
-        self.title = QLineEdit()
-        self.checks: dict[int, QCheckBox] = {}
-        self.channel_box = QWidget()
-        self.channel_layout = QHBoxLayout(self.channel_box)
-        self._device_signature: tuple | None = None
-        form.addRow("设备 / 槽位", self.device)
-        form.addRow("曲线或数值项目", self.source)
-        form.addRow("通道", self.channel_box)
-        form.addRow("显示方式", self.view)
-        form.addRow("卡片名称", self.title)
-        self.notice = QLabel("暂无已连接设备，请先在设备总览连接。")
-        self.notice.setObjectName("mutedText")
-        self.notice.setWordWrap(True)
-        form.addRow(self.notice)
-        self.overview_button = QPushButton("前往设备总览连接")
-        self.overview_button.clicked.connect(self.go_overview)
-        form.addRow(self.overview_button)
-        self.device.currentIndexChanged.connect(self.device_changed)
-        self.source.currentIndexChanged.connect(self.source_changed)
-        self.buttons = buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        form.addRow(buttons)
-        controller.refreshed.connect(self.refresh_devices)
-        self.refresh_devices()
-        self.device_changed()
+        self.setObjectName("monitorCategory")
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 10)
+        self.heading = QLabel(title)
+        self.heading.setObjectName("monitorCategoryTitle")
+        layout.addWidget(self.heading)
+        self.grid = CategoryGrid()
+        layout.addWidget(self.grid)
 
-    def go_overview(self) -> None:
-        self.reject()
-        self.controller.navigate.emit("设备管理", "", "")
+    def set_cards(self, cards: Sequence[QWidget]) -> None:
+        self.grid.set_items(cards)
 
-    def refresh_devices(self) -> None:
-        entries = []
-        for record in self.controller.connected_records():
-            if record["adapterId"] and mode_applicable(record, self.controller.mode):
-                label = record["displayName"] or record["identity"].get("model") or record["adapterId"]
-                slot = record.get("slots", {}).get(self.controller.mode, "")
-                if self.controller.states[record["id"]]["connectionState"] == "degraded":
-                    label += " · 连接异常"
-                entries.append(((slot_label(slot) + " · " if slot else "") + label, record["id"]))
-        signature = tuple(entries)
-        if signature != self._device_signature:
-            self.device.replace_items(entries, select_first=self._device_signature is None)
-            self._device_signature = signature
-        self.device.setPlaceholderText("选择已连接设备" if entries else "暂无已连接设备")
-        self.update_availability()
 
-    def update_availability(self) -> None:
-        available = self.controller.has_connected_session(self.device.currentData() or "")
-        self.buttons.button(QDialogButtonBox.StandardButton.Ok).setEnabled(available)
-        self.notice.setVisible(not available)
-        self.overview_button.setVisible(not available)
+class CategoryGrid(QWidget):
+    """A growing grid used inside the single overview scroll area."""
 
-    def accept(self) -> None:
-        # Recheck the latest cached session, including removal while the menu is open.
-        self.refresh_devices()
-        if self.controller.has_connected_session(self.device.currentData() or ""):
-            super().accept()
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.layout_grid = QGridLayout(self)
+        self.layout_grid.setContentsMargins(0, 0, 0, 0)
+        self.layout_grid.setSpacing(16)
+        self.layout_grid.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.items: list[QWidget] = []
+        self.columns = 0
+        self.installEventFilter(self)
 
-    def device_changed(self) -> None:
-        device_id = self.device.currentData()
-        self.update_availability()
-        self.source.clear()
-        self.view.clear()
-        while self.channel_layout.count():
-            item = self.channel_layout.takeAt(0)
-            widget = item.widget() if item else None
-            if widget:
-                widget.deleteLater()
-        self.checks = {}
-        if not device_id:
+    def eventFilter(self, obj, event):  # noqa: N802
+        if obj is self and event.type() == QEvent.Type.Resize:
+            QTimer.singleShot(0, self.reflow)
+        return super().eventFilter(obj, event)
+
+    def set_items(self, items: Sequence[QWidget]) -> None:
+        self.items = list(items)
+        self.reflow(force=True)
+        QTimer.singleShot(0, self.reflow)
+
+    def reflow(self, force: bool = False) -> None:
+        columns = max(1, (self.width() + 16) // 376)
+        if columns == self.columns and not force:
             return
-        record = self.controller.records[device_id]
-        for source in data_sources(config_from_record(record)):
-            self.source.addItem(source.label, source.key)
-        channels = (
-            self.controller.capabilities(device_id).channels
-            if instrument_category(record) in {"oscilloscope", "power_supply"}
-            else (1,)
-        )
-        for channel in channels:
-            check = QCheckBox(f"CH {channel}")
-            check.setChecked(channel == channels[0])
-            self.channel_layout.addWidget(check)
-            self.checks[channel] = check
-        self.source_changed()
-
-    def source_changed(self) -> None:
-        device_id = self.device.currentData()
-        if not device_id:
-            return
-        source = next(
-            (
-                s
-                for s in data_sources(config_from_record(self.controller.records[device_id]))
-                if s.key == self.source.currentData()
-            ),
-            None,
-        )
-        self.view.clear()
-        if source:
-            if (source.kind == "scalar" and not source.quantity) or source.kind == "status":
-                self.view.addItem("趋势与数值", "curve")
-                self.view.addItem("数值与迷你趋势", "number")
-            else:
-                self.view.addItem("曲线", source.view)
-            self.title.setText(self.source.currentText())
+        old_columns = self.columns
+        self.columns = columns
+        while self.layout_grid.count():
+            self.layout_grid.takeAt(0)
+        for index in range(max(old_columns, columns)):
+            self.layout_grid.setColumnStretch(index, 1 if index < columns else 0)
+            self.layout_grid.setColumnMinimumWidth(index, 0)
+        for index, item in enumerate(self.items):
+            self.layout_grid.addWidget(item, index // columns, index % columns)
 
 
 class MonitoringDashboard(QWidget):
@@ -327,23 +289,23 @@ class MonitoringDashboard(QWidget):
         super().__init__(parent)
         self.controller, self.mode = controller, ""
         self.specs: list[dict[str, Any]] = []
-        self.cards: dict[str, MonitorCard] = {}
+        self.cards: dict[str, RecordingDeviceCard] = {}
+        self.groups: dict[str, DeviceCategoryGroup] = {}
+        self.preferences: dict[str, dict[str, Any]] = {}
+        self.legacy_preferences: dict[str, dict[str, dict[str, Any]]] = {}
         layout = QVBoxLayout(self)
-        heading = QLabel("实时监测 / 总览")
+        heading = QLabel("实时监测总览")
         heading.setObjectName("pageTitle")
         layout.addWidget(heading)
         toolbar = QHBoxLayout()
         toolbar.addStretch()
-        for text, action in (
-            ("添加监测卡片", self.add_dialog),
-            ("开始总览监测", self.start),
-            ("停止总览监测", self.stop),
-        ):
-            button = QPushButton(text)
-            button.clicked.connect(action)
-            toolbar.addWidget(button)
+        self.sample_button = QPushButton("一键开始采样")
+        self.sample_button.setObjectName("primaryButton")
+        self.sample_button.clicked.connect(self.toggle_sampling)
+        toolbar.addWidget(self.sample_button)
         layout.addLayout(toolbar)
         self.hint = QLabel()
+        self.hint.setObjectName("overviewNote")
         self.hint.setWordWrap(True)
         layout.addWidget(self.hint)
         self.grid = ResponsiveGrid()
@@ -351,150 +313,340 @@ class MonitoringDashboard(QWidget):
         controller.refreshed.connect(self.refresh)
         self.refresh()
 
-    def persist(self) -> None:
-        self.controller.runtime.repository.save_workspace(f"monitor_layout/{self.mode}", self.specs)
+    def _slot_key(self, record: dict[str, Any]) -> str:
+        mode = self._recording_mode(record)
+        slot = record.get("slots", {}).get(mode, "")
+        return f"slot:{mode}:{slot}" if slot else f"device:{record['id']}"
+
+    def _recording_mode(self, record: dict[str, Any]) -> str:
+        """Return the mode used to validate and store this device's samples."""
+        category = instrument_category(record)
+        if category in {"optical_power_meter", "optical_spectrometer"}:
+            return "optical"
+        if category == "spectrum_analyzer":
+            return "electronic"
+        return self.controller.mode
+
+    def _load_preferences(self) -> None:
+        raw = self.controller.runtime.repository.load_workspace("monitor_overview/all", {})
+        self.preferences = dict(raw) if isinstance(raw, dict) else {}
+        self.legacy_preferences = {}
+        for mode in ("electronic", "optical"):
+            legacy = self.controller.runtime.repository.load_workspace(f"monitor_overview/{mode}", {})
+            self.legacy_preferences[mode] = dict(legacy) if isinstance(legacy, dict) else {}
+
+    def _persist(self) -> None:
+        self.controller.runtime.repository.save_workspace(
+            "monitor_overview/all", self.preferences
+        )
+
+    def _channels(self, device_id: str, record: dict[str, Any]) -> tuple[int, ...]:
+        category = instrument_category(record)
+        if category not in {"oscilloscope", "power_supply", "optical_power_meter"}:
+            return (1,)
+        try:
+            channels = tuple(self.controller.capabilities(device_id).channels)
+        except Exception:
+            channels = (1,)
+        return scope_channels(self.controller, device_id, channels) if category == "oscilloscope" else channels
+
+    def _recording_sources(self, record: dict[str, Any]):
+        sources = data_sources(config_from_record(record))
+        category = instrument_category(record)
+        return sources if category in {"power_supply", "signal_generator", "network_analyzer", "phase_noise_analyzer"} else sources[:1]
+
+    def _saved_preference(self, record: dict[str, Any]) -> dict[str, Any]:
+        key = self._slot_key(record)
+        saved = self.preferences.get(key)
+        if isinstance(saved, dict):
+            return saved
+        mode = self._recording_mode(record)
+        legacy = self.legacy_preferences.get(mode, {})
+        slot = record.get("slots", {}).get(mode, "")
+        legacy_keys = (
+            f"slot:{mode}:{slot}" if slot else "",
+            f"slot:{slot}" if slot else "",
+            slot,
+            f"device:{record['id']}",
+            record["id"],
+        )
+        for legacy_key in legacy_keys:
+            if legacy_key and isinstance(legacy.get(legacy_key), dict):
+                migrated = dict(legacy[legacy_key])
+                self.preferences[key] = migrated
+                return migrated
+        saved = {}
+        self.preferences[key] = saved
+        return saved
+
+    def _spec_for(self, record: dict[str, Any]) -> dict[str, Any] | None:
+        device_id = record["id"]
+        try:
+            sources = self._recording_sources(record)
+        except Exception:
+            return None
+        if not sources:
+            return None
+        source = sources[0]
+        saved = self._saved_preference(record)
+        recording_mode = self._recording_mode(record)
+        try:
+            default_interval = float(
+                monitoring_options(self.controller, device_id, recording_mode)["interval"]
+            )
+        except Exception:
+            default_interval = 1.0
+        interval = float(saved.get("interval", default_interval))
+        interval = min(60.0, max(0.5, interval))
+        if instrument_category(record) == "power_supply":
+            interval = min(POWER_INTERVALS, key=lambda option: abs(option - interval))
+        saved["interval"] = interval
+        saved.setdefault("enabled", True)
+        identity = record.get("identity") or {}
+        maker = identity.get("manufacturer", "")
+        model = identity.get("model", "")
+        serial = identity.get("serial", "")
+        details = " · ".join(value for value in (maker, model, serial) if value) or device_label(record)
+        slot = record.get("slots", {}).get(recording_mode, "")
+        return {
+            "id": f"device:{device_id}",
+            "device_id": device_id,
+            "source": source.key,
+            "sources": [item.key for item in sources],
+            "channels": list(self._channels(device_id, record)),
+            "title": device_label(record),
+            "category": instrument_category(record),
+            "category_label": CATEGORY_LABELS.get(instrument_category(record), instrument_category(record)),
+            "identity": details,
+            "slot": slot,
+            "slot_label": slot_label(slot),
+            "enabled": bool(saved.get("enabled", True)),
+            "interval": interval,
+            "recording_mode": recording_mode,
+        }
 
     def refresh(self) -> None:
         if self.mode != self.controller.mode:
             self.mode = self.controller.mode
-            for card in self.cards.values():
-                card.hide()
-                card.deleteLater()
-            self.cards = {}
-            self.specs = self.controller.runtime.repository.load_workspace(f"monitor_layout/{self.mode}", [])
-            for spec in self.specs:
-                self._create_card(spec)
-            self.grid.set_items([self.cards[s["id"]] for s in self.specs])
-        if self.isVisible():
-            for card in self.cards.values():
-                card.refresh()
-        self.hint.setText(f"{len(self.specs)} 个监测项目 · 添加卡片不会启动仪器 · 记录需在类型页显式开启")
+            self._load_preferences()
+        specs = []
+        for record in self.controller.connected_records():
+            spec = self._spec_for(record)
+            if spec is not None:
+                specs.append(spec)
+        active_ids = {spec["device_id"] for spec in specs}
+        for device_id in set(self.cards) - active_ids:
+            card = self.cards.pop(device_id)
+            card.hide()
+            card.deleteLater()
+        self.specs = specs
+        grouped: dict[str, list[RecordingDeviceCard]] = {}
+        for spec in specs:
+            existing_card = self.cards.get(spec["device_id"])
+            if existing_card is None:
+                card = RecordingDeviceCard(self.controller, spec)
+                card.changed.connect(self._persist_card)
+                card.open_requested.connect(self._open_device)
+                self.cards[spec["device_id"]] = card
+            else:
+                card = existing_card
+                card.set_spec(spec)
+            grouped.setdefault(spec["category"], []).append(card)
+            card.refresh()
+        for category, group in list(self.groups.items()):
+            if category not in grouped:
+                group.hide()
+                group.deleteLater()
+                del self.groups[category]
+        ordered_groups = []
+        for category in CATEGORY_LABELS:
+            if category not in grouped:
+                continue
+            existing_group = self.groups.get(category)
+            if existing_group is None:
+                group = DeviceCategoryGroup(CATEGORY_LABELS[category])
+                self.groups[category] = group
+            else:
+                group = existing_group
+            group.set_cards(grouped[category])
+            group.show()
+            ordered_groups.append(group)
+        for category, cards in grouped.items():
+            if category in self.groups and self.groups[category] in ordered_groups:
+                continue
+            existing_group = self.groups.get(category)
+            if existing_group is None:
+                group = DeviceCategoryGroup(CATEGORY_LABELS.get(category, category))
+                self.groups[category] = group
+            else:
+                group = existing_group
+            group.set_cards(cards)
+            group.show()
+            ordered_groups.append(group)
+        self.grid.set_items(ordered_groups)
+        self._update_button()
+        self.hint.setText(
+            f"当前显示 {len(specs)} 台已连接设备 · 已勾选 {sum(bool(s.get('enabled')) for s in specs)} 台"
+        )
 
-    def _create_card(self, spec: dict[str, Any]) -> None:
-        card = MonitorCard(self.controller, spec)
-        card.action.connect(self.card_action)
-        self.cards[spec["id"]] = card
+    def _persist_card(self) -> None:
+        for spec in self.specs:
+            card = self.cards.get(spec["device_id"])
+            if card is None:
+                continue
+            key = self._slot_key(self.controller.records[spec["device_id"]])
+            interval = card.interval.value()
+            if spec["category"] == "power_supply":
+                interval = min(POWER_INTERVALS, key=lambda option: abs(option - interval))
+                if interval != card.interval.value():
+                    card.interval.blockSignals(True)
+                    card.interval.setValue(interval)
+                    card.interval.blockSignals(False)
+            self.preferences[key] = {
+                "enabled": card.enabled.isChecked(),
+                "interval": interval,
+            }
+            spec["enabled"] = card.enabled.isChecked()
+            spec["interval"] = interval
+            if (
+                not card.enabled.isChecked()
+                and self.controller.runtime.monitoring.snapshots().get(spec["device_id"], {}).get("running")
+            ):
+                self.controller.watch(self.controller.runtime.monitoring.stop(spec["device_id"]))
+        self._persist()
+        self._update_button()
 
-    def add(
-        self, device_id: str, source: str, channels: tuple[int, ...], title: str = "", view: str = ""
-    ) -> None:
+    def _open_device(self, device_id: str) -> None:
+        record = self.controller.records.get(device_id)
+        if not record:
+            return
+        spec = next((item for item in self.specs if item["device_id"] == device_id), None)
+        self.controller.navigate.emit("实时监测", instrument_category(record), device_id)
+        self.open_card.emit(spec or {"device_id": device_id, "source": "", "channels": [1]})
+
+    def add(self, device_id: str, source: str, channels: tuple[int, ...], title: str = "", view: str = "") -> None:
+        """Compatibility entry for type pages; overview cards are automatic now."""
         self.refresh()
-        record = self.controller.records[device_id]
-        data_source = next(s for s in data_sources(config_from_record(record)) if s.key == source)
-        if not channels:
-            raise ValueError("至少选择一个通道")
-        allowed = self.controller.capabilities(device_id).channels
-        if any(channel not in allowed for channel in channels):
-            raise ValueError(f"通道超出设备范围：{allowed}")
-        self.controller.ensure_applicable(device_id)
-        spec = {
-            "id": uuid4().hex,
-            "device_id": device_id,
-            "source": source,
-            "channels": list(channels),
-            "title": title or data_source.label,
-            "view": view or data_source.view,
-        }
-        self.specs.append(spec)
-        self._create_card(spec)
-        self.grid.set_items([self.cards[s["id"]] for s in self.specs])
-        self.persist()
-        self.controller.message.emit("已添加监测卡片；尚未启动监测")
-
-    def add_dialog(self) -> None:
-        dialog = AddCardDialog(self.controller, self)
-        if dialog.exec():
-            try:
-                self.add(
-                    dialog.device.currentData(),
-                    dialog.source.currentData(),
-                    tuple(c for c, check in dialog.checks.items() if check.isChecked()),
-                    dialog.title.text(),
-                    dialog.view.currentData(),
-                )
-            except Exception as exc:
-                self.controller.message.emit(str(exc))
-        dialog.deleteLater()
+        card = self.cards.get(device_id)
+        if card is None:
+            return
+        target = next((spec for spec in self.specs if spec["device_id"] == device_id), None)
+        if target is not None:
+            task = self.controller.runtime.monitoring.snapshots().get(device_id, {})
+            if task.get("running") and task.get("interval") is not None:
+                # Pinning from a live page must carry its current scheduler
+                # setting into the overview preference before the card is
+                # persisted.  This avoids reviving an older overview value on
+                # the next stop/start cycle.
+                target["interval"] = float(task["interval"])
+            target.update(
+                source=source,
+                channels=list(channels),
+                title=title or target["title"],
+                view=view,
+            )
+            card.set_spec(target)
+            # A few integrations still inspect the legacy per-source view of
+            # ``specs`` after pinning a page.  Keep source aliases transiently;
+            # the next connected-device refresh rebuilds the canonical one-card
+            # list, and requests are deduplicated below.
+            if len(target.get("sources", ())) > 1:
+                aliases = []
+                for source_key in target["sources"]:
+                    if source_key == target["source"]:
+                        continue
+                    alias = dict(target)
+                    alias["id"] = f"{target['id']}:{source_key}"
+                    alias["source"] = source_key
+                    aliases.append(alias)
+                self.specs.extend(aliases)
+        self._persist_card()
 
     def card_action(self, action: str, card_id: str) -> None:
-        index = next(i for i, spec in enumerate(self.specs) if spec["id"] == card_id)
-        spec = self.specs[index]
-        if action == "open":
-            record = self.controller.records.get(spec["device_id"])
-            if record:
-                self.controller.navigate.emit("实时监测", instrument_category(record), record["id"])
-                self.open_card.emit(spec)
-            return
-        if action == "rename":
-            value, accepted = QInputDialog.getText(self, "卡片名称", "名称", text=spec["title"])
-            if not accepted or not value.strip():
-                return
-            spec["title"] = value.strip()
-            self.cards[card_id].title.setText(value.strip())
-        elif action == "remove":
-            card = self.cards.pop(card_id)
-            card.hide()
-            self.grid.grid.removeWidget(card)
-            card.deleteLater()
-            self.specs.pop(index)
-        else:
-            target = index + (-1 if action == "up" else 1)
-            if 0 <= target < len(self.specs):
-                self.specs[index], self.specs[target] = self.specs[target], self.specs[index]
-        self.grid.set_items([self.cards[s["id"]] for s in self.specs])
-        self.persist()
+        device_id = card_id.removeprefix("device:")
+        if action == "open" and device_id in self.cards:
+            self._open_device(device_id)
 
-    def start(self) -> None:
-        grouped: dict[str, list[Any]] = {}
+    def _requests(self) -> tuple[list[tuple[str, tuple[AcquisitionRequest, ...], float, str]], list[str]]:
+        grouped = []
+        dangerous = []
+        seen_devices: set[str] = set()
         for spec in self.specs:
+            card = self.cards.get(spec["device_id"])
             record = self.controller.records.get(spec["device_id"])
-            if not record:
+            if not card or not record or not card.enabled.isChecked() or not self.controller.has_connected_session(spec["device_id"]):
                 continue
-            source = next(
-                (s for s in data_sources(config_from_record(record)) if s.key == spec["source"]), None
-            )
-            if source is None:
-                self.controller.message.emit(f"卡片 {spec['title']} 的数据源已不可用，请重新选择")
+            if spec["device_id"] in seen_devices:
                 continue
-            requires_start = record["adapterId"] in {"pico.6404e", "keysight.3458a"}
+            seen_devices.add(spec["device_id"])
             channels = tuple(spec["channels"])
-            if instrument_category(record) == "oscilloscope":
-                channels = scope_channels(self.controller, record["id"], channels)
-                if not channels:
-                    continue
-            grouped.setdefault(record["id"], []).append(
-                source.request(channels, initiate=requires_start, confirmed=requires_start)
+            if not channels:
+                continue
+            available_sources = self._recording_sources(record)
+            wanted = set(spec.get("sources", (spec["source"],)))
+            sources = [item for item in available_sources if item.key in wanted]
+            if not sources:
+                self.controller.message.emit(f"{spec['title']} 暂无可用数据源")
+                continue
+            initiate = record.get("adapterId") in {"pico.6404e", "keysight.3458a"}
+            requests = tuple(
+                source.request(channels, initiate=initiate, confirmed=initiate) for source in sources
             )
-        dangerous = [
-            self.controller.records[key]["displayName"] or self.controller.records[key]["adapterId"]
-            for key, requests in grouped.items()
-            if any(r.initiate for r in requests)
-        ]
-        if (
-            dangerous
-            and QMessageBox.question(
-                self,
-                "确认监测采集",
-                "以下设备将按批次启动采集：\n" + "\n".join(dangerous),
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No,
+            grouped.append(
+                (record["id"], requests, card.interval.value(), self._recording_mode(record))
             )
-            != QMessageBox.StandardButton.Yes
-        ):
+            if initiate:
+                dangerous.append(device_label(record))
+        return grouped, dangerous
+
+    def toggle_sampling(self) -> None:
+        active = [device_id for device_id in self.cards if self.controller.runtime.monitoring.snapshots().get(device_id, {}).get("running")]
+        if active:
+            self.stop()
             return
-        for device_id, requests in grouped.items():
+        grouped, dangerous = self._requests()
+        if not grouped:
+            self.controller.message.emit("请至少勾选一台已连接设备")
+            return
+        if dangerous and QMessageBox.question(
+            self,
+            "确认开始采样",
+            "以下设备会启动仪器采样：\n" + "\n".join(dangerous),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        ) != QMessageBox.StandardButton.Yes:
+            return
+        for device_id, requests, interval, recording_mode in grouped:
             try:
-                self.controller.ensure_applicable(device_id)
-                options = monitoring_options(self.controller, device_id, self.controller.mode)
+                record = self.controller.records[device_id]
+                if not mode_applicable(record, recording_mode):
+                    raise DeviceError("此设备没有可用的监测模式", "unsupported")
+                options = monitoring_options(self.controller, device_id, recording_mode)
+                options["interval"] = interval
+                options["record_interval"] = None
                 self.controller.runtime.monitoring.start(
                     device_id,
-                    tuple(requests),
+                    requests,
                     **options,
-                    mode=self.controller.mode,
+                    mode=recording_mode,
+                    recording=True,
                 )
             except Exception as exc:
                 self.controller.message.emit(f"{self.controller.records[device_id]['adapterId']}：{exc}")
+        self._update_button()
+
+    def start(self) -> None:
+        self.toggle_sampling()
 
     def stop(self) -> None:
-        for device_id in {spec["device_id"] for spec in self.specs}:
-            self.controller.watch(self.controller.runtime.monitoring.stop(device_id))
+        for device_id in tuple(self.cards):
+            if self.controller.runtime.monitoring.snapshots().get(device_id, {}).get("running"):
+                self.controller.watch(self.controller.runtime.monitoring.stop(device_id))
+        self._update_button()
+
+    def _update_button(self) -> None:
+        active = any(
+            self.controller.runtime.monitoring.snapshots().get(device_id, {}).get("running")
+            for device_id in self.cards
+        )
+        self.sample_button.setText("停止采样" if active else "一键开始采样")

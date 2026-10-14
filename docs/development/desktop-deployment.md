@@ -16,7 +16,7 @@
 
 `scripts/download-vendors.ps1` 读取清单，复用缓存并核对锁定哈希和发布者；`-VerifyOnly` 禁止下载。开发下载遵循[环境规范](environment.md)，从国内镜像或官方直连获取。不安装驱动、不改变系统设置。
 
-离线材料开发时位于 `.tools/installers`；正式部署保存在 `%ProgramData%\TF-LabControl\maintenance\packages`，也可从发行目录的 `maintenance/packages` 读取。开发机绝对地址、网卡、租约和真实资产资料不进入清单。
+离线材料随源码保存在 `deployment/packages`：`installers` 放已核验的厂商安装包，`python` 放 Windows x64 / CPython 3.12 wheelhouse，`tools` 放项目工具；`manifest.json` 记录文件大小、SHA256、来源和签名状态。`.tools/installers` 仍是下载脚本的临时工作区，部署检查会优先使用仓库缓存。正式部署仍保存在 `%ProgramData%\TF-LabControl\maintenance\packages`，也可从发行目录的 `maintenance/packages` 读取；目录式打包应将已确认的离线材料一并复制到发行材料。开发机绝对地址、网卡、租约和真实资产资料不进入清单。
 
 ## 构建与检查
 
@@ -31,9 +31,17 @@ $env:HTTP_PROXY=''; $env:HTTPS_PROXY=''; $env:ALL_PROXY=''; $env:NO_PROXY='*'
 .venv-dev\Scripts\python.exe scripts/build_desktop.py
 ```
 
+如果仓库缓存已由 Git LFS 拉取，构建依赖也可以完全离线同步：
+
+```powershell
+$env:UV_PROJECT_ENVIRONMENT='.venv-dev'
+.venv-dev\Scripts\uv.exe pip sync deployment/packages/python/requirements.txt --offline --no-index --find-links deployment/packages/python --python .venv-dev\Scripts\python.exe
+.venv-dev\Scripts\uv.exe pip install --offline --no-index --find-links deployment/packages/python --no-deps --no-build-isolation --python .venv-dev\Scripts\python.exe -e .
+```
+
 上述环境变量仅在本次 PowerShell 进程有效。开发检查拒绝未登记依赖及失效型号组件引用，并列出待补项；严格发布检查还校验材料、安装/分发证据等，当前未齐备时应返回非零退出码。ZIP 内安装文件签名还需后续发布暂存校验；当前严格检查对此保持阻断。
 
-构建检查安装版本是否符合锁文件，生成 `build/deployment/release-manifest.json`，包含运行依赖闭包、构建版本和清单哈希，随 EXE 打包。测试版输出 `dist/TF-LabControl/TF-LabControl.exe`，目录必须整体分发；它不是已完成的正式安装包。`build_desktop.py --release` 在严格检查通过后才允许继续构建，完整发行还需安装器、许可和目标电脑验收门禁。
+构建检查安装版本是否符合锁文件，生成 `build/deployment/release-manifest.json`，包含运行依赖闭包、构建版本和清单哈希，随 EXE 打包。测试版输出 `dist/TF-LabControl/TF-LabControl.exe`，并把 `deployment/packages` 的已核验材料复制到 `dist/TF-LabControl/maintenance/packages`，同时携带 `maintenance/repair_53100a_driver.ps1` 和 `maintenance/ensure_vc_runtime.ps1` 作为外部 PowerShell 维护入口；目录必须整体分发，它不是已完成的正式安装包。`build_desktop.py --release` 在严格检查通过后才允许继续构建，完整发行还需安装器、许可和目标电脑验收门禁。
 
 `deployment/labcontrol.spec` 收集 Qt 插件、主题、动态型号模块和运行元数据；不从开发机复制厂商驱动 DLL。唯一启动分发函数先识别 `--csv-worker` / `--deployment-check` / `--cli`，再进入 GUI。源码入口和 EXE 共用该路径，CSV worker 不创建 GUI 或硬件会话。
 
@@ -62,6 +70,27 @@ TF-LabControl.exe --cli environment --report C:\Temp\environment.json
 5. 保留维护缓存，支持原离线安装包补齐；应用无法启动时从安装器维护入口修复。支持离线修复、重启后续装、升级前数据备份与版本迁移；系统重启由用户安排。
 
 网络方案含本机指纹、接口、网段、路由/DNS/网络类型恢复快照和执行顺序，检查换网卡、跨电脑旧方案、默认网关和其他接口/VPN 网段冲突。服务、防火墙的精确前态还必须由未来执行器在写入前采集，旧快照不能直接授权写入。见[实验网络部署](../guides/lab-network-deployment.md)。
+
+本机维护试验暴露的安装门禁已归档在[实验网络部署与换电脑](../guides/lab-network-deployment.md)：UAC 可见提权、物理运行目录、动态网卡选择、UDP 67 防火墙、DHCP-only 服务、租约分阶段验证和失败回滚必须由正式维护执行器完成。开发机的 `hardware-tests/dhcp-*` 只证明该批次的前后态和服务自测，不能复制到另一台电脑，也不能替代干净系统及真实设备验收。
+
+## 换电脑安装检查清单
+
+以下是安装器与“环境与修复”共用执行器的实现要求；当前未接入的自动操作仍为待实现。新用户仅需选择实验网口、处理系统提权提示，并在需要时让设备重新申请地址；不应手工下载依赖、编辑 INI、运行 CMD 或填写防火墙规则。
+
+| 本次暴露或迁移时必须检查的问题 | 安装器自动处理与通过依据 |
+| --- | --- |
+| 仓库大文件仍是 Git LFS 指针、缓存缺失或损坏 | 按离线清单核对文件大小和 SHA256；开发准备阶段拉取实际材料，正式安装包必须已携带完整材料；缺项明确列出，不把指针当安装程序 |
+| 新电脑没有 Python、uv 或构建环境 | 正式安装包运行冻结程序，不要求用户安装开发环境；源码安装先检测解释器版本/位数，再使用缓存安装；依赖与锁文件一致 |
+| 下载受代理、国外源或临时链接影响 | 优先完整离线缓存；开发补齐按国内镜像/官方直连策略执行并保存来源、版本、签名和哈希；不修改系统代理 |
+| TimeLab 安装成功但 USB 设备仍缺驱动 | 应用安装、驱动暂存和实际绑定分开检测；按准确硬件 ID 核对驱动、设备错误码和重启需求，必要时从外部 PowerShell 启动 `scripts/repair_53100a_driver.ps1`；详见 [53100A 部署维护源](../../src/lab_control/instruments/devices/microchip_53100a/deployment.md)；退出码 0 不能替代设备检查 |
+| 厂商安装和 PnPUtil 都返回 0，但设备报错 39 | 保存设备 ProblemStatus、SetupAPI 日志和对应 CodeIntegrity 事件的策略 GUID/名称；区分普通文件签名有效、驱动暂存成功和内核加载通过。命中 Windows Driver Policy 时寻找 WHCP 签名版本；同哈希新版安装包内驱动不重复安装，维护器不自动关闭安全策略 |
+| 已装 VISA/SDK 版本、位数或路径与开发机不同 | 检测现有兼容运行库并复用，逐项核对 x64、版本、DLL 及必要导出；不复制开发机绝对路径、不降级共享驱动、不自动切换 USB 驱动 |
+| VC++ 运行库已安装但安装器反复覆盖旧版本 | 读取 x64 运行库注册表版本；版本不低于清单要求时跳过安装，较高版本也不降级。需要补齐时由 `scripts/ensure_vc_runtime.ps1` 外部 PowerShell 提权执行并做安装后读回 |
+| 构建电脑 PATH 混入其他软件的 DLL | 使用受控构建环境，目录产物在源码外和中文/空格路径验证；安装成功与冻结 worker 可运行分别留证 |
+| 网络服务已运行但仪器仍不可见 | 执行[网络部署门禁](../guides/lab-network-deployment.md#换电脑实测踩坑与安装器门禁)，分别报告服务、租约 ACK、发现、身份核验；用户取消提权、设备离线及未续租均保留准确状态 |
+| 二次安装、升级、失败或卸载影响已有资料 | 检测并复用正常组件，维护前保存快照，重复修复不重复建规则；只回滚本应用拥有且未被外部修改的设置，保留库存、历史、离线缓存与待重启状态 |
+
+上述结果须写入本机维护报告，并在干净 Windows 10/11 x64、离线、普通用户、拒绝提权、已有共享驱动及重复修复场景验收。尚未完成的检测、自动配置和目标电脑测试继续阻断正式发布，不用本机成功代替跨电脑通过。
 
 ## 验收与发布
 

@@ -102,6 +102,9 @@ def match(identity: DeviceIdentity) -> str:
 
 
 def transport_for(config: ConnectionConfig, runtime: VisaRuntime) -> Transport:
+    definition = DEVICE_DEFINITIONS.get(config.adapter)
+    if definition and definition.transport_factory:
+        return definition.transport_factory(config, runtime)
     if config.transport == "visa":
         return VisaTransport(
             runtime,

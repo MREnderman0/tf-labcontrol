@@ -65,15 +65,29 @@ class SerialDiscoveryProvider:
     def enumerate(self) -> tuple[DiscoveryCandidate, ...]:
         from serial.tools.list_ports import comports
 
+        def usb_instance_id(port) -> str:
+            # USB-serial bridges usually keep this value when Windows assigns a
+            # different COM number after reinsertion.  Do not fall back to the
+            # port location: a changed socket is exactly the case we want to
+            # support.
+            if port.serial_number and port.vid is not None and port.pid is not None:
+                return f"VID_{port.vid:04X}&PID_{port.pid:04X}\\{port.serial_number}"
+            return ""
+
         return tuple(
             DiscoveryCandidate(
-                ConnectionConfig(port.device, transport="serial"),
+                ConnectionConfig(
+                    port.device,
+                    transport="serial",
+                    usb_instance_id=usb_instance_id(port),
+                ),
                 self.name,
                 {
                     "description": port.description,
                     "vid": port.vid,
                     "pid": port.pid,
                     "usb_serial": port.serial_number,
+                    "usb_instance_id": usb_instance_id(port),
                     "location": port.location,
                 },
             )
@@ -177,6 +191,58 @@ class Inventory:
                 None,
             )
 
+    def by_stable_id(self, usb_instance_id: str) -> dict[str, Any] | None:
+        """Find a serial device by its USB bridge identity, independent of COM."""
+        if not usb_instance_id:
+            return None
+        with self.lock:
+            matches = [
+                item
+                for item in self.records.values()
+                if item.get("config", {}).get("usb_instance_id") == usb_instance_id
+                or any(
+                    entry.get("config", {}).get("usb_instance_id") == usb_instance_id
+                    or entry.get("rawDescriptor", {}).get("usb_instance_id") == usb_instance_id
+                    for entry in item.get("candidates", {}).values()
+                )
+            ]
+            # Prefer an already configured/identified asset when legacy rows
+            # and the current stable USB identity coexist in the inventory.
+            return max(matches, key=lambda item: (bool(item.get("adapterId")), bool(item.get("identityKey"))), default=None)
+
+    @staticmethod
+    def _serial_signature(descriptor: dict[str, Any]) -> tuple[int, int] | None:
+        vid, pid = descriptor.get("vid"), descriptor.get("pid")
+        return (vid, pid) if isinstance(vid, int) and isinstance(pid, int) else None
+
+    def serial_profile(self, descriptor: dict[str, Any]) -> ConnectionConfig | None:
+        """Return an unambiguous configured serial profile for a USB signature.
+
+        This is opt-in through an already configured model. It lets another
+        identical bridge be probed after insertion without treating its COM
+        number as the device identity.
+        """
+        signature = self._serial_signature(descriptor)
+        if signature is None or not descriptor.get("usb_serial"):
+            return None
+        matches: dict[tuple[str, str], ConnectionConfig] = {}
+        with self.lock:
+            for record in self.records.values():
+                if not record.get("adapterId"):
+                    continue
+                try:
+                    config = ConnectionConfig(**record["config"])
+                except (KeyError, TypeError, ValueError):
+                    continue
+                if config.transport != "serial":
+                    continue
+                if any(
+                    self._serial_signature(entry.get("rawDescriptor", {})) == signature
+                    for entry in record.get("candidates", {}).values()
+                ):
+                    matches[(config.adapter, config.transport)] = config
+        return next(iter(matches.values())) if len(matches) == 1 else None
+
     def merge(
         self,
         candidate: DiscoveryCandidate,
@@ -190,7 +256,33 @@ class Inventory:
     ) -> dict[str, Any]:
         with self.lock:
             resource = candidate.config.resource
-            existing = self.by_resource(resource)
+            stable_existing = self.by_stable_id(candidate.config.usb_instance_id)
+            resource_existing = self.by_resource(resource)
+            existing: dict[str, Any] | None
+            # A stable USB identity wins over a reused COM number. If an old
+            # record predates this field, adopt it once at the same resource so
+            # it can follow the bridge on later insertions.
+            if stable_existing is not None:
+                existing = stable_existing
+            elif candidate.config.usb_instance_id:
+                existing = (
+                    resource_existing
+                    if resource_existing and not resource_existing.get("config", {}).get("usb_instance_id")
+                    else None
+                )
+            elif candidate.config.transport == "serial":
+                # Without a USB bridge serial there is no safe asset key. Keep
+                # unconfigured metadata together for this endpoint, but do not
+                # attach a configured identity to a reused COM number.
+                existing = (
+                    resource_existing
+                    if resource_existing
+                    and not resource_existing.get("adapterId")
+                    and not resource_existing.get("identityKey")
+                    else None
+                )
+            else:
+                existing = resource_existing
             if (
                 existing
                 and identity
@@ -317,6 +409,26 @@ class Inventory:
                 entry["lastSeenAt"] = now
                 record["lastSeenAt"] = now
             record["candidates"][resource] = entry
+            if (
+                candidate.source == "serial"
+                and candidate.config.usb_instance_id
+                and record.get("adapterId")
+                and record.get("config")
+                and not record.get("identityConflict")
+            ):
+                # The adapter profile follows the USB bridge; only the current
+                # COM endpoint is refreshed for this scan.
+                profile = ConnectionConfig(**record["config"])
+                record["config"] = asdict(
+                    replace(
+                        profile,
+                        resource=resource,
+                        transport="serial",
+                        aliases=(),
+                        usb_instance_id=candidate.config.usb_instance_id,
+                    )
+                )
+                record["primaryResourceExplicit"] = False
             prefer_visa = bool(
                 identity is not None
                 and not conflict
@@ -390,6 +502,74 @@ class Inventory:
                     if slot and other["id"] != device_id and other.get("slots", {}).get(mode) == slot:
                         raise DeviceError("Slot is already occupied", "slot_conflict")
                 record["slots"][mode] = slot
+            self.repository.save(record)
+            self.records[device_id] = record
+
+    def configure(self, device_id: str, config: ConnectionConfig) -> None:
+        """Attach an explicit adapter to one discovered resource.
+
+        Serial enumeration publishes metadata for every port.  A confirmed
+        serial profile may later follow matching USB bridge signatures, while a
+        port without a stable USB identity remains metadata-only.
+        """
+        with self.lock:
+            if device_id not in self.records:
+                raise DeviceError("设备记录不存在，请重新扫描", "device_not_found")
+            record = deepcopy(self.records[device_id])
+            normalized = canonical_resource(config.resource)
+            for other in self.records.values():
+                if other["id"] == device_id:
+                    continue
+                same_resource = any(
+                    canonical_resource(resource) == normalized
+                    and not other["candidates"].get(resource, {}).get("retired")
+                    for resource in other["resources"]
+                )
+                if same_resource and (other.get("adapterId") or other.get("identityKey")):
+                    raise DeviceError("该连接资源已属于另一条设备记录，请先选择主资源", "resource_conflict")
+            resource = config.resource
+            entry = record["candidates"].get(resource)
+            if config.transport == "serial" and not config.usb_instance_id and entry:
+                stable_id = entry.get("rawDescriptor", {}).get("usb_instance_id", "")
+                if stable_id:
+                    config = replace(config, usb_instance_id=stable_id)
+            if resource not in record["resources"]:
+                record["resources"].append(resource)
+            if entry is None:
+                entry = {
+                    "candidateId": uuid4().hex,
+                    "source": "configured",
+                    "sources": {},
+                    "rawDescriptor": {},
+                    "presenceState": "unknown",
+                }
+            sources = dict(entry.get("sources", {}))
+            sources["configured"] = {
+                "scanRunId": "manual",
+                "observedAt": utc_now(),
+                "rawDescriptor": entry.get("rawDescriptor", {}),
+            }
+            entry.update(
+                config=asdict(config),
+                source="configured",
+                sources=sources,
+                probeReason="manual_configured",
+                lastError="",
+                probeErrorCode="",
+                retired=False,
+            )
+            record["candidates"][resource] = entry
+            record["config"] = asdict(config)
+            record["adapterId"] = config.adapter
+            record["discoveryState"] = "identified" if record.get("identity") else "unknown"
+            record["probeReason"] = "manual_configured"
+            record["lastError"] = ""
+            record["probeErrorCode"] = ""
+            record["driverStatus"] = "unconfirmed"
+            # A serial COM number is a current endpoint, not an asset address.
+            # The next scan may replace it when the same USB bridge reappears.
+            record["primaryResourceExplicit"] = config.transport != "serial"
+            update_record_presence(record)
             self.repository.save(record)
             self.records[device_id] = record
 
@@ -489,6 +669,8 @@ class DiscoveryService:
         leases: ResourceLeases,
         inventory: Inventory,
         probe: Callable[[DiscoveryCandidate], tuple[DeviceIdentity, str]],
+        *,
+        probe_workers: int = 4,
     ) -> None:
         self.providers, self.sessions, self.leases, self.inventory, self.probe = (
             providers,
@@ -498,6 +680,7 @@ class DiscoveryService:
             probe,
         )
         self.worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix="discovery")
+        self.probe_workers = max(1, int(probe_workers))
         self.lock, self.cancelled = threading.Lock(), threading.Event()
         self.future: Future[Any] | None = None
         self.progress: dict[str, Any] = {"state": "idle"}
@@ -572,6 +755,29 @@ class DiscoveryService:
             observation_error = next((c for c in group if c.error_code), None)
             if observation_error is not None:
                 chosen = replace(chosen, error_code=observation_error.error_code, error=observation_error.error)
+            serial_candidate = next((c for c in group if c.source == "serial"), None)
+            if serial_candidate is not None:
+                known = self.inventory.by_stable_id(serial_candidate.config.usb_instance_id)
+                profile = (
+                    ConnectionConfig(**known["config"])
+                    if known and known.get("adapterId") and known.get("config")
+                    else self.inventory.serial_profile(serial_candidate.descriptor)
+                )
+                if profile is not None and profile.adapter:
+                    # Probe the currently enumerated COM resource with the
+                    # confirmed model profile. The USB bridge identity, not
+                    # its transient COM number, selects the profile.
+                    chosen = replace(
+                        serial_candidate,
+                        config=replace(
+                            profile,
+                            resource=serial_candidate.config.resource,
+                            transport="serial",
+                            aliases=(),
+                            usb_instance_id=serial_candidate.config.usb_instance_id,
+                        ),
+                        safe_scpi=any(c.safe_scpi for c in group),
+                    )
             known = self.inventory.by_resource(chosen.config.resource)
             if (
                 chosen.safe_scpi
@@ -621,6 +827,7 @@ class DiscoveryService:
                         self.leases.acquire(
                             owner,
                             (candidate.config.resource, *candidate.config.aliases, "discovery:unknown_alias"),
+                            identified=True,
                         )
                         leased = True
                 if leased:
@@ -646,9 +853,33 @@ class DiscoveryService:
             self.inventory.repository.audit("discovery_result", scan_id=scan_id, **item)
             return item
 
-        # Serial probing avoids colliding unconfirmed USB/LAN aliases during the same scan.
-        for candidate in candidates:
-            report["items"].append(process(candidate))
+        # Identity probes are the expensive part of a startup scan. Bound the
+        # number of concurrent probes and keep result ordering deterministic.
+        # Mock candidates remain serial because their fixture adapters share a
+        # process-global simulation state; real resources are endpoint-locked.
+        results: dict[int, dict[str, Any]] = {}
+        parallel = [
+            (index, candidate)
+            for index, candidate in enumerate(candidates)
+            if candidate.config.transport != "mock"
+        ]
+        serial = [
+            (index, candidate)
+            for index, candidate in enumerate(candidates)
+            if candidate.config.transport == "mock"
+        ]
+        for index, candidate in serial:
+            results[index] = process(candidate)
+        if parallel:
+            with ThreadPoolExecutor(
+                max_workers=min(self.probe_workers, len(parallel)), thread_name_prefix="probe"
+            ) as probe_executor:
+                probe_futures = {
+                    probe_executor.submit(process, candidate): index for index, candidate in parallel
+                }
+                for probe_future in as_completed(probe_futures):
+                    results[probe_futures[probe_future]] = probe_future.result()
+        report["items"] = [results[index] for index in range(len(candidates))]
         self.inventory.stale(scan_id, successful - {"configured"}, cancelled=self.cancelled.is_set())
         report.update(
             {

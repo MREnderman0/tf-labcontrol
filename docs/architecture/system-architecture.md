@@ -27,7 +27,7 @@
 
 run.bat、Python 模块入口和 lab-control 统一调用 app.main，创建真实 ApplicationRuntime 和 RealWindow；内部测试和预览注入隔离 Mock ApplicationRuntime 并显示同一窗口；lab-control-cli 调用同一会话服务。配置文件只描述资源/适配器/驱动，不允许混入厂家命令。
 
-真实进程使用每用户固定位置的进程锁（即使更换 LAB_CONTROL_HOME 仍互斥），阻止本软件 GUI/CLI/Python 实测进程同时占用仪器。不关闭其他厂商软件，其他程序占用会产生可解释错误。模拟 CLI 和单元测试不获取硬件进程锁，存储隔离在 simulation。
+真实进程使用每用户固定位置的独占进程锁（即使更换 LAB_CONTROL_HOME 仍互斥），阻止本软件 GUI/CLI/Python 实测进程同时占用仪器。锁被占用时启动边界报告持有进程的 PID 和启动时间；这些信息写入临时的 `hardware.lock.owner.json`，正常退出时清理，操作系统锁本身仍是唯一的占用依据。不关闭其他厂商软件，其他程序占用会产生可解释错误。模拟 CLI 和单元测试不获取硬件进程锁，存储隔离在 simulation。
 
 ## 数据流
 
@@ -45,7 +45,7 @@ run.bat、Python 模块入口和 lab-control 统一调用 app.main，创建真�
       <- 每数据源最近批次 MonitorFrame -> LivePlot（显示抽稀）
       -> 显式记录 / 保存 -> 后台 writer -> Repository.export（原始批次）
 
-扫描 worker 与设备 worker 独立。provider 并行枚举；原子租约确定可探测的临时资源。活动会话只提供缓存；未知别名延后探测，已有会话保持原句柄。扫描只关闭自己创建的临时对象。
+扫描 worker 与设备 worker 独立。provider 并行枚举，身份探测使用有界线程池；原子租约按端点和别名隔离独立设备，并让安全探测共享兼容闸门。活动会话只提供缓存；未知别名延后探测，已有会话保持原句柄。扫描只关闭自己创建的临时对象。
 
 ## 线程和生命周期
 

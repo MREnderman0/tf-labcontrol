@@ -55,7 +55,7 @@ storage/paths.py 的不可变 `SaveContext` 固定根目录、带时区开始时
 
 自定义目录只影响采集数据。真实与 Mock 的偏好分别保存在各自库存中；Mock 默认使用 simulation/data，自定义一级目录下则额外使用 simulation 子目录，设置页展示实际生效路径。不迁移库存、槽位、日志、配置、实机档案或历史采集文件。
 
-进程锁固定在每用户 TF-LabControl 根目录，防止换数据目录后启动第二个真实设备进程。SQLite 包含 inventory(id, document)、scans(id, document) 和新增 workspace(id, document)，document 为 UTF-8 JSON。新增表不改变旧库存/槽位格式；会话驻留内存，旧记录不能当成当前已连接。
+进程锁固定在每用户 TF-LabControl 根目录，防止换数据目录后启动第二个真实设备进程。`hardware.lock.owner.json` 只保存当前独占锁的 PID 和启动时间用于冲突提示，正常退出时删除，不能据此判断锁是否可用。SQLite 包含 inventory(id, document)、scans(id, document) 和新增 workspace(id, document)，document 为 UTF-8 JSON。新增表不改变旧库存/槽位格式；会话驻留内存，旧记录不能当成当前已连接。
 
 ## 页面工作区
 
@@ -63,11 +63,12 @@ workspace 使用键隔离，真实与模拟分别位于各自根目录：
 
 - `current_mode`：当前模式。
 - `data_storage/root`：用户选择的数据保存一级目录的绝对路径；缺省或 null 使用本运行目录的 data。保存前进行创建及写入/读回检查，失败保留原设置。
-- `monitor_layout/<mode>`：按顺序保存卡片 `{id, device_id, source, channels, title, view}`。device_id 为稳定库存 ID；不保存列数、仪器句柄或运行状态。
+- `monitor_overview/all`：保存所有已连接可监测设备总览卡片的 `{enabled, interval}`。槽位存在时使用 `slot:<mode>:<slot>`，未绑定槽位使用稳定设备 ID；不保存列数、仪器句柄或运行状态。旧的 `monitor_overview/electronic` 与 `monitor_overview/optical` 会在读取时兼容迁移。
+- `monitoring_channels/optical_power_meter`：按光功率计功能槽位保存通道勾选列表；未绑定槽位使用稳定设备 ID。
 - `draft/<mode>/<device_id>/<channel>/<operation>`：`fields` 保存原输入值及单位倍率，`rows` 保存数组草稿；成功应用后清除该项，失败保留。
 - `demo_slots_initialized`：仅模拟入口首次初始化 A/B，避免再次启动覆盖用户绑定。
 
-布局恢复不自动监测；列数根据当前内容宽度重新计算。未知设备或暂时缺少数据源保留卡片并解释状态。
+总览恢复不自动采样；列数根据当前内容宽度重新计算。只有当前已连接且存在数据源的设备显示卡片。
 
 ## 库存与资源候选
 
@@ -75,9 +76,11 @@ workspace 使用键隔离，真实与模拟分别位于各自根目录：
 
 candidates 以原始资源字符串为键，保留 candidateId、scanRunId、source、rawDescriptor、lastSeenAt、config、lastError、probeReason。同一物理设备的多个地址合并后不删除候选；合并前的空身份占位行可被吸收。存在冲突时保留原身份和 identityConflict，连接被禁用，不用新身份覆盖旧资产。
 
-库存及候选新增 presenceState（present/not_seen/unreachable/unknown）；候选的 evidenceScanRunId 标识存在性证据批次，sources 按来源保留 scanRunId、observedAt、rawDescriptor。旧单来源候选在下次合并时兼容补入 sources，无需重建数据库。configured 的 observedAt 只表示配置被枚举，不刷新 lastSeenAt；真实本地枚举或身份成功才更新后者。启动时仅在内存中将旧存在性置为 unknown，并去除旧 evidenceScanRunId，等待当前扫描/会话确认。
+库存及候选新增 presenceState（present/not_seen/unreachable/unknown）；候选的 evidenceScanRunId 标识存在性证据批次，sources 按来源保留 scanRunId、observedAt、rawDescriptor。旧单来源候选在下次合并时兼容补入 sources，无需重建数据库。configured 的 observedAt 只表示配置被枚举，不刷新 lastSeenAt；真实本地枚举或身份成功才更新后者。仅 `metadata_only` 且没有型号/适配器的串口资源保留为待核对线索，不进入当前设备集合。对已有型号或身份记录，串口/USB 枚举后的身份探测失败保持 unreachable，不因历史身份进入当前设备集合。启动时仅在内存中将旧存在性置为 unknown，并去除旧 evidenceScanRunId，等待当前扫描/会话确认。
 
 稳定 id 是持久化 UUID；可识别身份以厂家/型号/序列号匹配历史记录。序列号缺失时保持候选身份，不能因 COM/IP 相同证明是同一台设备。显示名与槽位保留。连接后才发现历史身份重复时保留 conflict，不在运行 worker 中偷偷更换设备 ID。
+
+型号协议无法读出序列号时，明确选择的适配器和资源仍可并行建立会话；端口、别名和配置中的预期序列号分别承担占用隔离。预期序列号只作为用户资产标签和租约键，不能替代设备实际身份读回。
 
 `slots` 继续使用按模式索引的映射，例如 `{"electronic": "signal_generator:1", "optical": ""}`。缺少模式键代表该模式尚无绑定记录，空字符串代表明确未绑定。身份合并不得用不同的历史选择覆盖显式空绑定；相互矛盾时保留冲突。同型号不同序列号不会继承槽位。无需新增表或重建旧库存。
 
