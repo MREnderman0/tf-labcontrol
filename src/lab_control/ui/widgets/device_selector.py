@@ -3,6 +3,7 @@ from __future__ import annotations
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
+from lab_control.application.bulk_connection import device_label
 from lab_control.application.controls import CATEGORY_LABELS, slot_label
 from lab_control.ui.controller import WorkspaceController, display_connection_state, state_label
 from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
@@ -49,7 +50,7 @@ class DeviceSelector(QWidget):
         records = self.controller.connected_records(self.category)
         entries = []
         for entry in records:
-            label = entry["displayName"] or entry["identity"].get("model") or entry["adapterId"]
+            label = device_label(entry)
             slot = entry.get("slots", {}).get(self.controller.mode)
             connection = display_connection_state(self.controller.states[entry["id"]])
             suffix = " · " + state_label(connection) if connection != "connected" else ""
@@ -64,9 +65,11 @@ class DeviceSelector(QWidget):
         self.channel.setEnabled(bool(self.device_id))
         if record:
             identity = record["identity"]
+            serial = identity.get("serial") or record["config"].get("expected_serial") or "未识别"
+            serial_label = "序列号" if identity.get("serial") else "资产序列号（配置）" if record["config"].get("expected_serial") else "序列号"
             self.info.setText(
                 f"{identity.get('model') or record['adapterId']}  ·  {record['config']['resource']}\n"
-                f"序列号：{identity.get('serial') or '未识别'}  ·  "
+                f"{serial_label}：{serial}  ·  "
                 + ("待实机验收" if self.controller.runtime.hardware else "模拟设备")
             )
         else:

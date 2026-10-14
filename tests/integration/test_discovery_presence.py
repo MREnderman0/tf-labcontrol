@@ -1,4 +1,5 @@
 import threading
+import time
 from dataclasses import replace
 
 import pytest
@@ -7,6 +8,7 @@ from lab_control.application.config import ConnectionConfig
 from lab_control.application.leases import ResourceLeases
 from lab_control.application.sessions import SessionManager
 from lab_control.demo.instrument import SimulatedInstrument
+from lab_control.discovery.presence import is_current, update_record_presence
 from lab_control.discovery.service import (
     ConfiguredDiscoveryProvider,
     DiscoveryCandidate,
@@ -67,9 +69,127 @@ def test_probe_connection_failure_is_not_a_driver_failure(store, code, driver_st
     result = scan([Provider(candidate)], failed_probe)
     record = inventory.all()[0]
     assert record["presenceState"] == "unreachable"
+    assert not is_current(record)
     assert record["driverStatus"] == driver_status
     assert record["probeErrorCode"] == code
     assert result["items"][0]["errorCode"] == code
+
+
+def test_failed_probe_wins_over_unprobed_serial_alias():
+    record = {
+        "identity": {"manufacturer": "Joinwit", "model": "JW8105"},
+        "discoveryState": "identified",
+        "scanRunId": "scan",
+        "candidates": {
+            "COM8": {
+                "scanRunId": "scan",
+                "presenceState": "unreachable",
+                "probeReason": "probe_failed",
+            },
+            "ASRL8::INSTR": {
+                "scanRunId": "scan",
+                "presenceState": "present",
+                "probeReason": "pending_probe",
+            },
+        },
+    }
+
+    update_record_presence(record)
+
+    assert record["presenceState"] == "unreachable"
+    assert record["discoveryState"] == "unreachable"
+
+
+def test_metadata_only_serial_resource_is_not_current(store):
+    _repo, inventory, scan = store
+    candidate = DiscoveryCandidate(ConnectionConfig("COM7", transport="serial"), "serial")
+
+    scan([Provider(candidate)], absent)
+
+    record = inventory.all()[0]
+    assert record["presenceState"] == "present"
+    assert record["probeReason"] == "metadata_only"
+    assert not is_current(record)
+
+
+def test_restart_scan_excludes_unconfirmed_serial_resources(tmp_path):
+    repo = Repository(tmp_path)
+    leases = ResourceLeases()
+    sessions = SessionManager(leases, repo, SimulatedInstrument)
+    inventory = Inventory(repo)
+    bridge_ids = {
+        "COM8": "VID_0403&PID_6001\\AV0KKMH5A",
+        "COM9": "VID_0403&PID_6001\\FTF5HM3QA",
+    }
+    try:
+        for port, bridge_id in bridge_ids.items():
+            config = ConnectionConfig(
+                port,
+                "joinwit.jw8105",
+                "serial",
+                usb_instance_id=bridge_id,
+            )
+            descriptor = {
+                "description": f"USB Serial Port ({port})",
+                "vid": 1027,
+                "pid": 24577,
+                "usb_serial": bridge_id.rsplit("\\", 1)[-1],
+                "usb_instance_id": bridge_id,
+            }
+            inventory.merge(
+                DiscoveryCandidate(config, "configured", descriptor),
+                "seed",
+                DeviceIdentity("Joinwit", "JW8105", confidence="model_only"),
+                config.adapter,
+            )
+        inventory.merge(
+            DiscoveryCandidate(
+                ConnectionConfig("COM7", transport="serial"),
+                "serial",
+                {"description": "USB Serial Port (COM7)", "usb_serial": "AQ02V9LLA"},
+            ),
+            "seed",
+            reason="metadata_only",
+        )
+
+        # A new process starts with no live presence evidence.
+        restarted = Inventory(repo)
+        assert all(not is_current(record) for record in restarted.all())
+
+        class SerialPorts:
+            name = "serial"
+
+            def enumerate(self):
+                return tuple(
+                    DiscoveryCandidate(
+                        ConnectionConfig(port, transport="serial", usb_instance_id=bridge_id),
+                        "serial",
+                        {
+                            "description": f"USB Serial Port ({port})",
+                            "vid": 1027,
+                            "pid": 24577,
+                            "usb_serial": bridge_id.rsplit("\\", 1)[-1],
+                            "usb_instance_id": bridge_id,
+                        },
+                    )
+                    for port, bridge_id in (
+                        ("COM7", "VID_0403&PID_6001\\AQ02V9LLA"),
+                        *bridge_ids.items(),
+                    )
+                )
+
+        def timeout_probe(_candidate):
+            raise DeviceError("Serial read timeout", "timeout")
+
+        scanner = DiscoveryService((SerialPorts(),), sessions, leases, restarted, timeout_probe)
+        try:
+            scanner.scan().result(timeout=5)
+        finally:
+            scanner.close()
+        assert all(not is_current(record) for record in restarted.all())
+    finally:
+        sessions.close()
+        repo.close()
 
 
 def test_absent_configured_sma_keeps_history_without_current_presence(store):
@@ -261,6 +381,59 @@ def test_cancelled_scan_does_not_reuse_previous_presence_or_mark_missing(tmp_pat
         assert states["FIXTURE-1"]["discoveryState"] != "stale"
     finally:
         release.set()
+        scanner.close()
+        sessions.close()
+        repo.close()
+
+
+def test_independent_identity_probes_run_in_parallel(tmp_path):
+    repo = Repository(tmp_path)
+    inventory = Inventory(repo)
+    leases = ResourceLeases()
+    sessions = SessionManager(leases, repo, SimulatedInstrument)
+    configs = tuple(
+        DiscoveryCandidate(
+            ConnectionConfig(f"USB::parallel-{index}::INSTR", "rs.sma100b"),
+            "visa",
+            safe_scpi=True,
+        )
+        for index in (1, 2)
+    )
+    entered = threading.Barrier(2)
+    state_lock = threading.Lock()
+    active = 0
+    maximum = 0
+
+    def probe(candidate):
+        nonlocal active, maximum
+        with state_lock:
+            active += 1
+            maximum = max(maximum, active)
+        try:
+            entered.wait(3)
+            time.sleep(0.02)
+            serial = candidate.config.resource.rsplit("-", 1)[-1].split(":", 1)[0]
+            return DeviceIdentity("Rohde&Schwarz", "SMA100B", serial), candidate.config.adapter
+        finally:
+            with state_lock:
+                active -= 1
+
+    scanner = DiscoveryService(
+        (ConfiguredDiscoveryProvider(tuple(config.config for config in configs)),),
+        sessions,
+        leases,
+        inventory,
+        probe,
+        probe_workers=2,
+    )
+    try:
+        report = scanner.scan().result(timeout=5)
+        assert maximum == 2
+        assert [item["resource"] for item in report["items"]] == [
+            config.config.resource for config in configs
+        ]
+        assert all(item["reason"] == "identified" for item in report["items"])
+    finally:
         scanner.close()
         sessions.close()
         repo.close()

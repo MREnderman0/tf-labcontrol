@@ -57,10 +57,22 @@ PicoScope 6404E 使用 PicoSDK，53100A 使用 TSERVE；不能把厂商私有协
 
 ## 原生组件
 
-`powershell -NoProfile -ExecutionPolicy Bypass -File scripts/download-vendors.ps1` 使用已确认的官方下载地址，支持 `-Vendor Visa`、`Pico`、`Thorlabs`，默认直连。下载暂存 `.tools/installers`，失败保留断点；有效已有安装包直接复用。来源由 `deployment/components.json` 统一维护，下载后核对锁定 SHA256、厂商签名并保存来源 JSON；`-VerifyOnly` 仅验证已有离线材料。当前开发阶段可使用厂商向导，后续安装维护组件负责自动安装。脚本不会自动安装、切换 USB 驱动或重启系统。
+`powershell -NoProfile -ExecutionPolicy Bypass -File scripts/download-vendors.ps1` 使用已确认的官方下载地址，支持 `-Vendor Visa`、`Pico`、`Thorlabs`，默认直连。已核验的安装包优先保存在仓库 `deployment/packages/installers`，下载暂存 `.tools/installers`，失败保留断点；有效已有安装包直接复用。来源由 `deployment/components.json` 统一维护，下载后核对锁定 SHA256、厂商签名并保存来源 JSON；`-VerifyOnly` 仅验证已有离线材料。当前开发阶段可使用厂商向导，后续安装维护组件负责自动安装。脚本不会自动安装、切换 USB 驱动或重启系统。
+
+项目内的 `deployment/packages` 是可随仓库复制的离线材料：`installers` 放已验证的 Windows 安装包，`python` 放从 `uv.lock` 导出的锁定清单和清华镜像 wheelhouse，`tools` 放项目使用的 uv。`setup-dev.ps1` 检测到缓存完整时自动执行离线同步，不访问网络；缓存不完整时才使用本节约定的国内镜像。大文件由 Git LFS 管理，clone 后需要执行 `git lfs pull`。
 
 - R&S VISA：官方国内下载，系统安装提供 64 位 VISA 后端。
 - PicoSDK：官方 x64 SDK，为 6404E 提供 `ps6000a.dll`。
 - Thorlabs OPM/TLPMX：官方安装包，提供 `TLPMX_64.dll`；保留现有 USB 驱动选择。
 
 厂商软件安装到系统目录，Python 依赖安装到项目环境。管理员权限、安装向导或重启待完成时记录实际状态，不自动重启。诊断会检查 Python 依赖、VISA 后端、SDK PE 位数、DLL 加载和必要导出函数；不会打开设备。SDK 可自动查找厂商标准目录，也可在连接配置里提供绝对 `sdk_path`。
+
+### VC++ 运行库版本门禁
+
+项目目标是 Windows 10/11 x64，组件清单固定 Microsoft v14 x64 安装包及 SHA256。当前登记版本为 `14.51.36247.0`，安装前读取 `HKLM\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64`：`Installed=1` 且版本不低于清单版本时直接跳过，不运行安装程序；检测到更高版本也跳过，禁止降级。只有缺失或版本较低时才校验安装包签名/哈希，并通过外部管理员 PowerShell 执行 `/install /quiet /norestart`，安装后再次读取注册表并记录结果。
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\ensure_vc_runtime.ps1
+```
+
+脚本记录在 `D:\TF-LabControl-runtime\TF-LabControl\maintenance\vc-runtime\results.json`，旧记录自动保存在同目录 `history`；UAC 取消、安装退出码和需重启状态均保留。脚本不删除运行库、不回退版本、不自动重启。此门禁用于避免重复运行旧厂商安装程序造成 VC++ 运行库降级。版本选择依据 [Microsoft 最新支持的 Visual C++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist)。

@@ -1,11 +1,9 @@
 from dataclasses import replace
 
 import numpy as np
-from PySide6.QtCore import Qt
 
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.runtime import ApplicationRuntime
-from lab_control.ui.pages.monitoring.dashboard import MonitorCard
 from lab_control.ui.real_window import RealWindow
 
 
@@ -46,6 +44,10 @@ def test_scope_page_and_overview_fit_current_frame_without_instrument_io(qtbot, 
         runtime.monitoring.stop(key).result(3)
         assert all(len(c.getData()[0]) > 1 for c in page.plot.curves.values())
         reads_after_stop = len(calls)
+        page.select_device("")
+        page.select_device(key)
+        qtbot.waitUntil(lambda: page.plot.displayed_frame is not None, timeout=3000)
+        assert len(calls) == reads_after_stop
         assert page.timing.interval.minimum() == 0.5 and page.timing.interval.maximum() == 60
         page.plot.plot.setXRange(-1, 1, padding=0)
         page.fit_action.trigger()
@@ -58,15 +60,6 @@ def test_scope_page_and_overview_fit_current_frame_without_instrument_io(qtbot, 
         with np.load(next(runtime.repository.root.glob("data/**/*/samples.npz"))) as saved:
             np.testing.assert_array_equal(saved["axis_0"], frame.batch.measurements[0].axis)
             np.testing.assert_array_equal(saved["values_0"], frame.batch.measurements[0].values)
-        page.pin()
-        window.navigate("实时监测")
-        cards = window.findChildren(MonitorCard)
-        qtbot.waitUntil(lambda: any(c.isVisible() and c.plot.displayed_frame for c in cards), timeout=5000)
-        card = next(c for c in cards if c.isVisible())
-        assert all(len(c.getData()[0]) > 1 for c in card.plot.curves.values())
-        card.plot.plot.setXRange(-1, 1, padding=0)
-        qtbot.mouseClick(card.fit_button, Qt.MouseButton.LeftButton)
-        assert card.plot.plot.viewRange()[0][1] < 1e-5
         assert len(calls) == reads_after_stop
     finally:
         window.timer.stop()

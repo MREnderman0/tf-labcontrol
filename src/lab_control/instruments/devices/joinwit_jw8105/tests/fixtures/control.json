@@ -1,0 +1,14 @@
+{
+  "fixture_origin": "User-supplied JW8105 V23.02.02 protocol examples; synthetic frame, not hardware data",
+  "adapter": "joinwit.jw8105",
+  "identity_reply": "Joinwit,JW8105,SER123,FW1",
+  "identity_exchanges": [["JW8105_CONNECT_FRAME", "7B 01 09 01 41 11 22 33 44 8F 7D"]],
+  "operation": "wavelength",
+  "channel": 1,
+  "parameters": {"value": 1310.0},
+  "exchanges": [
+    ["7B 01 09 01 46 B8 FF 01 00 7C 7D", "7B 01 05 01 47 37 7D"],
+    ["7B 01 05 01 48 36 7D", "7B 01 09 01 49 B8 FF 01 00 79 7D"]
+  ],
+  "evidence": "JW8105 用户通信协议 V23.02.02, SHA256 C708FDB6522D482637B0ACB3D7C7A867299925D9646A40804275CEDA42FFD4B6"
+}

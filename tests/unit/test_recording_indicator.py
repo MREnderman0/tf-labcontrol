@@ -5,7 +5,7 @@ from lab_control.app import load_stylesheet
 from lab_control.ui.pages.monitoring.recording_state import RecordingButton, update_recording_frame
 
 
-@pytest.mark.parametrize("name", ["spectrumChart", "monitorCard"])
+@pytest.mark.parametrize("name", ["spectrumChart", "monitorCard", "powerMeterWorkspace"])
 def test_recording_frame_pixels_and_geometry_follow_binary_drain(qtbot, name):
     frame = QFrame()
     frame.setObjectName(name)

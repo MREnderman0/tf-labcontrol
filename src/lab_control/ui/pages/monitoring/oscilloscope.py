@@ -77,7 +77,6 @@ class OscilloscopeMonitoringPage(QWidget):
         self.save_action = menu.addAction("保存当前帧", self.save)
         self.memory_action = menu.addAction("读取完整存储波形", self.read_memory)
         self.memory_action.setVisible(False)
-        self.pin_action = menu.addAction("添加到监测总览", self.pin)
         menu.addSeparator()
         self.refresh_action = menu.addAction("刷新参数", self.refresh_parameters)
         self.fit_action = menu.addAction("恢复仪器视图", lambda: self.plot.clear_preview())
@@ -151,6 +150,7 @@ class OscilloscopeMonitoringPage(QWidget):
         if self.isVisible():
             self.focus_settings()
         self.refresh()
+        self.refresh_frame(device_id)
 
     def focus_settings(self) -> None:
         self.controller.focus_settings(self.device_id, self.controls.keys() if self.controls else ())
@@ -320,7 +320,6 @@ class OscilloscopeMonitoringPage(QWidget):
             and not task.get("capture_saving")
         )
         self.refresh_action.setEnabled(bool(connected and not busy and not state.get("controlsLocked")))
-        self.pin_action.setEnabled(bool(self.controls and self.controls.channels()))
         self.timing.refresh(task)
         self.actual.setText(self.timing.actual.text())
         old = self.plot.displayed_frame

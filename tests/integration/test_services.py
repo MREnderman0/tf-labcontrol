@@ -1,6 +1,7 @@
 import json
 import threading
 from dataclasses import replace
+from types import SimpleNamespace
 
 import pytest
 
@@ -13,6 +14,7 @@ from lab_control.discovery.service import (
     DiscoveryCandidate,
     DiscoveryService,
     Inventory,
+    SerialDiscoveryProvider,
 )
 from lab_control.domain.instruments import AcquisitionRequest, DeviceCommand, DeviceError, DeviceIdentity
 from lab_control.storage.repository import Repository
@@ -71,6 +73,168 @@ def test_twenty_sessions_scan_and_stream_are_protected(tmp_path):
         for index in range(20):
             sessions.stop_acquisition(str(index))
         assert all(acquisition.result() for acquisition in acquisitions)
+    finally:
+        scanner.close()
+        sessions.close()
+        repo.close()
+
+
+def test_two_model_only_power_meters_can_use_distinct_resources(tmp_path):
+    """A protocol without a serial query must not make separate ports collide."""
+    repo = Repository(tmp_path)
+
+    class ModelOnly(SimulatedInstrument):
+        def identify(self):
+            return DeviceIdentity("Joinwit", "JW8105", confidence="model_only")
+
+    sessions = SessionManager(ResourceLeases(tmp_path), repo, ModelOnly)
+    first = ConnectionConfig("COM11", "joinwit.jw8105", "serial", expected_serial="JW-A")
+    second = ConnectionConfig("COM12", "joinwit.jw8105", "serial", expected_serial="JW-B")
+    try:
+        assert sessions.connect("meter-a", first).result(timeout=3).serial == ""
+        assert sessions.connect("meter-b", second).result(timeout=3).serial == ""
+        assert {item["connectionState"] for item in sessions.snapshots()} == {"connected"}
+    finally:
+        sessions.close()
+        repo.close()
+
+
+def test_runtime_can_configure_one_metadata_only_resource_before_connecting(tmp_path):
+    from lab_control.application.runtime import ApplicationRuntime
+
+    with ApplicationRuntime(root=tmp_path, hardware=False) as app:
+        record = app.inventory.merge(
+            DiscoveryCandidate(ConnectionConfig("mock://unknown", transport="mock"), "serial"),
+            "scan",
+        )
+        app.configure_device(
+            record["id"], ConnectionConfig("mock://unknown", "rigol.dg5504pro", "mock")
+        )
+        configured = next(item for item in app.inventory.all() if item["id"] == record["id"])
+        assert configured["adapterId"] == "rigol.dg5504pro"
+        assert configured["candidates"]["mock://unknown"]["source"] == "configured"
+        assert app.connect(record["id"]).result(timeout=3).model == "DG5504 Pro"
+
+
+def test_metadata_duplicate_does_not_block_explicit_configuration(tmp_path):
+    repo = Repository(tmp_path)
+    inventory = Inventory(repo)
+    first = inventory.merge(
+        DiscoveryCandidate(ConnectionConfig("COM7", transport="serial"), "serial"), "scan"
+    )
+    second = inventory.merge(
+        DiscoveryCandidate(ConnectionConfig("ASRL7::INSTR", transport="serial"), "serial"), "scan"
+    )
+    assert first["id"] == second["id"]
+    # Distinct persisted rows can exist after an old concurrent scan.  A
+    # metadata-only duplicate must not prevent assigning the protocol.
+    duplicate = {
+        "id": "duplicate",
+        "resources": ["COM7"],
+        "candidates": {"COM7": {"retired": False}},
+        "config": {**first["config"], "resource": "COM7"},
+        "adapterId": "",
+        "identity": {},
+        "identityKey": None,
+    }
+    inventory.records[duplicate["id"]] = duplicate
+    inventory.configure(second["id"], ConnectionConfig("COM7", "joinwit.jw8105", "serial"))
+    assert inventory.records[second["id"]]["adapterId"] == "joinwit.jw8105"
+    repo.close()
+
+
+def test_serial_scan_uses_usb_bridge_identity_when_com_number_changes(tmp_path):
+    repo = Repository(tmp_path)
+    inventory = Inventory(repo)
+    descriptor = {"vid": 1027, "pid": 24577, "usb_serial": "BRIDGE-A", "usb_instance_id": "VID_0403&PID_6001\\BRIDGE-A"}
+    original = inventory.merge(
+        DiscoveryCandidate(
+            ConnectionConfig("COM7", transport="serial", usb_instance_id=descriptor["usb_instance_id"]),
+            "serial",
+            descriptor,
+        ),
+        "scan-1",
+    )
+    inventory.configure(original["id"], ConnectionConfig("COM7", "joinwit.jw8105", "serial"))
+    moved = inventory.merge(
+        DiscoveryCandidate(
+            ConnectionConfig("COM12", transport="serial", usb_instance_id=descriptor["usb_instance_id"]),
+            "serial",
+            descriptor,
+        ),
+        "scan-2",
+        reason="pending_probe",
+    )
+    assert moved["id"] == original["id"]
+    assert moved["config"]["resource"] == "COM12"
+    assert moved["config"]["adapter"] == "joinwit.jw8105"
+    assert moved["primaryResourceExplicit"] is False
+    repo.close()
+
+
+def test_serial_provider_publishes_every_port_with_stable_usb_id(monkeypatch):
+    import serial.tools.list_ports
+
+    ports = (
+        SimpleNamespace(device="COM7", description="JW", vid=1027, pid=24577, serial_number="A", location="1"),
+        SimpleNamespace(device="COM9", description="JW", vid=1027, pid=24577, serial_number="B", location="2"),
+        SimpleNamespace(device="COM3", description="Unknown", vid=None, pid=None, serial_number=None, location=None),
+    )
+    monkeypatch.setattr(serial.tools.list_ports, "comports", lambda: ports)
+    candidates = SerialDiscoveryProvider().enumerate()
+    assert [item.config.resource for item in candidates] == ["COM7", "COM9", "COM3"]
+    assert candidates[0].config.usb_instance_id.endswith("\\A")
+    assert candidates[1].config.usb_instance_id.endswith("\\B")
+    assert candidates[2].config.usb_instance_id == ""
+
+
+def test_configured_serial_model_is_scanned_on_each_matching_usb_bridge(tmp_path):
+    repo = Repository(tmp_path)
+    inventory = Inventory(repo)
+    leases = ResourceLeases(tmp_path)
+    sessions = SessionManager(leases, repo, SimulatedInstrument)
+    descriptor_a = {"vid": 1027, "pid": 24577, "usb_serial": "A", "usb_instance_id": "VID_0403&PID_6001\\A"}
+    descriptor_b = {"vid": 1027, "pid": 24577, "usb_serial": "B", "usb_instance_id": "VID_0403&PID_6001\\B"}
+    first = inventory.merge(
+        DiscoveryCandidate(
+            ConnectionConfig("COM7", transport="serial", usb_instance_id=descriptor_a["usb_instance_id"]),
+            "serial",
+            descriptor_a,
+        ),
+        "initial",
+    )
+    inventory.configure(first["id"], ConnectionConfig("COM7", "joinwit.jw8105", "serial"))
+
+    class Ports:
+        name = "serial"
+
+        def enumerate(self):
+            return (
+                DiscoveryCandidate(
+                    ConnectionConfig("COM7", transport="serial", usb_instance_id=descriptor_a["usb_instance_id"]),
+                    "serial",
+                    descriptor_a,
+                ),
+                DiscoveryCandidate(
+                    ConnectionConfig("COM9", transport="serial", usb_instance_id=descriptor_b["usb_instance_id"]),
+                    "serial",
+                    descriptor_b,
+                ),
+            )
+
+    scanner = DiscoveryService(
+        (Ports(),),
+        sessions,
+        leases,
+        inventory,
+        lambda _: (DeviceIdentity("Joinwit", "JW8105", confidence="model_only"), "joinwit.jw8105"),
+    )
+    try:
+        result = scanner.scan().result(timeout=3)
+        assert [item["reason"] for item in result["items"]] == ["identified", "identified"]
+        current = [item for item in inventory.all() if item.get("presenceState") == "present"]
+        assert {item["config"]["resource"] for item in current} == {"COM7", "COM9"}
+        assert all(item["adapterId"] == "joinwit.jw8105" for item in current)
     finally:
         scanner.close()
         sessions.close()

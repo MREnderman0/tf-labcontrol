@@ -1,0 +1,203 @@
+{
+  "profile": {
+    "adapter_id": "joinwit.jw8105",
+    "manufacturer": [
+      "Joinwit",
+      "嘉慧"
+    ],
+    "models": [
+      "JW8105"
+    ],
+    "category": "optical_power_meter",
+    "channels": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "source": "https://www.joinwit.com/pro-info/638.html",
+    "revision": "V23.02.02 user-supplied protocol evidence; 115200 8-bit no parity; stop bit unspecified",
+    "identity_query": "JW8105_CONNECT_FRAME",
+    "error_query": "",
+    "status": [
+      "power",
+      "wavelength",
+      "sampling_rate"
+    ],
+    "acquisition": "jw8105-power"
+  },
+  "capabilities": {
+    "category": "optical_power_meter",
+    "channels": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "operations": [
+      {
+        "name": "power",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.joinwit.com/pro-info/638.html",
+        "section": "0x0142",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "display_power",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.joinwit.com/pro-info/638.html",
+        "section": "0x0162",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "wavelength",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "nm",
+            "minimum": 850.0,
+            "maximum": 1625.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": 0.01
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://www.joinwit.com/pro-info/638.html",
+        "section": "0x0148/0x0146",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sampling_rate",
+        "parameters": {
+          "value": {
+            "kind": "integer",
+            "unit": "code",
+            "minimum": 0,
+            "maximum": 8,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://www.joinwit.com/pro-info/638.html",
+        "section": "0x043C/0x0438",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "display_wavelengths",
+        "parameters": {
+          "value": {
+            "kind": "array",
+            "unit": "nm",
+            "minimum": 850.0,
+            "maximum": 1625.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://www.joinwit.com/pro-info/638.html",
+        "section": "0x0730/0x0732",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "pdl",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.joinwit.com/pro-info/638.html",
+        "section": "0x0440",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      }
+    ]
+  },
+  "commands": {
+    "power": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "display_power": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "wavelength": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "sampling_rate": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "display_wavelengths": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "pdl": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": true
+    }
+  }
+}

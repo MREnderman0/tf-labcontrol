@@ -48,32 +48,18 @@ def create_demo_runtime(root: Path | None = None) -> ApplicationRuntime:
                         )
             runtime.repository.save_workspace("demo_slots_initialized", True)
         for mode in ("electronic", "optical"):
-            key = f"monitor_layout/{mode}"
+            key = f"monitor_overview/{mode}"
             if runtime.repository.load_workspace(key) is not None:
                 continue
-            cards = []
-            choices = {
-                "oscilloscope": ("waveform", "示波器 A · 波形"),
-                "power_supply": ("current", "电源 A · 电流"),
-                "spectrum_analyzer": ("spectrum", "频谱仪 A · 频谱"),
-                "optical_power_meter": ("reading", "光功率计 A · 功率"),
-            }
-            for device_id, config in zip(ids, configs, strict=True):
+            preferences = {}
+            for device_id in ids:
                 record = records[device_id]
-                category = instrument_category(record)
-                if category in choices and config.resource.endswith("/1") and mode_applicable(record, mode):
-                    source, title = choices[category]
-                    cards.append(
-                        {
-                            "id": f"demo-{category}",
-                            "device_id": device_id,
-                            "source": source,
-                            "title": title,
-                            "channels": [1],
-                            "view": "curve",
-                        }
-                    )
-            runtime.repository.save_workspace(key, cards)
+                if not mode_applicable(record, mode):
+                    continue
+                slot = record.get("slots", {}).get(mode, "")
+                if slot:
+                    preferences[f"slot:{slot}"] = {"enabled": True}
+            runtime.repository.save_workspace(key, preferences)
         return runtime
     except Exception:
         runtime.close()

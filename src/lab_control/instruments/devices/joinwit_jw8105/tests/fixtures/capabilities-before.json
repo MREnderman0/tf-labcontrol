@@ -1,0 +1,19 @@
+{
+  "profile": {
+    "adapter_id": "joinwit.jw8105",
+    "manufacturer": ["Joinwit", "JOINWIT"],
+    "models": ["JW8105"],
+    "category": "optical_power_meter",
+    "channels": [],
+    "source": "https://www.joinwit.com/pro-info/638.html",
+    "revision": "Official product page reviewed 2026-10-10; command/framing details absent",
+    "identity_query": "",
+    "error_query": ""
+  },
+  "capabilities": {
+    "category": "optical_power_meter",
+    "channels": [],
+    "operations": []
+  },
+  "commands": {}
+}

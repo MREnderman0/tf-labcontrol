@@ -7,7 +7,6 @@
 - [设备发现与总览](device-discovery-and-overview.md)
 - [设备管理](device-management.md)
 - [实时监测](realtime-monitoring.md)
-- [数据采集](data-acquisition.md)
 - [日志和设置](logging-and-settings.md)
 - [数据处理](data-processing.md)
 

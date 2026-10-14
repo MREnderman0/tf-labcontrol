@@ -7,7 +7,9 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $folder = Join-Path $root '.tools\installers'
+$repositoryFolder = Join-Path $root 'deployment\packages\installers'
 New-Item -ItemType Directory -Force -Path $folder | Out-Null
+New-Item -ItemType Directory -Force -Path $repositoryFolder | Out-Null
 $manifestPath = Join-Path $root 'deployment\components.json'
 $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
 if ($manifest.schema_version -ne 1) { throw 'Unsupported component inventory.' }
@@ -32,8 +34,10 @@ foreach ($name in $selected) {
     if ($package.signature.member -and ([IO.Path]::GetFileName($package.signature.member) -ne $package.signature.member)) {
         throw 'Signature member must be a filename in the extracted archive root.'
     }
-    $path = Join-Path $folder $package.filename
-    $record = @{ vendor=$name; version=$package.version; source=$package.url; source_page=$package.source_page; path=$path; proxy=[bool]$UseProxy; state='pending'; hardware_accepted=$false }
+    $repositoryPath = Join-Path $repositoryFolder $package.filename
+    $stagingPath = Join-Path $folder $package.filename
+    $path = if (Test-Path -LiteralPath $repositoryPath) { $repositoryPath } else { $stagingPath }
+    $record = @{ vendor=$name; version=$package.version; source=$package.url; source_page=$package.source_page; path=$path; repository_path=$repositoryPath; proxy=[bool]$UseProxy; state='pending'; hardware_accepted=$false }
     try {
         if (-not (Test-Path -LiteralPath $path)) {
             if ($VerifyOnly) { throw 'Offline payload missing; download disabled by -VerifyOnly.' }
@@ -58,6 +62,11 @@ foreach ($name in $selected) {
         if ($signature.Status -ne 'Valid' -or $record.signer -notlike ('*' + $package.signature.publisher + '*')) { throw 'Installer signature/publisher validation failed; do not run.' }
         $record.installer = $installer
         $record.state = 'verified_download'
+        if ($path -eq $stagingPath) {
+            Copy-Item -LiteralPath $path -Destination $repositoryPath -Force
+            $record.path = $repositoryPath
+            $record.installer = $repositoryPath
+        }
         Write-Host "Verified $name $($package.version): $installer"
     } catch {
         $record.state = 'blocked'

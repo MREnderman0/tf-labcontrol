@@ -38,7 +38,7 @@ from lab_control.application.catalog import instrument_category, mode_applicable
 from lab_control.application.config import ConnectionConfig, config_from_record
 from lab_control.application.controls import CATEGORY_LABELS, slot_label
 from lab_control.application.runtime import ApplicationRuntime
-from lab_control.discovery.presence import is_current, presence_label
+from lab_control.discovery.presence import LIVE_CONNECTIONS, is_current, presence_label
 from lab_control.domain.instruments import DeviceError, jsonable
 from lab_control.instruments.registry import PROFILES, SDK_ADAPTERS, describe
 from lab_control.ui.controller import (
@@ -51,6 +51,7 @@ from lab_control.ui.pages.device_control.page import DeviceControlPage
 from lab_control.ui.pages.device_control.power_supply import PowerSupplyPage
 from lab_control.ui.pages.device_control.signal_source import SignalSourcePage
 from lab_control.ui.pages.monitoring.dashboard import MonitoringDashboard
+from lab_control.ui.pages.monitoring.optical_power import OpticalPowerMonitoringPage
 from lab_control.ui.pages.monitoring.oscilloscope import OscilloscopeMonitoringPage
 from lab_control.ui.pages.monitoring.page import MonitoringPage
 from lab_control.ui.pages.monitoring.phase_noise import PhaseNoiseMonitoringPage
@@ -144,6 +145,7 @@ class RealWindow(QMainWindow):
         self._manual_sidebar_collapsed = False
         self._watched_screen: QScreen | None = None
         self._screen_connected = False
+        self._submenu_signature: tuple[str, tuple[str, ...]] = ("", ())
         self.setWindowTitle("TF LabControl · 分类卡片 · " + ("真实设备" if runtime.hardware else "模拟演示"))
         self.resize(1440, 900)
         self.setMinimumSize(1280, 760)
@@ -184,7 +186,7 @@ class RealWindow(QMainWindow):
         self.sidebar_section.setObjectName("sidebarSection")
         side.addWidget(self.sidebar_section)
         self.nav_buttons = {}
-        for module in ("设备管理", "数据采集", "实时监测", "数据处理", "操作日志", "系统设置"):
+        for module in ("设备管理", "实时监测", "数据处理", "操作日志", "系统设置"):
             button = QPushButton(module)
             button.setObjectName("workspaceNav")
             button.setCheckable(True)
@@ -326,9 +328,95 @@ class RealWindow(QMainWindow):
     def focus_card(self, spec: dict) -> None:
         page = self.stack.currentWidget()
         if isinstance(
-            page, (MonitoringPage, SpectrumMonitoringPage, OscilloscopeMonitoringPage, PowerMonitoringPage)
+            page,
+            (
+                MonitoringPage,
+                SpectrumMonitoringPage,
+                OscilloscopeMonitoringPage,
+                PowerMonitoringPage,
+                OpticalPowerMonitoringPage,
+            ),
         ):
             page.focus_card(spec)
+
+    def _connected_categories(
+        self,
+        records: dict[str, dict[str, Any]] | None = None,
+        states: dict[str, dict[str, Any]] | None = None,
+    ) -> frozenset[str]:
+        if records is None:
+            records = {item["id"]: item for item in self.runtime.inventory.all()}
+        if states is None:
+            states = {item["stableDeviceId"]: item for item in self.runtime.sessions.snapshots()}
+        return frozenset(
+            instrument_category(record)
+            for device_id, record in records.items()
+            if states.get(device_id, {}).get("connectionState") in LIVE_CONNECTIONS
+        )
+
+    def _submenu_categories(
+        self,
+        module: str,
+        records: dict[str, dict[str, Any]] | None = None,
+        states: dict[str, dict[str, Any]] | None = None,
+    ) -> tuple[str, ...]:
+        if module not in {"设备管理", "实时监测"}:
+            return ()
+        monitoring_only = {
+            "spectrum_analyzer",
+            "oscilloscope",
+            "power_supply",
+            "phase_noise_analyzer",
+            "optical_power_meter",
+        }
+        available = self._connected_categories(records, states)
+        return tuple(
+            value
+            for value in CATEGORY_LABELS
+            if value in available and not (module == "设备管理" and value in monitoring_only)
+        )
+
+    def _rebuild_submenu(
+        self,
+        module: str,
+        category: str = "",
+        records: dict[str, dict[str, Any]] | None = None,
+        states: dict[str, dict[str, Any]] | None = None,
+    ) -> str:
+        categories = self._submenu_categories(module, records, states)
+        selected_category = category if category in categories else ""
+        self.submenu.blockSignals(True)
+        while self.submenu.count():
+            self.submenu.removeTab(0)
+        if module in {"设备管理", "实时监测"}:
+            self.submenu.addTab("总览")
+            self.submenu.setTabData(0, "")
+            selected_index = 0
+            for value in categories:
+                index = self.submenu.addTab(CATEGORY_LABELS[value])
+                self.submenu.setTabData(index, value)
+                if value == selected_category:
+                    selected_index = index
+            self.submenu.setCurrentIndex(selected_index)
+        else:
+            self.submenu.addTab("软件设置" if module == "系统设置" else module)
+            self.submenu.setTabData(0, "")
+        self.submenu.blockSignals(False)
+        self._submenu_signature = (module, categories)
+        return selected_category
+
+    def _sync_submenu(self) -> None:
+        if self.current_module not in {"设备管理", "实时监测"}:
+            return
+        categories = self._submenu_categories(self.current_module, self.records, self.states)
+        current_category = self.submenu.tabData(self.submenu.currentIndex()) or ""
+        if (self.current_module, categories) != self._submenu_signature or (
+            current_category and current_category not in categories
+        ):
+            self.navigate(
+                self.current_module,
+                current_category if current_category in categories else "",
+            )
 
     def navigate(self, module: str, category: str = "", device_id: str = "") -> None:
         if module == "设备管理" and category in {
@@ -336,6 +424,7 @@ class RealWindow(QMainWindow):
             "oscilloscope",
             "power_supply",
             "phase_noise_analyzer",
+            "optical_power_meter",
         }:
             module = "实时监测"
         if module not in self.nav_buttons:
@@ -345,28 +434,7 @@ class RealWindow(QMainWindow):
         for name, button in self.nav_buttons.items():
             button.setChecked(name == module)
         self.section_title.setText(module)
-        self.submenu.blockSignals(True)
-        while self.submenu.count():
-            self.submenu.removeTab(0)
-        if module in {"设备管理", "实时监测"}:
-            self.submenu.addTab("总览")
-            self.submenu.setTabData(0, "")
-            for value, label in CATEGORY_LABELS.items():
-                if module == "设备管理" and value in {
-                    "spectrum_analyzer",
-                    "oscilloscope",
-                    "power_supply",
-                    "phase_noise_analyzer",
-                }:
-                    continue
-                index = self.submenu.addTab(label)
-                self.submenu.setTabData(index, value)
-                if value == category:
-                    self.submenu.setCurrentIndex(index)
-        else:
-            self.submenu.addTab("软件设置" if module == "系统设置" else module)
-            self.submenu.setTabData(0, "")
-        self.submenu.blockSignals(False)
+        self._rebuild_submenu(module, category)
         self.show_page(device_id=device_id)
 
     def show_page(self, *_args, device_id: str = "") -> None:
@@ -399,6 +467,8 @@ class RealWindow(QMainWindow):
                         if category == "oscilloscope"
                         else PowerMonitoringPage(self.controller, self.dashboard.add)
                         if category == "power_supply"
+                        else OpticalPowerMonitoringPage(self.controller, self.dashboard.add)
+                        if category == "optical_power_meter"
                         else PhaseNoiseMonitoringPage(self.controller)
                         if category == "phase_noise_analyzer"
                         else MonitoringPage(self.controller, category, self.dashboard.add)
@@ -410,7 +480,6 @@ class RealWindow(QMainWindow):
                     title.setObjectName("pageTitle")
                     layout.addWidget(title)
                     message = {
-                        "数据采集": "在实时监测的设备类型页开启记录，可保存原始数据和配置快照。",
                         "数据处理": "数据处理工作台尚未开放。已保存数据可使用 CSV / NPZ 导出文件。",
                         "操作日志": "设备操作、监测与异常按日保存在软件运行目录的 logs 文件夹。",
                     }[module]
@@ -430,6 +499,7 @@ class RealWindow(QMainWindow):
                 SpectrumMonitoringPage,
                 OscilloscopeMonitoringPage,
                 PowerMonitoringPage,
+                OpticalPowerMonitoringPage,
                 PhaseNoiseMonitoringPage,
                 SignalSourcePage,
                 PowerSupplyPage,
@@ -632,6 +702,7 @@ class RealWindow(QMainWindow):
             ("rename", "修改名称"),
             ("slot", "功能槽位"),
             ("resource", "选择主资源"),
+            ("configure", "指定适配器"),
             ("diagnostic", "设备诊断"),
             ("manage", "设备控制"),
             ("monitor", "实时监测"),
@@ -645,7 +716,7 @@ class RealWindow(QMainWindow):
             else:
                 control = self.pool_menu.addAction(title)
                 control.triggered.connect(lambda _checked=False, key=key: self.action(key))
-                if key in {"status", "resource"}:
+                if key in {"status", "resource", "configure"}:
                     self.pool_menu.addSeparator()
             self.action_buttons[key] = control
         main_actions = []
@@ -721,6 +792,7 @@ class RealWindow(QMainWindow):
             self.clock_label.setText(QDateTime.currentDateTime().toString("HH:mm:ss"))
         self.records = {item["id"]: item for item in self.runtime.inventory.all()}
         self.states = {item["stableDeviceId"]: item for item in self.runtime.sessions.snapshots()}
+        self._sync_submenu()
         current_records = {
             key: record for key, record in self.records.items() if is_current(record, self.states.get(key))
         }
@@ -818,7 +890,7 @@ class RealWindow(QMainWindow):
             row = self.rows[device_id]
             state = self.states.get(device_id, {})
             connection = display_connection_state(state)
-            name = record["displayName"] or record["identity"].get("model") or record["config"]["resource"]
+            name = device_label(record)
             status_labels = {
                 "connected": "已连接",
                 "disconnected": "未连接",
@@ -930,7 +1002,7 @@ class RealWindow(QMainWindow):
                     not bool(
                         record
                         and instrument_category(record)
-                        in {"spectrum_analyzer", "oscilloscope", "power_supply"}
+                        in {"spectrum_analyzer", "oscilloscope", "power_supply", "optical_power_meter"}
                     )
                 )
             enabled = bool(record)
@@ -972,6 +1044,8 @@ class RealWindow(QMainWindow):
                 )
             elif key == "resource":
                 enabled &= not bool(state)
+            elif key == "configure":
+                enabled &= not bool(state) and not bool(record and record.get("identityConflict"))
             elif key == "stop":
                 enabled &= bool(
                     state.get("monitoring") or state.get("activeTask") == "continuous_acquisition"
@@ -982,16 +1056,16 @@ class RealWindow(QMainWindow):
                     and instrument_category(record) in CATEGORY_LABELS
                     and state.get("connectionState") in {"connected", "busy", "degraded"}
                 )
-            if key in {"connect", "reconnect", "resource"}:
+            if key in {"connect", "reconnect", "resource", "configure"}:
                 enabled &= not scanning
-            if key in {"connect", "disconnect", "reconnect", "resource"}:
+            if key in {"connect", "disconnect", "reconnect", "resource", "configure"}:
                 enabled &= not connecting
             button.setEnabled(enabled)
             button.setToolTip(
                 "正在批量连接，请等待完成或停止连接"
-                if connecting and key in {"connect", "disconnect", "reconnect", "resource"}
+                if connecting and key in {"connect", "disconnect", "reconnect", "resource", "configure"}
                 else "正在扫描并核验设备，完成后可连接"
-                if scanning and key in {"connect", "reconnect", "resource"}
+                if scanning and key in {"connect", "reconnect", "resource", "configure"}
                 else "请先连接设备"
                 if key in {"manage", "monitor"} and not enabled
                 else "设备忙碌，请先停止任务"
@@ -1018,9 +1092,11 @@ class RealWindow(QMainWindow):
             if driver == "error" and record.get("probeErrorCode") != "driver_missing":
                 # Historical records used "error" for every probe failure.
                 driver = "unconfirmed"
+            configured_serial = config.get("expected_serial", "")
+            displayed_serial = identity.get("serial") or configured_serial or "未提供"
             fields = {
                 **{
-                    key: identity.get(key) or "未提供"
+                    key: displayed_serial if key == "serial" else identity.get(key) or "未提供"
                     for key in ("manufacturer", "model", "serial", "firmware")
                 },
                 "confidence": "模拟身份"
@@ -1131,6 +1207,8 @@ class RealWindow(QMainWindow):
                 )
                 if accepted:
                     self.runtime.select_resource(device_id, value)
+            elif key == "configure":
+                self.configure_adapter(device_id)
             elif key == "rename":
                 value, accepted = QInputDialog.getText(self, "设备显示名", "名称")
                 if accepted:
@@ -1311,6 +1389,58 @@ class RealWindow(QMainWindow):
                     identity_confirmed=confirmed.isChecked(),
                 )
                 self.selected_id = self.runtime.add(config)
+                self.refresh()
+            except (DeviceError, ValueError) as exc:
+                self._failed(str(exc))
+
+    def configure_adapter(self, device_id: str) -> None:
+        """Let the user bind a known protocol to one enumerated resource."""
+        record = self.records[device_id]
+        current = config_from_record(record)
+        dialog = QDialog(self)
+        dialog.setWindowTitle("为已发现资源指定适配器")
+        form = QFormLayout(dialog)
+        resource = QLineEdit(current.resource)
+        serial = QLineEdit(current.expected_serial)
+        baud, timeout = QSpinBox(), QDoubleSpinBox()
+        baud.setRange(300, 3000000)
+        baud.setValue(current.baud_rate)
+        timeout.setRange(0.1, 60)
+        timeout.setValue(current.timeout)
+        adapter, transport = WorkspaceComboBox(), WorkspaceComboBox()
+        adapter.addItems([*PROFILES, *SDK_ADAPTERS])
+        if current.adapter:
+            adapter.setCurrentText(current.adapter)
+        transport.addItems(["visa", "serial", "tcp", "vicp", "tlpmx", "pm100d", "pico", "tserve"])
+        transport.setCurrentText(current.transport)
+        resource.setReadOnly(False)
+        form.addRow("资源地址", resource)
+        form.addRow("准确型号适配器", adapter)
+        form.addRow("传输方式", transport)
+        form.addRow("预期序列号（可选）", serial)
+        form.addRow("串口波特率", baud)
+        form.addRow("通信超时（秒）", timeout)
+        note = QLabel("COM 号只代表本次插入地址；确认适配器后，匹配的 USB 转串口设备会随扫描自动核验。")
+        note.setWordWrap(True)
+        form.addRow(note)
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        form.addRow(buttons)
+        if dialog.exec():
+            try:
+                config = ConnectionConfig(
+                    resource.text().strip(),
+                    adapter.currentText(),
+                    transport.currentText(),
+                    expected_serial=serial.text().strip(),
+                    baud_rate=baud.value(),
+                    timeout=timeout.value(),
+                    identity_confirmed=False,
+                )
+                self.runtime.configure_device(device_id, config)
                 self.refresh()
             except (DeviceError, ValueError) as exc:
                 self._failed(str(exc))

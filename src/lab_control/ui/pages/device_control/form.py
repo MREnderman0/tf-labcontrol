@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any
+from typing import Any, Callable
 
 import shiboken6
 from PySide6.QtCore import Qt
@@ -494,9 +494,16 @@ class OperationEditor(QFrame):
 
 
 class ControlForm(QWidget):
-    def __init__(self, controller: WorkspaceController, parent=None) -> None:
+    def __init__(
+        self,
+        controller: WorkspaceController,
+        parent=None,
+        *,
+        capability_filter: Callable[[Capability, Any], bool] | None = None,
+    ) -> None:
         super().__init__(parent)
         self.controller = controller
+        self.capability_filter = capability_filter
         self.device_id = ""
         self.channel = 1
         self.editors: dict[str, OperationEditor] = {}
@@ -566,6 +573,8 @@ class ControlForm(QWidget):
                 layouts.append(group_layout)
                 self.tabs.addTab(scroll, title)
             for cap in schema.operations:
+                if self.capability_filter and not self.capability_filter(cap, schema):
+                    continue
                 group = 2 if not cap.writable else 0 if cap.name in COMMON else 1
                 editor = OperationEditor(self.controller, device_id, cap, channel)
                 layouts[group].addWidget(editor)

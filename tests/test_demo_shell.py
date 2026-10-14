@@ -28,11 +28,11 @@ def test_store_connection_demo_updates_state() -> None:
     assert after.connection_state is ConnectionState.DISCONNECTED
 
 
-def test_main_window_has_six_navigation_items(qtbot) -> None:
+def test_main_window_has_five_navigation_items(qtbot) -> None:
     window = MainWindow()
     qtbot.addWidget(window)
-    assert len(window.nav_buttons) == 6
-    assert set(window.nav_buttons) == {"设备管理", "数据采集", "实时监测", "数据处理", "操作日志", "系统设置"}
+    assert len(window.nav_buttons) == 5
+    assert set(window.nav_buttons) == {"设备管理", "实时监测", "数据处理", "操作日志", "系统设置"}
 
 
 def test_navigation_rebuilds_submenu(qtbot) -> None:
@@ -45,8 +45,8 @@ def test_navigation_rebuilds_submenu(qtbot) -> None:
         "采集与处理",
         "异常与告警",
     ]
-    window._select_module("数据采集")
-    assert [button.text() for button in window.submenu_buttons] == ["采集配置", "采集中", "历史记录"]
+    window._select_module("实时监测")
+    assert [button.text() for button in window.submenu_buttons] == ["总览"]
 
 
 def test_mode_switch_updates_overview_and_topbar(qtbot) -> None:

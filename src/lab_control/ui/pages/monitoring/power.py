@@ -78,7 +78,6 @@ class PowerMonitoringPage(QWidget):
         menu = QMenu(tools)
         self.once_action = menu.addAction("单次读取", lambda: self.start(once=True))
         self.save_action = menu.addAction("保存当前帧", self.save)
-        self.pin_action = menu.addAction("添加到监测总览", self.pin)
         menu.addSeparator()
         menu.addAction("适应曲线", lambda: self.plot.fit_current())
         self.timing_action = menu.addAction("采集间隔")
@@ -182,6 +181,7 @@ class PowerMonitoringPage(QWidget):
         if self.isVisible():
             self.controller.focus_settings(device_id)
         self.refresh()
+        self.refresh_frame(device_id)
 
     def focus_card(self, spec: dict) -> None:
         self.selector.select(spec["device_id"])
@@ -332,7 +332,6 @@ class PowerMonitoringPage(QWidget):
             and not task.get("display_saving")
             and not task.get("capture_saving")
         )
-        self.pin_action.setEnabled(bool(self.device_id and self.channels()))
         self.status.setText(
             task.get("error")
             or task.get("recording_notice")

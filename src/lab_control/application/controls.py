@@ -144,6 +144,11 @@ arb_sample_rate=任意波形采样率
 modulation=调制开关
 modulation_type=调制类型
 power=功率
+display_power=显示功率
+wavelength=波长
+sampling_rate=采样率
+display_wavelengths=显示波长表
+pdl=偏振相关损耗
 sweep_dwell=扫描驻留时间
 sweep_mode=扫描运行方式
 sweep_step_linear=线性扫频步进
@@ -165,6 +170,20 @@ status_register=状态寄存器
 remote=进入远程控制
 local=返回面板控制
 errors=设备错误
+trigger_interval=触发间隔
+scan_list=扫描列表
+scan_size=扫描通道数
+dmm_installed=DMM 模块已安装
+dmm_state=DMM 状态
+monitor_state=监视状态
+configuration=通道配置
+measurements=测量读数
+system_version=系统版本
+slot_100=插槽 100 模块
+slot_200=插槽 200 模块
+slot_300=插槽 300 模块
+slot_400=插槽 400 模块
+slot_500=插槽 500 模块
 voltage_limit=电压上限
 voltage_limit_enabled=电压上限开关
 timer=定时输出
@@ -452,5 +471,7 @@ def data_sources(config: ConnectionConfig) -> tuple[DataSource, ...]:
                 "pump_driver": "泵浦电流",
             }.get(category, "读数"),
             "scalar",
+            quantity="power" if category == "optical_power_meter" else "",
+            measurement="power" if category == "optical_power_meter" else "",
         ),
     )

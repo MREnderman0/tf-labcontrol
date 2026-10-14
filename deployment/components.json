@@ -448,44 +448,48 @@
       "adapters": [],
       "sdk": "",
       "vendor": "",
-      "version": null,
+      "version": "4.74",
       "architecture": "x64",
       "systems": [
         "Windows 10 x64",
         "Windows 11 x64"
       ],
       "source_page": "https://pjo2.github.io/tftpd64/",
-      "url": null,
-      "filename": null,
-      "sha256": null,
+      "url": "https://github.com/PJO2/tftpd64/releases/download/v4.74/Tftpd64_Service_Installer_v4.74.exe",
+      "filename": "Tftpd64_Service_Installer_v4.74.exe",
+      "sha256": "175818a8f1bd75aededde4137761a24f850e4e43567f66293f759448999a2f78",
       "signature": {
         "policy": "authenticode",
-        "publisher": null,
+        "publisher": "Open Source Developer, Philippe Jounin",
         "member": null,
-        "evidence": null
+        "evidence": "Get-AuthenticodeSignature: Valid; thumbprint 8C9500B6640C811005FB8CB7BBF6848CFAC2E3EA"
       },
       "redistribution": {
         "state": "pending",
-        "evidence": null
+        "evidence": "Official v4.74 archives include EUPL-EN.pdf; final redistribution/source-availability review remains pending."
       },
       "detection": {
         "kind": "pending",
-        "detail": "Requires verified component-specific detection"
+        "detail": "Tftpd64 service executable plus UDP/67 listener bound to lab Ethernet"
       },
       "installation": {
         "state": "pending",
-        "arguments": null,
+        "arguments": [
+          "/S"
+        ],
         "order": 80,
-        "success_codes": null,
-        "reboot_codes": null,
+        "success_codes": [
+          0
+        ],
+        "reboot_codes": [],
         "requires_admin": true,
         "reboot": "possible",
-        "evidence": null
+        "evidence": "Official NSIS installer supports /S and returned 0 for local file installation. Development-host maintenance verified service registration, automatic start configuration, DHCP-only configuration and scoped firewall readback; clean target-machine installation and restart persistence remain pending."
       },
       "recovery": "Preserve compatible shared drivers and user data; restore only changes owned by this application.",
       "validation": {
         "state": "pending",
-        "evidence": null
+        "evidence": "2026-10-02 development-host batch verified the running service, automatic start configuration, UDP 67 listener, firewall/configuration/route readback and local DISCOVER/OFFER. Real instrument REQUEST/ACK, VISA LAN discovery, restart persistence and clean Windows 10/11 acceptance remain pending. Evidence stays in runtime hardware-tests/dhcp batches; installation requirements are in docs/guides/lab-network-deployment.md."
       }
     },
     {
@@ -495,45 +499,58 @@
       "transports": [],
       "adapters": [],
       "sdk": "",
-      "vendor": "",
-      "version": null,
+      "vendor": "Microsoft",
+      "version": "14.51.36247.0",
       "architecture": "x64",
       "systems": [
         "Windows 10 x64",
         "Windows 11 x64"
       ],
       "source_page": "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist",
-      "url": null,
-      "filename": null,
-      "sha256": null,
+      "url": "https://aka.ms/vc14/vc_redist.x64.exe",
+      "filename": "vc_redist.x64.exe",
+      "sha256": "843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c",
       "signature": {
         "policy": "authenticode",
-        "publisher": null,
+        "publisher": "Microsoft Corporation",
         "member": null,
-        "evidence": null
+        "evidence": "scripts/ensure_vc_runtime.ps1; verified official Microsoft package on 2026-10-11"
       },
       "redistribution": {
         "state": "pending",
-        "evidence": null
+        "evidence": "Microsoft Visual C++ v14 redistribution terms require release-owner confirmation; package source is the official Microsoft permalink"
       },
       "detection": {
-        "kind": "pending",
-        "detail": "Requires verified component-specific detection"
+        "kind": "registry",
+        "registry": "HKLM\\SOFTWARE\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\x64",
+        "value": "Version",
+        "installed_value": "Installed",
+        "minimum_version": "14.51.36247.0",
+        "detail": "Installed=1 and Version at least the pinned package; newer versions are accepted and never downgraded"
       },
       "installation": {
-        "state": "pending",
-        "arguments": null,
+        "state": "verified",
+        "arguments": [
+          "/install",
+          "/quiet",
+          "/norestart"
+        ],
         "order": 90,
-        "success_codes": null,
-        "reboot_codes": null,
+        "success_codes": [
+          0,
+          1638
+        ],
+        "reboot_codes": [
+          3010
+        ],
         "requires_admin": true,
         "reboot": "possible",
-        "evidence": null
+        "evidence": "scripts/ensure_vc_runtime.ps1 validates SHA256/signature, skips an equal or newer registry version, uses external PowerShell UAC, and validates the post-install version"
       },
       "recovery": "Preserve compatible shared drivers and user data; restore only changes owned by this application.",
       "validation": {
         "state": "pending",
-        "evidence": null
+        "evidence": "Development host package and registry detection verified 2026-10-11; clean Windows 10/11 offline acceptance remains pending"
       }
     }
   ],

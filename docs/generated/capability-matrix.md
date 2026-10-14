@@ -19,6 +19,8 @@ JSON 保留 hardware_tested/hardware_passed 兼容字段；固定 false 不代�
 | R&S FPH02 | `rs.fph` | 35 | fph | [型号卡片](../devices/spectrum-analyzers/rs-fph.md) |
 | Ceyear 6362D | `ceyear.6362d` | 23 | ceyear_6362d | [型号卡片](../devices/measurement-analyzers/ceyear-6362d.md) |
 | Microchip 53100A | `microchip.53100a` | 10 | phase_noise/am_noise/stability/streaming/timed_phase | [型号卡片](../devices/measurement-analyzers/phase-noise-53100a.md) |
+| Joinwit JW8105 | `joinwit.jw8105` | 6 | jw8105-power | [型号卡片](../devices/measurement-analyzers/joinwit-jw8105.md) |
+| RIGOL M300 | `rigol.m300` | 16 | scalar | [型号卡片](../devices/measurement-analyzers/rigol-m300.md) |
 | Siglent SDG6032X | `siglent.sdg6032x` | 36 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/sdg6032x.md) |
 | Keithley 2231A-30-3 | `keithley.2231a` | 15 | power | [型号卡片](../devices/power-supplies/keithley-2231a.md) |
 | Siglent SPD4306X | `siglent.spd4306x` | 22 | power | [型号卡片](../devices/power-supplies/spd4306x.md) |

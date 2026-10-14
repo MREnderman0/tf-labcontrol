@@ -87,7 +87,6 @@ class SpectrumMonitoringPage(QWidget):
         tools.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         menu = QMenu(tools)
         self.save_action = menu.addAction("保存当前帧", self.save)
-        menu.addAction("添加到监测总览", self.pin)
         menu.addSeparator()
         menu.addAction("适应曲线", self.fit_plot)
         self.timing_action = menu.addAction("采集节奏")
@@ -185,6 +184,7 @@ class SpectrumMonitoringPage(QWidget):
         if self.isVisible():
             self.controller.focus_settings(device_id)
         self.refresh()
+        self.refresh_frame(device_id)
 
     def showEvent(self, event) -> None:  # noqa: N802
         super().showEvent(event)

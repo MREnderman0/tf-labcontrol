@@ -21,6 +21,7 @@ from lab_control.ui.controller import WorkspaceController
 from lab_control.ui.pages.device_control.editors import ArrayEditor, ParameterEditor
 from lab_control.ui.pages.device_control.form import OperationEditor
 from lab_control.ui.pages.monitoring.dashboard import ResponsiveGrid
+from lab_control.ui.pages.monitoring.optical_power import OpticalPowerMonitoringPage
 from lab_control.ui.pages.monitoring.page import MonitoringPage
 from lab_control.ui.real_window import RealWindow
 
@@ -143,7 +144,17 @@ def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
             window.navigate("设备管理", category)
             page = window.stack.currentWidget()
             assert page.selector.combo.count() >= 2
-            if category not in MEASUREMENT_CATEGORIES:
+            if category == "optical_power_meter":
+                assert window.current_module == "实时监测"
+                assert isinstance(page, OpticalPowerMonitoringPage)
+                window.navigate("设备管理")
+                assert not any(
+                    window.submenu.tabData(index) == "optical_power_meter"
+                    for index in range(window.submenu.count())
+                )
+                window.navigate("实时监测", category)
+                page = window.stack.currentWidget()
+            elif category not in MEASUREMENT_CATEGORIES:
                 caps = window.controller.capabilities(page.selector.device_id)
                 if category == "signal_generator":
                     names = {
@@ -176,6 +187,7 @@ def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
                     SpectrumMonitoringPage,
                     OscilloscopeMonitoringPage,
                     PowerMonitoringPage,
+                    OpticalPowerMonitoringPage,
                     PhaseNoiseMonitoringPage,
                 ),
             )
@@ -204,14 +216,19 @@ def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
                 assert not runtime.monitoring.snapshots()
             elif category in MEASUREMENT_CATEGORIES:
                 caps = window.controller.capabilities(monitor.selector.device_id)
-                assert set(monitor.form.editors) == {c.name for c in caps.operations}
+                if category == "optical_power_meter":
+                    assert set(monitor.channel_checks) == set(caps.channels)
+                    assert all(check.isChecked() for check in monitor.channel_checks.values())
+                    assert monitor.parameter_card.editor is not None
+                    assert set(monitor.parameter_card.editor.editors) == {"value"}
+                    assert not hasattr(monitor, "form")
+                else:
+                    assert set(monitor.form.editors) == {c.name for c in caps.operations}
         window.navigate("实时监测")
         dashboard = window.dashboard
         spec = next(s for s in dashboard.specs if s["source"] == "waveform")
         device = spec["device_id"]
-        dashboard.add(device, "waveform", (2,), "CH2")
-        card = dashboard.specs[-1]
-        dashboard.card_action("open", card["id"])
+        dashboard._open_device(device)
         focused = window.stack.currentWidget()
         assert focused.device_id == device and 2 in focused.controls.checks
         # Opening a scope card focuses it; it must not switch off other hardware channels.
@@ -230,15 +247,16 @@ def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
                 assert window.width() == max(760, window.minimumWidth())
                 assert dashboard.grid.columns >= 1
         assert dashboard.cards == widgets
-        saved = runtime.repository.load_workspace("monitor_layout/electronic")
+        dashboard._persist()
+        saved = runtime.repository.load_workspace("monitor_overview/all")
         assert "columns" not in json.dumps(saved)
         window.mode.setCurrentIndex(1)
         assert window.controller.mode == "optical"
         assert runtime.monitoring.snapshots()[device]["running"]
         assert runtime.sessions.sessions[device].session_id == original
-        assert dashboard.specs != saved
+        assert dashboard.preferences != saved
         window.mode.setCurrentIndex(0)
-        assert dashboard.specs == saved
+        assert dashboard.preferences == saved
         runtime.monitoring.set_recording(device, True)
         with pytest.raises(DeviceError, match="记录"):
             window.controller.set_mode("optical")

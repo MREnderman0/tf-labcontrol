@@ -292,9 +292,12 @@ class SessionManager:
                 *((config.data_resource,) if config.data_resource else ()),
                 *((f"asset:{config.adapter}:{config.expected_serial}",) if config.expected_serial else ()),
             )
-            known = bool(
-                config.adapter and config.expected_serial.strip().upper() not in {"", "0", "N/A", "UNKNOWN"}
-            )
+            # An explicit adapter/resource pair is safe to open alongside another
+            # selected device even when the model protocol cannot report a serial
+            # number (JW8105 is one such model).  The endpoint, aliases and any
+            # configured asset serial remain exclusive below; the shared gate only
+            # prevents an unconfirmed discovery probe from racing active sessions.
+            known = bool(config.adapter)
             self.leases.acquire(device_id, resources, identified=known)
             session = DeviceSession(
                 device_id, config, ThreadPoolExecutor(max_workers=1, thread_name_prefix="instrument")
@@ -306,7 +309,11 @@ class SessionManager:
                 adapter = self.factory(config)
                 session.adapter = adapter
                 identity = adapter.identify()
-                if config.expected_serial and config.expected_serial != identity.serial:
+                # Some model-level protocols have no serial-number query.  An
+                # expected serial is still retained as a user-supplied asset label
+                # and lease key, but can only be checked when the adapter reports
+                # an actual serial.  A reported mismatch remains a hard conflict.
+                if config.expected_serial and identity.serial and config.expected_serial != identity.serial:
                     raise DeviceError(
                         "Configured serial differs from connected instrument", "identity_conflict"
                     )

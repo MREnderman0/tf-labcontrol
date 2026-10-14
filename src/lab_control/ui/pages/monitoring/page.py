@@ -102,9 +102,6 @@ class MonitoringPage(QWidget):
         self.fit_button = QPushButton("适应曲线")
         self.fit_button.clicked.connect(self.plot.fit_current)
         footer.addWidget(self.fit_button)
-        pin = QPushButton("添加此项目到监测总览")
-        pin.clicked.connect(self.pin)
-        footer.addWidget(pin)
         main_layout.addLayout(footer)
         splitter.addWidget(main)
         self.form = ControlForm(controller)
@@ -190,6 +187,7 @@ class MonitoringPage(QWidget):
         if self.category in MEASUREMENT_CATEGORIES:
             self.form.set_device(device_id, self.selector.channel.currentData() or 1)
         self.refresh()
+        self.refresh_frame(device_id)
 
     def channels(self) -> tuple[int, ...]:
         return tuple(channel for channel, check in self.channel_checks.items() if check.isChecked())

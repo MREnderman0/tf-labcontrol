@@ -81,9 +81,15 @@ def validate_manifest(value: dict) -> list[str]:
 def cache_directories() -> tuple[Path, ...]:
     folders = [Path(os.environ.get("PROGRAMDATA", Path.home())) / "TF-LabControl/maintenance/packages"]
     if not getattr(sys, "frozen", False):
+        # Keep verified installers in the repository so a fresh clone can use
+        # them without downloading again.  The temporary .tools cache remains
+        # as a fallback for files that have not yet been promoted here.
+        folders.append(Path(__file__).resolve().parents[3] / "deployment/packages/installers")
         folders.append(Path(__file__).resolve().parents[3] / ".tools/installers")
     else:
-        folders.append(Path(sys.executable).parent / "maintenance/packages")
+        frozen_packages = Path(sys.executable).parent / "maintenance/packages"
+        folders.append(frozen_packages)
+        folders.append(frozen_packages / "installers")
     return tuple(folders)
 
 

@@ -1,0 +1,65 @@
+# Joinwit JW8105
+
+注册标识为 `joinwit.jw8105`。本目录是 JW8105 的独立兼容边界，协议资料补齐后已通过 `devices/catalog.py` 注册；实机身份仍需通过连接回包和铭牌/资产序列号核对。
+
+## 能力与协议
+
+Joinwit 官方产品页将 JW8105 描述为多通道台式光功率计，公开规格包含 8～16 通道、A 型 +5～-75 dBm / C 型 +25～-50 dBm 测量范围、最高 10 kS/s 和波长/PDL 功能。[产品页](https://www.joinwit.com/pro-info/638.html) · [下载中心](https://www.joinwit.com/down.html)
+
+用户提供的《JW8105 用户通信协议 V23.02.02》补充了 RS232 `115200`、8 位无校验、默认模块地址 1、`0x7B ... 0x7D` 帧、长度字段、低字节在前数据和求和取反加一校验。源码只保留协议摘要；原 PDF SHA256 为 `C708FDB6522D482637B0ACB3D7C7A867299925D9646A40804275CEDA42FFD4B6`。PDF 元数据标题为 `JW8103`，正文为 JW8105，且没有说明停止位，也没有提供序列号/固件读取命令，因此这两项仍列为待厂家确认。
+
+本包不继承通用 `*IDN?`。`0x0140/0x0141` 只证明协议级通信并返回 4 字节配置，适配器因此返回 `Joinwit/JW8105` 的 `model_only` 身份，绝不把 USB 桥序列号当作仪器序列号。读功率、读波长、读采样率、读显示波长和读 PDL 已实现；写入波长、采样率和显示波长必须显式确认，并由型号包读回校验。
+
+同型号设备可以同时连接：公共会话层按明确选择的串口/VISA 资源和别名加锁，不会因为 `model_only` 身份共享未知设备闸门。由于协议没有仪器序列号读回，设备池会优先显示用户填写的“预期序列号”作为资产标签；未填写时显示具体资源地址。填写的序列号用于区分资产和占用租约，但在厂家提供序列号命令前不会伪装成已核验的仪器身份。
+
+## 连接与驱动
+
+目标接口按 RS232 接入；RJ45 是否可用于本资产和对应协议待厂家确认。USB 转串口桥的 VID/PID 和桥接器序列号只能作为枚举证据，不能作为仪器型号或仪器序列号。型号包同时支持 `transport="serial"` 和 `ASRL...::INSTR` 的 PyVISA 资源，并显式设置 115200、8 位、无校验、1 停止位、无流控；协议原文未说明停止位，正式批次仍需确认这一点。
+
+预检复用已有 PySerial/PyVISA，不新增或安装依赖。正式接入前仍须核实 RS232 适配器驱动和 VISA 路线，在组件台账登记来源、版本、签名/哈希、分发、检测/安装、权限/重启和恢复要求，再填入组件 ID。不能把本机枚举成功作为离线交付验收。
+
+## 单位与限制
+
+产品页规格可作为资料索引，不能在协议和固件确认前形成可写能力、通道数量或范围契约。不得发送盲猜身份命令；未经明确确认不得修改波长、量程、采样、校准或输出相关设置。`validate_control.py --confirm` 只用于已备份且可逐项恢复的参数验证。
+
+## 文件与公共依赖
+
+- `profile.py`：保存官方产品索引、用户协议证据和能力声明。
+- `protocol.py`：帧、校验、长度、字节序和缩放解析。
+- `transport.py`：型号专属长度帧读取及 115200 串口/VISA 设置。
+- `adapter.py`：身份级连接、只读能力和需确认的设置读回。
+- [hardware/README.md](hardware/README.md)：实机测试前置条件、留档和恢复边界。
+- `hardware/preflight.py`：只枚举用户选择的端口并检查物理路径，不打开设备。
+- `hardware/readonly.py`：在原生 Windows 运行环境中只打开明确选择的单一端口，记录原始帧、逐项读回、释放锁和一次重连；不发送设置、采集启动或输出命令。
+- `hardware/validate_control.py`：需要 `--confirm` 才运行的可逆写入验证；先备份完整参数，再逐项写入、读回、恢复并核对最终快照，不盲目重发。
+- `hardware/records.py`：协议资料到齐、正式注册后使用的批次摘要转换器。
+- `tests/fixtures/capabilities-before.json`：空能力基线，表示当前没有可声明的运行能力。
+
+正式实机批次前仍需取得厂家确认的完整型号/固件、停止位和仪器序列号来源；只读阶段使用 `0x0140`、`0x0142`、`0x0148`、`0x043C`、`0x0730`、`0x0440`，写入验证只使用已备份的波长、采样率和显示波长并逐项恢复。运行 `python -m pytest src/lab_control/instruments/devices/joinwit_jw8105/tests` 及项目规定的全量检查。
+
+## 测试入口与实机状态
+
+软件：`python -m pytest src/lab_control/instruments/devices/joinwit_jw8105/tests`。预检：`python -m lab_control.instruments.devices.joinwit_jw8105.hardware.preflight --resource <所选COM端口> --asset-name JW8105-UNKNOWN-<人工资产号>`。只读真机：`python -m lab_control.instruments.devices.joinwit_jw8105.hardware.readonly --resource <所选COM端口> --asset-name JW8105-UNKNOWN-<人工资产号>`。可逆写入验证：`python -m lab_control.instruments.devices.joinwit_jw8105.hardware.validate_control --resource <所选COM端口> --asset-name JW8105-UNKNOWN-<人工资产号> --confirm`；必须从原生 Windows PowerShell 启动，显式指定一个端口，批次会保存 `communication.jsonl`、`initial-state.json`、`final-state.json`、`results.json`、`summary.json` 和 `record.md`。预检和只读入口不会发送设置或输出命令。
+
+| 功能 | 接口及条件 | 验证范围 / 状态 | 证据位置 |
+| --- | --- | --- | --- |
+| 枚举 | USB 转串口 / 身份未知 | 系统候选和 VISA 别名已留档，不证明 JW8105 身份 | 运行目录批次 |
+| 身份、兼容层连接 | 最新只读批次已从明确串口读到协议级 JW8105 身份；仪器序列号/固件仍无命令 | passed（model_only） | 运行目录批次分项结果 |
+| 参数读取 | 功率、显示功率、波长、显示波长、采样率和 PDL 已逐项读回 | passed | 运行目录批次分项结果 |
+| 参数写入、恢复 | 备份后测试波长、8 个采样率通道和显示波长；每项写入、读回、恢复、再读回 | passed；最终快照与备份一致 | 运行目录控制批次分项结果 |
+| 重连 | 释放串口后重连，身份和稳定状态匹配 | passed | 运行目录批次分项结果 |
+| 物理测量 | 未接入已校准外部参考 | not_tested | 运行目录批次分项结果 |
+
+真实资产、USB 桥接器序列号和原始证据保存在 `%LOCALAPPDATA%\TF-LabControl\hardware-tests`，不进入源码。不据软件拒绝路径测试或端口枚举宣称整机验收通过。
+
+## 已知限制与待测
+
+| 项目 | 限制 / 原因 | 后续验证 |
+| --- | --- | --- |
+| 协议来源 | 用户 PDF 元数据标题为 JW8103，停止位和序列号命令缺失 | 向厂家确认文档适用型号、停止位和资产序列号来源 |
+| 正式占用锁 | 某些桌面执行环境可能重定向库存和锁 | 核对与正式程序相同的物理路径，不能使用另一份锁继续测试 |
+| 光功率精度 | 参考光源、校准和各通道接线未确认 | 独立物理测量批次，记录参考值与容差 |
+
+## 扩展与移除
+
+取得厂家确认后在本包补齐停止位、序列号来源、错误/超时/通道隔离及恢复测试，再通过 `devices/catalog.py` 唯一入口维护注册。删除包不删除用户配置及运行目录历史。

@@ -1,0 +1,12 @@
+{
+  "fixture_origin": "RIGOL M300 Programming Guide v2.0; synthetic protocol example, not hardware data",
+  "adapter": "rigol.m300",
+  "operation": "trigger_interval",
+  "channel": 1,
+  "parameters": {"value": 11.0},
+  "exchanges": [
+    ["TRIG:TIM 11", ""],
+    ["TRIG:TIM?", "+1.100000000E+01"],
+    ["SYST:ERR?", "0,No error"]
+  ]
+}
