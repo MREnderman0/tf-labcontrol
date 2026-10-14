@@ -25,6 +25,10 @@ def test_monitor_overview_uses_connected_devices_and_slot_preferences(qtbot, tmp
 
         first_card = window.dashboard.cards[first]
         second_card = window.dashboard.cards[second]
+        assert not hasattr(first_card, "plot")
+        assert not hasattr(second_card, "plot")
+        assert first_card.interval.isEnabled() and second_card.interval.isEnabled()
+        assert first_card.state.text() == "待开始采样" and second_card.state.text() == "待开始采样"
         first_card.enabled.setChecked(False)
         first_key = window.dashboard._slot_key(window.controller.records[first])
         assert runtime.repository.load_workspace("monitor_overview/all")[first_key]["enabled"] is False
@@ -32,7 +36,13 @@ def test_monitor_overview_uses_connected_devices_and_slot_preferences(qtbot, tmp
         window.dashboard.toggle_sampling()
         assert not runtime.monitoring.snapshots().get(first, {}).get("running")
         assert runtime.monitoring.snapshots()[second]["recording"]
+        second_card.refresh()
+        first_card.refresh()
+        assert second_card.property("recordingPhase") == "recording"
+        assert first_card.property("recordingPhase") == "idle"
         runtime.monitoring.stop(second).result(3)
+        second_card.refresh()
+        assert second_card.property("recordingPhase") == "idle"
 
         runtime.sessions.disconnect(first)
         window.controller.poll()

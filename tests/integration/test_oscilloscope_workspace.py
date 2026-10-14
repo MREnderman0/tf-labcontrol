@@ -363,18 +363,19 @@ def test_reconnect_drops_previous_frames_and_readings(scope, qtbot):
     assert page.plot.displayed_frame.session_id != old_session
 
 
-def test_overview_removes_closed_channel_and_keeps_other_grid_traces(scope, qtbot):
+def test_overview_is_control_only_and_keeps_scope_plot_on_detail_page(scope, qtbot):
     window, page, _, _, _ = scope
     page.start()
     qtbot.waitUntil(lambda: page.plot.displayed_frame is not None)
     page.pin()
     window.navigate("实时监测")
     card = next(iter(window.dashboard.cards.values()))
-    qtbot.waitUntil(lambda: card.plot.displayed_frame is not None)
+    assert not hasattr(card, "plot")
+    assert card.enabled.isChecked()
     page.controls.set_channel(1, False)
     qtbot.waitUntil(lambda: not page.controls.running and 1 not in page.controls.channels())
-    qtbot.waitUntil(lambda: not card.plot.curves[1, "waveform"].isVisible())
-    assert card.plot.curves[2, "waveform"].isVisible() and card.plot.instrument_view
+    assert page.plot.displayed_frame is not None
+    assert page.plot.curves[2, "waveform"].isVisible() and page.plot.instrument_view
 
 
 def test_stop_recording_retains_ui_lock_through_blocked_binary_write(scope, qtbot, monkeypatch):

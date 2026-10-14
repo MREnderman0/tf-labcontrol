@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import replace
 from typing import Any
 
 from PySide6.QtCore import QEvent, Qt, QTimer, Signal
@@ -27,8 +26,6 @@ from lab_control.application.controls import CATEGORY_LABELS, data_sources, slot
 from lab_control.domain.instruments import AcquisitionRequest, DeviceError
 from lab_control.domain.readback import boolean_value
 from lab_control.ui.controller import WorkspaceController
-from lab_control.ui.pages.monitoring.oscilloscope_plot import OscilloscopePlot
-from lab_control.ui.pages.monitoring.plot import LivePlot
 from lab_control.ui.pages.monitoring.recording_state import (
     recording_phase,
     recording_save_notice,
@@ -106,7 +103,6 @@ class RecordingDeviceCard(QFrame):
         self.spec = spec
         self.setObjectName("monitorCard")
         self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
-        self.setMinimumHeight(176)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 14, 16, 14)
         heading = QHBoxLayout()
@@ -124,13 +120,6 @@ class RecordingDeviceCard(QFrame):
         self.slot = QLabel()
         self.slot.setObjectName("monitorSlot")
         layout.addWidget(self.slot)
-        # Keep the cached graph available on overview cards.  The overview is
-        # device based now, but existing callers and the approved workspace
-        # still use the card as a quick preview after a page switch.
-        category = spec.get("category", "")
-        self.plot = OscilloscopePlot() if category == "oscilloscope" else LivePlot()
-        self.plot.setMinimumHeight(120)
-        layout.addWidget(self.plot, 1)
         controls = QHBoxLayout()
         self.enabled = QCheckBox("参与采样")
         self.enabled.toggled.connect(self._changed)
@@ -149,7 +138,6 @@ class RecordingDeviceCard(QFrame):
         self.state.setObjectName("mutedText")
         self.state.setWordWrap(True)
         layout.addWidget(self.state)
-        controller.frame_ready.connect(self.refresh_frame)
         self.set_spec(spec)
 
     def _changed(self, *_args) -> None:
@@ -196,36 +184,6 @@ class RecordingDeviceCard(QFrame):
             status = "待开始采样"
         self.state.setText(status)
         update_recording_frame(self, task)
-        self.refresh_frame(device_id)
-
-    def refresh_frame(self, device_id: str) -> None:
-        if device_id != self.spec.get("device_id") or not self.isVisible():
-            return
-        record = self.controller.records.get(device_id)
-        if not record:
-            return
-        source = next(
-            (item for item in data_sources(config_from_record(record)) if item.key == self.spec.get("source")),
-            None,
-        )
-        channels = tuple(self.spec.get("channels", (1,)))
-        if not source or not channels:
-            return
-        if isinstance(self.plot, OscilloscopePlot):
-            channels = scope_channels(self.controller, device_id, channels)
-            self.plot.restrict_channels(channels)
-        frame = self.controller.runtime.monitoring.latest(
-            device_id, source.kind, source.quantity, channels[0] if channels else 1
-        )
-        if not frame:
-            return
-        source = replace(source, view=self.spec.get("view", source.view))
-        self.plot.show_frame(frame, source, channels)
-        self.controller.runtime.monitoring.displayed(device_id, frame)
-
-    def showEvent(self, event) -> None:  # noqa: N802
-        super().showEvent(event)
-        self.refresh_frame(self.spec.get("device_id", ""))
 
 
 class DeviceCategoryGroup(QFrame):
