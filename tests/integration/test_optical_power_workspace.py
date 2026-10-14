@@ -63,7 +63,7 @@ def test_jw8105_all_channel_monitoring_records_and_filters(qapp, qtbot, tmp_path
         assert window.current_module == "实时监测"
         assert runtime.monitoring.settings_sync.focus == device
         assert runtime.monitoring.settings_sync.advanced == ()
-        assert set(page.channel_checks) == set(range(1, 9))
+        assert set(page.channel_checks) == set(range(1, 17))
         assert all(check.isChecked() for check in page.channel_checks.values())
         assert page.start_button.isEnabled()
 
@@ -73,9 +73,9 @@ def test_jw8105_all_channel_monitoring_records_and_filters(qapp, qtbot, tmp_path
         task = runtime.monitoring.tasks[device]
         assert not task.recording and task.record_interval is None
         assert task.requests[0].quantity == "power"
-        assert task.requests[0].channels == tuple(range(1, 9))
-        assert len(page.plot.curves) == 8
-        assert sum(card.isVisible() for card in page.cards.values()) == 8
+        assert task.requests[0].channels == tuple(range(1, 17))
+        assert len(page.plot.curves) == 16
+        assert sum(card.isVisible() for card in page.cards.values()) == 16
         measurement = page.plot.displayed_frame.batch.measurements[0]
         assert measurement.unit == "dBm"
         assert math.isclose(
@@ -83,15 +83,60 @@ def test_jw8105_all_channel_monitoring_records_and_filters(qapp, qtbot, tmp_path
             float(page.cards[measurement.channel].value.text().split()[0]),
             rel_tol=1e-5,
         )
+        # Monitoring stays active while the page is hidden. Returning to it
+        # must replay the bounded service history instead of painting only
+        # the newest frame and losing the elapsed trend.
+        points_before_hide = len(page.plot.curves[1].xData)
+        sequence_before_hide = runtime.monitoring.tasks[device].sequence
+        window.navigate("设备管理")
+        qtbot.waitUntil(
+            lambda: runtime.monitoring.tasks[device].sequence >= sequence_before_hide + 3,
+            timeout=8000,
+        )
+        sequence_while_hidden = runtime.monitoring.tasks[device].sequence
+        window.navigate("实时监测", "optical_power_meter", device)
+        qtbot.waitUntil(
+            lambda: (
+                page.plot.displayed_frame is not None and len(page.plot.curves[1].xData) > points_before_hide
+            ),
+            timeout=8000,
+        )
+        assert runtime.monitoring.tasks[device].sequence >= sequence_while_hidden
+        assert page.plot.displayed_frame.sequence >= sequence_while_hidden
+        # Recording is owned by the monitoring service, so changing pages
+        # must not pause or thin the binary frame stream.
+        page.record()
+        qtbot.waitUntil(lambda: runtime.monitoring.tasks[device].recording, timeout=8000)
+        qtbot.waitUntil(
+            lambda: runtime.monitoring.tasks[device].recorder.snapshot()["committed"] >= 1,
+            timeout=8000,
+        )
+        committed_before_hide = runtime.monitoring.tasks[device].recorder.snapshot()["committed"]
+        sequence_before_record_hide = runtime.monitoring.tasks[device].sequence
+        window.navigate("设备管理")
+        qtbot.waitUntil(
+            lambda: runtime.monitoring.tasks[device].sequence >= sequence_before_record_hide + 3,
+            timeout=8000,
+        )
+        qtbot.waitUntil(
+            lambda: runtime.monitoring.tasks[device].recorder.snapshot()["committed"] > committed_before_hide,
+            timeout=8000,
+        )
+        window.navigate("实时监测", "optical_power_meter", device)
+        qtbot.waitUntil(lambda: page.isVisible(), timeout=3000)
+        page.record()
+        qtbot.waitUntil(lambda: not runtime.monitoring.tasks[device].recording, timeout=8000)
         page.channel_checks[8].setChecked(False)
         saved_channels = runtime.repository.load_workspace("monitoring_channels/optical_power_meter")
         channel_key = page._channel_key(device)
-        assert saved_channels[channel_key] == [1, 2, 3, 4, 5, 6, 7]
+        assert saved_channels[channel_key] == [1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16]
         page.select_device("")
         page.select_device(device)
-        assert page.channels() == (1, 2, 3, 4, 5, 6, 7)
+        assert page.channels() == (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16)
         assert page.readout_grid.itemAt(0).widget() is page.cards[1]
         assert page.readout_grid.itemAt(1).widget() is page.cards[2]
+        assert page.readout_grid.itemAtPosition(0, 1).widget() is page.cards[2]
+        assert page.readout_grid.itemAtPosition(1, 0).widget() is page.cards[3]
         assert page.readout_scroll.horizontalScrollBarPolicy().name == "ScrollBarAlwaysOff"
         qtbot.waitUntil(lambda: page.plot.displayed_frame is not None, timeout=8000)
         assert page.cards[1].value.toolTip() == page.cards[1].value.text()
@@ -110,7 +155,10 @@ def test_jw8105_all_channel_monitoring_records_and_filters(qapp, qtbot, tmp_path
 
         page.channel_checks[8].setChecked(False)
         qtbot.waitUntil(
-            lambda: runtime.monitoring.tasks[device].requests[0].channels == tuple(range(1, 8)),
+            lambda: (
+                runtime.monitoring.tasks[device].requests[0].channels
+                == (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16)
+            ),
             timeout=8000,
         )
         assert runtime.monitoring.tasks[device].running
@@ -126,12 +174,20 @@ def test_jw8105_all_channel_monitoring_records_and_filters(qapp, qtbot, tmp_path
         assert runtime.monitoring.snapshots()[device]["running"]
         assert all(not card.isVisible() for card in page.cards.values())
         page.channel_checks[1].setChecked(True)
-        qtbot.waitUntil(
-            lambda: runtime.monitoring.tasks[device].requests[0].channels == (1,), timeout=8000
-        )
+        qtbot.waitUntil(lambda: runtime.monitoring.tasks[device].requests[0].channels == (1,), timeout=8000)
         assert runtime.monitoring.tasks[device].running
         page.record()
         qtbot.waitUntil(lambda: not runtime.monitoring.tasks[device].recording, timeout=8000)
+        page.toggle_monitoring()
+        qtbot.waitUntil(lambda: not runtime.monitoring.snapshots()[device]["running"], timeout=8000)
+        runtime.monitoring.stop(device).result(8)
+        previous_origin = page.plot.time_origin
+        page.start()
+        qtbot.waitUntil(
+            lambda: page.plot.displayed_frame is not None and page.plot.time_origin != previous_origin,
+            timeout=8000,
+        )
+        assert page.plot.curves[1].xData[0] == 0
         page.toggle_monitoring()
         qtbot.waitUntil(lambda: not runtime.monitoring.snapshots()[device]["running"], timeout=8000)
         runtime.monitoring.stop(device).result(8)
@@ -169,7 +225,7 @@ def test_request_refresh_discards_inflight_frame_without_stopping_monitoring(tmp
     try:
         runtime.monitoring.start(
             device,
-            (AcquisitionRequest("scalar", channels=tuple(range(1, 9)), points=1, quantity="power"),),
+            (AcquisitionRequest("scalar", channels=tuple(range(1, 17)), points=1, quantity="power"),),
             interval=0.05,
             record_interval=None,
             mode="optical",
@@ -198,8 +254,7 @@ def test_request_refresh_discards_inflight_frame_without_stopping_monitoring(tmp
         saved = list(read_frames(paths[0]))
         assert saved
         assert all(
-            {measurement["channel"] for measurement in frame["measurements"]} <= {1}
-            for frame in saved
+            {measurement["channel"] for measurement in frame["measurements"]} <= {1} for frame in saved
         )
     finally:
         runtime.close()

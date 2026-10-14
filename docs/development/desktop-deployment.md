@@ -14,6 +14,8 @@
 
 已有 VISA、PicoSDK、Thorlabs 缓存哈希及来源已登记；安装/分发/目标电脑验证尚有待补项。TSERVE、DHCP、串口/GPIB 和 VC++ 组件也在台账中。待补项由开发/发布负责人解决，不交给最终用户搜索资源。
 
+K+K FXE 维护材料已登记为 `kplusk-config-tool`、`kplusk-library-win` 和 `kplusk-python-wrapper`，离线文件位于 `deployment/packages/tools/kplusk`，目录式构建会复制到 `maintenance/packages/tools/kplusk`。配置工具是便携 Win32 程序，KK Library 和 Python wrapper 是官方归档；项目的 `kplusk.fxe` 兼容层只调用官方库的已核实只读接口，不在后台写设备参数。首次换电脑时按[实验网络部署与换电脑](../guides/lab-network-deployment.md)中的 K+K FXE 小节执行 USB 配置、设备重启和交换机验证。K+K 官方软件当前 Authenticode 未签名，分发状态和许可边界保持 `pending`，发布检查不会误报为可直接发布。
+
 `scripts/download-vendors.ps1` 读取清单，复用缓存并核对锁定哈希和发布者；`-VerifyOnly` 禁止下载。开发下载遵循[环境规范](environment.md)，从国内镜像或官方直连获取。不安装驱动、不改变系统设置。
 
 离线材料随源码保存在 `deployment/packages`：`installers` 放已核验的厂商安装包，`python` 放 Windows x64 / CPython 3.12 wheelhouse，`tools` 放项目工具；`manifest.json` 记录文件大小、SHA256、来源和签名状态。`.tools/installers` 仍是下载脚本的临时工作区，部署检查会优先使用仓库缓存。正式部署仍保存在 `%ProgramData%\TF-LabControl\maintenance\packages`，也可从发行目录的 `maintenance/packages` 读取；目录式打包应将已确认的离线材料一并复制到发行材料。开发机绝对地址、网卡、租约和真实资产资料不进入清单。

@@ -23,7 +23,9 @@ DEVICE_MODULES = (
     "lab_control.instruments.devices.ceyear_6362d",
     "lab_control.instruments.devices.microchip_53100a",
     "lab_control.instruments.devices.joinwit_jw8105",
+    "lab_control.instruments.devices.coremorrow_xmt",
     "lab_control.instruments.devices.rigol_m300",
+    "lab_control.instruments.devices.kplusk_fxe",
 )
 
 

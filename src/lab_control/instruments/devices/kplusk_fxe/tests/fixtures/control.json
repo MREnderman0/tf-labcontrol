@@ -1,0 +1,16 @@
+{
+  "fixture_origin": "Official K+K Library identity-shaped response for hardware-free registry tests; no vendor library loaded",
+  "adapter": "kplusk.fxe",
+  "identity_reply": "K+K,FXE,SER123,FW1",
+  "identity_exchanges": [
+    [
+      "KPLUSK_LIBRARY_IDENTITY",
+      "K+K,FXE,SER123,FW1"
+    ]
+  ],
+  "operation": "report",
+  "channel": 1,
+  "parameters": {},
+  "exchanges": [],
+  "evidence": "sanitized metadata fixture; not a hardware capture"
+}

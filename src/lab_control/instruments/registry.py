@@ -20,7 +20,7 @@ from lab_control.instruments.power_supplies import PowerAdapter
 from lab_control.instruments.signal_sources import PROFILES as SIGNALS
 from lab_control.instruments.signal_sources import SignalGeneratorAdapter
 from lab_control.transport.base import MockTransport, Transport
-from lab_control.transport.streams import SerialTransport, TcpSocketTransport, VicpTransport
+from lab_control.transport.streams import ScpiSocketTransport, SerialTransport, VicpTransport
 from lab_control.transport.visa import VisaRuntime, VisaTransport
 
 DEVICE_DEFINITIONS = load_definitions()
@@ -117,13 +117,24 @@ def transport_for(config: ConnectionConfig, runtime: VisaRuntime) -> Transport:
     if config.transport == "serial":
         return SerialTransport(config.resource, config.baud_rate, config.timeout, config.terminator.encode())
     endpoint = urlparse(config.resource)
-    if not endpoint.hostname or endpoint.path not in ("", "/"):
-        raise DeviceError("Use tcp://host:port or vicp://host:port", "invalid_parameter")
     if config.transport == "tcp":
-        return TcpSocketTransport(
-            endpoint.hostname, endpoint.port or 5025, config.timeout, config.terminator.encode()
+        if endpoint.scheme == "tcp" and endpoint.hostname and endpoint.path in ("", "/"):
+            host, port = endpoint.hostname, endpoint.port or 5025
+        else:
+            match = re.fullmatch(r"TCPIP\d*::([^:]+)::(\d+)::SOCKET", config.resource, re.I)
+            if not match:
+                raise DeviceError("Use tcp://host:port or TCPIP::host::port::SOCKET", "invalid_parameter")
+            host, port = match[1], int(match[2])
+        return ScpiSocketTransport(
+            host,
+            port,
+            config.timeout,
+            config.terminator.encode(),
+            config.source_address,
         )
     if config.transport == "vicp":
+        if not endpoint.hostname or endpoint.path not in ("", "/"):
+            raise DeviceError("Use vicp://host:port", "invalid_parameter")
         return VicpTransport(endpoint.hostname, endpoint.port or 1861, config.timeout)
     raise Unsupported("No byte transport for this configuration")
 

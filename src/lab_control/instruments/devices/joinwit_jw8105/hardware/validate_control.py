@@ -27,7 +27,7 @@ from .readonly import TraceTransport, _config, _safe_asset_name
 from .records import publish_report
 
 PORT_PATTERN = re.compile(r"COM[1-9][0-9]*", re.IGNORECASE)
-CHANNELS = tuple(range(1, 9))
+CHANNELS = tuple(range(1, 17))
 
 
 def _same(left: Any, right: Any) -> bool:

@@ -70,6 +70,10 @@ class MonitorTask:
     index: int = 0
     sequence: int = 0
     frames: dict[tuple[str, str], MonitorFrame] = field(default_factory=dict)
+    # Bounded replay window for scalar workspaces. The latest-frame map above
+    # remains the fast path; this lets hidden pages catch up without affecting
+    # acquisition or recording.
+    frame_history: dict[tuple[str, str], deque[MonitorFrame]] = field(default_factory=dict)
     error: str = ""
     last_path: str = ""
     stop_future: Future[Any] | None = None
@@ -266,9 +270,7 @@ class MonitoringService:
             self.repository.audit("monitor_started", device_id=device_id, requests=merged, mode=mode)
         self.wake.set()
 
-    def replace_requests(
-        self, device_id: str, requests: tuple[AcquisitionRequest, ...]
-    ) -> None:
+    def replace_requests(self, device_id: str, requests: tuple[AcquisitionRequest, ...]) -> None:
         """Replace a running task's acquisition set without stopping monitoring.
 
         A request already in flight is allowed to finish at the session worker, but
@@ -286,6 +288,7 @@ class MonitoringService:
             task.requests = merged
             task.request_revision += 1
             task.frames.clear()
+            task.frame_history.clear()
             task.notice = ""
             task.next_at = 0
             task.index = 0
@@ -625,6 +628,26 @@ class MonitoringService:
                 return None
         return frame
 
+    def recent(
+        self, device_id: str, kind: str, quantity: str = "", channel: int = 1
+    ) -> tuple[MonitorFrame, ...]:
+        """Return the bounded replay window for a live data source.
+
+        Earlier configuration versions remain usable trend history; only a
+        changed instrument session invalidates the cached frames.
+        """
+        with self.lock:
+            task = self.tasks.get(device_id)
+            if not task:
+                return ()
+            key = (kind, quantity + (f":{channel}" if kind == "status" else ""))
+            frames = tuple(task.frame_history.get(key, ()))
+        snapshot = next((s for s in self.sessions.snapshots() if s["stableDeviceId"] == device_id), {})
+        session_id = snapshot.get("sessionId")
+        if session_id:
+            frames = tuple(frame for frame in frames if frame.session_id == session_id)
+        return frames
+
     def snapshots(self) -> dict[str, dict[str, Any]]:
         with self.lock:
             return {
@@ -634,6 +657,7 @@ class MonitoringService:
                     "pending": bool(task.pending or task.write_pending),
                     "error": task.error,
                     "sequence": task.sequence,
+                    "monitoring_context_id": task.monitoring_context_id,
                     "last_path": task.last_path,
                     "mode": task.mode,
                     "interval": task.interval,
@@ -776,6 +800,8 @@ class MonitoringService:
             batch.performance.get("received_at_monotonic", time.perf_counter()),
             session_id,
         )
+        if request.kind == "scalar":
+            task.frame_history.setdefault(key, deque(maxlen=1200)).append(task.frames[key])
         task.timings.append(
             {
                 "sequence": task.sequence,

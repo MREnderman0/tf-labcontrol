@@ -10,6 +10,7 @@ from typing import Any
 from lab_control.application.config import ConnectionConfig, canonical_resource
 from lab_control.application.leases import ProcessLease, ResourceLeases
 from lab_control.application.sessions import SessionManager
+from lab_control.application.static_addresses import StaticAddressStore
 from lab_control.discovery.service import (
     ConfiguredDiscoveryProvider,
     DiscoveryCandidate,
@@ -79,12 +80,15 @@ class ApplicationRuntime:
                 LanDiscoveryProvider,
                 LanDiscoverySettings,
                 RememberedLanDiscoveryProvider,
+                StaticAddressDiscoveryProvider,
                 load_lan_settings,
             )
 
             self.lan_settings = (
                 load_lan_settings(self.repository.root) if hardware else LanDiscoverySettings()
             )
+            self.static_addresses = StaticAddressStore(self.repository)
+            self.static_address_provider = StaticAddressDiscoveryProvider(self.static_addresses)
             providers: tuple[Any, ...] = (ConfiguredDiscoveryProvider(configurations),)
             if hardware:
                 providers += (
@@ -103,6 +107,10 @@ class ApplicationRuntime:
                         LanDiscoveryProvider(self.visa, self.lan_settings),
                         RememberedLanDiscoveryProvider(self.inventory, self.lan_settings),
                     )
+                # Explicitly saved endpoints are safe to query even when
+                # service advertisement discovery is disabled. The provider
+                # only returns exact operator-entered address/port pairs.
+                providers += (self.static_address_provider,)
                 sdk_groups: dict[tuple[str, str], list[ConnectionConfig]] = {}
                 for config in configurations:
                     if config.transport in {"tlpmx", "pico"}:
@@ -217,6 +225,18 @@ class ApplicationRuntime:
 
     def connect_all_discovered(self) -> Future[dict[str, Any]]:
         return self.bulk_connection.start()
+
+    def scan_static_addresses(self, ids: tuple[str, ...] | list[str] | set[str]) -> Future[dict[str, Any]]:
+        """Run one scan for selected saved addresses without changing other presence state."""
+        from lab_control.domain.instruments import DeviceError
+
+        if not self.hardware:
+            raise DeviceError("模拟模式不执行真实地址扫描", "unsupported")
+        selected = tuple(str(value) for value in ids)
+        if not selected:
+            raise ValidationError("至少选择一个静态地址")
+        provider = self.static_address_provider.for_ids(selected)
+        return self.discovery.scan((provider,), preserve_presence=True, scope="address_list")
 
     def cancel_connect_all(self) -> None:
         self.bulk_connection.cancel()

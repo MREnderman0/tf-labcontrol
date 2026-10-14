@@ -66,6 +66,9 @@ def stage_offline_packages() -> None:
     vc_guard = ROOT / "scripts/ensure_vc_runtime.ps1"
     if vc_guard.is_file():
         shutil.copy2(vc_guard, target.parent / vc_guard.name)
+    kplusk_launcher = ROOT / "scripts/launch-kplusk-config.ps1"
+    if kplusk_launcher.is_file():
+        shutil.copy2(kplusk_launcher, target.parent / kplusk_launcher.name)
     component_manifest = ROOT / "deployment/components.json"
     if component_manifest.is_file():
         shutil.copy2(component_manifest, target.parent / component_manifest.name)

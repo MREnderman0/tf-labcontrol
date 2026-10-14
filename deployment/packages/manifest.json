@@ -454,6 +454,56 @@
       "signature_status": "Valid (Authenticode)"
     },
     {
+      "path": "deployment/packages/tools/kplusk/KK_FirmwareUpload_Win_Ver_5.1.0_25-11-28.zip",
+      "kind": "vendor-portable-archive",
+      "size": 1489237,
+      "sha256": "95AA33D15C8E13FD8B16075482222BCD9AC2D0D774670B3DAAD5CE4FD8F52D2C",
+      "source": "https://kplusk-messtechnik.de/downloads/files/KK_FirmwareUpload_Win_Ver_5.1.0_25-11-28.zip",
+      "source_page": "https://kplusk-messtechnik.de/downloads/index.html",
+      "publisher": "K+K Messtechnik GmbH",
+      "signature_status": "Archive; member NotSigned; official package retained with Terms_of_use.pdf"
+    },
+    {
+      "path": "deployment/packages/tools/kplusk/KK_FirmwareUpload_Win32_Ver_5.1.0_25-11-28.exe",
+      "kind": "vendor-portable",
+      "size": 3563008,
+      "sha256": "769427BDC115AD006C5116E987505B6D2334CC882546392183C9D96B1C7CB0D9",
+      "source": "KK_FirmwareUpload_Win_Ver_5.1.0_25-11-28.zip",
+      "source_page": "https://kplusk-messtechnik.de/downloads/index.html",
+      "publisher": "K+K Messtechnik GmbH",
+      "signature_status": "NotSigned; extracted archive member"
+    },
+    {
+      "path": "deployment/packages/tools/kplusk/KK-Library_Win_Ver_21.2.2_25-11-28.zip",
+      "kind": "vendor-library-archive",
+      "size": 2962990,
+      "sha256": "7F457FA4039B3C4F0B6E16C096650419BEB33ED9115F5A548D3FB7A438EEDB2F",
+      "source": "https://kplusk-messtechnik.de/downloads/files/KK-Library_Win_Ver_21.2.2_25-11-28.zip",
+      "source_page": "https://kplusk-messtechnik.de/downloads/index.html",
+      "publisher": "K+K Messtechnik GmbH",
+      "signature_status": "Archive; DLL Authenticode status NotSigned"
+    },
+    {
+      "path": "deployment/packages/tools/kplusk/PythonModules_2.1.zip",
+      "kind": "vendor-wrapper-archive",
+      "size": 26394,
+      "sha256": "56C2BBFD51320F593DCC92429706D2B2DE0A91A715D38026102B123587646EB0",
+      "source": "https://kplusk-messtechnik.de/downloads/files/PythonModules_2.1.zip",
+      "source_page": "https://kplusk-messtechnik.de/downloads/index.html",
+      "publisher": "K+K Messtechnik GmbH",
+      "signature_status": "Archive; SHA256 recorded"
+    },
+    {
+      "path": "deployment/packages/tools/kplusk/Terms_of_use.pdf",
+      "kind": "vendor-license",
+      "size": 91404,
+      "sha256": "DF68C7B704AB8F61747A0955ED70BC01BC5978855135B5498FEE34B2ACFDB8C6",
+      "source": "https://kplusk-messtechnik.de/downloads/files/KK-Library_Win_Ver_21.2.2_25-11-28.zip",
+      "source_page": "https://kplusk-messtechnik.de/downloads/index.html",
+      "publisher": "K+K Messtechnik GmbH",
+      "signature_status": "Official terms PDF"
+    },
+    {
       "path": "deployment/packages/installers/vc_redist.x64.exe",
       "kind": "vendor-installer",
       "size": 18731856,
@@ -462,6 +512,116 @@
       "source_page": "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist",
       "publisher": "Microsoft Corporation",
       "signature_status": "Valid (Authenticode)"
+    },
+    {
+      "path": "deployment/packages/tools/kplusk/runtime/Changelog.txt",
+      "kind": "vendor-runtime",
+      "size": 8612,
+      "sha256": "3A1435E53117B00372C3FD1190D0032CB9794CEF56C443D2DE4D5E1D77D4A7AA",
+      "source": "deployment/packages/tools/kplusk/KK-Library_Win_Ver_21.2.2_25-11-28.zip / PythonModules_2.1.zip",
+      "source_page": "https://kplusk-messtechnik.de/downloads/index.html",
+      "publisher": "K+K Messtechnik GmbH",
+      "signature_status": "Extracted from official archive; see Terms_of_use.pdf"
+    },
+    {
+      "path": "deployment/packages/tools/kplusk/runtime/KK_FX80E.dll",
+      "kind": "vendor-runtime",
+      "size": 3269632,
+      "sha256": "EC029CFC0593B36D55A49E4490C1435DED52BDC6C32D1ED2BEFB64A3FFAE819A",
+      "source": "deployment/packages/tools/kplusk/KK-Library_Win_Ver_21.2.2_25-11-28.zip / PythonModules_2.1.zip",
+      "source_page": "https://kplusk-messtechnik.de/downloads/index.html",
+      "publisher": "K+K Messtechnik GmbH",
+      "signature_status": "Extracted from official archive; see Terms_of_use.pdf"
+    },
+    {
+      "path": "deployment/packages/tools/kplusk/runtime/kk_library.h",
+      "kind": "vendor-runtime",
+      "size": 8891,
+      "sha256": "F5F91E0B0419AD118FFE2841638E164F53788F3BADF1FBAEC2EAB7BD6E22B935",
+      "source": "deployment/packages/tools/kplusk/KK-Library_Win_Ver_21.2.2_25-11-28.zip / PythonModules_2.1.zip",
+      "source_page": "https://kplusk-messtechnik.de/downloads/index.html",
+      "publisher": "K+K Messtechnik GmbH",
+      "signature_status": "Extracted from official archive; see Terms_of_use.pdf"
+    },
+    {
+      "path": "deployment/packages/tools/kplusk/runtime/KK_Library_64.dll",
+      "kind": "vendor-runtime",
+      "size": 5076480,
+      "sha256": "9B46F8603B75C8142739F69D27DF81AC7036F5FC5343B0CDA7097987863DD566",
+      "source": "deployment/packages/tools/kplusk/KK-Library_Win_Ver_21.2.2_25-11-28.zip / PythonModules_2.1.zip",
+      "source_page": "https://kplusk-messtechnik.de/downloads/index.html",
+      "publisher": "K+K Messtechnik GmbH",
+      "signature_status": "Extracted from official archive; see Terms_of_use.pdf"
+    },
+    {
+      "path": "deployment/packages/tools/kplusk/runtime/kklib.py",
+      "kind": "vendor-runtime",
+      "size": 101889,
+      "sha256": "BC2582776FCF8944EE94D735C9E7036B1399C649C4B1A271E2512F95E8270E41",
+      "source": "deployment/packages/tools/kplusk/KK-Library_Win_Ver_21.2.2_25-11-28.zip / PythonModules_2.1.zip",
+      "source_page": "https://kplusk-messtechnik.de/downloads/index.html",
+      "publisher": "K+K Messtechnik GmbH",
+      "signature_status": "Extracted from official archive; see Terms_of_use.pdf"
+    },
+    {
+      "path": "deployment/packages/tools/kplusk/runtime/Library_ReadMe.txt",
+      "kind": "vendor-runtime",
+      "size": 1906,
+      "sha256": "CA997BE2A7E2386AD5940CE85442A24F97C103FEF13840137F8FEBD02DA40653",
+      "source": "deployment/packages/tools/kplusk/KK-Library_Win_Ver_21.2.2_25-11-28.zip / PythonModules_2.1.zip",
+      "source_page": "https://kplusk-messtechnik.de/downloads/index.html",
+      "publisher": "K+K Messtechnik GmbH",
+      "signature_status": "Extracted from official archive; see Terms_of_use.pdf"
+    },
+    {
+      "path": "deployment/packages/tools/kplusk/runtime/logreceiver.py",
+      "kind": "vendor-runtime",
+      "size": 5710,
+      "sha256": "1BF5E695388B3C929238F7899269ACFA545E4DACAEB1D242E3161574DB2EEF34",
+      "source": "deployment/packages/tools/kplusk/KK-Library_Win_Ver_21.2.2_25-11-28.zip / PythonModules_2.1.zip",
+      "source_page": "https://kplusk-messtechnik.de/downloads/index.html",
+      "publisher": "K+K Messtechnik GmbH",
+      "signature_status": "Extracted from official archive; see Terms_of_use.pdf"
+    },
+    {
+      "path": "deployment/packages/tools/kplusk/runtime/ReadMe.txt",
+      "kind": "vendor-runtime",
+      "size": 1257,
+      "sha256": "D46E1439E80AA17D3D68F8F591E079DE91F00C284F84CCE6B261956608473F95",
+      "source": "deployment/packages/tools/kplusk/KK-Library_Win_Ver_21.2.2_25-11-28.zip / PythonModules_2.1.zip",
+      "source_page": "https://kplusk-messtechnik.de/downloads/index.html",
+      "publisher": "K+K Messtechnik GmbH",
+      "signature_status": "Extracted from official archive; see Terms_of_use.pdf"
+    },
+    {
+      "path": "deployment/packages/tools/kplusk/runtime/reportreceiver.py",
+      "kind": "vendor-runtime",
+      "size": 14962,
+      "sha256": "5974DD45E90CC463A905C27224E803A18F3975D084B64D3DE2BAF16991E53FFF",
+      "source": "deployment/packages/tools/kplusk/KK-Library_Win_Ver_21.2.2_25-11-28.zip / PythonModules_2.1.zip",
+      "source_page": "https://kplusk-messtechnik.de/downloads/index.html",
+      "publisher": "K+K Messtechnik GmbH",
+      "signature_status": "Extracted from official archive; see Terms_of_use.pdf"
+    },
+    {
+      "path": "deployment/packages/tools/kplusk/runtime/reportstructreceiver.py",
+      "kind": "vendor-runtime",
+      "size": 14677,
+      "sha256": "C3AE042264F03DF2455A28882B45F22A95E970C313EF7710549134923331CEB0",
+      "source": "deployment/packages/tools/kplusk/KK-Library_Win_Ver_21.2.2_25-11-28.zip / PythonModules_2.1.zip",
+      "source_page": "https://kplusk-messtechnik.de/downloads/index.html",
+      "publisher": "K+K Messtechnik GmbH",
+      "signature_status": "Extracted from official archive; see Terms_of_use.pdf"
+    },
+    {
+      "path": "deployment/packages/tools/kplusk/runtime/Terms_of_use.pdf",
+      "kind": "vendor-runtime",
+      "size": 91404,
+      "sha256": "DF68C7B704AB8F61747A0955ED70BC01BC5978855135B5498FEE34B2ACFDB8C6",
+      "source": "deployment/packages/tools/kplusk/KK-Library_Win_Ver_21.2.2_25-11-28.zip / PythonModules_2.1.zip",
+      "source_page": "https://kplusk-messtechnik.de/downloads/index.html",
+      "publisher": "K+K Messtechnik GmbH",
+      "signature_status": "Extracted from official archive; see Terms_of_use.pdf"
     }
   ],
   "excluded": [

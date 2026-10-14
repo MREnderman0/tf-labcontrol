@@ -28,7 +28,16 @@ def test_monitor_overview_uses_connected_devices_and_slot_preferences(qtbot, tmp
         assert not hasattr(first_card, "plot")
         assert not hasattr(second_card, "plot")
         assert first_card.interval.isEnabled() and second_card.interval.isEnabled()
-        assert first_card.state.text() == "待开始采样" and second_card.state.text() == "待开始采样"
+        assert first_card.slot.parent() is first_card
+        assert first_card.enabled.parent() is first_card
+        assert first_card.interval.parent() is first_card
+        assert first_card.details_dialog.findChild(type(first_card.enabled)) is None
+        assert first_card.details_dialog.findChild(type(first_card.interval)) is None
+        assert first_card.state.text() == "待开始" and second_card.state.text() == "待开始"
+        assert 'href="#details"' in first_card.details_link.text()
+        assert "详情" in first_card.details_link.text()
+        assert "尚未开始记录" in first_card.detail_path.text()
+        assert not first_card.details_dialog.isVisible()
         first_card.enabled.setChecked(False)
         first_key = window.dashboard._slot_key(window.controller.records[first])
         assert runtime.repository.load_workspace("monitor_overview/all")[first_key]["enabled"] is False
@@ -77,7 +86,7 @@ def test_monitor_overview_includes_optical_power_meter_in_electronic_layout(qtbo
         task = runtime.monitoring.tasks[device]
         assert task.mode == "optical"
         assert task.requests[0].quantity == "power"
-        assert task.requests[0].channels == tuple(range(1, 9))
+        assert task.requests[0].channels == tuple(range(1, 17))
         runtime.monitoring.stop(device).result(5)
     finally:
         window.controller.close()

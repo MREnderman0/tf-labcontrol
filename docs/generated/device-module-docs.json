@@ -8,8 +8,10 @@
   "docs/devices/oscilloscopes/waverunner-9404m.md": "66b093f48568e35bc8ef2a0a21ef6adecbefa88041a00da7da9f1cc42b48a386",
   "docs/devices/oscilloscopes/rigol-dho924.md": "9ba2256e9e2e8abfcefe9df2c1380a2a9100d3eb090f181fe776b191b2f7b3ff",
   "docs/devices/spectrum-analyzers/rs-fph.md": "42eb66d020271b98bd57247e1b8d3040c90700d72788552a97b7755cae02f81b",
-  "docs/devices/measurement-analyzers/ceyear-6362d.md": "be4b7d0038a4ce8d32dcf85e3d7e02dfee28438f655bf53e1eb33324033693c3",
+  "docs/devices/measurement-analyzers/ceyear-6362d.md": "25b9634a70aa83b28a3ccf7e313f20beddec26c898b692e526a0b57ad9bf8447",
   "docs/devices/measurement-analyzers/phase-noise-53100a.md": "eb17acd09bce6034f32b57b341ab17735112278481f133fa545ba385e6094e19",
-  "docs/devices/measurement-analyzers/joinwit-jw8105.md": "c6fed76da48c1c3e49874acd2911b8011450aa77823ae45127d30ebd186b9ef3",
-  "docs/devices/measurement-analyzers/rigol-m300.md": "e311d3b6055adc4fe6e8a65680c8def7f2c6881634aa72cf01875e9cf64f8c17"
+  "docs/devices/measurement-analyzers/joinwit-jw8105.md": "e23dba144f2b62258c4fbd719516b3ed50e3ff742bbde4abd0a5d3d3370713a8",
+  "docs/devices/measurement-analyzers/coremorrow-xmt.md": "2e7673989fd85fb1cdd888f42a6424f976abf41e94e30367e4c381e34e8e21d7",
+  "docs/devices/measurement-analyzers/rigol-m300.md": "e311d3b6055adc4fe6e8a65680c8def7f2c6881634aa72cf01875e9cf64f8c17",
+  "docs/devices/measurement-analyzers/kplusk-fxe.md": "70398f44db4823b36868f1274cdbf401008d68544b09c5843553cae79df94483"
 }

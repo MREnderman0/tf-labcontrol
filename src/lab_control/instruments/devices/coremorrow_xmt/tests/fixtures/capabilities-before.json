@@ -1,0 +1,19 @@
+{
+  "profile": {
+    "adapter_id": "coremorrow.xmt",
+    "manufacturer": ["CoreMorrow", "芯明天"],
+    "models": [],
+    "category": "multimeter",
+    "channels": [],
+    "source": "",
+    "revision": "No compatibility contract before this package",
+    "identity_query": "",
+    "error_query": ""
+  },
+  "capabilities": {
+    "category": "multimeter",
+    "channels": [],
+    "operations": []
+  },
+  "commands": {}
+}

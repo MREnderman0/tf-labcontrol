@@ -50,7 +50,9 @@
 | Ceyear 6362D | `ceyear.6362d` | LAN Socket 10001；PyVISA | [卡片](devices/measurement-analyzers/ceyear-6362d.md) |
 | Microchip 53100A | `microchip.53100a` | USB：TimeLab 驱动与项目托管 TSERVE64；也支持已有外部 TSERVE | [卡片](devices/measurement-analyzers/phase-noise-53100a.md) |
 | Joinwit JW8105 | `joinwit.jw8105` | RS232；RJ45 选件待核对 | [卡片](devices/measurement-analyzers/joinwit-jw8105.md) |
+| 芯明天 XMT（完整型号待核） | `coremorrow.xmt` | USB 串口 / VISA ASRL；COM 参数由现场配置指定 | [卡片](devices/measurement-analyzers/coremorrow-xmt.md) |
 | RIGOL M300 | `rigol.m300` | LAN / USB VISA；优先 PyVISA | [卡片](devices/measurement-analyzers/rigol-m300.md) |
+| K+K FXE | `kplusk.fxe` | Ethernet（经交换机直连设备 IP）；USB 仅用于官方配置工具 | [卡片](devices/measurement-analyzers/kplusk-fxe.md) |
 <!-- device-modules:end -->
 
 ## 现场盘点与状态提升

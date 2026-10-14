@@ -1,0 +1,31 @@
+{
+  "profile": {
+    "adapter_id": "kplusk.fxe",
+    "manufacturer": [
+      "K+K",
+      "K+K Messtechnik"
+    ],
+    "models": [
+      "FXE",
+      "FXE-compatible K+K counter"
+    ],
+    "category": "multimeter",
+    "channels": [],
+    "source": "",
+    "revision": "No compatibility contract before this package",
+    "identity_query": "",
+    "error_query": "",
+    "status": [
+      "firmware_version",
+      "user_id",
+      "report"
+    ],
+    "acquisition": ""
+  },
+  "capabilities": {
+    "category": "multimeter",
+    "channels": [],
+    "operations": []
+  },
+  "commands": {}
+}

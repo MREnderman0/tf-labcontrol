@@ -11,8 +11,16 @@ from lab_control.transport.diagnostics import measured, synchronized
 
 
 class TcpSocketTransport:
-    def __init__(self, host: str, port: int = 5025, timeout: float = 3, terminator: bytes = b"\n") -> None:
+    def __init__(
+        self,
+        host: str,
+        port: int = 5025,
+        timeout: float = 3,
+        terminator: bytes = b"\n",
+        source_address: str = "",
+    ) -> None:
         self.host, self.port, self.timeout = host, port, timeout
+        self.source_address = source_address
         self.resource = f"tcp://{host}:{port}"
         self.terminator = terminator
         self.sock: socket.socket | None = None
@@ -21,7 +29,13 @@ class TcpSocketTransport:
 
     def open(self) -> None:
         try:
-            self.sock = socket.create_connection((self.host, self.port), self.timeout)
+            if self.source_address:
+                self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.sock.settimeout(self.timeout)
+                self.sock.bind((self.source_address, 0))
+                self.sock.connect((self.host, self.port))
+            else:
+                self.sock = socket.create_connection((self.host, self.port), self.timeout)
             self.sock.settimeout(self.timeout)
             # SCPI/VICP exchanges are latency-sensitive, small request/reply
             # messages. Do not coalesce a later command behind an earlier ACK.
@@ -87,6 +101,42 @@ class TcpSocketTransport:
     @measured("read")
     def _read_exact(self, count: int) -> bytes:
         return self.reader.exact(count)
+
+
+class ScpiSocketTransport(TcpSocketTransport):
+    """Raw SCPI socket transactions; keep VICP's framed protocol separate."""
+
+    @synchronized
+    @measured("query")
+    def query_binary(self, payload: bytes | str, max_bytes: int) -> bytes:
+        if not 0 < max_bytes <= MAX_MESSAGE:
+            raise DeviceError("Invalid binary receive budget", "invalid_parameter")
+        if self.sock is None:
+            raise DeviceError("Binary connection requires explicit reconnect", "disconnected")
+        try:
+            self.write(payload)
+            return self.reader.definite_block(max_bytes)
+        except Exception:
+            # A partial binary transaction cannot be safely reused or replayed.
+            self.close()
+            raise
+
+    @synchronized
+    def query_timeout(self, payload: bytes | str, seconds: float) -> bytes:
+        if not 0.1 <= seconds <= 60:
+            raise DeviceError("Invalid query timeout", "invalid_parameter")
+        if self.sock is None:
+            raise DeviceError("Connection requires explicit reconnect", "disconnected")
+        old = self.sock.gettimeout()
+        self.sock.settimeout(seconds)
+        try:
+            return self.query(payload)
+        except Exception:
+            self.close()
+            raise
+        finally:
+            if self.sock is not None:
+                self.sock.settimeout(old)
 
 
 class VicpTransport(TcpSocketTransport):

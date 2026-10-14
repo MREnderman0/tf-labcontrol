@@ -308,6 +308,7 @@ class Inventory:
                         candidate.config.transport,
                         timeout=candidate.config.timeout,
                         expected_serial=identity.serial,
+                        source_address=candidate.config.source_address,
                     ),
                 )
             matches = [
@@ -693,7 +694,13 @@ class DiscoveryService:
         with self.lock:
             return bool(self.future and not self.future.done())
 
-    def scan(self) -> Future[dict[str, Any]]:
+    def scan(
+        self,
+        providers: tuple[DiscoveryProvider, ...] | None = None,
+        *,
+        preserve_presence: bool = False,
+        scope: str = "",
+    ) -> Future[dict[str, Any]]:
         with self.lock:
             if self.closing:
                 raise DeviceError("程序正在退出", "runtime_closing")
@@ -702,13 +709,19 @@ class DiscoveryService:
             if self.future and not self.future.done():
                 raise DeviceError("A scan is already running", "scan_busy")
             self.cancelled.clear()
-            self.future = self.worker.submit(self._scan)
+            selected = self.providers if providers is None else tuple(providers)
+            self.future = self.worker.submit(self._scan, selected, preserve_presence, scope)
             return self.future
 
     def cancel(self, scan_id: str = "") -> None:
         self.cancelled.set()
 
-    def _scan(self) -> dict[str, Any]:
+    def _scan(
+        self,
+        providers: tuple[DiscoveryProvider, ...],
+        preserve_presence: bool = False,
+        scope: str = "",
+    ) -> dict[str, Any]:
         started = time.monotonic()
         scan_id = uuid4().hex
         report: dict[str, Any] = {
@@ -718,14 +731,16 @@ class DiscoveryService:
             "items": [],
             "state": "running",
         }
+        if scope:
+            report["scope"] = scope
         self.progress = report
         self.inventory.repository.audit("scan_started", scan_id=scan_id)
         successful: set[str] = set()
         observations: dict[str, list[DiscoveryCandidate]] = {}
         with ThreadPoolExecutor(
-            max_workers=max(1, len(self.providers)), thread_name_prefix="enumerate"
+            max_workers=max(1, len(providers)), thread_name_prefix="enumerate"
         ) as executor:
-            futures = {executor.submit(provider.enumerate): provider for provider in self.providers}
+            futures = {executor.submit(provider.enumerate): provider for provider in providers}
             for future in as_completed(futures):
                 provider = futures[future]
                 try:
@@ -751,6 +766,15 @@ class DiscoveryService:
                 self.inventory.merge(candidate, scan_id, reason="pending_probe")
             # Explicit connection settings win, independently of provider completion order.
             chosen = max(group, key=lambda c: (bool(c.config.adapter), c.source == "configured"))
+            # The saved address may pin an interface while an older startup
+            # config still supplies serial/limits. Keep those identity guards,
+            # but use the explicitly selected source for this exact socket.
+            bound = next((c for c in group if c.source == "static_addresses" and c.config.source_address), None)
+            if bound is not None and chosen.config.transport in {"visa", "tcp"}:
+                chosen = replace(
+                    chosen,
+                    config=replace(chosen.config, transport="tcp", source_address=bound.config.source_address),
+                )
             chosen = replace(chosen, safe_scpi=any(c.safe_scpi for c in group))
             observation_error = next((c for c in group if c.error_code), None)
             if observation_error is not None:
@@ -880,7 +904,8 @@ class DiscoveryService:
                 for probe_future in as_completed(probe_futures):
                     results[probe_futures[probe_future]] = probe_future.result()
         report["items"] = [results[index] for index in range(len(candidates))]
-        self.inventory.stale(scan_id, successful - {"configured"}, cancelled=self.cancelled.is_set())
+        if not preserve_presence:
+            self.inventory.stale(scan_id, successful - {"configured"}, cancelled=self.cancelled.is_set())
         report.update(
             {
                 "state": "cancelled" if self.cancelled.is_set() else "complete",

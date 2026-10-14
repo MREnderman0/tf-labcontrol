@@ -211,6 +211,10 @@ def verify(
     report: dict[str, Any] = {
         "adapter_id": "ceyear.6362d",
         "resource": config.resource,
+        "connection": {
+            "transport": config.transport,
+            "source_address": config.source_address or None,
+        },
         "expected_serial": config.expected_serial,
         "started_at": utc_now(),
         "scope": "6362D B.11; explicit selected LAN asset; no network/source/calibration changes",
@@ -342,13 +346,15 @@ def verify(
     try:
         if leave_stopped and not control:
             raise DeviceError("Leave-stopped policy requires explicit control mode", "backup_unreliable")
+        lan_resource = re.fullmatch(r"TCPIP\d*::[^:]+::10001::SOCKET", config.resource, re.I)
         if (
             config.adapter != "ceyear.6362d"
-            or config.transport != "visa"
+            or config.transport not in {"visa", "tcp"}
+            or (config.transport == "visa" and config.source_address)
             or not config.expected_serial
-            or not re.fullmatch(r"TCPIP\d*::[^:]+::10001::SOCKET", config.resource, re.I)
+            or not lan_resource
         ):
-            raise DeviceError("One exact LAN VISA asset and serial required", "identity_required")
+            raise DeviceError("One exact Ceyear 6362D LAN asset and serial required", "identity_required")
         home = application_home()
         report["physical_paths"] = verify_runtime_paths(
             home, Path(os.environ["LOCALAPPDATA"]) / "TF-LabControl"

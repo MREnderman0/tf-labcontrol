@@ -1,0 +1,21 @@
+{
+  "fixture_origin": "Observed CoreMorrow XMT read-only COM6 frame; the fixture exercises a readback-only apply path",
+  "adapter": "coremorrow.xmt",
+  "identity_reply": "CoreMorrow,XMT-compatible controller (exact model pending),SER123,FW1",
+  "identity_exchanges": [
+    [
+      "XMT_READ_POWER_CONFIG",
+      "CoreMorrow,XMT-compatible controller (exact model pending),SER123,FW1"
+    ]
+  ],
+  "exchanges": [
+    [
+      "AA 01 06 50 00 FD",
+      "AA 01 3D 50 00 00 03 03 06 2E 07 58 01 00 00 64 58 58 58 58 52 0A 10 10 FF FF FF FF FF FF FF CF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 00 00 00 58 E4"
+    ]
+  ],
+  "operation": "power_config",
+  "channel": 1,
+  "parameters": {},
+  "evidence": "CoreMorrow Control Software 25.09.26; XMT_DLL_SER.h and COM6 read-only transcript"
+}

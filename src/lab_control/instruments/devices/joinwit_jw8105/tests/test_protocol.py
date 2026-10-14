@@ -45,7 +45,7 @@ def test_frame_checksum_and_length_match_protocol_examples() -> None:
 
 
 def test_framed_reader_uses_declared_length_instead_of_tail_search() -> None:
-    raw = build_frame(1, 0x0141, b"\x7D\x00\x01\x02")
+    raw = build_frame(1, 0x0141, b"\x7d\x00\x01\x02")
     pieces = [raw[:3], raw[3:]]
 
     def read_exact(count: int) -> bytes:
@@ -74,6 +74,26 @@ def test_power_read_decodes_eight_signed_values() -> None:
     assert adapter.read("power", 1) == pytest.approx(-73.28)
     assert powers_16(payload)[7] == pytest.approx(-74.39)
     assert transport.history == [bytes.fromhex("7B 01 05 01 42 3C 7D")]
+
+
+def test_sixteen_channel_acquisition_reads_both_fixed_eight_channel_modules() -> None:
+    module_one = b"".join(int(index).to_bytes(2, "little", signed=True) for index in range(8))
+    module_two = b"".join(int(index + 100).to_bytes(2, "little", signed=True) for index in range(8))
+    transport = MockFrameTransport(
+        [
+            build_frame(1, 0x0141, b"\x11\x22\x33\x44"),
+            build_frame(1, 0x0143, module_one),
+            build_frame(2, 0x0143, module_two),
+        ]
+    )
+    adapter = Jw8105Adapter(transport, DEFINITION.profile, config())
+    adapter.identify()
+    batch = adapter.acquire(AcquisitionRequest(channels=tuple(range(1, 17))))
+    assert [measurement.channel for measurement in batch.measurements] == list(range(1, 17))
+    assert batch.measurements[0].values == pytest.approx(0)
+    assert batch.measurements[8].values == pytest.approx(1.0)
+    assert transport.history[1] == build_frame(1, 0x0142)
+    assert transport.history[2] == build_frame(2, 0x0142)
 
 
 def test_read_settings_and_acquisition_are_read_only() -> None:
@@ -118,11 +138,23 @@ def test_bad_checksum_is_rejected_before_decoding() -> None:
 
 def test_capabilities_are_registered_but_model_only_identity_has_no_serial() -> None:
     caps = DEFINITION.capability_schema(config())
-    assert caps.channels == tuple(range(1, 9))
+    assert caps.channels == tuple(range(1, 17))
     assert {item.name for item in caps.operations} == {
-        "power", "display_power", "wavelength", "sampling_rate", "display_wavelengths", "pdl"
+        "power",
+        "display_power",
+        "wavelength",
+        "sampling_rate",
+        "display_wavelengths",
+        "pdl",
     }
     assert DEFINITION.profile.revision.startswith("V23.02.02")
+
+
+def test_single_module_configuration_keeps_eight_channel_layout() -> None:
+    assert DEFINITION.capability_schema(config(options=("channels=8",))).channels == tuple(range(1, 9))
+    assert DEFINITION.capability_schema(config(options=("module=2",))).channels == tuple(range(1, 9))
+    with pytest.raises(Exception, match="channels=8"):
+        DEFINITION.capability_schema(config(options=("module=1", "channels=16")))
 
 
 def test_invalid_module_option_is_rejected() -> None:

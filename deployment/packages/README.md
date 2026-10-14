@@ -6,7 +6,7 @@
 
 - `installers/`：Python 3.12.10、R&S VISA 7.2.6、PicoSDK 11.1.0.481、Thorlabs OPM 7.0.5320.947、TimeLab 1.780A、Tftpd64 Service 4.74 的官方安装包。它们的来源、大小、SHA256 和签名状态记录在 `manifest.json`，组件用途和安装边界仍以 `deployment/components.json` 为准。
 - `python/`：由 `uv.lock` 导出的锁定依赖清单和 Windows x64 / CPython 3.12 wheelhouse。下载时使用清华 PyPI 镜像，禁止代理和国外 PyPI 回退。
-- `tools/`：项目环境使用的 `uv 0.12.18` 启动文件，以及 Tftpd64 4.74 原始便携归档、解压文件和所附许可证。这里的 INI 保持厂商原始内容，现场网卡、地址池及租约须另存本机运行目录。
+- `tools/`：项目环境使用的 `uv 0.12.18` 启动文件、Tftpd64 4.74 原始便携归档，以及 `kplusk/` 下的 K+K FXE 配置工具、KK Library、Python wrapper 和官方使用条款。这里的 INI 保持厂商原始内容，现场网卡、地址池及租约须另存本机运行目录；K+K 的静态 IP 配置仍由用户通过 USB 工具确认后执行。
 - `manifest.json`：缓存文件清单及校验信息。
 
 ## 使用

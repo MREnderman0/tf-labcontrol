@@ -17,7 +17,7 @@ HEADER = 0x7B
 TAIL = 0x7D
 DEFAULT_ADDRESS = 0x01
 BAUD_RATE = 115200
-CHANNELS = tuple(range(1, 9))
+CHANNELS = tuple(range(1, 9))  # Local channels in each of the two addressed modules.
 MAX_WAVELENGTH_NM = 1625.0
 MIN_WAVELENGTH_NM = 850.0
 MAX_DISPLAY_WAVELENGTHS = 32
@@ -96,13 +96,13 @@ def unsigned_le(data: bytes, *, scale: float, width: int) -> float:
 def powers_16(data: bytes) -> tuple[float, ...]:
     if len(data) != 16:
         raise DeviceError("JW8105 16-bit power payload must contain 8 channels", "parse_error")
-    return tuple(signed_le(data[index : index + 2], scale=100, width=2) for index in range(0, 16, 2))
+    return tuple(signed_le(data[index : index + 2], scale=100, width=2) for index in range(0, len(data), 2))
 
 
 def powers_32(data: bytes) -> tuple[float, ...]:
     if len(data) != 32:
         raise DeviceError("JW8105 32-bit power payload must contain 8 channels", "parse_error")
-    return tuple(signed_le(data[index : index + 4], scale=1000, width=4) for index in range(0, 32, 4))
+    return tuple(signed_le(data[index : index + 4], scale=1000, width=4) for index in range(0, len(data), 4))
 
 
 def wavelengths(data: bytes) -> tuple[float, ...]:
@@ -111,7 +111,9 @@ def wavelengths(data: bytes) -> tuple[float, ...]:
     count = data[0]
     if len(data) != 1 + count * 2:
         raise DeviceError("JW8105 display wavelength count mismatch", "parse_error")
-    return tuple(unsigned_le(data[offset : offset + 2], scale=1, width=2) for offset in range(1, len(data), 2))
+    return tuple(
+        unsigned_le(data[offset : offset + 2], scale=1, width=2) for offset in range(1, len(data), 2)
+    )
 
 
 def build_wavelength(value: float) -> bytes:

@@ -1,0 +1,5 @@
+{
+  "empty": {"result_code": "KK_NO_ERR", "data": null},
+  "timestamp": {"result_code": "KK_NO_ERR", "data": "7015; 12345"},
+  "measurement": {"result_code": "KK_NO_ERR", "data": "1900; 1.25; 2.50"}
+}

@@ -6,6 +6,7 @@ from typing import Any
 from PySide6.QtCore import QEvent, Qt, QTimer, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
+    QDialog,
     QDoubleSpinBox,
     QFrame,
     QGridLayout,
@@ -88,7 +89,7 @@ class ResponsiveGrid(QScrollArea):
             self.grid.setColumnStretch(index, 1 if index < columns else 0)
             self.grid.setColumnMinimumWidth(index, 0)
         for index, item in enumerate(self.items):
-            self.grid.addWidget(item, index // columns, index % columns)
+            self.grid.addWidget(item, index // columns, index % columns, Qt.AlignmentFlag.AlignTop)
 
 
 class RecordingDeviceCard(QFrame):
@@ -114,9 +115,7 @@ class RecordingDeviceCard(QFrame):
         self.category.setObjectName("eyebrow")
         heading.addWidget(self.category)
         layout.addLayout(heading)
-        self.identity = QLabel()
-        self.identity.setObjectName("mutedText")
-        layout.addWidget(self.identity)
+
         self.slot = QLabel()
         self.slot.setObjectName("monitorSlot")
         layout.addWidget(self.slot)
@@ -134,10 +133,49 @@ class RecordingDeviceCard(QFrame):
         self.interval.valueChanged.connect(self._changed)
         controls.addWidget(self.interval)
         layout.addLayout(controls)
+
+        status_row = QHBoxLayout()
         self.state = QLabel()
-        self.state.setObjectName("mutedText")
-        self.state.setWordWrap(True)
-        layout.addWidget(self.state)
+        self.state.setObjectName("monitorState")
+        self.state.setWordWrap(False)
+        status_row.addWidget(self.state)
+        status_row.addStretch()
+        self.details_link = QLabel('<a href="#details" style="color:#e3a252; text-decoration:none;">详情</a>')
+        self.details_link.setObjectName("monitorDetailsLink")
+        self.details_link.setTextFormat(Qt.TextFormat.RichText)
+        self.details_link.setTextInteractionFlags(Qt.TextInteractionFlag.LinksAccessibleByMouse)
+        self.details_link.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.details_link.linkActivated.connect(lambda _link: self.show_details())
+        status_row.addWidget(self.details_link)
+        layout.addLayout(status_row)
+
+        self.details_dialog = QDialog(self)
+        self.details_dialog.setObjectName("monitorDetailsDialog")
+        self.details_dialog.setWindowTitle("监测详情")
+        self.details_dialog.setModal(False)
+        details_layout = QVBoxLayout(self.details_dialog)
+        details_layout.setContentsMargins(18, 16, 18, 16)
+        details_layout.setSpacing(8)
+        self.identity = QLabel()
+        self.identity.setObjectName("mutedText")
+        self.identity.setWordWrap(True)
+        details_layout.addWidget(self.identity)
+        runtime_title = QLabel("采样运行信息")
+        runtime_title.setObjectName("monitorDetailsHeading")
+        details_layout.addWidget(runtime_title)
+        self.detail_state = QLabel()
+        self.detail_state.setObjectName("mutedText")
+        self.detail_state.setWordWrap(True)
+        details_layout.addWidget(self.detail_state)
+        self.detail_path = QLabel()
+        self.detail_path.setObjectName("monitorDetailsPath")
+        self.detail_path.setWordWrap(True)
+        details_layout.addWidget(self.detail_path)
+        self.detail_frames = QLabel()
+        self.detail_frames.setObjectName("monitorDetailsMeta")
+        self.detail_frames.setWordWrap(True)
+        details_layout.addWidget(self.detail_frames)
+        details_layout.addStretch()
         self.set_spec(spec)
 
     def _changed(self, *_args) -> None:
@@ -151,6 +189,7 @@ class RecordingDeviceCard(QFrame):
         self.category.setText(spec["category_label"])
         self.identity.setText(spec["identity"])
         self.slot.setText(f"功能槽位：{spec['slot_label']}")
+        self.details_dialog.setWindowTitle(f"{spec['title']} · 监测详情")
         self.setToolTip(f"本设备：{spec['title']}\n{spec['identity']}")
         self.enabled.blockSignals(True)
         self.enabled.setChecked(bool(spec.get("enabled", True)))
@@ -159,6 +198,13 @@ class RecordingDeviceCard(QFrame):
         self.interval.setValue(float(spec.get("interval", 0.5)))
         self.interval.blockSignals(False)
         self.refresh()
+
+    def show_details(self) -> None:
+        self.details_dialog.adjustSize()
+        self.details_dialog.setMinimumWidth(390)
+        self.details_dialog.show()
+        self.details_dialog.raise_()
+        self.details_dialog.activateWindow()
 
     def refresh(self) -> None:
         device_id = self.spec["device_id"]
@@ -173,16 +219,31 @@ class RecordingDeviceCard(QFrame):
         self.style().unpolish(self)
         self.style().polish(self)
         if task.get("error"):
-            status = task["error"]
+            detail = task["error"]
+            status = "异常"
+        elif recording_phase(task) == "draining":
+            detail = "记录收尾中 · 正在排空已接收数据"
+            status = "收尾中"
         elif recording_save_notice(task):
-            status = recording_save_notice(task)
+            detail = recording_save_notice(task)
+            status = "记录中" if task.get("recording") else "待处理"
         elif task.get("recording"):
-            status = "采样中 · 数据正在记录"
+            detail = "正在连续记录有效采集帧"
+            status = "记录中"
         elif task.get("running"):
-            status = "监视中 · 尚未记录"
+            detail = "监测中 · 尚未开启记录"
+            status = "监测中"
         else:
-            status = "待开始采样"
+            detail = "待开始采样"
+            status = "待开始"
         self.state.setText(status)
+        self.state.setToolTip(detail)
+        self.detail_state.setText(detail)
+        recording_state = task.get("recording_state", {})
+        folder = recording_state.get("folder") or task.get("last_path") or ""
+        self.detail_path.setText(f"保存位置：{folder}" if folder else "保存位置：尚未开始记录")
+        committed = recording_state.get("committed")
+        self.detail_frames.setText(f"已保存帧数：{committed}" if committed is not None else "")
         update_recording_frame(self, task)
 
 
@@ -237,7 +298,7 @@ class CategoryGrid(QWidget):
             self.layout_grid.setColumnStretch(index, 1 if index < columns else 0)
             self.layout_grid.setColumnMinimumWidth(index, 0)
         for index, item in enumerate(self.items):
-            self.layout_grid.addWidget(item, index // columns, index % columns)
+            self.layout_grid.addWidget(item, index // columns, index % columns, Qt.AlignmentFlag.AlignTop)
 
 
 class MonitoringDashboard(QWidget):
@@ -294,9 +355,7 @@ class MonitoringDashboard(QWidget):
             self.legacy_preferences[mode] = dict(legacy) if isinstance(legacy, dict) else {}
 
     def _persist(self) -> None:
-        self.controller.runtime.repository.save_workspace(
-            "monitor_overview/all", self.preferences
-        )
+        self.controller.runtime.repository.save_workspace("monitor_overview/all", self.preferences)
 
     def _channels(self, device_id: str, record: dict[str, Any]) -> tuple[int, ...]:
         category = instrument_category(record)
@@ -306,12 +365,18 @@ class MonitoringDashboard(QWidget):
             channels = tuple(self.controller.capabilities(device_id).channels)
         except Exception:
             channels = (1,)
-        return scope_channels(self.controller, device_id, channels) if category == "oscilloscope" else channels
+        return (
+            scope_channels(self.controller, device_id, channels) if category == "oscilloscope" else channels
+        )
 
     def _recording_sources(self, record: dict[str, Any]):
         sources = data_sources(config_from_record(record))
         category = instrument_category(record)
-        return sources if category in {"power_supply", "signal_generator", "network_analyzer", "phase_noise_analyzer"} else sources[:1]
+        return (
+            sources
+            if category in {"power_supply", "signal_generator", "network_analyzer", "phase_noise_analyzer"}
+            else sources[:1]
+        )
 
     def _saved_preference(self, record: dict[str, Any]) -> dict[str, Any]:
         key = self._slot_key(record)
@@ -466,10 +531,9 @@ class MonitoringDashboard(QWidget):
             }
             spec["enabled"] = card.enabled.isChecked()
             spec["interval"] = interval
-            if (
-                not card.enabled.isChecked()
-                and self.controller.runtime.monitoring.snapshots().get(spec["device_id"], {}).get("running")
-            ):
+            if not card.enabled.isChecked() and self.controller.runtime.monitoring.snapshots().get(
+                spec["device_id"], {}
+            ).get("running"):
                 self.controller.watch(self.controller.runtime.monitoring.stop(spec["device_id"]))
         self._persist()
         self._update_button()
@@ -482,7 +546,9 @@ class MonitoringDashboard(QWidget):
         self.controller.navigate.emit("实时监测", instrument_category(record), device_id)
         self.open_card.emit(spec or {"device_id": device_id, "source": "", "channels": [1]})
 
-    def add(self, device_id: str, source: str, channels: tuple[int, ...], title: str = "", view: str = "") -> None:
+    def add(
+        self, device_id: str, source: str, channels: tuple[int, ...], title: str = "", view: str = ""
+    ) -> None:
         """Compatibility entry for type pages; overview cards are automatic now."""
         self.refresh()
         card = self.cards.get(device_id)
@@ -532,7 +598,12 @@ class MonitoringDashboard(QWidget):
         for spec in self.specs:
             card = self.cards.get(spec["device_id"])
             record = self.controller.records.get(spec["device_id"])
-            if not card or not record or not card.enabled.isChecked() or not self.controller.has_connected_session(spec["device_id"]):
+            if (
+                not card
+                or not record
+                or not card.enabled.isChecked()
+                or not self.controller.has_connected_session(spec["device_id"])
+            ):
                 continue
             if spec["device_id"] in seen_devices:
                 continue
@@ -550,15 +621,17 @@ class MonitoringDashboard(QWidget):
             requests = tuple(
                 source.request(channels, initiate=initiate, confirmed=initiate) for source in sources
             )
-            grouped.append(
-                (record["id"], requests, card.interval.value(), self._recording_mode(record))
-            )
+            grouped.append((record["id"], requests, card.interval.value(), self._recording_mode(record)))
             if initiate:
                 dangerous.append(device_label(record))
         return grouped, dangerous
 
     def toggle_sampling(self) -> None:
-        active = [device_id for device_id in self.cards if self.controller.runtime.monitoring.snapshots().get(device_id, {}).get("running")]
+        active = [
+            device_id
+            for device_id in self.cards
+            if self.controller.runtime.monitoring.snapshots().get(device_id, {}).get("running")
+        ]
         if active:
             self.stop()
             return
@@ -566,13 +639,17 @@ class MonitoringDashboard(QWidget):
         if not grouped:
             self.controller.message.emit("请至少勾选一台已连接设备")
             return
-        if dangerous and QMessageBox.question(
-            self,
-            "确认开始采样",
-            "以下设备会启动仪器采样：\n" + "\n".join(dangerous),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No,
-        ) != QMessageBox.StandardButton.Yes:
+        if (
+            dangerous
+            and QMessageBox.question(
+                self,
+                "确认开始采样",
+                "以下设备会启动仪器采样：\n" + "\n".join(dangerous),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            != QMessageBox.StandardButton.Yes
+        ):
             return
         for device_id, requests, interval, recording_mode in grouped:
             try:
