@@ -198,7 +198,7 @@ def test_unknown_reference_missing_capability_and_disconnect(source, qtbot):
     assert page.settings_dialog is None and not writes
 
 
-def test_device_and_mode_switch_discard_only_dialog_draft(source, qtbot):
+def test_device_switch_discards_dialog_but_legacy_mode_keeps_general_workspace(source, qtbot):
     window, page, _, ids, writes = source
     editor = page.panels[1].editors["offset"]
     edit(qtbot, editor, "0.1")
@@ -213,7 +213,8 @@ def test_device_and_mode_switch_discard_only_dialog_draft(source, qtbot):
     window.controller.set_mode("optical")
     window.navigate("设备管理", "signal_generator", ids["siglent.sdg2082x"])
     page = window.stack.currentWidget()
-    assert page.settings_dialog is None
-    assert page.tabs.count() > 0 and not page.settings_button.isVisible()
-    assert any("sweep" in p.editors for p in page.advanced_groups)
+    assert page.settings_dialog is dialog
+    assert page.tabs.count() == 0 and page.settings_button.isVisible()
+    assert page.advanced_groups == []
+    assert window.controller.mode == "general"
     assert writes == []

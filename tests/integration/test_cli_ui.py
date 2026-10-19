@@ -6,6 +6,8 @@ from PySide6.QtCore import Qt
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.runtime import ApplicationRuntime
 from lab_control.cli.main import main
+from lab_control.ui.pages.device_control.power_supply import PowerSupplyPage
+from lab_control.ui.pages.monitoring.power import PowerMonitoringPage
 from lab_control.ui.real_window import CATEGORIES, RealWindow
 
 
@@ -71,7 +73,7 @@ def test_real_overview_incremental_mode_and_scan(qtbot, tmp_path, monkeypatch):
     window.show()
     window.refresh()
     assert window.category_filter.count() == len(CATEGORIES) + 1
-    assert len(window.card_grid.cards) == 5
+    assert len(window.card_grid.cards) == 1
     card = window.cards["signal_generator"]
     assert card.online_count.text() == "01"
     assert card.visible_count.text() == "可见 1 台"
@@ -89,14 +91,95 @@ def test_real_overview_incremental_mode_and_scan(qtbot, tmp_path, monkeypatch):
     window.scan()
     qtbot.waitUntil(lambda: runtime.discovery.future.done(), timeout=3000)
     window.refresh()
-    window.mode.setCurrentIndex(1)
+    window.controller.set_mode("optical")
+    assert window.controller.mode == "general"
+    assert not hasattr(window, "mode")
     assert window.rows[device_id] is row
     assert window.selected_id == device_id
     assert runtime.sessions.snapshots()[0]["sessionId"] == session_id
     assert window.cards["signal_generator"] is card
-    assert any(c.category == "optical_power_meter" for c in window.card_grid.cards)
+    assert not any(c.category == "optical_power_meter" for c in window.card_grid.cards)
     assert window.action_buttons["disconnect"].isEnabled()
     window.timer.stop()
     runtime.close()
     window.closing = True
     window.bridge.worker.shutdown()
+
+
+def test_optical_card_groups_spectrometer_and_power_meter(qtbot, tmp_path):
+    configs = (
+        ConnectionConfig("mock://spectrometer", "sim.optical_spectrometer", "mock"),
+        ConnectionConfig("mock://power-meter", "sim.optical_power_meter", "mock"),
+    )
+    runtime = ApplicationRuntime(configs, root=tmp_path, hardware=False)
+    window = RealWindow(runtime)
+    qtbot.addWidget(window)
+    try:
+        report = runtime.discovery.scan().result(timeout=5)
+        assert report["state"] == "complete"
+        window.refresh()
+        card = window.cards["optical_power_meter"]
+        assert card.discovered_count.text() == "发现 2 台"
+        assert card.visible_count.text() == "可见 2 台"
+    finally:
+        window.timer.stop()
+        window.controller.close()
+        window.closing = True
+        window.bridge.worker.shutdown()
+        runtime.close()
+
+
+def test_power_surfaces_route_coremorrow_to_management_and_other_supplies_to_monitoring(
+    qtbot, tmp_path
+):
+    runtime = ApplicationRuntime(root=tmp_path, hardware=False)
+    coremorrow = runtime.add(ConnectionConfig("mock://coremorrow", "coremorrow.xmt", "mock"))
+    generic = runtime.add(ConnectionConfig("mock://generic-power", "gwinstek.gpd4303s", "mock"))
+    runtime.connect(coremorrow).result()
+    runtime.connect(generic).result()
+    window = RealWindow(runtime)
+    qtbot.addWidget(window)
+    try:
+        window.refresh()
+        assert "power_supply" in window._submenu_categories("设备管理")
+        assert "power_supply" in window._submenu_categories("实时监测")
+
+        window.navigate("设备管理", "power_supply", coremorrow)
+        assert window.current_module == "设备管理"
+        management = window.stack.currentWidget()
+        assert isinstance(management, PowerSupplyPage)
+        assert management.selector.combo.findData(coremorrow) >= 0
+        assert management.selector.combo.findData(generic) == -1
+
+        window.navigate("设备管理", "power_supply", generic)
+        assert window.current_module == "实时监测"
+        monitoring = window.stack.currentWidget()
+        assert isinstance(monitoring, PowerMonitoringPage)
+        assert monitoring.selector.combo.findData(generic) >= 0
+        assert monitoring.selector.combo.findData(coremorrow) == -1
+    finally:
+        window.timer.stop()
+        window.controller.close()
+        window.closing = True
+        window.bridge.worker.shutdown()
+        runtime.close()
+
+
+def test_overview_cards_only_show_current_scan_records(qtbot, tmp_path):
+    config = ConnectionConfig("mock://unscanned", "rigol.dg5504pro", "mock")
+    runtime = ApplicationRuntime(root=tmp_path, hardware=False)
+    device_id = runtime.add(config)
+    window = RealWindow(runtime)
+    qtbot.addWidget(window)
+    try:
+        window.refresh()
+        assert not window.card_grid.cards
+        runtime.connect(device_id).result()
+        window.refresh()
+        assert [card.category for card in window.card_grid.cards] == ["signal_generator"]
+    finally:
+        window.timer.stop()
+        window.controller.close()
+        window.closing = True
+        window.bridge.worker.shutdown()
+        runtime.close()

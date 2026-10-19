@@ -250,16 +250,15 @@ def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
         dashboard._persist()
         saved = runtime.repository.load_workspace("monitor_overview/all")
         assert "columns" not in json.dumps(saved)
-        window.mode.setCurrentIndex(1)
-        assert window.controller.mode == "optical"
+        window.controller.set_mode("optical")  # Legacy API is a no-op for UI layout.
+        assert window.controller.mode == "general"
         assert runtime.monitoring.snapshots()[device]["running"]
         assert runtime.sessions.sessions[device].session_id == original
-        assert dashboard.preferences != saved
-        window.mode.setCurrentIndex(0)
         assert dashboard.preferences == saved
         runtime.monitoring.set_recording(device, True)
-        with pytest.raises(DeviceError, match="记录"):
-            window.controller.set_mode("optical")
+        window.controller.set_mode("electronic")
+        assert window.controller.mode == "general"
+        assert runtime.monitoring.snapshots()[device]["recording"]
         runtime.monitoring.stop(device).result(timeout=3)
     finally:
         shutdown(window)

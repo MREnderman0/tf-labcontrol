@@ -21,8 +21,8 @@ def test_occupied_slot_is_selectable_and_requires_confirmation(workspace, qtbot,
     key = runtime.add(config)
     runtime.connect(key).result(3)
     runtime.inventory.edit(previous, display_name="原设备")
-    runtime.bind_slot(previous, "signal_generator:1", "electronic")
-    runtime.bind_slot(key, "signal_generator:2", "electronic")
+    runtime.bind_slot(previous, "signal_generator:1", "general")
+    runtime.bind_slot(key, "signal_generator:2", "general")
     window.refresh()
     window.open_category("signal_generator")
     window.tree.setCurrentItem(window.rows[key])
@@ -62,8 +62,8 @@ def test_occupied_slot_is_selectable_and_requires_confirmation(workspace, qtbot,
     qtbot.mouseClick(window.action_buttons["slot"], Qt.MouseButton.LeftButton)
     assert seen == ["confirm"]
     records = {r["id"]: r for r in runtime.inventory.all()}
-    assert records[previous]["slots"]["electronic"] == ("" if replace_binding else "signal_generator:1")
-    assert records[key]["slots"]["electronic"] == (
+    assert records[previous]["slots"]["general"] == ("" if replace_binding else "signal_generator:1")
+    assert records[key]["slots"]["general"] == (
         "signal_generator:1" if replace_binding else "signal_generator:2"
     )
     assert runtime.sessions.sessions[previous].state == "connected"
@@ -452,5 +452,5 @@ def test_external_slot_button_binds_and_unbinds_through_shared_dialog(workspace,
         QTimer.singleShot(10, choose)
         qtbot.mouseClick(window.action_buttons["slot"], Qt.MouseButton.LeftButton)
         record = next(record for record in runtime.inventory.all() if record["id"] == key)
-        assert record["slots"].get("electronic", "") == expected
+        assert record["slots"].get("general", "") == expected
         assert window.device_pool.isVisible()

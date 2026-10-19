@@ -17,7 +17,7 @@ def test_each_launch_resets_but_rebinding_and_modes_preserve_current_choices(
     config = ConnectionConfig("mock://startup", adapter, "mock")
     with ApplicationRuntime(root=tmp_path, hardware=False) as runtime:
         key = runtime.add(config)
-        pref = f"monitor-timing/electronic/{key}"
+        pref = f"monitor-timing/general/{key}"
         runtime.repository.save_workspace(pref, previous)
     for _ in range(2):
         with ApplicationRuntime(root=tmp_path, hardware=False) as runtime:

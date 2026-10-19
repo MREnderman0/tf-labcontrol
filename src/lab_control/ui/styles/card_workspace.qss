@@ -183,6 +183,30 @@ QFrame#powerChannel QLabel#powerMeasured { color: #e2c08b; font-size: 12px; }
 QFrame#powerChannel QLabel#rangeHint { color: #8da09c; font-size: 11px; }
 QFrame#powerChannel QPushButton#primaryButton { background: #d99342; border-color: #d99342; color: #14110d; font-weight: 700; border-radius: 5px; }
 QFrame#powerChannel QPushButton#primaryButton:disabled { background: #1a2022; color: #778584; border-color: #354042; font-weight: 400; }
+
+/* CoreMorrow E00: compact three-row management controls. */
+QFrame#coremorrowChannel { background: #151b1d; border: 1px solid #3b4243; border-left: 3px solid #d99342; border-radius: 7px; }
+QFrame#coremorrowChannel QWidget { background: transparent; }
+QLabel#coremorrowChannelTitle { color: #e3a252; font-size: 16px; font-weight: 600; }
+QLabel#coremorrowChannelStatus { color: #b7c1bf; font-size: 12px; }
+QFrame#coremorrowChannel QLineEdit#sourceValue { background: #101618; font-size: 18px; padding: 3px 7px; min-height: 25px; border-radius: 5px; }
+QFrame#coremorrowChannel QLineEdit#sourceValue:focus { border-color: #d99342; }
+QFrame#coremorrowChannel QComboBox#coremorrowDirection, QFrame#coremorrowChannel QDoubleSpinBox#coremorrowStep { background: #1b2224; padding: 3px 5px; min-height: 25px; }
+QLabel#coremorrowControlLabel { color: #b7c1bf; font-size: 12px; }
+QPushButton#coremorrowStepButton { background: #263235; border: 1px solid #64716f; color: #e5ece9; padding: 4px 15px; border-radius: 5px; }
+QPushButton#coremorrowStepButton:hover { border-color: #d99342; color: #f3c27e; }
+QPushButton#coremorrowStepButton:disabled { color: #687674; border-color: #354042; background: #1a2022; }
+QLabel#coremorrowActualTitle { color: #e3a252; font-size: 13px; }
+QLCDNumber#coremorrowActual { color: #e6a653; background: #0c1113; border: 1px solid #4e5b5b; border-radius: 5px; padding: 3px; }
+QLabel#coremorrowActualUnit { color: #d8b57f; font-size: 12px; }
+QLabel#coremorrowActualDetail { color: #a6b3b0; font-size: 11px; }
+QFrame#coremorrowChannel QLabel#rangeHint { color: #8da09c; font-size: 10px; }
+QFrame#coremorrowChannel QPushButton#primaryButton { background: #d99342; border-color: #d99342; color: #14110d; font-weight: 700; border-radius: 5px; }
+QFrame#coremorrowChannel QPushButton#primaryButton:disabled { background: #1a2022; color: #778584; border-color: #354042; font-weight: 400; }
+QFrame#coremorrowChannel[waveform="true"] QPushButton { min-width: 48px; padding: 4px 6px; }
+QFrame#coremorrowChannel[waveform="true"] QComboBox { min-width: 72px; padding: 3px 5px; }
+QFrame#coremorrowChannel[waveform="true"] QLineEdit#sourceValue { font-size: 16px; }
+QLabel#coremorrowWaveStatus { color: #b7c1bf; font-size: 12px; }
 QLabel#powerOutputState { color: #b2bdba; font-size: 12px; }
 QPushButton#powerOutputButton { border-color: #a87946; color: #efbd84; border-radius: 5px; padding-left: 8px; padding-right: 8px; }
 QPushButton#powerOutputButton:disabled { color: #788286; border-color: #354042; }
