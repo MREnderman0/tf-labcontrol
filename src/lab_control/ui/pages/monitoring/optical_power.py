@@ -344,10 +344,7 @@ class OpticalPowerMonitoringPage(QWidget):
     def __init__(self, controller: WorkspaceController, add_card, parent=None) -> None:
         super().__init__(parent)
         self.controller, self.add_card = controller, add_card
-        # This page is the optical-power workspace regardless of the global
-        # layout mode. Requiring a mode switch first made a connected meter's
-        # monitoring action appear disabled.
-        self.device_id, self.mode = "", "optical"
+        self.device_id, self.mode = "", "general"
         self.transition = False
         self.generation = 0
         self.channel_checks: dict[int, QCheckBox] = {}
@@ -448,8 +445,8 @@ class OpticalPowerMonitoringPage(QWidget):
 
     def _channel_key(self, device_id: str) -> str:
         record = self.controller.records.get(device_id, {})
-        slot = record.get("slots", {}).get("optical", "")
-        return f"slot:optical:{slot}" if slot else f"device:{device_id}"
+        slot = record.get("slots", {}).get("general", "")
+        return f"slot:general:{slot}" if slot else f"device:{device_id}"
 
     def _background_sync_keys(self, device_id: str) -> tuple[tuple[int, str], ...]:
         """Return settings that are safe to poll while this page is visible.
@@ -534,7 +531,7 @@ class OpticalPowerMonitoringPage(QWidget):
     def select_device(self, device_id: str) -> None:
         if self.transition:
             return
-        self.device_id, self.mode = device_id, "optical"
+        self.device_id, self.mode = device_id, "general"
         self.controller.focus_settings(device_id, self._background_sync_keys(device_id))
         self.generation += 1
         self.latest_frame = None
@@ -600,7 +597,7 @@ class OpticalPowerMonitoringPage(QWidget):
             return
         try:
             record = self.controller.records.get(self.device_id)
-            if not record or not mode_applicable(record, "optical"):
+            if not record or not mode_applicable(record, "general"):
                 raise DeviceError("此设备不支持光学监测", "unsupported")
             self.timing.commit()
             options = self.timing.options()
@@ -679,12 +676,12 @@ class OpticalPowerMonitoringPage(QWidget):
             self.latest_frame = None
             self.monitoring_context_id = context_id
         draining = recording_phase(task) == "draining"
-        self.timing.bind(device_id, "optical")
+        self.timing.bind(device_id, "general")
         self.timing.refresh(task)
         connected = state.get("connectionState") in {"connected", "busy"}
         applicable = bool(
             self.controller.records.get(device_id)
-            and mode_applicable(self.controller.records[device_id], "optical")
+            and mode_applicable(self.controller.records[device_id], "general")
         )
         self.connection.setText(
             "已连接" if connected else state_label(state.get("connectionState", "disconnected"))

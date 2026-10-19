@@ -14,6 +14,7 @@ from lab_control.application.controls import control_capabilities
 from lab_control.application.runtime import ApplicationRuntime
 from lab_control.discovery.presence import LIVE_CONNECTIONS
 from lab_control.domain.instruments import DeviceCommand, DeviceError
+from lab_control.domain.workspace import GENERAL, WORKSPACE_MODES
 
 Job = tuple[Future[Any], Callable[[Any], None] | None, Callable[[Exception], None] | None]
 
@@ -23,6 +24,10 @@ class WorkspaceController(QObject):
     message = Signal(str)
     navigate = Signal(str, str, str)
     settings_changed = Signal(str)
+    # A monitoring interval is a device-level workspace preference.  Pages
+    # and the monitoring overview listen to this signal so changing either
+    # editor updates the other one immediately.
+    monitoring_interval_changed = Signal(str, float)
     frame_ready = Signal(str)
     _frame_wakeup = Signal()
     _job_wakeup = Signal()
@@ -30,7 +35,7 @@ class WorkspaceController(QObject):
     def __init__(self, runtime: ApplicationRuntime, parent: QObject) -> None:
         super().__init__(parent)
         self.runtime = runtime
-        self.mode = runtime.repository.load_workspace("current_mode", "electronic")
+        self.mode = GENERAL
         self.records: dict[str, dict[str, Any]] = {}
         self.states: dict[str, dict[str, Any]] = {}
         self.group_devices: set[str] = set()
@@ -145,16 +150,10 @@ class WorkspaceController(QObject):
         self.runtime.monitoring.wake.set()
 
     def set_mode(self, mode: str) -> None:
-        if self.group_devices:
-            raise DeviceError("参数正在分组应用，请完成后切换模式", "task_busy")
-        if any(
-            s.get("recording") or s.get("controlPending") or s.get("activeTask") == "continuous_acquisition"
-            for s in self.runtime.sessions.snapshots()
-        ):
-            raise DeviceError("记录或控制进行中，请完成任务后切换模式", "task_busy")
-        self.mode = mode
-        self.runtime.repository.save_workspace("current_mode", mode)
-        self.refreshed.emit()
+        # Compatibility for callers of the old selector. UI workspaces are
+        # always general; legacy labels no longer switch pages or preferences.
+        if mode not in WORKSPACE_MODES:
+            raise DeviceError("未知工作区标识", "invalid_parameter")
 
     def capabilities(self, device_id: str, channel: int = 1):
         snapshot = self.runtime.sessions.capability_snapshot(device_id)
@@ -176,9 +175,16 @@ class WorkspaceController(QObject):
             if self.has_connected_session(key) and (not category or instrument_category(record) == category)
         )
 
-    def ensure_applicable(self, device_id: str) -> None:
-        if not mode_applicable(self.records[device_id], self.mode):
-            raise DeviceError("此设备不适用于当前模式", "unsupported")
+    def ensure_applicable(self, device_id: str, *, workspace_mode: str | None = None) -> None:
+        mode = self.mode if workspace_mode is None else workspace_mode
+        if not mode_applicable(self.records[device_id], mode):
+            raise DeviceError("设备适配器不可用或工作区标识无效", "unsupported")
+
+    def slot_notice(self, device_id: str) -> str:
+        record = self.records.get(device_id, {})
+        if record.get("slots", {}).get(GENERAL):
+            return ""
+        return record.get("slotMigrationConflict", "")
 
     def apply(
         self,
@@ -188,10 +194,11 @@ class WorkspaceController(QObject):
         on_error: Callable[[Exception], None] | None = None,
         *,
         group_member: bool = False,
+        workspace_mode: str | None = None,
     ) -> None:
         if device_id in self.group_devices and not group_member:
             raise DeviceError("当前设备正在应用一组参数", "task_busy")
-        self.ensure_applicable(device_id)
+        self.ensure_applicable(device_id, workspace_mode=workspace_mode)
         cap = self.capabilities(device_id, command.channel).get(command.operation)
         cap.validate(command.parameters)
         self.watch(self.runtime.monitoring.apply(device_id, command), callback, on_error)

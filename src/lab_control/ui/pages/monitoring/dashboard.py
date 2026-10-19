@@ -32,7 +32,11 @@ from lab_control.ui.pages.monitoring.recording_state import (
     recording_save_notice,
     update_recording_frame,
 )
-from lab_control.ui.pages.monitoring.timing import POWER_INTERVALS, monitoring_options
+from lab_control.ui.pages.monitoring.timing import (
+    POWER_INTERVALS,
+    monitoring_options,
+    save_monitoring_interval,
+)
 
 
 def scope_channels(controller, device_id: str, channels) -> tuple[int, ...]:
@@ -330,6 +334,7 @@ class MonitoringDashboard(QWidget):
         self.grid = ResponsiveGrid()
         layout.addWidget(self.grid, 1)
         controller.refreshed.connect(self.refresh)
+        controller.monitoring_interval_changed.connect(self._sync_interval_from_timing)
         self.refresh()
 
     def _slot_key(self, record: dict[str, Any]) -> str:
@@ -338,19 +343,13 @@ class MonitoringDashboard(QWidget):
         return f"slot:{mode}:{slot}" if slot else f"device:{record['id']}"
 
     def _recording_mode(self, record: dict[str, Any]) -> str:
-        """Return the mode used to validate and store this device's samples."""
-        category = instrument_category(record)
-        if category in {"optical_power_meter", "optical_spectrometer"}:
-            return "optical"
-        if category == "spectrum_analyzer":
-            return "electronic"
-        return self.controller.mode
+        return "general"
 
     def _load_preferences(self) -> None:
         raw = self.controller.runtime.repository.load_workspace("monitor_overview/all", {})
         self.preferences = dict(raw) if isinstance(raw, dict) else {}
         self.legacy_preferences = {}
-        for mode in ("electronic", "optical"):
+        for mode in ("general",):
             legacy = self.controller.runtime.repository.load_workspace(f"monitor_overview/{mode}", {})
             self.legacy_preferences[mode] = dict(legacy) if isinstance(legacy, dict) else {}
 
@@ -413,6 +412,25 @@ class MonitoringDashboard(QWidget):
         source = sources[0]
         saved = self._saved_preference(record)
         recording_mode = self._recording_mode(record)
+        # Older versions stored the overview interval independently.  Use it
+        # once when no device timing exists, then make the device timing key
+        # canonical so both pages keep reading the same value afterwards.
+        timing_key = f"monitor-timing/{recording_mode}/{device_id}"
+        stored_timing = self.controller.runtime.repository.load_workspace(timing_key, None)
+        memory_timing = self.controller.runtime.monitoring_preferences.get(timing_key)
+        has_timing = isinstance(stored_timing, dict) and "interval" in stored_timing
+        has_timing = has_timing or isinstance(memory_timing, dict) and "interval" in memory_timing
+        if not has_timing and "interval" in saved:
+            try:
+                save_monitoring_interval(
+                    self.controller,
+                    device_id,
+                    recording_mode,
+                    float(saved["interval"]),
+                    notify=False,
+                )
+            except (TypeError, ValueError):
+                pass
         try:
             default_interval = float(
                 monitoring_options(self.controller, device_id, recording_mode)["interval"]
@@ -447,6 +465,26 @@ class MonitoringDashboard(QWidget):
             "interval": interval,
             "recording_mode": recording_mode,
         }
+
+    def _sync_interval_from_timing(self, device_id: str, interval: float) -> None:
+        """Reflect a device-page edit in the matching overview card."""
+        card = self.cards.get(device_id)
+        record = self.controller.records.get(device_id)
+        if card is None or record is None:
+            return
+        interval = float(interval)
+        if instrument_category(record) == "power_supply":
+            interval = min(POWER_INTERVALS, key=lambda option: abs(option - interval))
+        card.interval.blockSignals(True)
+        card.interval.setValue(interval)
+        card.interval.blockSignals(False)
+        key = self._slot_key(record)
+        preference = self.preferences.setdefault(key, {})
+        preference["interval"] = interval
+        for spec in self.specs:
+            if spec.get("device_id") == device_id:
+                spec["interval"] = interval
+        self._persist()
 
     def refresh(self) -> None:
         if self.mode != self.controller.mode:
@@ -525,6 +563,15 @@ class MonitoringDashboard(QWidget):
                     card.interval.blockSignals(True)
                     card.interval.setValue(interval)
                     card.interval.blockSignals(False)
+            try:
+                save_monitoring_interval(
+                    self.controller,
+                    spec["device_id"],
+                    spec["recording_mode"],
+                    interval,
+                )
+            except Exception as exc:
+                self.controller.message.emit(str(exc))
             self.preferences[key] = {
                 "enabled": card.enabled.isChecked(),
                 "interval": interval,

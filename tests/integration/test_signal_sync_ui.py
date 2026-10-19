@@ -418,12 +418,12 @@ def test_old_sequence_and_hidden_advanced_settings_are_ignored(synced, qtbot):
     window.controller.set_mode("optical")
     window.navigate("设备管理", "signal_generator", key)
     page = window.stack.currentWidget()
-    sweep = next(i for i in range(page.tabs.count()) if page.tabs.tabText(i) == "扫频")
-    page.tabs.setCurrentIndex(sweep)
+    assert page.tabs.count() == 0
     qtbot.wait(100)
     wanted = runtime.monitoring.settings_sync.wanted(key)
-    assert any("sweep" in name for _, name in wanted)
-    assert all(name != "load" for _, name in wanted)
+    assert all("sweep" not in name and "arb" not in name for _, name in wanted)
+    assert window.controller.mode == "general"
+
 
 
 def test_fast_navigation_and_reconnect_use_new_session_readback(synced, qtbot):
@@ -438,6 +438,9 @@ def test_fast_navigation_and_reconnect_use_new_session_readback(synced, qtbot):
     qtbot.waitUntil(lambda: not page.device_id)
     assert not page.outputs and not page.panels
     assert window.controller.sync_device == ""
+    # The last disconnected device removes its category tab. Complete that
+    # navigation before reconnecting instead of racing the window refresh timer.
+    window.refresh()
     runtime.connect(key).result()
     session = runtime.sessions.sessions[key]
     session.adapter.values["1.output"] = {"value": 1.0}
@@ -445,6 +448,8 @@ def test_fast_navigation_and_reconnect_use_new_session_readback(synced, qtbot):
     runtime.monitoring.enable_settings_sync()
     qtbot.waitUntil(lambda: page.selector.combo.findData(key) >= 0)
     assert page.selector.device_id == ""  # Reconnecting never silently restores a target.
+    window.navigate("设备管理", "signal_generator")
+    assert window.stack.currentWidget() is page
     page.selector.select(key)
     qtbot.waitUntil(lambda: page.outputs[1].state.text() == "输出开启 · 正常")
     assert session.session_id != previous

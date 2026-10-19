@@ -18,8 +18,10 @@ def monitoring_intervals(controller, device_id: str, mode: str) -> tuple[float, 
 def monitoring_options(controller, device_id: str, mode: str) -> dict:
     category = instrument_category(controller.records.get(device_id, {}))
     reset_on_launch = category in {"spectrum_analyzer", "oscilloscope", "power_supply"}
-    default_interval = 1.0 if category == "power_supply" else 0.5
-    default_cadence = "interval" if reset_on_launch else "fastest"
+    # A spectrum scan is a complete instrument sweep. Ten seconds is the
+    # conservative first-run cadence; a saved per-device value still wins.
+    default_interval = 10.0 if category == "optical_spectrometer" else 1.0 if category == "power_supply" else 0.5
+    default_cadence = "interval" if reset_on_launch or category == "optical_spectrometer" else "fastest"
     key = f"monitor-timing/{mode}/{device_id}"
     preferences = controller.runtime.monitoring_preferences
     if key not in preferences:
@@ -41,6 +43,46 @@ def monitoring_options(controller, device_id: str, mode: str) -> dict:
         cadence = "interval"
     # Old independent save/CSV preferences never throttle the new UI path.
     return dict(interval=interval, record_interval=None, cadence=cadence, csv_interval=5)
+
+
+def save_monitoring_interval(
+    controller,
+    device_id: str,
+    mode: str,
+    interval: float,
+    *,
+    cadence: str | None = None,
+    notify: bool = True,
+) -> float:
+    """Persist one device's interval and update an active scheduler.
+
+    The overview and device pages intentionally share this small write path.
+    It keeps the existing timing options (cadence and CSV settings), while
+    changing only the interval requested by the user.  ``set_intervals`` is a
+    local scheduler operation, so calling it while no task is active is safe
+    and does not contact the instrument.
+    """
+    if not device_id:
+        return float(interval)
+    interval = float(interval)
+    options = monitoring_options(controller, device_id, mode)
+    category = instrument_category(controller.records.get(device_id, {}))
+    if category == "power_supply":
+        interval = min(POWER_INTERVALS, key=lambda option: abs(option - interval))
+    options["interval"] = interval
+    options["record_interval"] = None
+    options["cadence"] = (
+        "interval"
+        if category == "power_supply"
+        else cadence if cadence is not None else options.get("cadence", "interval")
+    )
+    controller.runtime.monitoring.set_intervals(device_id, **options)
+    key = f"monitor-timing/{mode}/{device_id}"
+    controller.runtime.monitoring_preferences[key] = dict(options)
+    controller.runtime.repository.save_workspace(key, options)
+    if notify and hasattr(controller, "monitoring_interval_changed"):
+        controller.monitoring_interval_changed.emit(device_id, interval)
+    return interval
 
 
 class MonitoringTiming(QWidget):
@@ -74,7 +116,10 @@ class MonitoringTiming(QWidget):
         self.interval.setMinimumWidth(100)
         self.interval.setMaximumWidth(132)
         self.interval.setToolTip("相邻采集请求的目标开始间隔，范围 0.5～60 秒；不改变仪器扫描时间。")
-        self.interval.editingFinished.connect(self.commit)
+        # Spinbox edits are the device-page equivalent of changing an
+        # overview card.  Commit on every accepted value so the other view
+        # follows without requiring a separate save action.
+        self.interval.valueChanged.connect(self._interval_value_changed)
         label = QLabel("采集间隔", self)
         self.interval_label = label
         label.setObjectName("mutedText")
@@ -94,6 +139,22 @@ class MonitoringTiming(QWidget):
         self.actual = QLabel("实际 — s/帧", self)
         self.actual.setObjectName("rangeHint")
         layout.addWidget(self.actual)
+        if hasattr(controller, "monitoring_interval_changed"):
+            controller.monitoring_interval_changed.connect(self._external_interval_changed)
+
+    def _external_interval_changed(self, device_id: str, interval: float) -> None:
+        if device_id != self.device_id:
+            return
+        self.interval.blockSignals(True)
+        self.interval.setValue(float(interval))
+        self.interval.blockSignals(False)
+        self.presets.blockSignals(True)
+        self.presets.setCurrentIndex(max(0, self.presets.findData(float(interval))))
+        self.presets.blockSignals(False)
+
+    def _interval_value_changed(self, _value: float) -> None:
+        if self.device_id:
+            self.commit()
 
     def set_fixed_interval(self, fixed: bool = True) -> None:
         """Use the shared 0.5–60 second interval control without a cadence selector."""
@@ -138,7 +199,9 @@ class MonitoringTiming(QWidget):
         self.cadence.setCurrentIndex(self.cadence.findData(options["cadence"]))
         self.cadence.blockSignals(False)
         self.interval.setEnabled(self.fixed_interval or options["cadence"] == "interval")
+        self.interval.blockSignals(True)
         self.interval.setValue(options["interval"])
+        self.interval.blockSignals(False)
         self.presets.blockSignals(True)
         self.presets.setCurrentIndex(max(0, self.presets.findData(options["interval"])))
         self.presets.blockSignals(False)
@@ -149,9 +212,13 @@ class MonitoringTiming(QWidget):
             return
         options = self.options()
         try:
-            self.controller.runtime.monitoring.set_intervals(self.device_id, **options)
-            self.controller.runtime.monitoring_preferences[self.key] = dict(options)
-            self.controller.runtime.repository.save_workspace(self.key, options)
+            save_monitoring_interval(
+                self.controller,
+                self.device_id,
+                self.mode,
+                options["interval"],
+                cadence=options["cadence"],
+            )
         except Exception as exc:
             self.controller.message.emit(str(exc))
 

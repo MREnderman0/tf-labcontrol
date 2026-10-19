@@ -364,13 +364,13 @@ def test_timing_controls_are_local_persistent_and_separate_per_device(spectrum, 
     page.selector.select(key)
     assert page.interval.value() == 0.75
     window.controller.set_mode("optical")
-    qtbot.waitUntil(lambda: page.mode == "optical")
-    assert page.interval.value() == 0.5
+    assert page.mode == "general"
+    assert page.interval.value() == 0.75
     page.interval.setValue(3)
     page.interval.editingFinished.emit()
     window.controller.set_mode("electronic")
-    qtbot.waitUntil(lambda: page.mode == "electronic")
-    assert page.interval.value() == 0.75
+    assert page.mode == "general"
+    assert page.interval.value() == 3
     page.toggle_monitoring()
     qtbot.waitUntil(lambda: runtime.monitoring.snapshots()[key]["frame_interval"] is not None)
     qtbot.waitUntil(lambda: "—" not in page.timing.actual.text())

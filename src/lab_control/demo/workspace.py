@@ -36,18 +36,20 @@ def create_demo_runtime(root: Path | None = None) -> ApplicationRuntime:
         for device_id in ids:
             runtime.connect(device_id).result()
         records = {r["id"]: r for r in runtime.inventory.all()}
-        if not runtime.repository.load_workspace("demo_slots_initialized", False):
+        if not runtime.repository.load_workspace("demo_general_slots_initialized", False):
             for device_id, config in zip(ids, configs, strict=True):
                 record = records[device_id]
-                for mode in ("electronic", "optical"):
+                if "general" in record.get("slots", {}):
+                    continue
+                for mode in ("general",):
                     if mode_applicable(record, mode):
                         runtime.bind_slot(
                             device_id,
                             f"{instrument_category(record)}:{config.resource.rsplit('/', 1)[1]}",
                             mode,
                         )
-            runtime.repository.save_workspace("demo_slots_initialized", True)
-        for mode in ("electronic", "optical"):
+            runtime.repository.save_workspace("demo_general_slots_initialized", True)
+        for mode in ("general",):
             key = f"monitor_overview/{mode}"
             if runtime.repository.load_workspace(key) is not None:
                 continue

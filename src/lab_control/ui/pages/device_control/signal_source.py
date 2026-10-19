@@ -16,7 +16,6 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSizePolicy,
     QTabWidget,
-    QTextBrowser,
     QVBoxLayout,
     QWidget,
 )
@@ -31,7 +30,7 @@ from lab_control.ui.widgets.device_selector import DeviceSelector
 from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
 
 MAIN = ("waveform", "frequency", "power", "amplitude", "offset")
-ELECTRONIC_MAIN = (*MAIN, "phase")
+PRIMARY_CONTROLS = (*MAIN, "phase")
 EXTRA = ("phase", "load", "pulse_duty", "pulse_width", "ramp_symmetry", "amplitude_unit")
 ORDER = ("waveform", "load", "amplitude_unit", "frequency", "power", "amplitude", "offset", "phase")
 
@@ -78,6 +77,7 @@ class ParameterGroup(QFrame):
         *,
         columns: int = 1,
         simplified: bool = False,
+        follow_readback: bool = True,
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -89,6 +89,7 @@ class ParameterGroup(QFrame):
         self.reading = False
         self.columns = columns
         self.simplified = simplified
+        self.follow_readback = follow_readback
         self.visible_columns = 0
         self.context_hidden: set[str] = set()
         self.success_report = False
@@ -114,6 +115,7 @@ class ParameterGroup(QFrame):
                 compact=not standalone,
                 actions=standalone,
                 simplified=simplified,
+                follow_readback=follow_readback,
             )
             editor.enable_auto_sync()
             self.editors[cap.name] = editor
@@ -559,13 +561,13 @@ class SignalSourcePage(QWidget):
             lambda: controller.navigate.emit("实时监测", "signal_generator", self.device_id)
         )
         toolbar.addWidget(monitor)
-        monitor.setVisible(controller.mode != "electronic")
+        monitor.hide()
         self.settings_button = QPushButton("高级设置", self)
         self.settings_button.setObjectName("sourceSettingsButton")
         self.settings_button.setIcon(settings_icon())
         self.settings_button.setIconSize(QSize(18, 18))
         self.settings_button.clicked.connect(self.open_settings)
-        self.settings_button.setVisible(controller.mode == "electronic")
+        self.settings_button.show()
         toolbar.addWidget(self.settings_button)
         layout.addLayout(toolbar)
         self.range_status = QLabel("范围尚未确认", self)
@@ -591,7 +593,6 @@ class SignalSourcePage(QWidget):
         self.body_layout.addLayout(self.grid)
         self.tabs = TaskTabs()
         self.advanced_channel = WorkspaceComboBox(self.tabs)
-        self.advanced_channel.currentIndexChanged.connect(self.build_advanced)
         self.tabs.setCornerWidget(self.advanced_channel)
         self.tabs.hide()
         self.tabs.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
@@ -619,11 +620,10 @@ class SignalSourcePage(QWidget):
             return
         if self.settings_dialog is not None:
             self.settings_dialog.reject()
-        electronic = self.controller.mode == "electronic"
         self.empty.setVisible(not device_id)
-        self.tabs.setVisible(bool(device_id) and not electronic)
-        self.settings_button.setVisible(electronic)
-        self.monitor_button.setVisible(not electronic)
+        self.tabs.hide()
+        self.settings_button.show()
+        self.monitor_button.hide()
         if not device_id and self.controller.sync_device == self.device_id:
             self.controller.focus_settings("")
         self.device_id, self.mode = device_id, self.controller.mode
@@ -650,53 +650,41 @@ class SignalSourcePage(QWidget):
                 caps = self.controller.capabilities(device_id, ch).operations
                 main = [
                     cap
-                    for name in (ELECTRONIC_MAIN if electronic else MAIN)
+                    for name in PRIMARY_CONTROLS
                     for cap in caps
                     if cap.name == name
                 ]
-                if self.rf and not electronic:
-                    main += [cap for cap in caps if cap.name == "reference_clock"]
                 card = QFrame()
                 card.setObjectName("channelPanel")
-                card.setProperty("simplified", electronic)
+                card.setProperty("simplified", True)
                 card.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
                 card_layout = QVBoxLayout(card)
                 card_layout.setContentsMargins(0, 0, 0, 0)
                 card_layout.setSpacing(0)
-                heading = QLabel(
-                    ("射频信号" if self.rf else f"CH {ch}")
-                    if electronic
-                    else ("射频信号 · 连续 / 扫频 / 列表" if self.rf else f"CH {ch} · 基本信号")
-                )
+                heading = QLabel("射频信号" if self.rf else f"CH {ch}")
                 heading.setObjectName("channelTitle")
                 heading.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-                output = OutputControl(self.controller, device_id, ch, rf=self.rf, embedded=electronic)
+                output = OutputControl(self.controller, device_id, ch, rf=self.rf, embedded=True)
                 self.outputs[ch] = output
-                if electronic:
-                    header = QFrame(card)
-                    header.setObjectName("sourceChannelHeader")
-                    header_layout = QHBoxLayout(header)
-                    header_layout.setContentsMargins(20, 14, 20, 14)
-                    header_layout.addWidget(heading)
-                    header_layout.addStretch()
-                    header_layout.addWidget(output)
-                    card_layout.addWidget(header)
-                else:
-                    card_layout.addWidget(heading)
-                    self.output_bar.addWidget(output, 0, len(self.outputs) - 1)
+                header = QFrame(card)
+                header.setObjectName("sourceChannelHeader")
+                header_layout = QHBoxLayout(header)
+                header_layout.setContentsMargins(20, 14, 20, 14)
+                header_layout.addWidget(heading)
+                header_layout.addStretch()
+                header_layout.addWidget(output)
+                card_layout.addWidget(header)
                 group = ParameterGroup(
                     self.controller,
                     device_id,
                     ch,
                     main,
-                    columns=2 if electronic or self.rf else 1,
-                    simplified=electronic,
+                    columns=2,
+                    simplified=True,
                 )
                 card_layout.addWidget(group)
                 self.panels[ch] = group
                 self.channel_cards.append(card)
-            if not electronic:
-                self.build_advanced()
         self.advanced_channel.blockSignals(False)
         self.tabs.blockSignals(False)
         self.last_columns = 0
@@ -704,49 +692,6 @@ class SignalSourcePage(QWidget):
         self.refresh()
         if self.isVisible():
             self.read_main()
-
-    def build_advanced(self) -> None:
-        if self.mode == "electronic" or not self.device_id:
-            return
-        self.tabs.blockSignals(True)
-        while self.tabs.count():
-            widget = self.tabs.widget(0)
-            self.tabs.removeTab(0)
-            if widget is not None:
-                widget.deleteLater()
-        self.advanced_groups = []
-        channel = self.advanced_channel.currentData() or 1
-        buckets: dict[str, list[Capability]] = {}
-        for cap in self.controller.capabilities(self.device_id, channel).operations:
-            name = cap.name
-            if name in MAIN or name == "output" or (self.rf and name == "reference_clock"):
-                continue
-            group = (
-                "通道设置"
-                if name in EXTRA
-                else "扫频"
-                if "sweep" in name or name == "frequency_mode"
-                else "列表 / 任意波形"
-                if name.startswith(("list", "arb", "upload", "load_waveform"))
-                else "突发 / 触发"
-                if "burst" in name or "trigger" in name
-                else "调制"
-                if name.startswith(("am_", "fm_", "pm_", "pulse_", "modulation"))
-                else "设备设置"
-            )
-            buckets.setdefault(group, []).append(cap)
-        for label in ("通道设置", "扫频", "调制", "突发 / 触发", "列表 / 任意波形", "设备设置"):
-            if label in buckets:
-                panel = ParameterGroup(self.controller, self.device_id, channel, buckets[label], columns=2)
-                self.advanced_groups.append(panel)
-                self.tabs.addTab(panel, label)
-        self.details = QTextBrowser()
-        self.details.setMinimumHeight(160)
-        self.tabs.addTab(self.details, "设备详情")
-        self.tabs.blockSignals(False)
-        self.refresh()
-        if self.isVisible():
-            self.read_advanced()
 
     def read_main(self) -> None:
         self.read_advanced()
@@ -777,9 +722,6 @@ class SignalSourcePage(QWidget):
 
     def visible_sync_keys(self) -> tuple[tuple[int, str], ...]:
         keys = tuple(key for panel in self.panels.values() for key in panel.sync_keys())
-        panel = self.tabs.currentWidget()
-        if self.mode != "electronic" and isinstance(panel, ParameterGroup):
-            keys += panel.sync_keys()
         if self.settings_dialog is not None and self.settings_dialog.context_valid():
             keys += self.settings_dialog.sync_keys()
         return tuple(dict.fromkeys(keys))
@@ -925,17 +867,6 @@ class SignalSourcePage(QWidget):
         self.refresh_button.setText("范围已过期 ↻" if snapshot and snapshot.stale else "刷新范围")
 
     def reflow(self) -> None:
-        available_columns = self.scroll_area.viewport().width() // 205
-        output_columns = (
-            4 if len(self.outputs) >= 4 and available_columns >= 4 else 2 if len(self.outputs) >= 2 else 1
-        )
-        if self.mode != "electronic":
-            for output in self.outputs.values():
-                self.output_bar.removeWidget(output)
-            for index, output in enumerate(self.outputs.values()):
-                self.output_bar.addWidget(output, index // output_columns, index % output_columns)
-            for index in range(4):
-                self.output_bar.setColumnStretch(index, int(index < output_columns))
         for panel in [*self.panels.values(), *self.advanced_groups]:
             panel.reflow_fields()
         columns = 2 if len(self.channel_cards) > 1 else 1

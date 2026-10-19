@@ -11,7 +11,7 @@ def test_monitor_overview_uses_connected_devices_and_slot_preferences(qtbot, tmp
     second = runtime.add(ConnectionConfig("mock://overview/second", "rs.sma100b", "mock"))
     runtime.add(ConnectionConfig("mock://overview/offline", "rs.sma100b", "mock"))
     for device_id, index in ((first, 1), (second, 2)):
-        runtime.bind_slot(device_id, f"signal_generator:{index}", "electronic")
+        runtime.bind_slot(device_id, f"signal_generator:{index}", "general")
     runtime.connect(first).result(3)
     runtime.connect(second).result(3)
     window = RealWindow(runtime)
@@ -78,13 +78,13 @@ def test_monitor_overview_includes_optical_power_meter_in_electronic_layout(qtbo
         assert device in window.dashboard.cards
         spec = next(item for item in window.dashboard.specs if item["device_id"] == device)
         assert spec["category"] == "optical_power_meter"
-        assert spec["recording_mode"] == "optical"
+        assert spec["recording_mode"] == "general"
         assert spec["sources"] == ["reading"]
 
         window.dashboard.toggle_sampling()
         qtbot.waitUntil(lambda: runtime.monitoring.snapshots().get(device, {}).get("recording"), timeout=5000)
         task = runtime.monitoring.tasks[device]
-        assert task.mode == "optical"
+        assert task.mode == "general"
         assert task.requests[0].quantity == "power"
         assert task.requests[0].channels == tuple(range(1, 17))
         runtime.monitoring.stop(device).result(5)

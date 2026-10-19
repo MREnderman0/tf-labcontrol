@@ -46,7 +46,7 @@ def power(qapp, qtbot, tmp_path):
 def test_power_startup_presets_and_shared_in_run_values(tmp_path, qtbot, old):
     with ApplicationRuntime(root=tmp_path, hardware=False) as runtime:
         key = runtime.add(ConnectionConfig("mock://power-start", "gwinstek.gpd4303s", "mock"))
-        pref = f"monitor-timing/electronic/{key}"
+        pref = f"monitor-timing/general/{key}"
         runtime.repository.save_workspace(pref, old)
     for _ in range(2):
         with ApplicationRuntime(root=tmp_path, hardware=False) as runtime:
