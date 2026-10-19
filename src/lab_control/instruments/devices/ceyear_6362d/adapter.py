@@ -226,11 +226,22 @@ class Ceyear6362DAdapter(ScpiAdapter):
         if fmt != "ASCII" and order is None:
             raise Unsupported("Binary byte order for this 6362D software has not been qualified")
         raw = []
+        width = 8 if fmt == "REAL,64" else 4
         for axis in ("X", "Y"):
             query = f":TRACE:DATA:{axis}? TRA"
+            # The 6362D B.11 endpoint has qualified fixed-size raw replies on
+            # some commands and IEEE blocks on others.  The transport helper
+            # consumes either framing using the known point count; it never
+            # waits for an idle timeout to infer a frame boundary.
+            flexible_query = getattr(self.transport, "query_binary_flexible", None)
+            fixed_query = getattr(self.transport, "query_fixed", None)
             binary_query = getattr(self.transport, "query_binary", None)
             raw.append(
-                binary_query(query, 50001 * (8 if fmt == "REAL,64" else 4))
+                flexible_query(query, count * width)
+                if fmt != "ASCII" and flexible_query
+                else fixed_query(query, count * width)
+                if fmt != "ASCII" and fixed_query
+                else binary_query(query, 50001 * width)
                 if fmt != "ASCII" and binary_query
                 else self.transport.query(query)
             )

@@ -61,14 +61,21 @@ class OperationEditor(QFrame):
         compact: bool = False,
         actions: bool = True,
         simplified: bool = False,
+        follow_readback: bool = True,
+        workspace_mode: str | None = None,
     ) -> None:
         super().__init__(parent)
         self.compact = compact
         self.show_actions = actions
+        # Some devices expose a deliberately rounded or delayed readback.  Their
+        # readback is still useful for status, but must not replace the user's
+        # target value in the draft editor.
+        self.follow_readback = follow_readback
         self.setObjectName("compactOperation" if compact else "operationCard")
         self.controller, self.device_id, self.cap = controller, device_id, cap
         self.channel = channel if cap.channel_scoped else 1
-        self.mode = controller.mode
+        self.workspace_mode = workspace_mode
+        self.mode = controller.mode if workspace_mode is None else workspace_mode
         self.dirty = False
         self.busy = False
         self.current_value: Any = None
@@ -200,9 +207,13 @@ class OperationEditor(QFrame):
         self.status.setText("待应用" if self.dirty else "")
         if self.auto_sync:
             self.render_auto_reading()
-        if not self.dirty:
+        if not self.dirty and self.follow_readback:
             self.controller.runtime.repository.save_workspace(self.key, None)
             return
+        self.persist_fields()
+
+    def persist_fields(self) -> None:
+        """Keep independent user targets even after a successful apply/readback."""
         self.controller.runtime.repository.save_workspace(
             self.key,
             {
@@ -266,8 +277,8 @@ class OperationEditor(QFrame):
                 available
                 and self.cap.writable
                 and record
-                and mode_applicable(record, self.controller.mode)
-                and self.controller.mode == self.mode
+                and mode_applicable(record, self.mode)
+                and (self.workspace_mode is not None or self.controller.mode == self.mode)
                 and not state.get("controlPending")
                 and not state.get("capabilityStale", True)
                 and self.device_id not in self.controller.group_devices
@@ -304,8 +315,11 @@ class OperationEditor(QFrame):
         if not self.editing():
             if self.dirty and self.matches_current():
                 self.dirty = False
-                self.controller.runtime.repository.save_workspace(self.key, None)
-            if not self.dirty and not self.matches_current():
+                if self.follow_readback:
+                    self.controller.runtime.repository.save_workspace(self.key, None)
+                else:
+                    self.persist_fields()
+            if self.follow_readback and not self.dirty and not self.matches_current():
                 values = (
                     self.current_value
                     if isinstance(self.current_value, dict)
@@ -397,7 +411,7 @@ class OperationEditor(QFrame):
         )
         self.readback.setToolTip(reading.timestamp)
         self.readback.setVisible(not self.compact or reading.source != "simulated")
-        if not self.dirty and reading.value is not None:
+        if self.follow_readback and not self.dirty and reading.value is not None:
             values = reading.value if isinstance(reading.value, dict) else {"value": reading.value}
             for name, value in values.items():
                 if name in self.editors:
@@ -439,12 +453,12 @@ class OperationEditor(QFrame):
             self._submitted_revision = self._edit_revision
             self.status.setText("等待当前读取完成 / 正在应用…")
             self.refresh_enabled()
-            self.controller.apply(
-                self.device_id,
-                DeviceCommand(self.cap.name, values, self.channel, confirmed),
-                self.applied,
-                self.failed,
-            )
+            command = DeviceCommand(self.cap.name, values, self.channel, confirmed)
+            if self.workspace_mode is None:
+                self.controller.apply(self.device_id, command, self.applied, self.failed)
+            else:
+                self.controller.apply(self.device_id, command, self.applied, self.failed,
+                                      workspace_mode=self.workspace_mode)
         except Exception as exc:
             self.failed(exc)
 
@@ -476,7 +490,10 @@ class OperationEditor(QFrame):
         if result.outcome == "success":
             if not self.auto_sync or self._submitted_revision == self._edit_revision:
                 self.dirty = False
-                self.controller.runtime.repository.save_workspace(self.key, None)
+                if self.follow_readback:
+                    self.controller.runtime.repository.save_workspace(self.key, None)
+                else:
+                    self.persist_fields()
         if self.auto_sync:
             self._reading_valid = False
             self.last_reading = None

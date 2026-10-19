@@ -284,7 +284,7 @@ class PowerChannel(ParameterGroup):
 
 
 class PowerSupplyPage(QWidget):
-    def __init__(self, controller: WorkspaceController, parent=None):
+    def __init__(self, controller: WorkspaceController, parent=None, *, surface: str | None = None):
         super().__init__(parent)
         self.controller = controller
         self.device_id = ""
@@ -295,7 +295,9 @@ class PowerSupplyPage(QWidget):
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(12)
         self.header = QHBoxLayout()
-        self.selector = DeviceSelector(controller, "power_supply", self, compact=True)
+        self.selector = DeviceSelector(
+            controller, "power_supply", self, compact=True, surface=surface
+        )
         self.header.addWidget(self.selector, 1)
         self.connection = QLabel(self)
         self.connection.setObjectName("powerSyncState")

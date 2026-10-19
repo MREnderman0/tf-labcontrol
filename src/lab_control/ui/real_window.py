@@ -38,7 +38,7 @@ from PySide6.QtWidgets import (
 )
 
 from lab_control.application.bulk_connection import device_label
-from lab_control.application.catalog import instrument_category, mode_applicable
+from lab_control.application.catalog import instrument_category, mode_applicable, surface_applicable
 from lab_control.application.config import ConnectionConfig, config_from_record
 from lab_control.application.controls import CATEGORY_LABELS, slot_label
 from lab_control.application.runtime import ApplicationRuntime
@@ -51,11 +51,13 @@ from lab_control.ui.controller import (
     display_connection_state,
     display_task,
 )
+from lab_control.ui.pages.device_control.coremorrow_e00 import CoreMorrowE00Page
 from lab_control.ui.pages.device_control.page import DeviceControlPage
 from lab_control.ui.pages.device_control.power_supply import PowerSupplyPage
 from lab_control.ui.pages.device_control.signal_source import SignalSourcePage
 from lab_control.ui.pages.monitoring.dashboard import MonitoringDashboard
 from lab_control.ui.pages.monitoring.optical_power import OpticalPowerMonitoringPage
+from lab_control.ui.pages.monitoring.optical_spectrum import OpticalSpectrumMonitoringPage
 from lab_control.ui.pages.monitoring.oscilloscope import OscilloscopeMonitoringPage
 from lab_control.ui.pages.monitoring.page import MonitoringPage
 from lab_control.ui.pages.monitoring.phase_noise import PhaseNoiseMonitoringPage
@@ -77,7 +79,6 @@ CATEGORIES = {
     "load_drivers": "负载 / 泵浦",
     "unknown": "未分类 / 未知设备",
 }
-PRIMARY_CATEGORIES = tuple(CATEGORIES)[:5]
 CATEGORY_DESCRIPTIONS = {
     "signal_generator": "频率、幅度和输出状态",
     "power_supply": "电压、电流与通道状态",
@@ -203,11 +204,8 @@ class RealWindow(QMainWindow):
         side.addStretch()
         badges = QHBoxLayout()
         badges.setSpacing(6)
-        self.mode_badge = QLabel()
-        self.mode_badge.setObjectName("modeBadge")
         self.runtime_badge = QLabel("● 真实设备" if self.runtime.hardware else "● 演示版")
         self.runtime_badge.setObjectName("runtimeBadge")
-        badges.addWidget(self.mode_badge)
         badges.addWidget(self.runtime_badge)
         side.addLayout(badges)
         row.addWidget(self.sidebar)
@@ -263,12 +261,6 @@ class RealWindow(QMainWindow):
         heading = QLabel("软件设置")
         heading.setObjectName("pageTitle")
         settings.addWidget(heading)
-        settings.addWidget(QLabel("实验模式"))
-        settings.addWidget(self.mode)
-        self.mode.setCurrentIndex(max(0, self.mode.findData(self.controller.mode)))
-        mode_note = QLabel("模式只影响布局、槽位候选和控制适用性；设备总览保留全部设备。")
-        mode_note.setWordWrap(True)
-        settings.addWidget(mode_note)
         from lab_control.ui.pages.storage_settings import StorageSettingsPanel
 
         self.storage_panel = StorageSettingsPanel(self.runtime.repository, settings_body)
@@ -296,7 +288,6 @@ class RealWindow(QMainWindow):
         self.brand.setText("TF" if collapsed else "TF LABCONTROL")
         self.brand_subline.setVisible(not collapsed)
         self.sidebar_section.setVisible(not collapsed)
-        self.mode_badge.setVisible(not collapsed)
         self.runtime_badge.setVisible(not collapsed)
         for label, button in self.nav_buttons.items():
             button.setText(label[:2] if collapsed else label)
@@ -342,6 +333,7 @@ class RealWindow(QMainWindow):
                 OscilloscopeMonitoringPage,
                 PowerMonitoringPage,
                 OpticalPowerMonitoringPage,
+                OpticalSpectrumMonitoringPage,
             ),
         ):
             page.focus_card(spec)
@@ -372,15 +364,36 @@ class RealWindow(QMainWindow):
         monitoring_only = {
             "spectrum_analyzer",
             "oscilloscope",
-            "power_supply",
             "phase_noise_analyzer",
             "optical_power_meter",
+            "optical_spectrometer",
         }
-        available = self._connected_categories(records, states)
+        if records is None:
+            records = {item["id"]: item for item in self.runtime.inventory.all()}
+        if states is None:
+            states = {item["stableDeviceId"]: item for item in self.runtime.sessions.snapshots()}
+        connected = tuple(
+            record
+            for device_id, record in records.items()
+            if states.get(device_id, {}).get("connectionState") in LIVE_CONNECTIONS
+        )
+        available = {instrument_category(record) for record in connected}
         return tuple(
             value
             for value in CATEGORY_LABELS
-            if value in available and not (module == "设备管理" and value in monitoring_only)
+            if value in available
+            and not (module == "设备管理" and value in monitoring_only)
+            and (
+                value != "power_supply"
+                or any(
+                    surface_applicable(
+                        record,
+                        "management" if module == "设备管理" else "monitoring",
+                    )
+                    for record in connected
+                    if instrument_category(record) == value
+                )
+            )
         )
 
     def _rebuild_submenu(
@@ -429,11 +442,30 @@ class RealWindow(QMainWindow):
         if module == "设备管理" and category in {
             "spectrum_analyzer",
             "oscilloscope",
-            "power_supply",
             "phase_noise_analyzer",
             "optical_power_meter",
+            "optical_spectrometer",
         }:
             module = "实时监测"
+        elif module == "设备管理" and category == "power_supply":
+            records = {item["id"]: item for item in self.runtime.inventory.all()}
+            states = {item["stableDeviceId"]: item for item in self.runtime.sessions.snapshots()}
+            requested = records.get(device_id)
+            has_management_supply = (
+                requested is not None
+                and states.get(device_id, {}).get("connectionState") in LIVE_CONNECTIONS
+                and instrument_category(requested) == "power_supply"
+                and surface_applicable(requested, "management")
+                if device_id
+                else any(
+                    states.get(record_id, {}).get("connectionState") in LIVE_CONNECTIONS
+                    and instrument_category(record) == "power_supply"
+                    and surface_applicable(record, "management")
+                    for record_id, record in records.items()
+                )
+            )
+            if not has_management_supply:
+                module = "实时监测"
         if module not in self.nav_buttons:
             return
         self.device_pool.hide()
@@ -462,7 +494,7 @@ class RealWindow(QMainWindow):
                     page = (
                         SignalSourcePage(self.controller)
                         if category == "signal_generator"
-                        else PowerSupplyPage(self.controller)
+                        else CoreMorrowE00Page(self.controller)
                         if category == "power_supply"
                         else DeviceControlPage(self.controller, category)
                     )
@@ -476,6 +508,8 @@ class RealWindow(QMainWindow):
                         if category == "power_supply"
                         else OpticalPowerMonitoringPage(self.controller, self.dashboard.add)
                         if category == "optical_power_meter"
+                        else OpticalSpectrumMonitoringPage(self.controller, self.dashboard.add)
+                        if category == "optical_spectrometer"
                         else PhaseNoiseMonitoringPage(self.controller)
                         if category == "phase_noise_analyzer"
                         else MonitoringPage(self.controller, category, self.dashboard.add)
@@ -507,24 +541,16 @@ class RealWindow(QMainWindow):
                 OscilloscopeMonitoringPage,
                 PowerMonitoringPage,
                 OpticalPowerMonitoringPage,
+                OpticalSpectrumMonitoringPage,
                 PhaseNoiseMonitoringPage,
                 SignalSourcePage,
                 PowerSupplyPage,
+                CoreMorrowE00Page,
             ),
         ):
             # Resolve a requested device before showEvent can start readback for the page.
             page.selector.select(device_id)
         self.stack.setCurrentWidget(page)
-
-    def change_mode(self, *_args) -> None:
-        try:
-            self.controller.set_mode(self.mode.currentData())
-        except DeviceError as exc:
-            self.mode.blockSignals(True)
-            self.mode.setCurrentIndex(self.mode.findData(self.controller.mode))
-            self.mode.blockSignals(False)
-            self._failed(str(exc))
-        self.refresh()
 
     def _build_overview(self) -> None:
         root = QWidget()
@@ -540,10 +566,6 @@ class RealWindow(QMainWindow):
         heading.setObjectName("pageTitle")
         toolbar.addWidget(heading)
         toolbar.addStretch()
-        self.mode = WorkspaceComboBox()
-        self.mode.addItem("电子学模式", "electronic")
-        self.mode.addItem("光学模式", "optical")
-        self.mode.currentIndexChanged.connect(self.change_mode)
         self.scan_button = QPushButton("扫描设备")
         self.scan_button.setObjectName("primaryButton")
         self.scan_button.clicked.connect(self.scan)
@@ -797,8 +819,7 @@ class RealWindow(QMainWindow):
     def refresh(self) -> None:
         if self.closing:
             return
-        if hasattr(self, "mode_badge"):
-            self.mode_badge.setText("● 电子学模式" if self.controller.mode == "electronic" else "● 光学模式")
+        if hasattr(self, "clock_label"):
             self.clock_label.setText(QDateTime.currentDateTime().toString("HH:mm:ss"))
         self.records = {item["id"]: item for item in self.runtime.inventory.all()}
         self.states = {item["stableDeviceId"]: item for item in self.runtime.sessions.snapshots()}
@@ -867,7 +888,7 @@ class RealWindow(QMainWindow):
                 for item in records
             )
             known = sum(bool(item["identity"]) for item in records)
-            bound = sum(bool(item.get("slots", {}).get(self.mode.currentData())) for item in records)
+            bound = sum(bool(item.get("slots", {}).get(self.controller.mode)) for item in records)
             abnormal = sum(
                 bool(item.get("lastError"))
                 or self.states.get(item["id"], {}).get("connectionState") in {"error", "degraded"}
@@ -884,12 +905,7 @@ class RealWindow(QMainWindow):
             if self.category_filter.itemData(index, Qt.ItemDataRole.ToolTipRole) != tooltip:
                 self.category_filter.setItemData(index, tooltip, Qt.ItemDataRole.ToolTipRole)
             self.cards[category].update_counts(len(records), live, abnormal, bound)
-            if (
-                category in PRIMARY_CATEGORIES
-                or records
-                or history_count
-                or (category == "optical_power_meter" and self.controller.mode == "optical")
-            ):
+            if records:
                 visible_cards.append(self.cards[category])
         self.card_grid.set_cards(tuple(visible_cards))
         for device_id, record in self.records.items():
@@ -937,7 +953,7 @@ class RealWindow(QMainWindow):
                     if connection != "disconnected" or device_id in current_records
                     else presence_label(record, state)
                 ),
-                slot_label(record.get("slots", {}).get(self.mode.currentData(), "")),
+                self.controller.slot_notice(record["id"]) or slot_label(record.get("slots", {}).get(self.controller.mode, "")),
             ]
             badges_changed = row.text(3) != texts[3] or row.text(4) != texts[4]
             for index, text in enumerate(texts):
@@ -954,7 +970,7 @@ class RealWindow(QMainWindow):
                 + "\n"
                 + record["identity"].get("serial", "")
                 + f"\n连接状态：{row.toolTip(3).removeprefix('● ')}"
-                + f"\n工作模式：{self.mode.currentText()}\n功能槽位：{texts[4]}",
+                + f"\n功能槽位：{texts[4]}",
             )
             if badges_changed:
                 # Both badges come from hidden columns; invalidate the visible card too.
@@ -1046,7 +1062,7 @@ class RealWindow(QMainWindow):
                     )
                     and bool(
                         record
-                        and applicable(record, self.mode.currentData())
+                        and applicable(record, self.controller.mode)
                         and record["adapterId"]
                         and not record.get("identityConflict")
                         and record["discoveryState"] != "conflict"
@@ -1130,8 +1146,8 @@ class RealWindow(QMainWindow):
                 "adapter": record["adapterId"] or "待补协议",
                 "resource": f"{config['transport'].upper()}  ·  {config['resource']}",
                 "aliases": "\n".join(r for r in record["resources"] if r != config["resource"]) or "无",
-                "mode": self.mode.currentText(),
-                "slot": slot_label(record.get("slots", {}).get(self.mode.currentData(), "")),
+                "mode": "通用工作区",
+                "slot": self.controller.slot_notice(record["id"]) or slot_label(record.get("slots", {}).get(self.controller.mode, "")),
                 "presence": presence_label(record, state),
                 "identity_state": identity_state,
                 "seen": seen.toLocalTime().toString("yyyy-MM-dd HH:mm:ss")
@@ -1230,7 +1246,7 @@ class RealWindow(QMainWindow):
         self.refresh()
 
     def choose_slot(self, device_id: str) -> None:
-        mode = self.mode.currentData()
+        mode = self.controller.mode
         records = self.runtime.inventory.all()
         record = next(r for r in records if r["id"] == device_id)
         category = instrument_category(record)
@@ -1255,7 +1271,7 @@ class RealWindow(QMainWindow):
             prompt = QLabel(f"已有【{device_label(owner)}】绑定【{slot_label(slot)}】，是否替换？")
             prompt.setWordWrap(True)
             layout.addWidget(prompt)
-            note = QLabel("替换后，原设备保持连接，当前模式下的槽位变为未绑定。")
+            note = QLabel("替换后，原设备保持连接，槽位变为未绑定。")
             note.setWordWrap(True)
             layout.addWidget(note)
             buttons = QDialogButtonBox(
@@ -1427,7 +1443,7 @@ class RealWindow(QMainWindow):
         label.setPlaceholderText("可选，例如实验室光谱仪")
         source_address = QLineEdit()
         source_address.setObjectName("staticSourceAddressInput")
-        source_address.setPlaceholderText("可选，填写实验网卡的 IPv4；留空使用系统路由")
+        source_address.setPlaceholderText("可选，填写实验网卡 IPv4；6362D 留空自动选择物理网卡")
         advanced_form.addRow("Socket 端口（IP）", port)
         advanced_form.addRow("串口波特率（COM）", baud)
         advanced_form.addRow("通信超时（秒）", timeout)

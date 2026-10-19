@@ -5,6 +5,7 @@
 | 型号 | 接入路线 | 文档 |
 | --- | --- | --- |
 | GW Instek GPD-4303S | USB 虚拟串口；优先 PyVISA ASRL，9600 baud / 8N1 / LF | [型号说明](gpd-4303s.md) |
+| 芯明天 XMT（完整型号待核） | USB 串口 / VISA ASRL；COM 参数由现场配置指定 | [型号说明](coremorrow-xmt.md) |
 | Keithley 2231A-30-3 | 2231A-001 USB 适配器 / 虚拟串口 | [型号说明](keithley-2231a.md) |
 | Siglent SPD4306X | USB / LAN VISA / 已配置 TCP Socket | [型号说明](spd4306x.md) |
 | ITECH IT6322 | RS-232 / 已安装 USB 或 GPIB 接口 | [型号说明](it6322.md) |

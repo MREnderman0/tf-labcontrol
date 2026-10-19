@@ -38,6 +38,11 @@ class XmtSerialTransport(SerialTransport):
                 self.close()
             raise
 
+    def write_frame(self, payload: bytes) -> None:
+        """Send a command with no response; callers perform explicit readback."""
+
+        self.write(payload)
+
 
 class XmtVisaTransport(VisaTransport):
     def __init__(self, runtime: VisaRuntime, resource: str, baud_rate: int, timeout: float) -> None:
@@ -67,6 +72,11 @@ class XmtVisaTransport(VisaTransport):
                 self.close()
             raise
 
+    def write_frame(self, payload: bytes) -> None:
+        """Send a command with no response; callers perform explicit readback."""
+
+        self.write(payload)
+
 
 def create_transport(config: ConnectionConfig, runtime: VisaRuntime):
     if config.transport == "serial":
@@ -74,4 +84,3 @@ def create_transport(config: ConnectionConfig, runtime: VisaRuntime):
     if config.transport == "visa":
         return XmtVisaTransport(runtime, config.resource, config.baud_rate, config.timeout)
     raise Unsupported("CoreMorrow XMT requires transport=serial or transport=visa")
-

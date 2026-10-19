@@ -1,0 +1,285 @@
+{
+  "dll_sha256": "9f7bce57e3fb94fadde8e1db8b203cc69c0d1c3b281ffc462a322a673ff154f8",
+  "offline": true,
+  "rows": [
+    {
+      "channel": 0,
+      "shape": 90,
+      "parameters": [
+        0.2,
+        1.0,
+        0.1
+      ],
+      "frames": [
+        "aa 01 14 0f 00 00 5a 00 00 07 d0 00 01 00 00 00 00 03 e8 d7"
+      ]
+    },
+    {
+      "channel": 0,
+      "shape": 70,
+      "parameters": [
+        0.2,
+        1.0,
+        0.1
+      ],
+      "frames": [
+        "aa 01 14 0f 00 00 46 00 00 07 d0 00 01 00 00 00 00 03 e8 cb"
+      ]
+    },
+    {
+      "channel": 0,
+      "shape": 83,
+      "parameters": [
+        0.2,
+        1.0,
+        0.1
+      ],
+      "frames": [
+        "aa 01 14 0f 00 00 53 00 00 07 d0 00 01 00 00 00 00 03 e8 de"
+      ]
+    },
+    {
+      "channel": 0,
+      "shape": 74,
+      "parameters": [
+        0.2,
+        1.0,
+        0.1
+      ],
+      "frames": [
+        "aa 01 14 0f 00 00 4a 00 00 07 d0 00 01 00 00 00 00 03 e8 c7"
+      ]
+    },
+    {
+      "channel": 1,
+      "shape": 90,
+      "parameters": [
+        0.2,
+        1.0,
+        0.1
+      ],
+      "frames": [
+        "aa 01 14 0f 00 01 5a 00 00 07 d0 00 01 00 00 00 00 03 e8 d6"
+      ]
+    },
+    {
+      "channel": 1,
+      "shape": 70,
+      "parameters": [
+        0.2,
+        1.0,
+        0.1
+      ],
+      "frames": [
+        "aa 01 14 0f 00 01 46 00 00 07 d0 00 01 00 00 00 00 03 e8 ca"
+      ]
+    },
+    {
+      "channel": 1,
+      "shape": 83,
+      "parameters": [
+        0.2,
+        1.0,
+        0.1
+      ],
+      "frames": [
+        "aa 01 14 0f 00 01 53 00 00 07 d0 00 01 00 00 00 00 03 e8 df"
+      ]
+    },
+    {
+      "channel": 1,
+      "shape": 74,
+      "parameters": [
+        0.2,
+        1.0,
+        0.1
+      ],
+      "frames": [
+        "aa 01 14 0f 00 01 4a 00 00 07 d0 00 01 00 00 00 00 03 e8 c6"
+      ]
+    },
+    {
+      "channel": 2,
+      "shape": 90,
+      "parameters": [
+        0.2,
+        1.0,
+        0.1
+      ],
+      "frames": [
+        "aa 01 14 0f 00 02 5a 00 00 07 d0 00 01 00 00 00 00 03 e8 d5"
+      ]
+    },
+    {
+      "channel": 2,
+      "shape": 70,
+      "parameters": [
+        0.2,
+        1.0,
+        0.1
+      ],
+      "frames": [
+        "aa 01 14 0f 00 02 46 00 00 07 d0 00 01 00 00 00 00 03 e8 c9"
+      ]
+    },
+    {
+      "channel": 2,
+      "shape": 83,
+      "parameters": [
+        0.2,
+        1.0,
+        0.1
+      ],
+      "frames": [
+        "aa 01 14 0f 00 02 53 00 00 07 d0 00 01 00 00 00 00 03 e8 dc"
+      ]
+    },
+    {
+      "channel": 2,
+      "shape": 74,
+      "parameters": [
+        0.2,
+        1.0,
+        0.1
+      ],
+      "frames": [
+        "aa 01 14 0f 00 02 4a 00 00 07 d0 00 01 00 00 00 00 03 e8 c5"
+      ]
+    },
+    {
+      "frequency": 0.001,
+      "channel": 0,
+      "shape": 90,
+      "parameters": [
+        0.4,
+        0.001,
+        0.3
+      ],
+      "frames": [
+        "aa 01 14 0f 00 00 5a 00 00 0f a0 00 00 00 0a 00 00 0b b8 fc"
+      ]
+    },
+    {
+      "frequency": 0.01,
+      "channel": 0,
+      "shape": 90,
+      "parameters": [
+        0.4,
+        0.01,
+        0.3
+      ],
+      "frames": [
+        "aa 01 14 0f 00 00 5a 00 00 0f a0 00 00 00 64 00 00 0b b8 92"
+      ]
+    },
+    {
+      "frequency": 0.1,
+      "channel": 0,
+      "shape": 90,
+      "parameters": [
+        0.4,
+        0.1,
+        0.3
+      ],
+      "frames": [
+        "aa 01 14 0f 00 00 5a 00 00 0f a0 00 00 03 e8 00 00 0b b8 1d"
+      ]
+    },
+    {
+      "frequency": 0.5,
+      "channel": 0,
+      "shape": 90,
+      "parameters": [
+        0.4,
+        0.5,
+        0.3
+      ],
+      "frames": [
+        "aa 01 14 0f 00 00 5a 00 00 0f a0 00 00 13 88 00 00 0b b8 6d"
+      ]
+    },
+    {
+      "frequency": 1.0,
+      "channel": 0,
+      "shape": 90,
+      "parameters": [
+        0.4,
+        1.0,
+        0.3
+      ],
+      "frames": [
+        "aa 01 14 0f 00 00 5a 00 00 0f a0 00 01 00 00 00 00 0b b8 f7"
+      ]
+    },
+    {
+      "frequency": 2.0,
+      "channel": 0,
+      "shape": 90,
+      "parameters": [
+        0.4,
+        2.0,
+        0.3
+      ],
+      "frames": [
+        "aa 01 14 0f 00 00 5a 00 00 0f a0 00 02 00 00 00 00 0b b8 f4"
+      ]
+    },
+    {
+      "frequency": 100.0,
+      "channel": 0,
+      "shape": 90,
+      "parameters": [
+        0.4,
+        100.0,
+        0.3
+      ],
+      "frames": [
+        "aa 01 14 0f 00 00 5a 00 00 0f a0 00 64 00 00 00 00 0b b8 92"
+      ]
+    },
+    {
+      "frequency": 1000.0,
+      "channel": 0,
+      "shape": 90,
+      "parameters": [
+        0.4,
+        1000.0,
+        0.3
+      ],
+      "frames": [
+        "aa 01 14 0f 00 00 5a 00 00 0f a0 03 e8 00 00 00 00 0b b8 1d"
+      ]
+    },
+    {
+      "frequency": 10000.0,
+      "channel": 0,
+      "shape": 90,
+      "parameters": [
+        0.4,
+        10000.0,
+        0.3
+      ],
+      "frames": [
+        "aa 01 14 0f 00 00 5a 00 00 0f a0 27 10 00 00 00 00 0b b8 c1"
+      ]
+    },
+    {
+      "stop": 0,
+      "frames": [
+        "aa 01 07 11 00 00 bd"
+      ]
+    },
+    {
+      "stop": 1,
+      "frames": [
+        "aa 01 07 11 00 01 bc"
+      ]
+    },
+    {
+      "stop": 2,
+      "frames": [
+        "aa 01 07 11 00 02 bf"
+      ]
+    }
+  ]
+}
