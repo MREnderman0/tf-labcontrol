@@ -8,7 +8,7 @@
     "models": [
       "XMT-compatible controller (exact model pending)"
     ],
-    "category": "multimeter",
+    "category": "power_supply",
     "channels": [
       1,
       2,
@@ -19,8 +19,8 @@
       7,
       8
     ],
-    "source": "https://www.coremorrow.com/",
-    "revision": "XMT serial frame observed from vendor DLL 25.09.26; exact model/E09 applicability pending",
+    "source": "https://www.coremorrow.com/en/proshow-26-313-1.html",
+    "revision": "E00.C3-13 positive 0..120 V control envelope from vendor E00.C table; serial frame and encoder verified, exact instrument serial and physical output pending",
     "identity_query": "XMT_READ_POWER_CONFIG",
     "error_query": "",
     "status": [
@@ -29,13 +29,154 @@
     "acquisition": ""
   },
   "capabilities": {
-    "category": "multimeter",
+    "category": "power_supply",
     "channels": [
       1,
       2,
       3
     ],
     "operations": [
+      {
+        "name": "control_state",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "Installed XMT_DLL_SER.h (CoreMorrow Control Software 25.09.26)",
+        "section": "Software command journal; no verified mode or waveform query in XMT_DLL_SER.h",
+        "verification": "no_verified_mode_or_waveform_readback; explicit_unknown_with_command_journal",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "standard_waveform",
+        "parameters": {
+          "waveform": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "SIN",
+              "SQUARE",
+              "TRIANGLE",
+              "SAWTOOTH"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          },
+          "frequency": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 0.0001,
+            "maximum": 10000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          },
+          "amplitude": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": 0.0001,
+            "maximum": 120.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          },
+          "offset": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": 0.0,
+            "maximum": 120.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.coremorrow.com/en/proshow-26-313-1.html",
+        "section": "XMT_COMMAND_WaveSetMultWave B3=15; Z/F/S/J; envelope offset +/- Vpp/2",
+        "verification": "vendor_encoder_verified; command_has_no_ack; physical_output_pending",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "waveform_stop",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "Installed XMT_DLL_SER.h (CoreMorrow Control Software 25.09.26)",
+        "section": "XMT_COMMAND_WaveSetMultWaveStop B3=17",
+        "verification": "vendor_encoder_verified_no_ack",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "normal_mode",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "Installed XMT_DLL_SER.h (CoreMorrow Control Software 25.09.26)",
+        "section": "Stop standard waveforms, restore saved DC values with bounded readback",
+        "verification": "software_readback; physical_output_pending",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "voltage",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": 0.0,
+            "maximum": 120.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.coremorrow.com/PIEZO_PRODUCT/catalog/en/Piezo%20Controller%20Software%20User%20Manual_CoreMorrow.pdf",
+        "section": "XMT_COMMAND_SinglePoint(B3=0,B4=0); B3=51 readback",
+        "verification": "official_e00_c_e03_00_13_positive_envelope_0_to_120V; wire_encoder_verified; physical_output_pending",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "measured_voltage",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.coremorrow.com/PIEZO_PRODUCT/catalog/en/Piezo%20Controller%20Software%20User%20Manual_CoreMorrow.pdf",
+        "section": "XMT_COMMAND_ReadMultChannelMoveOrVolt(B3=51,B4=0)",
+        "verification": "wire_verified_no_load_readback; physical_output_pending",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
       {
         "name": "power_config",
         "parameters": {},
@@ -67,6 +208,42 @@
     ]
   },
   "commands": {
+    "control_state": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "standard_waveform": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "waveform_stop": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "normal_mode": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "voltage": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "measured_voltage": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
     "power_config": {
       "writes": [],
       "query": "",

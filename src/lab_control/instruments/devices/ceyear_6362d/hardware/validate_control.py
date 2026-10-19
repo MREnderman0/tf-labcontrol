@@ -6,7 +6,6 @@ import argparse
 import hashlib
 import importlib.metadata
 import json
-import os
 import platform
 import re
 import time
@@ -72,6 +71,7 @@ class AuditTransport:
         self.capture_curves = True
         self.sequence = 0
         self.faulted = False
+        self.command_counts: dict[str, int] = {}
 
     def open(self):
         raise RuntimeError("Session owns transport opening")
@@ -97,6 +97,7 @@ class AuditTransport:
         if not self.writes_allowed or not any(re.fullmatch(p, command) for p in self.patterns):
             raise DeviceError("Command outside backed-up 6362D plan", "unsupported")
         self.log(tx=command)
+        self.command_counts[command] = self.command_counts.get(command, 0) + 1
         try:
             self.inner.write(command)
         except Exception as exc:
@@ -140,6 +141,12 @@ class AuditTransport:
     def query_binary(self, command, maximum):
         return self._query(command, lambda: self.inner.query_binary(command, maximum))
 
+    def query_fixed(self, command, count):
+        return self._query(command, lambda: self.inner.query_fixed(command, count))
+
+    def query_binary_flexible(self, command, count):
+        return self._query(command, lambda: self.inner.query_binary_flexible(command, count))
+
     def close(self):
         self.inner.close()
 
@@ -156,18 +163,26 @@ def frame_metadata(batch) -> dict:
         "axis_unit": trace.axis_unit,
         "axis_start": float(trace.axis[0]),
         "axis_stop": float(trace.axis[-1]),
+        "configuration_version": batch.configuration.get("_session_configuration_version"),
         "metadata": trace.metadata,
     }
 
 
-def read_trace(wire: AuditTransport, trace: str, axis: str, fmt: str) -> bytes:
+def read_trace(wire: AuditTransport, trace: str, axis: str, fmt: str, points: int | None = None) -> bytes:
     """Preserve the original framing, including binary backups before initialization."""
     command = f":TRACE:DATA:{axis}? {trace}"
     if fmt == "ASCII":
         return wire.query(command)
     if fmt not in {"REAL,32", "REAL,64"}:
         raise DeviceError("Unknown backup transfer format", "backup_unreliable")
-    return wire.query_binary(command, 50001 * (4 if fmt == "REAL,32" else 8))
+    width = 4 if fmt == "REAL,32" else 8
+    flexible_query = getattr(wire, "query_binary_flexible", None)
+    if points is not None and flexible_query:
+        return flexible_query(command, points * width)
+    fixed_query = getattr(wire, "query_fixed", None)
+    if points is not None and fixed_query:
+        return fixed_query(command, points * width)
+    return wire.query_binary(command, 50001 * width)
 
 
 class MetadataRecording(Recording):
@@ -206,6 +221,9 @@ def verify(
     leave_stopped=False,
     x_atol_nm: float | None = None,
     y_atol_db: float | None = None,
+    auto_single_frames: int = 0,
+    auto_record_frames: int = 10,
+    auto_interval: float = 10.0,
 ) -> dict:
     folder.mkdir(parents=True, exist_ok=False)
     report: dict[str, Any] = {
@@ -248,6 +266,11 @@ def verify(
         ),
         "panel_evidence": {"original_scan": original_scan, "trigger": trigger},
         "scan_restore_policy": "user_authorized_leave_stopped" if leave_stopped else "restore_original",
+        "automatic_single_scan": {
+            "requested_frames": auto_single_frames,
+            "requested_recorded_frames": auto_record_frames,
+            "interval_seconds": auto_interval,
+        },
         "trigger_policy": "unchanged; unknown option commands are not sent",
         "operations": [],
         "matrix": MATRIX,
@@ -291,7 +314,7 @@ def verify(
 
         def xy(fmt):
             adapter.set_transfer_format(fmt)
-            return tuple(read_trace(wire, "TRA", axis, fmt) for axis in ("X", "Y"))
+            return tuple(read_trace(wire, "TRA", axis, fmt, count) for axis in ("X", "Y"))
 
         ascii_xy = run(lambda: xy("ASCII"))
         binary_xy = run(lambda: xy("REAL,64"))
@@ -312,20 +335,90 @@ def verify(
             report["frames"].append(frame_metadata(batch))
         report["stages"][stage] = "passed"
         mark("monitoring")
-        if start_scan:
+        if auto_single_frames:
+            if start_scan:
+                raise DeviceError("Automatic single-scan validation requires original scan stopped", "backup_unreliable")
+            if auto_single_frames < 5 or auto_record_frames < 10 or not 0.5 <= auto_interval <= 60:
+                raise DeviceError("Automatic single-scan validation needs at least 5 frames, 10 recorded frames and a 0.5..60 s interval", "invalid_parameter")
+        if start_scan and not auto_single_frames:
             apply("repeat")
         with app.monitoring.lock:
+            single_commands_before = wire.command_counts.get(":INITIATE", 0)
             app.monitoring.start(
-                key, (AcquisitionRequest("spectrum"),), cadence="fastest", mode="optical", record_interval=None
+                key,
+                (
+                    AcquisitionRequest("spectrum", points=2001, initiate=bool(auto_single_frames), confirmed=bool(auto_single_frames)),
+                ),
+                cadence="interval" if auto_single_frames else "fastest",
+                interval=auto_interval if auto_single_frames else 0.5,
+                mode="optical",
+                record_interval=None,
             )
-            app.monitoring.set_recording(key, True)
         start = time.monotonic()
         try:
-            while time.monotonic() - start < 60:
-                task = app.monitoring.tasks[key]
-                if task.error or not task.running:
-                    raise DeviceError(task.error or "Monitoring stopped", "monitor_failed")
-                time.sleep(0.2)
+            task = app.monitoring.tasks[key]
+            if auto_single_frames:
+                app.monitoring.set_recording(key, True)
+                while task.sequence < auto_single_frames:
+                    if task.error or not task.running:
+                        raise DeviceError(task.error or "Monitoring stopped", "monitor_failed")
+                    time.sleep(0.2)
+                report["automatic_single_scan"] = {
+                    **report["automatic_single_scan"],
+                    "completed_frames": task.sequence,
+                    "single_commands": wire.command_counts.get(":INITIATE", 0) - single_commands_before,
+                }
+                app.monitoring.set_recording(key, False)
+                if task.recorder:
+                    deadline = time.monotonic() + 30
+                    while not task.recorder.binary_done:
+                        if time.monotonic() > deadline:
+                            raise DeviceError("Recording drain did not finish before parameter change", "monitor_failed")
+                        time.sleep(0.2)
+                # Change each exposed optical setting while the scanner is live;
+                # session serialization drops any frame carrying the old snapshot.
+                changes = (
+                    ("start_wavelength", 1542),
+                    ("stop_wavelength", 1558),
+                    ("rbw", 0.2),
+                    ("sensitivity", "MID"),
+                )
+                report["monitoring_parameter_changes"] = []
+                before_recorded = len(report.get("recorded_metadata", []))
+                for operation, value in changes:
+                    result = apply(operation, value)
+                    actual = run(lambda op=operation: adapter.read(op))
+                    report["monitoring_parameter_changes"].append(
+                        {"operation": operation, "requested": value, "readback": actual, "result": jsonable(result)}
+                    )
+                app.monitoring.set_recording(key, True)
+                deadline = time.monotonic() + max(180, auto_record_frames * auto_interval + 60)
+                while len(report.get("recorded_metadata", [])) - before_recorded < auto_record_frames:
+                    if task.error or not task.running:
+                        raise DeviceError(task.error or "Monitoring stopped", "monitor_failed")
+                    if time.monotonic() > deadline:
+                        raise DeviceError("Automatic single-scan recording deadline exceeded", "monitor_failed")
+                    time.sleep(0.2)
+                after_change = report.get("recorded_metadata", [])[before_recorded:]
+                if any(
+                    abs(float(frame["axis_start"]) - 1542) > 1e-6
+                    or abs(float(frame["axis_stop"]) - 1558) > 1e-6
+                    for frame in after_change
+                ):
+                    raise DeviceError("A pre-change optical frame was recorded after configuration change", "configuration_changed")
+                report["monitoring_parameter_changes_summary"] = {
+                    "recorded_before_change": before_recorded,
+                    "recorded_after_change": len(after_change),
+                    "post_change_axes": sorted({(frame["axis_start"], frame["axis_stop"]) for frame in after_change}),
+                    "recording_disabled_during_change": True,
+                }
+            else:
+                app.monitoring.set_recording(key, True)
+                while time.monotonic() - start < 60:
+                    task = app.monitoring.tasks[key]
+                    if task.error or not task.running:
+                        raise DeviceError(task.error or "Monitoring stopped", "monitor_failed")
+                    time.sleep(0.2)
         finally:
             app.monitoring.stop(key).result(180)
         task = app.monitoring.tasks[key]
@@ -334,12 +427,16 @@ def verify(
             "seconds": time.monotonic() - start,
             "frames": task.sequence,
             "recorded_frames": recorded,
+            "single_commands": wire.command_counts.get(":INITIATE", 0) - single_commands_before,
+            "acquisition_mode": "single_per_frame" if auto_single_frames else "passive",
         }
         if not task.sequence:
             raise DeviceError("No valid monitoring frames", "monitor_failed")
-        if recorded != task.sequence:
+        if auto_single_frames and recorded < auto_record_frames:
+            raise DeviceError("Automatic single-scan recording did not retain enough frames", "monitor_failed")
+        if not auto_single_frames and recorded != task.sequence:
             raise DeviceError("Metadata recording did not retain every monitoring frame", "monitor_failed")
-        if start_scan:
+        if start_scan and not auto_single_frames:
             apply("stop")
         report["stages"][stage] = "passed"
 
@@ -356,9 +453,7 @@ def verify(
         ):
             raise DeviceError("One exact Ceyear 6362D LAN asset and serial required", "identity_required")
         home = application_home()
-        report["physical_paths"] = verify_runtime_paths(
-            home, Path(os.environ["LOCALAPPDATA"]) / "TF-LabControl"
-        )
+        report["physical_paths"] = verify_runtime_paths(home, home)
         if not folder.absolute().is_relative_to((home / "hardware-tests").absolute()):
             raise DeviceError("Hardware batches must use the formal runtime", "path_redirected")
         app = ApplicationRuntime((config,))
@@ -412,7 +507,11 @@ def verify(
                 raise DeviceError("Other active traces have no qualified recovery", "backup_unreliable")
             if count:
                 for axis in ("X", "Y"):
-                    raw = run(lambda: read_trace(wire, trace, axis, original["transfer_format"]))
+                    raw = run(
+                        lambda: read_trace(
+                            wire, trace, axis, original["transfer_format"], count
+                        )
+                    )
                     report["trace_backups"][trace][axis] = {
                         "bytes": len(raw),
                         "sha256": hashlib.sha256(raw).hexdigest(),
@@ -490,7 +589,7 @@ def verify(
             ):
                 raise DeviceError("New sweep data does not match tested range/points", "readback_mismatch")
             report["stages"][stage] = "passed"
-            transfer_tests(True)
+            transfer_tests(not auto_single_frames)
     except Exception as exc:
         report.update(
             error=str(exc),
@@ -598,6 +697,15 @@ def verify(
             + "\n".join(f"|{k}|{v}|" for k, v in report["stages"].items())
             + "\n\n最终状态："
             + report["final_state"]
+            + "\n\n自动单次扫描："
+            + json.dumps(report.get("automatic_single_scan", {}), ensure_ascii=False)
+            + "\n\n监测："
+            + json.dumps(report.get("monitoring", {}), ensure_ascii=False)
+            + "\n\n监测中参数变更："
+            + json.dumps(report.get("monitoring_parameter_changes", []), ensure_ascii=False)
+            + "\n\n配置切换记录核对："
+            + json.dumps(report.get("monitoring_parameter_changes_summary", {}), ensure_ascii=False)
+            + "\n\n物理输出：未测试（没有校准参考光源）"
             + "\n\n异常："
             + report.get("error", "无")
             + "\n\n恢复异常："
@@ -623,6 +731,9 @@ def main() -> int:
     )
     parser.add_argument("--x-atol-nm", type=float)
     parser.add_argument("--y-atol-db", type=float)
+    parser.add_argument("--auto-single-frames", type=int, default=0, help="Run one confirmed single scan per monitoring frame")
+    parser.add_argument("--auto-record-frames", type=int, default=10, help="Valid metadata-only frames required after the live setting change")
+    parser.add_argument("--auto-interval", type=float, default=10.0, help="Target interval for automatic single scans (0.5..60 s)")
     args = parser.parse_args()
     configs = load_config(args.config)
     if len(configs) != 1:
@@ -644,6 +755,9 @@ def main() -> int:
         leave_stopped=args.leave_stopped,
         x_atol_nm=args.x_atol_nm,
         y_atol_db=args.y_atol_db,
+        auto_single_frames=args.auto_single_frames,
+        auto_record_frames=args.auto_record_frames,
+        auto_interval=args.auto_interval,
     )
     print(
         json.dumps(

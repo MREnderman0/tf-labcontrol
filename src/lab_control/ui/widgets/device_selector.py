@@ -4,6 +4,7 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from lab_control.application.bulk_connection import device_label
+from lab_control.application.catalog import surface_applicable
 from lab_control.application.controls import CATEGORY_LABELS, slot_label
 from lab_control.ui.controller import WorkspaceController, display_connection_state, state_label
 from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
@@ -13,9 +14,17 @@ class DeviceSelector(QWidget):
     selected = Signal(str)
     channel_changed = Signal(int)
 
-    def __init__(self, controller: WorkspaceController, category: str, parent=None, *, compact=False) -> None:
+    def __init__(
+        self,
+        controller: WorkspaceController,
+        category: str,
+        parent=None,
+        *,
+        compact=False,
+        surface: str | None = None,
+    ) -> None:
         super().__init__(parent)
-        self.controller, self.category = controller, category
+        self.controller, self.category, self.surface = controller, category, surface
         self.device_id = ""
         self.signature: tuple[tuple[str, str], ...] | None = None
         layout = QVBoxLayout(self)
@@ -47,7 +56,11 @@ class DeviceSelector(QWidget):
         self.refresh()
 
     def refresh(self) -> None:
-        records = self.controller.connected_records(self.category)
+        records = tuple(
+            record
+            for record in self.controller.connected_records(self.category)
+            if self.surface is None or surface_applicable(record, self.surface)
+        )
         entries = []
         for entry in records:
             label = device_label(entry)

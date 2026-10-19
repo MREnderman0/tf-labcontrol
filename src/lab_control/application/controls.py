@@ -35,6 +35,10 @@ OPERATION_LABELS = dict(
     line.split("=", 1)
     for line in """
 waveform=波形
+control_state=控制状态
+standard_waveform=标准波形
+waveform_stop=停止标准波形
+normal_mode=常规模式
 frequency=频率
 amplitude=幅度
 offset=偏移

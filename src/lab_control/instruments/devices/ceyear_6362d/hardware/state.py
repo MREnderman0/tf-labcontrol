@@ -9,17 +9,15 @@ import numpy as np
 from lab_control.domain.instruments import DeviceCommand, DeviceError
 
 from ..adapter import FRAME_SETTINGS, WAVELENGTHS, Ceyear6362DAdapter, agrees
-from ..protocol import RESOLUTIONS, values, wavelength_axis
+from ..protocol import RESOLUTIONS, SENSITIVITIES, values, wavelength_axis
 
 SETTINGS = (*FRAME_SETTINGS, "active_trace")
 MATRIX = (
     ("points_auto", False),
-    ("rbw", 0.1),
-    ("rbw", 0.2),
+    *(('rbw', value) for value in RESOLUTIONS),
     ("sweep_points", 1001),
     ("sweep_points", 2001),
-    ("sensitivity", "NORMAL"),
-    ("sensitivity", "MID"),
+    *(("sensitivity", value) for value in SENSITIVITIES.values()),
 )
 # Fixed before any write; test points are exact settings, not a physical accuracy claim.
 TOLERANCES = {op: 1e-6 for op in WAVELENGTHS}

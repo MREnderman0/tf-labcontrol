@@ -6,6 +6,7 @@ from lab_control.instruments.devices.definition import DeviceDefinition, DeviceD
 
 from .adapter import Ceyear6362DAdapter
 from .authentication import discovery_identity
+from .discovery import normalize_discovery_config
 from .profile import profile
 
 DEFINITION = DeviceDefinition(
@@ -19,4 +20,5 @@ DEFINITION = DeviceDefinition(
     deployment_components=("rs-visa",),
     identity_requires_adapter=True,
     discovery_identity=discovery_identity,
+    discovery_config=normalize_discovery_config,
 )

@@ -15,6 +15,48 @@ NUMERIC = (*FREQUENCY, "reference_level", "attenuation", "rbw", "vbw")
 AUTOMATIC = {"attenuation": "attenuation_auto", "rbw": "rbw_auto", "vbw": "vbw_auto"}
 SETTINGS = (*NUMERIC, *AUTOMATIC.values())
 
+OPTICAL_SETTINGS = ("start_wavelength", "stop_wavelength", "rbw", "sensitivity")
+
+
+def wavelength_draft(values: dict[str, Any], changed: str, low: float, high: float) -> dict[str, float]:
+    """Return a bounded optical wavelength draft without changing instrument state."""
+    start = float(values.get("start_wavelength", low))
+    stop = float(values.get("stop_wavelength", high))
+    if not all(math.isfinite(value) for value in (start, stop)):
+        raise ValidationError("波长范围必须是有限数")
+    start = max(low, min(high, start))
+    stop = max(low, min(high, stop))
+    if start > stop:
+        if changed == "start_wavelength":
+            start = stop
+        elif changed == "stop_wavelength":
+            stop = start
+        else:
+            raise ValidationError("起始波长不能高于终止波长")
+    return {"start_wavelength": start, "stop_wavelength": stop}
+
+
+def prepare_optical_changes(
+    current: dict[str, Any], target: dict[str, Any], caps: CapabilitySet
+) -> list[DeviceCommand]:
+    """Validate the four optical settings and order endpoint writes safely."""
+    for name in OPTICAL_SETTINGS:
+        if name not in target:
+            raise ValidationError(f"缺少光学参数：{name}")
+        caps.get(name).validate({"value": target[name]})
+    start, stop = float(target["start_wavelength"]), float(target["stop_wavelength"])
+    if not (math.isfinite(start) and math.isfinite(stop)) or start > stop:
+        raise ValidationError("起始波长不能高于终止波长")
+    changed = {name for name in OPTICAL_SETTINGS if current.get(name) != target[name]}
+    order = ["start_wavelength", "stop_wavelength"]
+    if target["start_wavelength"] > current.get("stop_wavelength", target["stop_wavelength"]):
+        order.reverse()
+    return [DeviceCommand(name, {"value": target[name]}) for name in order if name in changed] + [
+        DeviceCommand(name, {"value": target[name]})
+        for name in ("rbw", "sensitivity")
+        if name in changed
+    ]
+
 
 def frequency_draft(values: dict[str, Any], changed: str, low: float, high: float) -> dict[str, float]:
     """Clamp the edited pair as a whole, preserving a center/span draft at the band edges."""

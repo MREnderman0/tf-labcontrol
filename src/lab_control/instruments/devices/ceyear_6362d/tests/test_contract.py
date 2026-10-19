@@ -175,6 +175,30 @@ def test_scan_completion_uses_vendor_status_with_bounded_timeout():
     assert "*OPC?" not in item.transport.history
 
 
+def test_initiated_acquisition_sends_one_single_command_per_request():
+    item = adapter()
+    batch = item.acquire(AcquisitionRequest("spectrum", initiate=True, confirmed=True))
+    assert batch.measurements[0].axis_unit == "nm"
+    assert item.transport.history.count(":INITIATE:SMODE SINGLE") == 1
+    assert item.transport.history.count(":INITIATE") == 1
+
+
+def test_initiated_acquisition_requires_confirmation_before_any_io():
+    item = adapter()
+    with pytest.raises(DeviceError, match="confirmation"):
+        item.acquire(AcquisitionRequest("spectrum", initiate=True))
+    assert item.transport.history == ["*IDN?"]
+
+
+def test_initiated_acquisition_timeout_is_not_retried():
+    item = adapter()
+    item.transport.values[":STATUS:OPERATION:CONDITION?"] = b"0"
+    with pytest.raises(DeviceError) as error:
+        item.acquire(AcquisitionRequest("spectrum", initiate=True, confirmed=True))
+    assert error.value.code == "acquisition_failed"
+    assert item.transport.history.count(":INITIATE") == 1
+
+
 def test_repeat_status_is_not_mislabeled_as_idle():
     item = adapter()
     item.transport.values[":INITIATE:SMODE?"] = b"2"
@@ -265,10 +289,15 @@ def test_frozen_ascii_real64_qualification_and_production_decoding(monkeypatch, 
     np.testing.assert_allclose(batch.measurements[0].values, [-62.5, -12, -60.5])
 
 
-@pytest.mark.parametrize("reply", [b"#18abc", b"#08abcdefgh", b"#18abcdefghGARBAGE", b"abcdefgh"])
+@pytest.mark.parametrize("reply", [b"#18abc", b"#08abcdefgh", b"#18abcdefghGARBAGE"])
 def test_binary_truncation_or_bad_framing_is_rejected(reply):
     with pytest.raises(DeviceError):
         p.values(reply, 1, "REAL,64", "<")
+
+
+def test_real64_raw_payload_is_accepted_for_qualified_socket_framing():
+    raw = np.asarray([1.54e-6], dtype="<f8").tobytes()
+    np.testing.assert_allclose(p.values(raw, 1, "REAL,64", "<"), [1.54e-6])
 
 
 def test_wrong_endian_is_not_automatically_retried():

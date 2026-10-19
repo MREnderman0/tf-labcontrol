@@ -89,6 +89,30 @@ class SimulatedInstrument:
                     for name, (unit, low, high) in SIMULATED_CATEGORIES[category].items()
                 ),
             )
+            if category == "optical_spectrometer":
+                # Keep the demo on the same four controls as the real optical page.
+                optical = list(self.caps.operations)
+                optical.extend(
+                    (
+                        Capability(
+                            "rbw",
+                            {"value": Parameter("number", "nm", 0.02, 2, choices=("0.02", "0.05", "0.1", "0.2", "0.5", "1", "2"))},
+                            readable=True,
+                            writable=True,
+                            verification="simulated",
+                            source="simulation only",
+                        ),
+                        Capability(
+                            "sensitivity",
+                            {"value": Parameter("enum", "", choices=("NORMAL", "MID", "HIGH1", "HIGH2", "HIGH3"))},
+                            readable=True,
+                            writable=True,
+                            verification="simulated",
+                            source="simulation only",
+                        ),
+                    )
+                )
+                self.caps = replace(self.caps, operations=tuple(optical))
         defaults = {
             "frequency": 1000,
             "amplitude": 1,
@@ -114,6 +138,7 @@ class SimulatedInstrument:
             "points": 1001,
             "start_wavelength": 1400,
             "stop_wavelength": 1600,
+            "rbw": 0.1,
         }
         if self.adapter_id == "pico.6404e":
             defaults["timebase"] = 10  # Mock timebase index, not a hardware GetTimebase result.
@@ -138,6 +163,7 @@ class SimulatedInstrument:
                             "range": "1",
                             "direction": "RISING",
                             "s_parameter": "S21",
+                            "sensitivity": "NORMAL",
                         }.get(name if name != "value" else cap.name, "")
                         value = next(
                             (v for v in param.choices if preferred and v.startswith(preferred)),
@@ -349,8 +375,8 @@ class SimulatedInstrument:
                     self._value(1, "stop_wavelength", 1600),
                     request.points,
                 )
-                values = np.exp(-(((x - 1550) / 8) ** 2))
-                unit, axis_unit = "a.u.", "nm"
+                values = -55 + 48 * np.exp(-(((x - 1550) / 8) ** 2))
+                unit, axis_unit = "dBm", "nm"
             result.append(
                 Measurement(
                     quantity, unit, values, channel, x, axis_unit, Quality.SIMULATED, metadata=metadata

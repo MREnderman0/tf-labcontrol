@@ -86,9 +86,10 @@ def values(raw: bytes, count: int, fmt: str, order: str | None) -> np.ndarray:
         if fmt not in {"REAL,32", "REAL,64"} or order not in {"<", ">"}:
             raise DeviceError("6362D binary byte order is not qualified", "unsupported")
         width = 8 if fmt == "REAL,64" else 4
-        if not raw.startswith(b"#"):
-            raise DeviceError("6362D binary reply has no definite block", "parse_error")
-        payload = block_payload(raw)
+        # B.11 SOCKET replies from the 6362D are fixed-length binary payloads
+        # without an IEEE header.  Keep accepting a complete IEEE block for
+        # VISA/back-end fixtures, but never infer a length from a timeout.
+        payload = block_payload(raw) if raw.startswith(b"#") else raw
         if len(payload) != count * width:
             raise DeviceError("6362D binary trace byte count mismatch", "parse_error")
         result = np.frombuffer(payload, dtype=f"{order}f{width}").astype(np.float64)
