@@ -242,6 +242,37 @@ class VisaTransport:
         self.write(payload)
         return self._read_binary(max_bytes)
 
+    @synchronized
+    @measured("query")
+    def query_binary_flexible(self, payload: bytes | str, payload_bytes: int) -> bytes:
+        """Read a qualified raw payload or an IEEE block from a SOCKET resource."""
+        if not 1 <= payload_bytes <= MAX_MESSAGE:
+            raise DeviceError("Invalid binary payload size", "invalid_parameter")
+        if self.handle is None:
+            raise DeviceError("Binary connection requires explicit reconnect", "disconnected")
+        old = self.handle.read_termination
+        try:
+            self.write(payload)
+            self.handle.read_termination = None
+            first = self.reader.exact(1)
+            if first == b"#":
+                self.reader.buffer[:0] = first
+                return self.reader.definite_block(payload_bytes)
+            body = first + self.reader.exact(payload_bytes - 1)
+            trailer = self.reader.exact(1)
+            if trailer == b"\r":
+                trailer += self.reader.exact(1)
+            if trailer not in (b"\n", b"\r\n"):
+                raise DeviceError("Invalid raw binary trailer", "parse_error")
+            return body
+        except Exception as exc:
+            error = self._error(exc)
+            self.close()
+            raise error from exc
+        finally:
+            if self.handle is not None:
+                self.handle.read_termination = old
+
     @measured("read")
     def _read_binary(self, max_bytes: int) -> bytes:
         from pyvisa.constants import StatusCode

@@ -214,3 +214,30 @@ class ProcessLease(FileLease):
 
     def __init__(self, root: Path, *, shared: bool = False) -> None:
         super().__init__(root / "hardware.lock", shared=shared, code="process_busy")
+        if not shared:
+            self._clear_redirected_owner_metadata()
+
+    def _clear_redirected_owner_metadata(self) -> None:
+        """Remove an advisory file left in another AppData view after a clean claim.
+
+        The byte-range lock is authoritative.  This runs only after this
+        process has acquired the canonical lock, so a live legacy process
+        cannot have its advisory metadata removed while it still owns it.
+        """
+        if self._owner_metadata is None:
+            return
+        logical_root = Path(
+            os.environ.get("LAB_CONTROL_HOME")
+            or Path(os.environ.get("LOCALAPPDATA", Path.home())) / "TF-LabControl"
+        )
+        logical_lock = logical_root / "hardware.lock"
+        logical_metadata = logical_lock.with_suffix(logical_lock.suffix + ".owner.json")
+        if logical_metadata == self._owner_metadata or not logical_metadata.exists():
+            return
+        try:
+            if os.path.samefile(logical_lock, self.path):
+                logical_metadata.unlink(missing_ok=True)
+        except OSError:
+            # Advisory cleanup must never turn a successfully acquired lock
+            # into a failed hardware launch.
+            return

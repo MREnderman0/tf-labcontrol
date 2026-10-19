@@ -122,6 +122,38 @@ class ScpiSocketTransport(TcpSocketTransport):
             raise
 
     @synchronized
+    @measured("query")
+    def query_binary_flexible(self, payload: bytes | str, payload_bytes: int) -> bytes:
+        """Read a known-size raw payload or an IEEE block without guessing by timeout.
+
+        A few model-specific SOCKET protocols return fixed binary data directly,
+        while another command on the same session uses an IEEE block.  The
+        caller supplies the qualified payload size; a leading ``#`` selects the
+        validated block parser, otherwise the exact payload and line trailer
+        are consumed.
+        """
+        if not 1 <= payload_bytes <= MAX_MESSAGE:
+            raise DeviceError("Invalid binary payload size", "invalid_parameter")
+        if self.sock is None:
+            raise DeviceError("Binary connection requires explicit reconnect", "disconnected")
+        try:
+            self.write(payload)
+            first = self.reader.exact(1)
+            if first == b"#":
+                self.reader.buffer[:0] = first
+                return self.reader.definite_block(payload_bytes)
+            body = first + self.reader.exact(payload_bytes - 1)
+            trailer = self.reader.exact(1)
+            if trailer == b"\r":
+                trailer += self.reader.exact(1)
+            if trailer not in (b"\n", b"\r\n"):
+                raise DeviceError("Invalid raw binary trailer", "parse_error")
+            return body
+        except Exception:
+            self.close()
+            raise
+
+    @synchronized
     def query_timeout(self, payload: bytes | str, seconds: float) -> bytes:
         if not 0.1 <= seconds <= 60:
             raise DeviceError("Invalid query timeout", "invalid_parameter")

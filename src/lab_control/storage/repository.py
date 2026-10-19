@@ -14,15 +14,14 @@ from uuid import uuid4
 import numpy as np
 
 from lab_control.domain.instruments import DeviceIdentity, MeasurementBatch, jsonable, utc_now
+from lab_control.domain.workspace import GENERAL
 from lab_control.storage.frame_timing import TIMING_COLUMNS, timing_columns
 from lab_control.storage.paths import BatchSaveContext, SaveContext, SaveKind
+from lab_control.storage.runtime import runtime_home
 
 
 def application_home() -> Path:
-    return Path(
-        os.environ.get("LAB_CONTROL_HOME")
-        or Path(os.environ.get("LOCALAPPDATA", Path.home())) / "TF-LabControl"
-    )
+    return runtime_home()
 
 
 class Repository:
@@ -155,18 +154,20 @@ class Repository:
             batch.root if batch else self.data_root, mode, kind, device_id, identity, adapter_id, batch=batch
         )
 
-    def create_recording(self, mode: str = "electronic", *, context: SaveContext | None = None, **options):
+    def create_recording(self, mode: str | None = None, *, context: SaveContext | None = None, **options):
         from lab_control.storage.recording import Recording
 
+        mode = (context.mode if context else GENERAL) if mode is None else mode
         return Recording(
             self.root, mode, context=context or self.new_save_context(mode, "continuous"), **options
         )
 
     def export(
-        self, batch: MeasurementBatch, mode: str = "electronic", *, context: SaveContext | None = None
+        self, batch: MeasurementBatch, mode: str | None = None, *, context: SaveContext | None = None
     ) -> Path:
         from lab_control.domain.instruments import ValidationError
 
+        mode = (context.mode if context else GENERAL) if mode is None else mode
         context = context or self.new_save_context(mode, "single_frame", identity=batch.identity)
         context.validate(mode, "single_frame")
         folder = context.prepare()

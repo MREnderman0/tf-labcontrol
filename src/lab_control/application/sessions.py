@@ -26,6 +26,7 @@ from lab_control.domain.instruments import (
     jsonable,
     utc_now,
 )
+from lab_control.domain.workspace import GENERAL
 from lab_control.storage.recording import Recording
 from lab_control.storage.repository import Repository
 from lab_control.transport.diagnostics import AcquisitionStatistics, capture_io
@@ -322,6 +323,15 @@ class SessionManager:
                 if identity.key:
                     self.leases.acquire(
                         device_id, (f"identity:{identity.key}", f"asset:{config.adapter}:{identity.serial}")
+                    )
+                bind_state = getattr(adapter, "bind_control_state", None)
+                if callable(bind_state):
+                    # Optional model-owned journal. Bind only after identity validation;
+                    # the hook must not perform device I/O or replay saved commands.
+                    state_key = f"device-control-state/{device_id}"
+                    bind_state(
+                        lambda: self.repository.load_workspace(state_key),
+                        lambda value: self.repository.save_workspace(state_key, value),
                     )
                 prepare = getattr(adapter, "prepare_acquisition", None)
                 session.acquisition_setup_enabled = configure_acquisition
@@ -765,7 +775,7 @@ class SessionManager:
         *,
         interval: float = 0.5,
         count: int | None = None,
-        mode: str = "electronic",
+        mode: str = GENERAL,
         cadence: str | None = None,
         record_interval: float | None = None,
         csv_interval: float = 5,

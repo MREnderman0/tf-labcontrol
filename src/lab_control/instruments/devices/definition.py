@@ -35,6 +35,15 @@ class DeviceDefinition:
     discovery_factory: Callable[[], Any] | None = None
     identity_requires_adapter: bool = False
     discovery_identity: Callable[[Any, ConnectionConfig], DeviceIdentity] | None = None
+    # Model-owned normalization for explicitly saved discovery endpoints.  The
+    # common discovery service supplies only the current physical IPv4 sources;
+    # transport selection and model-specific routing stay in the device pack.
+    discovery_config: Callable[[ConnectionConfig, tuple[str, ...]], ConnectionConfig] | None = None
+    # Optional workspace placement for power-supply model packages.  Existing
+    # power supplies remain monitoring-only by default; a package can opt into
+    # the dedicated management surface without changing its protocol profile.
+    management_surface: bool = False
+    monitoring_surface: bool = True
 
     @property
     def adapter_id(self) -> str:

@@ -27,7 +27,7 @@
 
 run.bat、Python 模块入口和 lab-control 统一调用 app.main，创建真实 ApplicationRuntime 和 RealWindow；内部测试和预览注入隔离 Mock ApplicationRuntime 并显示同一窗口；lab-control-cli 调用同一会话服务。配置文件只描述资源/适配器/驱动，不允许混入厂家命令。
 
-真实进程使用每用户固定位置的独占进程锁（即使更换 LAB_CONTROL_HOME 仍互斥），阻止本软件 GUI/CLI/Python 实测进程同时占用仪器。锁被占用时启动边界报告持有进程的 PID 和启动时间；这些信息写入临时的 `hardware.lock.owner.json`，正常退出时清理，操作系统锁本身仍是唯一的占用依据。不关闭其他厂商软件，其他程序占用会产生可解释错误。模拟 CLI 和单元测试不获取硬件进程锁，存储隔离在 simulation。
+真实进程使用每用户固定位置的独占进程锁（即使更换 LAB_CONTROL_HOME 仍互斥），并在 Windows AppData 视图重定向时解析到库存文件的最终物理运行根目录，阻止本软件 GUI/CLI/Python 实测进程同时占用仪器。锁被占用时启动边界报告持有进程的 PID 和启动时间；这些信息写入临时的 `hardware.lock.owner.json`，正常退出时清理，操作系统锁本身仍是唯一的占用依据。不关闭其他厂商软件，其他程序占用会产生可解释错误。模拟 CLI 和单元测试不获取硬件进程锁，存储隔离在 simulation。
 
 ## 数据流
 

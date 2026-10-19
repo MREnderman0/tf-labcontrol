@@ -2,7 +2,7 @@
 
 实机验证的原始批次与派生摘要遵循[记录规范](../testing/records.md)。`summary.json` 和 `overview/` 仅用于离线证据检索，不参与库存状态、会话或控制判断；原始通信、快照和恢复文件保留原样。
 
-领域对象定义在 domain/instruments.py，持久化由 storage/repository.py 完成。新记录统一使用设置中的数据保存一级目录；电子学与光学仅在元数据中区分，不增加目录层。历史 data/electronic 与 data/optical 保留原样。
+领域对象定义在 domain/instruments.py，持久化由 storage/repository.py 完成。新记录统一使用设置中的数据保存一级目录；新记录的工作区标识为 `general`，不增加目录层；旧接口仍接受 `electronic`、`optical` 元数据。历史 data/electronic 与 data/optical 保留原样。
 
 `AcquisitionRequest.consistency` 支持 `full`、`live`、`stream`，默认 `full`；`stream` 需要本次运行的非空 `context_id` 且不能启动物理扫描。批次 `validation=cached` 表示曲线为新读取、配置沿用已有快照，`settings_timestamps` 保留原时间。连续记录缓存帧在 `performance.acquisition_context_id` 中带来源编号，监测缓存不具备记录来源；不能把后者当作完整记录帧。手动显示快照可导出监测缓存及 live 帧，但保留原校验级别、时间及配置来源，不升级为 full。`_session_configuration_version` 和 `monitor_*` 是软件调度元数据，不是仪器读回。历史文件保持原样。
 
@@ -49,7 +49,7 @@
 
 storage/paths.py 的不可变 `SaveContext` 固定根目录、带时区开始时间、身份、设备 ID、适配器、模式、类型和记录标识。`BatchSaveContext` 预留共用根目录、开始时间及批次路径；仅显式批量任务传入它，分别启动的多台设备仍属于单设备采集。本版不新增批量采集界面。构造上下文不创建目录或曲线文件。
 
-`Repository.export()`、`create_recording()` 和 `Recording` 可选接收 `context`；未传入时仍支持原调用方式并生成新目录。界面保存当前帧、兼容的新读帧导出、连续记录及 CLI 在接受操作时建立上下文，再排队读取/写盘。修改根目录、跨午夜和后台 CSV 转换都不会改变已固定路径；单帧内容保留原帧时间及配置来源。
+`Repository.export()`、`create_recording()` 和 `Recording` 可选接收 `context`；未传入时仍支持原调用方式并生成新目录。仓储接口省略 `mode` 时使用上下文的标签，没有上下文则默认 `general`；显式标签与上下文不一致仍拒绝。界面保存当前帧、兼容的新读帧导出、连续记录及 CLI 在接受操作时建立上下文，再排队读取/写盘。修改根目录、跨午夜和后台 CSV 转换都不会改变已固定路径；单帧内容保留原帧时间及配置来源。
 
 连续记录开始时立即独占创建目录、中文记录说明及 `_raw/recording.json`。清单版本 1 保存 `kind`、`mode`、`scope`、`run_id`、可选 `batch_id`、`device_id`、`adapter_id`、原始 `identity`、`started_local` 与 `started_utc`；新增 `layout_version=2` 表示分析文件在顶层、原始文件在 `_raw`。不改变 SQLite 格式版本。缺少布局版本的历史目录按版本 1 读取；保存上下文可显式使用旧布局。准备失败明确报错并撤销记录状态及参数锁，不切换备用位置。无有效帧即停止仍保留说明、清单和零帧摘要，不产生曲线 CSV 或分段文件。
 
@@ -61,12 +61,12 @@ storage/paths.py 的不可变 `SaveContext` 固定根目录、带时区开始时
 
 workspace 使用键隔离，真实与模拟分别位于各自根目录：
 
-- `current_mode`：当前模式。
+- `current_mode`：正式界面固定为 `general`；原选择保存在迁移记录中。
 - `data_storage/root`：用户选择的数据保存一级目录的绝对路径；缺省或 null 使用本运行目录的 data。保存前进行创建及写入/读回检查，失败保留原设置。
-- `monitor_overview/all`：保存所有已连接可监测设备总览卡片的 `{enabled, interval}`。槽位存在时使用 `slot:<mode>:<slot>`，未绑定槽位使用稳定设备 ID；不保存列数、仪器句柄或运行状态。旧的 `monitor_overview/electronic` 与 `monitor_overview/optical` 会在读取时兼容迁移。
+- `monitor_overview/all`：保存所有已连接可监测设备总览卡片的 `{enabled, interval}`。槽位存在时使用 `slot:general:<slot>`，未绑定槽位使用稳定设备 ID；不保存列数、仪器句柄或运行状态。采样间隔同时写入并以 `monitor-timing/general/<device>` 作为设备级 canonical 设置，设备页和总览修改后双向同步；旧的 `monitor_overview/electronic` 与 `monitor_overview/optical` 在启动时一次性兼容迁移。
 - `monitoring_channels/optical_power_meter`：按光功率计功能槽位保存通道勾选列表；未绑定槽位使用稳定设备 ID。
 - `draft/<mode>/<device_id>/<channel>/<operation>`：`fields` 保存原输入值及单位倍率，`rows` 保存数组草稿；成功应用后清除该项，失败保留。
-- `demo_slots_initialized`：仅模拟入口首次初始化 A/B，避免再次启动覆盖用户绑定。
+- `demo_general_slots_initialized`：仅模拟入口首次初始化通用 A/B，避免再次启动覆盖用户绑定；原 `demo_slots_initialized` 键保留。
 
 总览恢复不自动采样；列数根据当前内容宽度重新计算。只有当前已连接且存在数据源的设备显示卡片。
 
@@ -82,7 +82,7 @@ candidates 以原始资源字符串为键，保留 candidateId、scanRunId、sou
 
 型号协议无法读出序列号时，明确选择的适配器和资源仍可并行建立会话；端口、别名和配置中的预期序列号分别承担占用隔离。预期序列号只作为用户资产标签和租约键，不能替代设备实际身份读回。
 
-`slots` 继续使用按模式索引的映射，例如 `{"electronic": "signal_generator:1", "optical": ""}`。缺少模式键代表该模式尚无绑定记录，空字符串代表明确未绑定。身份合并不得用不同的历史选择覆盖显式空绑定；相互矛盾时保留冲突。同型号不同序列号不会继承槽位。无需新增表或重建旧库存。
+`slots` 使用通用键，例如 `{"general": "signal_generator:1"}`；旧 `electronic`、`optical` 键保留原样。缺少键代表尚无绑定记录，空字符串代表明确未绑定。身份合并不得用不同的历史选择覆盖显式空绑定；相互矛盾时保留冲突。同型号不同序列号不会继承槽位。无需新增表或重建旧库存。
 
 `bind_slot(device_id, slot, mode, replace_device_id=...)` 的可选参数表示用户已确认替换的当前占用者；省略时占用仍报错，占用者变化时报 `slot_changed`，须重新确认。两台设备的任务状态和库存占用在同一锁定区间核对，仓储 `save_many()` 用一个 SQLite 事务提交双方记录，成功后才替换内存记录。事务失败不发布半完成状态；`slot_changed` 审计包含被替换设备 ID。
 
@@ -92,7 +92,7 @@ candidates 以原始资源字符串为键，保留 candidateId、scanRunId、sou
 
 snapshots 返回 stableDeviceId、sessionId、resource、adapterId、connectionState、activeTask、pending、lastStatus、lastError、identity。lastStatus 包含状态值和 UTC 时间。
 
-0.3.0 增加 monitoring、recording、configurationVersion、controlPending。监测任务存在时会话持续 busy，批次间也不会误允许断开。recording 在在途记录或写盘尚未结束时继续为真，用于模式锁。控制前值来自已读回/已接受缓存，并写入 operation_requested.before；没有历史值时为 null，不虚构。
+0.3.0 增加 monitoring、recording、configurationVersion、controlPending。监测任务存在时会话持续 busy，批次间也不会误允许断开。recording 在在途记录或写盘尚未结束时继续为真，用于参数锁。控制前值来自已读回/已接受缓存，并写入 operation_requested.before；没有历史值时为 null，不虚构。
 
 发现状态：unknown/identified/stale/unreachable/conflict。identified 要求当前存在证据与身份记录同时成立；仅保存历史 identity 不代表本次已发现。candidate 与 duplicate 是设计概念，本版候选通过 candidates 集合保存，重复资源通过合并或 conflict 表达，不增加虚假的连接状态。连接状态：connecting/connected/busy/degraded/error；没有会话即 disconnected。
 
@@ -157,3 +157,13 @@ NPZ 使用 NumPy 数据数组，不保存 pickle 对象。CSV 使用 UTF-8 BOM �
 审计记录连接参数、目标身份、操作请求/结果、步骤数、失败与清理事件；流任务记录开始/停止和错误。报告含测试范围、目标、时间、请求/读回、数据路径及 hardware_accepted=false。报告成功只代表执行了该次检查，不自动提升设备验证等级。
 
 HDF5、高频无限流写盘、完整实验/阈值索引、遥测和科学数据解析仍为后续设计。附件载荷帧格式为空，本轮没有猜测数据包定义。
+
+## 通用工作区迁移
+
+运行时取得进程锁后、加载内存库存前，在同一个 SQLite 事务中执行 `workspace_migration/general-v1`。只补充缺失的通用设置，保留全部旧键、原始批次和历史数据文件；事务失败则全部回滚，下次启动可重试。迁移完成标记使后续启动不覆盖用户的新设置。
+
+光谱仪／光功率计优先使用旧 optical 设置，频谱仪优先 electronic，其他设备优先原 current_mode（缺失时 electronic）；只有键不存在才尝试另一模式，显式 null、空列表和空绑定均保留。复制参数草稿、采样间隔、软件标记、示波器微调、总览偏好和光功率计通道选择。各类别每次启动的采样间隔重置规则继续生效。
+
+无歧义旧槽位复制到 general。同一设备旧绑定不一致、槽位类别不匹配或多设备争用同一槽位时，general 保持未绑定，库存 slotMigrationConflict 保存提示，重新绑定／解除绑定会清除此提示；原冲突依据保存在迁移记录中。既有 general 绑定和设置优先，不被旧值覆盖。未绑定设备的总览偏好使用稳定设备 ID，避免冲突槽位混用。
+
+监测、采集、记录、保存上下文和 CLI 统一接受 general/electronic/optical；默认使用 general，显式旧标签仅影响元数据，未知标签仍拒绝。保存目录及分段版本不变，旧记录读取和离线转换无需改写。

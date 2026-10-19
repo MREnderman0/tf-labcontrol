@@ -27,6 +27,7 @@ import numpy as np
 
 from lab_control.application.acquisition_pipeline import FrozenDict, batch_bytes, validate_recorded_batch
 from lab_control.domain.instruments import MeasurementBatch, ValidationError, jsonable
+from lab_control.domain.workspace import WORKSPACE_MODES
 from lab_control.storage.frame_timing import TIMING_COLUMNS, timing_columns
 from lab_control.storage.layout import manifest, raw_folder
 from lab_control.storage.paths import SaveContext
@@ -272,7 +273,7 @@ class Recording:
         context: SaveContext | None = None,
         prepare_storage: bool = True,
     ) -> None:
-        if mode not in {"electronic", "optical"}:
+        if mode not in WORKSPACE_MODES:
             raise ValidationError("Invalid experiment mode")
         self.validate_csv_interval(csv_interval)
         self.started_monotonic = time.perf_counter()

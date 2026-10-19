@@ -15,6 +15,7 @@ from lab_control.application.sessions import SessionManager
 from lab_control.discovery.addresses import follow_verified_address, network_host, remember_identity
 from lab_control.discovery.presence import LIVE_CONNECTIONS, local_enumeration, update_record_presence
 from lab_control.domain.instruments import DeviceError, DeviceIdentity, jsonable, utc_now
+from lab_control.domain.workspace import GENERAL, WORKSPACE_MODES
 from lab_control.storage.repository import Repository
 from lab_control.transport.visa import VisaRuntime
 
@@ -492,8 +493,10 @@ class Inventory:
         *,
         display_name: str | None = None,
         slot: str | None = None,
-        mode: str = "electronic",
+        mode: str = GENERAL,
     ) -> None:
+        if mode not in WORKSPACE_MODES:
+            raise DeviceError("Unknown workspace mode", "invalid_parameter")
         with self.lock:
             record = deepcopy(self.records[device_id])
             if display_name is not None:
@@ -503,6 +506,8 @@ class Inventory:
                     if slot and other["id"] != device_id and other.get("slots", {}).get(mode) == slot:
                         raise DeviceError("Slot is already occupied", "slot_conflict")
                 record["slots"][mode] = slot
+                if mode == GENERAL:
+                    record.pop("slotMigrationConflict", None)
             self.repository.save(record)
             self.records[device_id] = record
 
@@ -578,6 +583,8 @@ class Inventory:
         self, device_id: str, slot: str, mode: str, *, replace_device_id: str | None = None
     ) -> None:
         """Caller holds the session lock while validating both participants."""
+        if mode not in WORKSPACE_MODES:
+            raise DeviceError("Unknown workspace mode", "invalid_parameter")
         with self.lock:
             owners = [
                 item
@@ -591,6 +598,8 @@ class Inventory:
                 raise DeviceError("该槽位已有设备绑定，请确认是否替换", "slot_conflict")
             record = deepcopy(self.records[device_id])
             record.setdefault("slots", {})[mode] = slot
+            if mode == GENERAL:
+                record.pop("slotMigrationConflict", None)
             changed = [record]
             for owner in owners:
                 previous = deepcopy(owner)
@@ -672,6 +681,8 @@ class DiscoveryService:
         probe: Callable[[DiscoveryCandidate], tuple[DeviceIdentity, str]],
         *,
         probe_workers: int = 4,
+        normalize_discovery_config: Callable[[ConnectionConfig, tuple[str, ...]], ConnectionConfig] | None = None,
+        source_addresses: Callable[[], tuple[str, ...]] | None = None,
     ) -> None:
         self.providers, self.sessions, self.leases, self.inventory, self.probe = (
             providers,
@@ -682,6 +693,8 @@ class DiscoveryService:
         )
         self.worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix="discovery")
         self.probe_workers = max(1, int(probe_workers))
+        self.normalize_discovery_config = normalize_discovery_config
+        self.source_addresses = source_addresses
         self.lock, self.cancelled = threading.Lock(), threading.Event()
         self.future: Future[Any] | None = None
         self.progress: dict[str, Any] = {"state": "idle"}
@@ -759,6 +772,16 @@ class DiscoveryService:
                     result=report["providers"][provider.name],
                 )
 
+        available_sources: tuple[str, ...] = ()
+        if self.source_addresses is not None:
+            try:
+                available_sources = tuple(self.source_addresses())
+            except DeviceError:
+                # The model normalizer will publish a precise source-address
+                # diagnostic for targeted endpoints; discovery remains usable
+                # for serial, VISA and SDK candidates.
+                available_sources = ()
+
         # Publish every resource before identity I/O. One slow probe cannot hide the other resources.
         candidates: list[DiscoveryCandidate] = []
         for group in observations.values():
@@ -775,9 +798,22 @@ class DiscoveryService:
                     chosen,
                     config=replace(chosen.config, transport="tcp", source_address=bound.config.source_address),
                 )
+            if (
+                self.normalize_discovery_config is not None
+                and self.source_addresses is not None
+                and any(c.source == "static_addresses" for c in group)
+                and chosen.config.adapter
+            ):
+                try:
+                    chosen = replace(
+                        chosen,
+                        config=self.normalize_discovery_config(chosen.config, available_sources),
+                    )
+                except DeviceError as exc:
+                    chosen = replace(chosen, error=str(exc), error_code=exc.code)
             chosen = replace(chosen, safe_scpi=any(c.safe_scpi for c in group))
             observation_error = next((c for c in group if c.error_code), None)
-            if observation_error is not None:
+            if observation_error is not None and not chosen.error_code:
                 chosen = replace(chosen, error_code=observation_error.error_code, error=observation_error.error)
             serial_candidate = next((c for c in group if c.source == "serial"), None)
             if serial_candidate is not None:

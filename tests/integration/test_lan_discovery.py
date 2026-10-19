@@ -150,7 +150,7 @@ def test_ip_move_preserves_identity_limits_slots_and_name(inventory):
     )
     inventory.stale("new", {"lan"})
     assert updated["id"] == first["id"] and len(inventory.all()) == 1
-    assert updated["displayName"] == "信号源 A" and updated["slots"]["electronic"] == "signal_generator:1"
+    assert updated["displayName"] == "信号源 A" and updated["slots"]["general"] == "signal_generator:1"
     config = verified_connection(updated)
     assert config.resource.endswith("192.0.2.20::inst0::INSTR")
     assert config.timeout == 4 and config.expected_serial == "ASSET_A" and config.limits == {"amplitude": 0.5}
@@ -212,7 +212,7 @@ def test_selected_lan_follows_identity_after_restart_and_keeps_usb_and_settings(
     assert selected.expected_serial == "ASSET_A" and selected.timeout == 8
     assert selected.limits == {"amplitude": 0.5} and tuple(selected.options) == ("OPTION",)
     assert moved["id"] == original["id"] and moved["displayName"] == "实验信号源"
-    assert moved["slots"]["electronic"] == "signal_generator:1"
+    assert moved["slots"]["general"] == "signal_generator:1"
     assert usb.config.resource in moved["resources"] and not moved["primaryResourceExplicit"]
     # Rediscovering the USB interface must not undo the user's LAN preference.
     assert restarted.merge(usb, "later", identity(), usb.config.adapter)["config"] == moved["config"]

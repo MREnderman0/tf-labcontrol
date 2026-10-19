@@ -4,6 +4,7 @@ import os
 import sys
 from pathlib import Path
 
+from PySide6.QtCore import QTimer
 from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtWidgets import QApplication
 
@@ -55,10 +56,9 @@ def main() -> int:
         return 2
     window = RealWindow(runtime)
     window.show()
-    if runtime.lan_settings.enabled:
-        from PySide6.QtCore import QTimer
-
-        QTimer.singleShot(0, window.scan)
+    # Every transport is scanned once after the window is shown.  LAN discovery
+    # is optional, but serial/VISA discovery must not depend on that setting.
+    QTimer.singleShot(0, window.scan)
     result = app.exec()
     runtime.close()
     return result

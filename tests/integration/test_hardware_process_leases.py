@@ -113,3 +113,23 @@ def test_exclusive_process_lease_reports_holder_and_cleans_advisory_metadata(tmp
     finally:
         first.close()
     assert not metadata.exists()
+
+
+def test_process_lease_cleans_stale_metadata_from_redirected_appdata_view(tmp_path, monkeypatch):
+    physical = tmp_path / "physical" / "TF-LabControl"
+    logical = tmp_path / "logical" / "TF-LabControl"
+    physical.mkdir(parents=True)
+    logical.mkdir(parents=True)
+    physical_lock = physical / "hardware.lock"
+    logical_lock = logical / "hardware.lock"
+    physical_lock.touch()
+    os.link(physical_lock, logical_lock)
+    stale = logical / "hardware.lock.owner.json"
+    stale.write_text('{"pid": 123}', encoding="utf-8")
+    monkeypatch.setenv("LAB_CONTROL_HOME", str(logical))
+
+    lease = ProcessLease(physical)
+    try:
+        assert not stale.exists()
+    finally:
+        lease.close()

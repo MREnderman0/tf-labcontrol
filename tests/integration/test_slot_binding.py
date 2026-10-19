@@ -147,7 +147,7 @@ def test_alias_merge_preserves_explicit_unbinding_and_marks_conflicting_choices(
     config = replace(ConnectionConfig(**original["config"]), resource="mock://alias")
     candidate = DiscoveryCandidate(config, "configured")
     extra = runtime.inventory.merge(candidate, "scan")
-    runtime.inventory.edit(extra["id"], slot=placeholder)
+    runtime.inventory.edit(extra["id"], slot=placeholder, mode="electronic")
     identity = SimulatedInstrument(config).identify()
     runtime.inventory.merge(candidate, "scan", identity, config.adapter)
     assert slots(runtime)[key]["electronic"] == historical

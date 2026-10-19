@@ -54,8 +54,8 @@ def load_lan_settings(root: Path) -> LanDiscoverySettings:
     return LanDiscoverySettings(**data)
 
 
-def ethernet_networks() -> tuple[str, ...]:
-    """Resolve up physical Ethernet adapters each scan, including newly attached USB NICs."""
+def _physical_ipv4_rows() -> tuple[tuple[str, int], ...]:
+    """Return preferred IPv4 addresses on up physical Ethernet adapters."""
     if sys.platform != "win32":
         raise DeviceError("Automatic Ethernet discovery requires Windows", "unsupported")
     # HardwareInterface + type 6 excludes WLAN, loopback, VPN and virtual switches.
@@ -72,13 +72,30 @@ def ethernet_networks() -> tuple[str, ...]:
     rows = json.loads(process.stdout or "[]")
     if isinstance(rows, dict):
         rows = [rows]
-    networks = set()
+    result = []
     for row in rows:
         address = ipaddress.IPv4Address(row["ip"])
         if address.is_unspecified or address.is_loopback or address.is_multicast:
             continue
-        networks.add(str(ipaddress.IPv4Network(f"{address}/{row['prefix']}", strict=False)))
-    return tuple(sorted(networks))
+        result.append((str(address), int(row["prefix"])))
+    return tuple(sorted(set(result)))
+
+
+def physical_ipv4_addresses() -> tuple[str, ...]:
+    """Return current physical Ethernet source addresses without changing networking."""
+    return tuple(address for address, _prefix in _physical_ipv4_rows())
+
+
+def ethernet_networks() -> tuple[str, ...]:
+    """Resolve up physical Ethernet adapters each scan, including newly attached USB NICs."""
+    return tuple(
+        sorted(
+            {
+                str(ipaddress.IPv4Network(f"{address}/{prefix}", strict=False))
+                for address, prefix in _physical_ipv4_rows()
+            }
+        )
+    )
 
 
 def interface_networks(interfaces: tuple[str, ...]) -> tuple[str, ...]:
