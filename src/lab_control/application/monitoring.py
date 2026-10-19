@@ -27,6 +27,7 @@ from lab_control.domain.instruments import (
     Quality,
     ValidationError,
 )
+from lab_control.domain.workspace import GENERAL, WORKSPACE_MODES
 from lab_control.storage.paths import SaveContext
 from lab_control.storage.recording import Recording
 from lab_control.storage.repository import Repository
@@ -82,7 +83,7 @@ class MonitorTask:
     monitoring_context_id: str = field(default_factory=lambda: uuid4().hex)
     once: bool = False
     pending_record_session: str = ""
-    pending_record_mode: str = "electronic"
+    pending_record_mode: str = GENERAL
     last_started_at: float = 0
     last_record_at: float = 0
     next_record_at: float = 0
@@ -186,13 +187,13 @@ class MonitoringService:
         *,
         interval: float = 0.5,
         record_interval: float | None = 0.05,
-        mode: str = "electronic",
+        mode: str = GENERAL,
         once: bool = False,
         cadence: str | None = None,
         csv_interval: float = 5,
         recording: bool = False,
     ) -> None:
-        if not requests or not 0.05 <= interval <= 60 or mode not in {"electronic", "optical"}:
+        if not requests or not 0.05 <= interval <= 60 or mode not in WORKSPACE_MODES:
             raise ValidationError("Choose data sources, a 0.05..60 s interval and a valid mode")
         self.validate_intervals(interval, record_interval)
         validate_cadence(interval, cadence)
@@ -307,7 +308,7 @@ class MonitoringService:
         if task.recorder and not task.recorder.binary_done:
             raise DeviceError("Wait for the previous recording to drain", "task_busy")
         next_mode = mode or task.mode
-        if next_mode not in {"electronic", "optical"}:
+        if next_mode not in WORKSPACE_MODES:
             raise ValidationError("Invalid recording mode")
         previous_lock = bool(
             task.pending_record_session
@@ -409,7 +410,7 @@ class MonitoringService:
     def export_displayed_frame(self, device_id: str, frame: MonitorFrame, mode: str) -> Future[Any]:
         """Export this displayed snapshot without I/O or upgrading its provenance."""
         validate_displayed_batch(frame.batch)
-        if mode not in {"electronic", "optical"}:
+        if mode not in WORKSPACE_MODES:
             raise ValidationError("Invalid recording mode")
         with self.lock:
             if self.closing or device_id in self.display_exports or device_id in self.capture_saves:
@@ -453,7 +454,7 @@ class MonitoringService:
         with self.lock:
             if self.closing or device_id in self.capture_saves or device_id in self.display_exports:
                 raise DeviceError("采集并保存正在进行，请等待完成", "task_busy")
-            if mode not in {"electronic", "optical"}:
+            if mode not in WORKSPACE_MODES:
                 raise ValidationError("Invalid recording mode")
             state = next((s for s in self.sessions.snapshots() if s["stableDeviceId"] == device_id), {})
             task = self.tasks.get(device_id)
@@ -585,7 +586,7 @@ class MonitoringService:
                 raise DeviceError("Start monitoring before recording", "task_busy")
             if enabled and not task.recording and task.recorder and not task.recorder.binary_done:
                 raise DeviceError("Wait for the previous recording to drain", "task_busy")
-            if mode is not None and mode not in {"electronic", "optical"}:
+            if mode is not None and mode not in WORKSPACE_MODES:
                 raise ValidationError("Invalid recording mode")
             if enabled and mode and task.mode != mode:
                 if task.recording or task.pending_record_session or task.write_pending:

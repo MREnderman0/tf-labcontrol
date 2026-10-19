@@ -54,7 +54,9 @@ def test_formal_main_passes_config_to_real_runtime(qapp, tmp_path, monkeypatch, 
     monkeypatch.setattr(window, "RealWindow", lambda _runtime: SimpleNamespace(show=lambda: None, scan=scan))
     assert app.main() == 0
     assert calls == [path, configurations, "closed"]
-    assert scheduled == ([(0, scan)] if lan_enabled else [])
+    # The formal entry point always performs the initial discovery pass; LAN
+    # availability only changes which providers participate in that scan.
+    assert scheduled == [(0, scan)]
 
 
 def test_real_inventory_stays_empty_and_preserves_saved_state(tmp_path, monkeypatch):

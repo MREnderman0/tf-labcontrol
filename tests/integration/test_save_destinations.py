@@ -174,7 +174,7 @@ def test_recording_preparation_failure_releases_reservation_and_keeps_monitor_mo
             service.set_recording(key, True, mode="optical")
         task = service.tasks[key]
         assert not task.recording and task.recorder is None and not task.record_session
-        assert task.mode == "electronic" and not session.recording
+        assert task.mode == "general" and not session.recording
         assert not runtime.sessions.snapshots()[0]["controlsLocked"]
         service.stop(key).result(5)
 

@@ -21,8 +21,14 @@ from lab_control.discovery.service import (
     VisaDiscoveryProvider,
 )
 from lab_control.domain.instruments import DeviceIdentity, ValidationError
+from lab_control.domain.workspace import WORKSPACE_MODES
 from lab_control.instruments.base import identity_from_scpi
-from lab_control.instruments.registry import create_adapter, match, transport_for
+from lab_control.instruments.registry import (
+    create_adapter,
+    match,
+    normalize_discovery_config,
+    transport_for,
+)
 from lab_control.storage.repository import Repository
 from lab_control.transport.visa import VisaRuntime
 
@@ -48,6 +54,7 @@ class ApplicationRuntime:
         # UI choices live for this launch. Scope/spectrum never restore a prior
         # launch's fastest cadence; all pages share the same per-device choices.
         self.monitoring_preferences: dict[str, dict[str, Any]] = {}
+        fixed_runtime_home = application_home()
         self.repository = Repository(
             root if hardware else (root or application_home()) / "simulation", simulation=not hardware
         )
@@ -58,9 +65,7 @@ class ApplicationRuntime:
         try:
             if hardware:
                 # Fixed per-user lock even when LAB_CONTROL_HOME/config changes.
-                import os
-
-                lock_root = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "TF-LabControl"
+                lock_root = fixed_runtime_home
                 # A real runtime is a single process per user.  Opening this
                 # compatibility gate shared allowed a GUI and an external
                 # PowerShell/CLI launch to enter discovery at the same time;
@@ -71,6 +76,10 @@ class ApplicationRuntime:
                 self.process_lease = ProcessLease(lock_root, shared=False)
             self.visa = visa or VisaRuntime()
             self.leases = ResourceLeases(lock_root)
+            from lab_control.application.catalog import instrument_category
+            from lab_control.storage.workspace_migration import migrate_general_workspace
+
+            self.workspace_migration = migrate_general_workspace(self.repository, instrument_category)
             self.inventory = Inventory(self.repository)
             self.sessions = SessionManager(
                 self.leases, self.repository, lambda config: create_adapter(config, self.visa)
@@ -82,6 +91,7 @@ class ApplicationRuntime:
                 RememberedLanDiscoveryProvider,
                 StaticAddressDiscoveryProvider,
                 load_lan_settings,
+                physical_ipv4_addresses,
             )
 
             self.lan_settings = (
@@ -117,7 +127,13 @@ class ApplicationRuntime:
                         sdk_groups.setdefault((config.transport, config.sdk_path), []).append(config)
                 providers += tuple(VendorSdkDiscoveryProvider(tuple(group)) for group in sdk_groups.values())
             self.discovery = DiscoveryService(
-                providers, self.sessions, self.leases, self.inventory, self.probe
+                providers,
+                self.sessions,
+                self.leases,
+                self.inventory,
+                self.probe,
+                normalize_discovery_config=normalize_discovery_config,
+                source_addresses=physical_ipv4_addresses if hardware else None,
             )
             from lab_control.application.monitoring import MonitoringService
 
@@ -302,7 +318,7 @@ class ApplicationRuntime:
                 ):
                     raise DeviceError("设备正在执行任务，请停止并等待完成后修改槽位", "task_busy")
             record = next(item for item in self.inventory.all() if item["id"] == device_id)
-            if mode not in {"electronic", "optical"}:
+            if mode not in WORKSPACE_MODES:
                 raise ValidationError("Unknown workspace mode")
             if slot and (record.get("identityConflict") or record["discoveryState"] == "conflict"):
                 raise DeviceError("设备身份冲突，请先核对", "identity_conflict")

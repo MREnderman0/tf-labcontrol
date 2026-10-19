@@ -139,6 +139,14 @@ def transport_for(config: ConnectionConfig, runtime: VisaRuntime) -> Transport:
     raise Unsupported("No byte transport for this configuration")
 
 
+def normalize_discovery_config(config: ConnectionConfig, source_addresses: tuple[str, ...]) -> ConnectionConfig:
+    """Apply an optional model-owned connection policy before discovery I/O."""
+    definition = DEVICE_DEFINITIONS.get(config.adapter)
+    if definition and definition.discovery_config:
+        return definition.discovery_config(config, source_addresses)
+    return config
+
+
 def build_scpi_adapter(config: ConnectionConfig, transport: Transport) -> ScpiAdapter:
     """Use the same model factory for real sessions and injected protocol transports.
 

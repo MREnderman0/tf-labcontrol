@@ -9,6 +9,7 @@ from typing import Any
 from lab_control.application.config import ConnectionConfig, load_config
 from lab_control.application.runtime import ApplicationRuntime
 from lab_control.domain.instruments import AcquisitionRequest, DeviceCommand, DeviceError, jsonable, utc_now
+from lab_control.domain.workspace import GENERAL, WORKSPACE_MODES
 from lab_control.instruments.registry import PENDING, PROFILES, SDK_ADAPTERS
 
 
@@ -77,7 +78,7 @@ def parser() -> argparse.ArgumentParser:
         capture.add_argument("--points", type=int, default=1000)
         capture.add_argument("--initiate", action="store_true")
         capture.add_argument("--confirm", action="store_true")
-        capture.add_argument("--mode", choices=("electronic", "optical"), default="electronic")
+        capture.add_argument("--mode", choices=WORKSPACE_MODES, default=GENERAL)
         if name == "stream":
             capture.add_argument("--count", type=int, default=10)
             capture.add_argument("--interval", type=float, default=0.5)

@@ -95,7 +95,7 @@ def test_recording_rejected_during_control_group_does_not_change_mode_or_flags(t
             with pytest.raises(DeviceError):
                 runtime.monitoring.set_recording(key, True, mode="optical")
             task = runtime.monitoring.tasks[key]
-            assert not task.recording and not task.acquisition_context_id and task.mode == "electronic"
+            assert not task.recording and not task.acquisition_context_id and task.mode == "general"
             assert not runtime.sessions.sessions[key].recording
         finally:
             runtime.sessions.set_control_group(key, False)

@@ -11,6 +11,7 @@ from typing import Literal
 from uuid import uuid4
 
 from lab_control.domain.instruments import DeviceIdentity, ValidationError, jsonable
+from lab_control.domain.workspace import WORKSPACE_MODES
 
 SaveKind = Literal["single_frame", "continuous"]
 
@@ -72,7 +73,7 @@ class SaveContext:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "root", self.root.resolve())
-        if self.mode not in {"electronic", "optical"} or self.kind not in {"single_frame", "continuous"}:
+        if self.mode not in WORKSPACE_MODES or self.kind not in {"single_frame", "continuous"}:
             raise ValidationError("Invalid save mode or type")
         if self.batch:
             object.__setattr__(self, "root", self.batch.root)

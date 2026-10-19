@@ -22,6 +22,7 @@
 ## 查看测试记录
 
 - [频谱仪紧凑监测与标记](ui-spectrum-review.md)
+- 光学光谱仪实时监测页面与补测以型号包 README 及运行目录批次为准
 - [电源四宫格操作与验收](ui-power-supply-review.md)
 
 - [实机记录与离线台账](testing/records.md)：逐台、逐接口、逐项目及待核对项

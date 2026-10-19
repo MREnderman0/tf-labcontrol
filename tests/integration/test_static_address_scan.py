@@ -45,3 +45,50 @@ def test_targeted_static_scan_does_not_mark_other_inventory_absent(tmp_path):
             scanner.close()
         sessions.close()
         repository.close()
+
+
+def test_static_scan_persists_model_normalized_tcp_source_config(tmp_path):
+    repository = Repository(tmp_path)
+    leases = ResourceLeases(tmp_path)
+    sessions = SessionManager(leases, repository, SimulatedInstrument)
+    inventory = Inventory(repository)
+    scanner = None
+    try:
+        store = StaticAddressStore(repository)
+        entry = store.add("192.168.5.241")
+        old = ConnectionConfig(entry.resource, "ceyear.6362d")
+        existing = inventory.merge(
+            DiscoveryCandidate(old, "configured"),
+            "old",
+            DeviceIdentity("Ceyear Technologies", "CY6362D", "SERIAL-A", "2.2.1"),
+            "ceyear.6362d",
+        )
+        scanner = DiscoveryService(
+            (StaticAddressDiscoveryProvider(store),),
+            sessions,
+            leases,
+            inventory,
+            lambda _candidate: (
+                DeviceIdentity("Ceyear Technologies", "CY6362D", "SERIAL-A", "2.2.1"),
+                "ceyear.6362d",
+            ),
+            normalize_discovery_config=lambda config, sources: config.__class__(
+                config.resource,
+                config.adapter,
+                "tcp",
+                timeout=config.timeout,
+                source_address=sources[0],
+            ),
+            source_addresses=lambda: ("192.168.0.1",),
+        )
+        result = scanner.scan().result(timeout=5)
+        assert result["items"][0]["reason"] == "identified"
+        record = next(item for item in inventory.all() if item["id"] == existing["id"])
+        assert record["presenceState"] == "present"
+        assert record["config"]["transport"] == "tcp"
+        assert record["config"]["source_address"] == "192.168.0.1"
+    finally:
+        if scanner is not None:
+            scanner.close()
+        sessions.close()
+        repository.close()

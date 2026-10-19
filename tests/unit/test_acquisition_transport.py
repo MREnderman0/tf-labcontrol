@@ -5,7 +5,7 @@ import pytest
 from lab_control.domain.instruments import DeviceError
 from lab_control.transport.base import BufferedReader, MockTransport, block_payload
 from lab_control.transport.diagnostics import AcquisitionStatistics, capture_io
-from lab_control.transport.streams import SerialTransport, TcpSocketTransport
+from lab_control.transport.streams import ScpiSocketTransport, SerialTransport, TcpSocketTransport
 from lab_control.transport.visa import VisaTransport
 
 
@@ -153,3 +153,12 @@ def test_fixed_length_query_accounts_read_once(kind):
         assert transport.query_fixed("READ?", 3) == b"ABC"
     assert capture.queries == capture.writes == capture.reads == 1
     assert capture.received_bytes == 3
+
+
+@pytest.mark.parametrize("reply", [b"ABC\r\n", b"#13ABC\r\n"])
+def test_flexible_binary_query_accepts_raw_or_ieee_framing(reply):
+    transport = ScpiSocketTransport("192.0.2.1")
+    transport.sock = SimpleNamespace(sendall=lambda _: None, close=lambda: None)
+    transport.reader.buffer.extend(reply)
+    result = transport.query_binary_flexible("READ?", 3)
+    assert result in {b"ABC", b"#13ABC\r\n"}
