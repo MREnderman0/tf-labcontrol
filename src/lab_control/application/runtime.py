@@ -234,10 +234,34 @@ class ApplicationRuntime:
     def _check_connection_admission(self) -> None:
         from lab_control.domain.instruments import DeviceError
 
+        if self.sessions.maintenance_active:
+            raise DeviceError("安装向导运行期间暂停设备连接，请完成安装并重新检查", "maintenance_busy")
         if self.discovery.closing or self.closed:
             raise DeviceError("程序正在退出", "runtime_closing")
         if self.discovery.connection_batch_active:
             raise DeviceError("正在批量连接，请等待完成或停止连接", "connection_batch_busy")
+
+    def begin_maintenance(self) -> None:
+        """Reserve idle hardware admission before an explicitly opened installer."""
+        from lab_control.domain.instruments import DeviceError
+
+        monitoring_busy = any(
+            s.get("running") or s.get("pending") or s.get("recording")
+            for s in self.monitoring.snapshots().values()
+        )
+        with self.discovery.lock, self.sessions.lock:
+            self._check_connection_admission()
+            if self.discovery.is_scanning or self.sessions.sessions:
+                raise DeviceError(
+                    "请等待扫描完成，停止采集并断开所有设备后再打开安装向导", "maintenance_busy"
+                )
+            if monitoring_busy:
+                raise DeviceError("采集或记录尚未结束", "maintenance_busy")
+            self.sessions.maintenance_active = True
+
+    def end_maintenance(self) -> None:
+        with self.discovery.lock, self.sessions.lock:
+            self.sessions.maintenance_active = False
 
     def connect_all_discovered(self) -> Future[dict[str, Any]]:
         return self.bulk_connection.start()

@@ -7,6 +7,8 @@ $root = Split-Path $PSScriptRoot -Parent
 $filename = 'KK_FirmwareUpload_Win32_Ver_5.1.0_25-11-28.exe'
 $expected = '769427BDC115AD006C5116E987505B6D2334CC882546392183C9D96B1C7CB0D9'
 $candidates = @(
+    (Join-Path $env:LOCALAPPDATA "TF-LabControl\maintenance\packages\tools\kplusk\$filename"),
+    (Join-Path $env:ProgramData "TF-LabControl\maintenance\packages\tools\kplusk\$filename"),
     (Join-Path $root "deployment\packages\tools\kplusk\$filename"),
     (Join-Path $PSScriptRoot "packages\tools\kplusk\$filename"),
     (Join-Path $root "dist\TF-LabControl\maintenance\packages\tools\kplusk\$filename")

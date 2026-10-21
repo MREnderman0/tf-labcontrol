@@ -2,62 +2,69 @@
 
 ## 交付要求和当前状态
 
-目标为 Windows 10/11 x64。最终用户通过离线安装包获得所需运行依赖和设备驱动，首次选择实验网口后由维护组件自动配置实验网络。设备兼容和物理输出仍按[实机留档规范](../testing/records.md)逐项验收。
+目标为 Windows 10/11 x64。默认联网版包含程序运行所需 Python/Qt，首次运行由用户选择设备组件，自动检查并下载；用户点击“打开安装向导”后由厂商安装器请求所需权限。可另行构建含所选组件及依赖闭包的离线包，最终用户无需寻找资源。设备兼容和物理输出仍按[实机留档规范](../testing/records.md)逐项验收。
 
-当前已提供统一组件清单、开发/发布检查、目录式 EXE 构建、独立 CSV worker、设置内环境检查/修复方案/报告导出。自动安装/修复执行器、正式安装向导、网络配置应用和跨电脑验收尚未交付。“方案生成”不表示已经修复。当前网络入口仍只读。
+已实现组件登记、下载/缓存校验、首次准备页、目录式 EXE、CSV worker、设置内环境检查/修复方案/报告导出。正式应用安装器、自动修复执行器、网络配置应用和跨电脑验收仍待完成。首次准备不配置网络、不切换驱动、不启动设备配置/固件工具、不自动重启。
 
-## 组件维护
+## 组件维护与缓存
 
-[外部组件清单](../../deployment/components.json)是来源；[uv.lock](../../uv.lock)锁定 Python 及构建依赖。新增运行依赖必须同时登记，型号 `DeviceDefinition.deployment_components` 引用组件 ID。公共层处理部署，型号协议仍留在型号包。
+[外部组件清单](../../deployment/components.json)维护用途、型号/接口、版本、架构、系统、来源、大小、SHA256、签名策略、分发依据、检测、安装参数、权限/重启、恢复边界和验证证据。[uv.lock](../../uv.lock)锁定 Python 依赖；型号通过 `deployment_components` 引用组件。未知项保持 `pending`，USB 串口/GPIB 仍须落实准确硬件 ID，不能猜测通用驱动。
 
-外部组件须记录用途、适用型号/接口、版本/架构/系统、官方来源、安装包名、SHA256、签名发布者、分发依据、检测方法、安装参数/顺序、退出码、权限/重启、恢复边界和验证证据。无法确定时填 `null` / `pending`，不能猜测静默参数、通用驱动或许可。USB 串口和 GPIB 组件必须落实到实际接口硬件 ID；不拿一种适配器驱动代表所有适配器。
+`download_sources` 是有序来源，兼容旧 `url`；`archive_members` 保存成员名、目标路径、大小和哈希，`installer_entry` 仅指向已验证安装器，`dependencies` 定义依赖闭包。清单更新后执行 `scripts/generate_download_docs.py`，生成[下载地址与验证状态](../generated/download-resources.md)。
 
-已有 VISA、PicoSDK、Thorlabs 缓存哈希及来源已登记；安装/分发/目标电脑验证尚有待补项。TSERVE、DHCP、串口/GPIB 和 VC++ 组件也在台账中。待补项由开发/发布负责人解决，不交给最终用户搜索资源。
+开发、构建、运行、设备接入及维护过程中，凡新增、升级或替换任何依赖或安装材料，包括 Python 包、SDK、DLL、驱动、运行库、服务、工具和归档，必须在同一变更中同步更新下载资源清单、适用的锁文件及下载资源页面；未同步清单的变更不算完成。登记必须包含用途、版本、国内镜像或官方来源、大小、哈希、适用签名、许可和验证状态，未知项标为 `pending`，不得伪报可用。
 
-K+K FXE 维护材料已登记为 `kplusk-config-tool`、`kplusk-library-win` 和 `kplusk-python-wrapper`，离线文件位于 `deployment/packages/tools/kplusk`，目录式构建会复制到 `maintenance/packages/tools/kplusk`。配置工具是便携 Win32 程序，KK Library 和 Python wrapper 是官方归档；项目的 `kplusk.fxe` 兼容层只调用官方库的已核实只读接口，不在后台写设备参数。首次换电脑时按[实验网络部署与换电脑](../guides/lab-network-deployment.md)中的 K+K FXE 小节执行 USB 配置、设备重启和交换机验证。K+K 官方软件当前 Authenticode 未签名，分发状态和许可边界保持 `pending`，发布检查不会误报为可直接发布。
+下载资源页面只由 `scripts/generate_download_docs.py` 根据组件清单、开发材料清单和 `uv.lock` 生成，禁止手工维护重复数据。新增、升级或替换材料后，须运行生成器检查并执行文档链接、锚点和导航检查。
 
-`scripts/download-vendors.ps1` 读取清单，复用缓存并核对锁定哈希和发布者；`-VerifyOnly` 禁止下载。开发下载遵循[环境规范](environment.md)，从国内镜像或官方直连获取。不安装驱动、不改变系统设置。
+所有新组件下载默认存入 `%LOCALAPPDATA%\TF-LabControl\maintenance\packages`。仍兼容项目 `deployment/packages`、旧 `.tools/installers`、发行目录 `maintenance/packages`、`%ProgramData%\TF-LabControl\maintenance\packages`。旧材料仅在校验后复用；Git 不再跟踪安装包、wheels、工具 EXE、解压 DLL/wrapper。许可、清单、恢复说明保留在 [packages](../../deployment/packages/README.md)。
 
-离线材料随源码保存在 `deployment/packages`：`installers` 放已核验的厂商安装包，`python` 放 Windows x64 / CPython 3.12 wheelhouse，`tools` 放项目工具；`manifest.json` 记录文件大小、SHA256、来源和签名状态。`.tools/installers` 仍是下载脚本的临时工作区，部署检查会优先使用仓库缓存。正式部署仍保存在 `%ProgramData%\TF-LabControl\maintenance\packages`，也可从发行目录的 `maintenance/packages` 读取；目录式打包应将已确认的离线材料一并复制到发行材料。开发机绝对地址、网卡、租约和真实资产资料不进入清单。
+下载进程禁用代理且只接受 HTTPS；不修改系统代理。厂商优先官方国内站，否则官方直连；先写临时文件，再校验大小、固定 SHA256 和适用的 Authenticode 发布者。网络错误有限重试，4xx 明确失败，校验失败不自动升级或改清单。取消/失败清理临时文件，可再次准备；同一缓存组件使用进程文件锁，结果保存在缓存 `reports`。固定链接被厂商更新时可能不能恢复旧版本，应由维护者核实更新元数据。
 
-## 构建与检查
+K+K 库和 wrapper 从官方 ZIP 中按已确认的映射恢复，与原载荷逐字节一致。未签名归档使用 `official-sha256`，明确显示 NotSigned；不伪报签名通过。配置工具仅准备材料，GUI 不启动它；显式维护入口及静态 IP 流程见[实验网络部署](../guides/lab-network-deployment.md)。
 
-在已有下载策略环境中同步固定的构建工具：
+## 开发、准备与构建
+
+唯一开发启动脚本为根目录 `run.bat`。准备脚本复用已有 Python 3.12 x64；缺失时准备已锁定 Python 安装器，显示厂商向导路径，安装后重新运行。完整 wheelhouse 可离线使用；不完整、损坏或 LFS 指针触发按锁文件从清华镜像准备，阿里云只作显式备用，绝不自动回退国外 PyPI。正常安装不重新生成锁文件。开发组默认安装，构建组显式追加。
 
 ```powershell
-$env:UV_PROJECT_ENVIRONMENT='.venv-dev'
-$env:HTTP_PROXY=''; $env:HTTPS_PROXY=''; $env:ALL_PROXY=''; $env:NO_PROXY='*'
-.venv-dev\Scripts\uv.exe sync --locked --group build --python .venv-dev\Scripts\python.exe --no-python-downloads --default-index https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/
-.venv-dev\Scripts\python.exe scripts/check_deployment.py
-.venv-dev\Scripts\python.exe scripts/check_deployment.py --release --report .tools/deployment-release-check.json
-.venv-dev\Scripts\python.exe scripts/build_desktop.py
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-dev.ps1 -Build
+# 完整开发缓存，严格离线
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-dev.ps1 -Build -Offline -Cache D:\LabCache
+# 开发材料单独导出，不混入运行包
+.venv-dev\Scripts\python.exe scripts/prepare_dev_cache.py --output D:\LabDevCache
+.venv-dev\Scripts\python.exe -m lab_control --cli components list
+.venv-dev\Scripts\python.exe -m lab_control --cli components prepare --component rs-visa --cache D:\LabCache --report .tools/preparation.json
+.venv-dev\Scripts\python.exe -m lab_control --cli components verify --component rs-visa --cache D:\LabCache
+.venv-dev\Scripts\python.exe scripts/check_deployment.py --distribution online
+.venv-dev\Scripts\python.exe scripts/build_desktop.py --distribution online
+# 离线测试包示例；依赖闭包自动包含 K+K Library
+.venv-dev\Scripts\python.exe scripts/build_desktop.py --distribution offline --cache D:\LabCache --component rs-visa --component kplusk-python-wrapper
+.venv-dev\Scripts\python.exe scripts/check_deployment.py --release --distribution online --report .tools/deployment-release-check.json
 ```
 
-如果仓库缓存已由 Git LFS 拉取，构建依赖也可以完全离线同步：
+公共 CLI 的 `prepare --offline` 只复用缓存，`verify` 不联网；安装向导不通过 CLI 启动。原 `scripts/download-vendors.ps1` 是兼容入口，`-VerifyOnly` 只验证。`--cache` 在组件服务中指定输出/验证根目录，在构建/检查中指定材料根目录（可重复）。自定义缓存必须包含清单约定的子目录；不能把临时文件或 LFS 指针当成材料。
+
+构建默认 `online`，输出 `dist/online/TF-LabControl`；离线输出 `dist/offline/TF-LabControl`。已有目录不覆盖，使用 `--output` 指定新目录。联网版不带厂商安装包、wheelhouse、uv 或 Python 安装器。离线版仅装配所选组件及依赖，构建前核验材料；未指定组件代表全部登记组件，存在缺项就报告失败，不悄悄忽略。开发材料通过独立脚本导出。
+
+构建验证运行/构建工具版本，生成 `build/<distribution>/deployment/release-manifest.json` 随 EXE 发布，记录依赖闭包、清单/锁文件哈希、模式及所选组件。维护脚本放 `maintenance`，目录须整体分发，测试包不等于正式安装包。源码 sdist 排除全部评审截图，Git 中的设计基线与评审证据保持不变。
+
+`--release` 保留原有来源、安装、签名策略、分发、目标环境等门禁；联网模式不要求已携带载荷，离线模式额外验证实际材料及解压签名。已有待验收项保持阻断，不因仓库瘦身通过。安装向导可用不等于严格发布通过。
+
+`deployment/labcontrol.spec` 收集 Qt、主题和动态型号模块；不复制开发机厂商驱动。统一启动分发函数先识别 `--csv-worker` / `--deployment-check` / `--cli` 再进入 GUI，这些入口均不显示首次准备页或隐式下载。扫描、连接也不触发下载。
 
 ```powershell
-$env:UV_PROJECT_ENVIRONMENT='.venv-dev'
-.venv-dev\Scripts\uv.exe pip sync deployment/packages/python/requirements.txt --offline --no-index --find-links deployment/packages/python --python .venv-dev\Scripts\python.exe
-.venv-dev\Scripts\uv.exe pip install --offline --no-index --find-links deployment/packages/python --no-deps --no-build-isolation --python .venv-dev\Scripts\python.exe -e .
-```
-
-上述环境变量仅在本次 PowerShell 进程有效。开发检查拒绝未登记依赖及失效型号组件引用，并列出待补项；严格发布检查还校验材料、安装/分发证据等，当前未齐备时应返回非零退出码。ZIP 内安装文件签名还需后续发布暂存校验；当前严格检查对此保持阻断。
-
-构建检查安装版本是否符合锁文件，生成 `build/deployment/release-manifest.json`，包含运行依赖闭包、构建版本和清单哈希，随 EXE 打包。测试版输出 `dist/TF-LabControl/TF-LabControl.exe`，并把 `deployment/packages` 的已核验材料复制到 `dist/TF-LabControl/maintenance/packages`，同时携带 `maintenance/repair_53100a_driver.ps1` 和 `maintenance/ensure_vc_runtime.ps1` 作为外部 PowerShell 维护入口；目录必须整体分发，它不是已完成的正式安装包。`build_desktop.py --release` 在严格检查通过后才允许继续构建，完整发行还需安装器、许可和目标电脑验收门禁。
-
-`deployment/labcontrol.spec` 收集 Qt 插件、主题、动态型号模块和运行元数据；不从开发机复制厂商驱动 DLL。唯一启动分发函数先识别 `--csv-worker` / `--deployment-check` / `--cli`，再进入 GUI。源码入口和 EXE 共用该路径，CSV worker 不创建 GUI 或硬件会话。
-
-```powershell
-# 将整个产物复制到源码目录以外后执行；报告位置也用于 PNG 截图
+.venv-dev\Scripts\python.exe scripts/check_desktop.py --bundle dist/online/TF-LabControl --report .tools/deployment/online-smoke.json
 TF-LabControl.exe --deployment-check C:\Temp\labcontrol-smoke.json
 TF-LabControl.exe --cli environment --report C:\Temp\environment.json
 ```
 
-部署自检使用临时隔离数据和模拟界面，禁止 VISA ResourceManager，验证型号、主题、版本、记录和真实子进程 CSV 转换。它不证明驱动安装、真实网络或设备验收通过。普通用户数据继续位于 `%LOCALAPPDATA%\TF-LabControl` 或显式 `LAB_CONTROL_HOME`；升级前使用一致性备份，卸载默认保留数据。
+自检复制产物到源码外中文及空格路径，使用隔离数据和模拟界面，禁止 VISA ResourceManager，运行真实 CSV 子进程。它不证明驱动、网络或设备验收。普通用户数据继续位于 `%LOCALAPPDATA%\TF-LabControl` 或 `LAB_CONTROL_HOME`，升级/卸载保留数据。
 
 ## 软件设置：环境与修复
 
-入口是“系统设置 → 软件设置 → 环境与修复”；原设备管理“环境诊断”也进入这里。后台检查可取消，保留已完成结果；显示正常、缺失、不兼容、待核实、未需要和检查失败。可查看建议、受影响型号、离线材料、权限/重启要求，并导出 JSON。
+入口是“系统设置 → 软件设置 → 环境与修复”；原设备管理“环境诊断”也进入这里。“准备设备组件”与首次页共用公共下载服务。首次页可跳过；已有库存按型号预选，空库存不默认勾选全部，可按设备/接口推荐组件后再调整。点击准备后明确区分材料、已检测组件和设备尚未验收。
+
+安装向导只能由用户点击打开；活动扫描、设备会话或采集期间拒绝启动。打开前重新校验并检测已有兼容版本以避免覆盖/降级；安装期间保留连接和扫描锁，用户完成或关闭厂商向导后点击重新检测。安装失败不标记检测成功。后台检查可取消，保留已完成结果；显示正常、缺失、不兼容、待核实、未需要和检查失败。可查看建议、受影响型号、离线材料、权限/重启要求，并导出 JSON。
 
 公共接口 `inspect_environment`、`plan_repair`、`export_report` 供设置页和 CLI 使用。CLI 为 `lab-control-cli environment [--report 文件] [--repair-plan]`；全局 `--home`、`--config` 放在子命令前。报告版本为 1，检查结果和未执行的修复方案分别保存。报告可能含本机路径和网络信息，仅存运行资料，不提交源码。
 
@@ -81,7 +88,7 @@ TF-LabControl.exe --cli environment --report C:\Temp\environment.json
 
 | 本次暴露或迁移时必须检查的问题 | 安装器自动处理与通过依据 |
 | --- | --- |
-| 仓库大文件仍是 Git LFS 指针、缓存缺失或损坏 | 按离线清单核对文件大小和 SHA256；开发准备阶段拉取实际材料，正式安装包必须已携带完整材料；缺项明确列出，不把指针当安装程序 |
+| 仓库大文件仍是 Git LFS 指针、缓存缺失或损坏 | 按离线清单核对文件大小和 SHA256；开发准备或联网首次准备阶段恢复实际材料；离线包必须携带所选组件及依赖闭包；缺项明确列出，不把指针当安装程序 |
 | 新电脑没有 Python、uv 或构建环境 | 正式安装包运行冻结程序，不要求用户安装开发环境；源码安装先检测解释器版本/位数，再使用缓存安装；依赖与锁文件一致 |
 | 下载受代理、国外源或临时链接影响 | 优先完整离线缓存；开发补齐按国内镜像/官方直连策略执行并保存来源、版本、签名和哈希；不修改系统代理 |
 | TimeLab 安装成功但 USB 设备仍缺驱动 | 应用安装、驱动暂存和实际绑定分开检测；按准确硬件 ID 核对驱动、设备错误码和重启需求，必要时从外部 PowerShell 启动 `scripts/repair_53100a_driver.ps1`；详见 [53100A 部署维护源](../../src/lab_control/instruments/devices/microchip_53100a/deployment.md)；退出码 0 不能替代设备检查 |
@@ -96,7 +103,7 @@ TF-LabControl.exe --cli environment --report C:\Temp\environment.json
 
 ## 验收与发布
 
-本轮实际构建、回归、界面和待验收边界见[验收记录](../reviews/desktop-deployment-review.md)。
+原部署阶段证据见[历史部署验收记录](../reviews/desktop-deployment-review.md)；此次瘦身证据见[仓库瘦身验收](../reviews/repository-slimming-review.md)。
 
 开发回归覆盖缺失/损坏材料、架构、未登记依赖、源码及冻结 worker、中文路径、转换失败保留数据、设置页异步/取消/失败/导出、网络方案冲突和旧快照。文档执行生成一致性及链接导航检查。
 

@@ -1,4 +1,4 @@
-"""Check component coverage; --release additionally requires verified offline deployment."""
+"""Check component coverage and online/offline release requirements without installing."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from lab_control.instruments.registry import PROFILES, SDK_ADAPTERS
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def check(root: Path = ROOT, *, release: bool = False, caches=None) -> dict:
+def check(root: Path = ROOT, *, release: bool = False, caches=None, distribution="offline") -> dict:
     manifest = load_manifest(root / "deployment/components.json")
     components = {item["id"]: item for item in manifest["components"]}
     project = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
@@ -65,7 +65,9 @@ def check(root: Path = ROOT, *, release: bool = False, caches=None) -> dict:
     pending = {}
     for component in components.values():
         if release:
-            problems = release_issues(component, caches if caches is not None else cache_directories())
+            problems = release_issues(
+                component, caches if caches is not None else cache_directories(), distribution=distribution
+            )
         else:
             problems = [
                 field + " pending"
@@ -77,6 +79,7 @@ def check(root: Path = ROOT, *, release: bool = False, caches=None) -> dict:
     return {
         "schema_version": 1,
         "mode": "release" if release else "development",
+        "distribution": distribution,
         "errors": sorted(set(errors)),
         "pending": pending,
         "passed": not errors and (not release or not pending),
@@ -86,11 +89,16 @@ def check(root: Path = ROOT, *, release: bool = False, caches=None) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--release", action="store_true")
+    parser.add_argument("--distribution", choices=("online", "offline"), default="online")
     parser.add_argument("--cache", type=Path, action="append")
     parser.add_argument("--report", type=Path)
     args = parser.parse_args()
     try:
-        result = check(release=args.release, caches=tuple(args.cache) if args.cache else None)
+        result = check(
+            release=args.release,
+            caches=tuple(args.cache) if args.cache else None,
+            distribution=args.distribution,
+        )
     except (ValueError, OSError) as exc:
         result = {"passed": False, "errors": [str(exc)]}
     if args.report:

@@ -65,8 +65,10 @@ class EnvironmentRepairPanel(QWidget):
         self.cancel_button = QPushButton("取消检查")
         self.plan_button = QPushButton("查看修复方案")
         self.export_button = QPushButton("导出报告")
+        self.prepare_button = QPushButton("准备设备组件")
         for button in (self.check_button, self.cancel_button, self.plan_button, self.export_button):
             buttons.addWidget(button)
+        buttons.addWidget(self.prepare_button)
         buttons.addStretch()
         layout.addLayout(buttons)
         self.cancel_button.setEnabled(False)
@@ -84,7 +86,7 @@ class EnvironmentRepairPanel(QWidget):
         self.details = QTextBrowser()
         self.details.setMaximumHeight(130)
         layout.addWidget(self.details)
-        note = QLabel("自动修复待安装维护组件接入。当前可检查环境、查看方案并导出报告。")
+        note = QLabel("可按需下载组件并打开厂商安装向导；网络配置和自动修复尚未接入。")
         note.setObjectName("mutedText")
         note.setWordWrap(True)
         layout.addWidget(note)
@@ -93,6 +95,12 @@ class EnvironmentRepairPanel(QWidget):
         self.plan_button.clicked.connect(self.show_plan)
         self.export_button.clicked.connect(self.choose_export)
         self.table.currentItemChanged.connect(self.show_details)
+        self.prepare_button.clicked.connect(self.prepare_components)
+
+    def prepare_components(self):
+        from lab_control.ui.pages.component_preparation import show_preparation
+
+        show_preparation(self.runtime, self)
 
     def start(self):
         if self.disposed or (self.future and not self.future.done()):

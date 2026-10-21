@@ -32,7 +32,8 @@
 ## 开发维护
 
 - [开发环境](development/environment.md)、[依赖与资料](development/references.md)
-- [桌面部署与环境修复](development/desktop-deployment.md)：组件台账、离线材料、EXE 构建和设置内检查
+- [桌面部署与环境修复](development/desktop-deployment.md)：组件台账、联网/离线构建和设置内准备
+- [依赖下载资源](generated/download-resources.md)：按清单生成的国内镜像/官方直连地址与验证状态
 - [文档维护约定及迁移清单](development/documentation.md)
 - [系统架构](architecture/system-architecture.md)、[技术栈](architecture/technology-stack.md)、[前端架构](architecture/frontend-framework.md)
 - [兼容接口](protocols/device-compatibility.md)、[传输协议](protocols/visa-scpi.md)、[数据模型](data/data-model.md)

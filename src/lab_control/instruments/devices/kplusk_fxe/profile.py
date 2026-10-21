@@ -43,7 +43,7 @@ def _capabilities() -> tuple[Capability, ...]:
 
 
 def capability_schema(config: ConnectionConfig) -> CapabilitySet:
-    return CapabilitySet("multimeter", (1,), _capabilities())
+    return CapabilitySet("frequency_counter", tuple(range(1, 25)), _capabilities())
 
 
 def profile() -> Profile:
@@ -52,13 +52,13 @@ def profile() -> Profile:
         adapter_id="kplusk.fxe",
         manufacturer=("K+K", "K+K Messtechnik"),
         models=("FXE", "FXE-compatible K+K counter"),
-        category="multimeter",
-        channels=(1,),
+        category="frequency_counter",
+        channels=tuple(range(1, 25)),
         source=OFFICIAL_DOWNLOADS,
         revision="K+K Library 21.2.2 / Python wrapper 2.1; read-only compatibility subset",
         commands={item.name: CommandSpec(item) for item in capabilities},
         status=("firmware_version", "user_id", "report"),
         identity_query="KPLUSK_LIBRARY_IDENTITY",
         error_query="",
-        acquisition="",
+        acquisition="scalar:frequency",
     )

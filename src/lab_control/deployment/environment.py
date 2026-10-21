@@ -116,6 +116,7 @@ def inspect_environment(
     cancel: threading.Event | None = None,
     progress: Callable[[dict], None] | None = None,
     caches: tuple[Path, ...] | None = None,
+    selected_components: tuple[str, ...] = (),
 ) -> dict:
     cancel = cancel or threading.Event()
     report: dict[str, Any] = {
@@ -172,6 +173,9 @@ def inspect_environment(
     try:
         manifest = load_manifest()
         needed = required_components(configs, lan=lan, dhcp=dhcp)
+        from lab_control.deployment.materials import component_closure
+
+        needed.update(c["id"] for c in component_closure(selected_components, manifest))
         add("manifest", "组件台账", "ok", "组件清单已加载", "使用同版本离线安装包修复程序文件")
     except Exception as exc:
         add("manifest", "组件台账", "error", str(exc), "使用同版本离线安装包修复程序文件")
@@ -298,9 +302,9 @@ def inspect_environment(
             try:
                 from lab_control.deployment.file_components import inspect_files_usb
 
-                state, reason = inspect_files_usb(component["detection"], tuple(
-                    c for c in configs if c.adapter in component["adapters"]
-                ))
+                state, reason = inspect_files_usb(
+                    component["detection"], tuple(c for c in configs if c.adapter in component["adapters"])
+                )
             except Exception as exc:
                 state, reason = "error", str(exc)
         elif key == "rs-visa":
@@ -333,7 +337,9 @@ def inspect_environment(
             vc = windows.get("vc_runtime") or {}
             if vc.get("Installed") == 1:
                 actual = _version_tuple(vc.get("Version"))
-                minimum = _version_tuple(component.get("version") or component["detection"].get("minimum_version"))
+                minimum = _version_tuple(
+                    component.get("version") or component["detection"].get("minimum_version")
+                )
                 if actual and minimum:
                     state = "ok" if actual >= minimum else "incompatible"
                     comparator = "不低于" if state == "ok" else "低于"

@@ -89,6 +89,7 @@ class SessionManager:
         self.lock = threading.RLock()
         self.listeners: list[Callable[[dict[str, Any]], None]] = []
         self.recordings: list[Recording] = []
+        self.maintenance_active = False
 
     def subscribe(self, callback: Callable[[dict[str, Any]], None]) -> Callable[[], None]:
         with self.lock:
@@ -277,6 +278,8 @@ class SessionManager:
         configure_acquisition: bool = True,
     ) -> Future[DeviceIdentity]:
         with self.lock:
+            if self.maintenance_active:
+                raise DeviceError("安装向导运行期间暂停连接", "maintenance_busy")
             if self.leases.owner("discovery:unknown_alias"):
                 raise DeviceError(
                     "Identity probe is using an unconfirmed physical resource; retry after scan",

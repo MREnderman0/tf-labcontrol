@@ -209,7 +209,11 @@ class Inventory:
             ]
             # Prefer an already configured/identified asset when legacy rows
             # and the current stable USB identity coexist in the inventory.
-            return max(matches, key=lambda item: (bool(item.get("adapterId")), bool(item.get("identityKey"))), default=None)
+            return max(
+                matches,
+                key=lambda item: (bool(item.get("adapterId")), bool(item.get("identityKey"))),
+                default=None,
+            )
 
     @staticmethod
     def _serial_signature(descriptor: dict[str, Any]) -> tuple[int, int] | None:
@@ -681,7 +685,8 @@ class DiscoveryService:
         probe: Callable[[DiscoveryCandidate], tuple[DeviceIdentity, str]],
         *,
         probe_workers: int = 4,
-        normalize_discovery_config: Callable[[ConnectionConfig, tuple[str, ...]], ConnectionConfig] | None = None,
+        normalize_discovery_config: Callable[[ConnectionConfig, tuple[str, ...]], ConnectionConfig]
+        | None = None,
         source_addresses: Callable[[], tuple[str, ...]] | None = None,
     ) -> None:
         self.providers, self.sessions, self.leases, self.inventory, self.probe = (
@@ -715,6 +720,8 @@ class DiscoveryService:
         scope: str = "",
     ) -> Future[dict[str, Any]]:
         with self.lock:
+            if self.sessions.maintenance_active:
+                raise DeviceError("安装向导运行期间暂停扫描", "maintenance_busy")
             if self.closing:
                 raise DeviceError("程序正在退出", "runtime_closing")
             if self.connection_batch_active:
@@ -792,11 +799,15 @@ class DiscoveryService:
             # The saved address may pin an interface while an older startup
             # config still supplies serial/limits. Keep those identity guards,
             # but use the explicitly selected source for this exact socket.
-            bound = next((c for c in group if c.source == "static_addresses" and c.config.source_address), None)
+            bound = next(
+                (c for c in group if c.source == "static_addresses" and c.config.source_address), None
+            )
             if bound is not None and chosen.config.transport in {"visa", "tcp"}:
                 chosen = replace(
                     chosen,
-                    config=replace(chosen.config, transport="tcp", source_address=bound.config.source_address),
+                    config=replace(
+                        chosen.config, transport="tcp", source_address=bound.config.source_address
+                    ),
                 )
             if (
                 self.normalize_discovery_config is not None
@@ -814,7 +825,9 @@ class DiscoveryService:
             chosen = replace(chosen, safe_scpi=any(c.safe_scpi for c in group))
             observation_error = next((c for c in group if c.error_code), None)
             if observation_error is not None and not chosen.error_code:
-                chosen = replace(chosen, error_code=observation_error.error_code, error=observation_error.error)
+                chosen = replace(
+                    chosen, error_code=observation_error.error_code, error=observation_error.error
+                )
             serial_candidate = next((c for c in group if c.source == "serial"), None)
             if serial_candidate is not None:
                 known = self.inventory.by_stable_id(serial_candidate.config.usb_instance_id)

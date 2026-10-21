@@ -31,3 +31,10 @@ build/
 .tools/
 .local/
 tmp/
+deployment/packages/**
+!deployment/packages/**/
+!deployment/packages/**/README.md
+!deployment/packages/manifest.json
+!deployment/packages/python/requirements.txt
+!deployment/packages/**/Terms_of_use.pdf
+!deployment/packages/**/EUPL-EN.pdf

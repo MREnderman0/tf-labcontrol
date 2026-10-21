@@ -57,7 +57,17 @@
       "validation": {
         "state": "pending",
         "evidence": null
-      }
+      },
+      "dependencies": [],
+      "download_sources": [
+        {
+          "url": "https://cdn.rohde-schwarz.com.cn/pws/dl_downloads/dl_application/application_notes/1dc02___rs_v/RS_VISA_Setup_Win_7_2_6.exe",
+          "kind": "official-domestic"
+        }
+      ],
+      "archive_members": [],
+      "installer_entry": "RS_VISA_Setup_Win_7_2_6.exe",
+      "size": 63498136
     },
     {
       "id": "pico-sdk",
@@ -109,7 +119,17 @@
       "validation": {
         "state": "pending",
         "evidence": null
-      }
+      },
+      "dependencies": [],
+      "download_sources": [
+        {
+          "url": "https://www.picotech.com/download/software/sr/PicoSDK_x64_11.1.0.481.exe",
+          "kind": "official-direct"
+        }
+      ],
+      "archive_members": [],
+      "installer_entry": "PicoSDK_x64_11.1.0.481.exe",
+      "size": 129097376
     },
     {
       "id": "thorlabs-opm",
@@ -162,7 +182,30 @@
       "validation": {
         "state": "pending",
         "evidence": null
-      }
+      },
+      "dependencies": [],
+      "download_sources": [
+        {
+          "url": "https://media.thorlabscms.cn/contentassets/012d23129bc54ff2bfdbf4c6d4a306fa/thorlabs.opticalparametermonitor.7.0.5320.947.zip",
+          "kind": "official-domestic"
+        }
+      ],
+      "archive_members": [
+        {
+          "member": "Changelog.txt",
+          "path": "installers/thorlabs-opm/Changelog.txt",
+          "size": 6167,
+          "sha256": "14fb7a0c27459e7a90ff9af1ecbc4d9a8259dc7fed32e077958fd2dfc4a19a06"
+        },
+        {
+          "member": "ThorlabsOPMSetup.exe",
+          "path": "installers/thorlabs-opm/ThorlabsOPMSetup.exe",
+          "size": 135070776,
+          "sha256": "6874c0176f58cf18c3cb428ed0e5c79415867d7c7cd21b608ae7b0ba13aed916"
+        }
+      ],
+      "installer_entry": "installers/thorlabs-opm/ThorlabsOPMSetup.exe",
+      "size": 134596957
     },
     {
       "id": "ftdi-vcp",
@@ -212,7 +255,11 @@
       "validation": {
         "state": "pending",
         "evidence": null
-      }
+      },
+      "dependencies": [],
+      "download_sources": [],
+      "archive_members": [],
+      "installer_entry": null
     },
     {
       "id": "keithley-usb",
@@ -262,7 +309,11 @@
       "validation": {
         "state": "pending",
         "evidence": null
-      }
+      },
+      "dependencies": [],
+      "download_sources": [],
+      "archive_members": [],
+      "installer_entry": null
     },
     {
       "id": "serial-interface",
@@ -310,7 +361,11 @@
       "validation": {
         "state": "pending",
         "evidence": null
-      }
+      },
+      "dependencies": [],
+      "download_sources": [],
+      "archive_members": [],
+      "installer_entry": null
     },
     {
       "id": "gpib-interface",
@@ -358,7 +413,11 @@
       "validation": {
         "state": "pending",
         "evidence": null
-      }
+      },
+      "dependencies": [],
+      "download_sources": [],
+      "archive_members": [],
+      "installer_entry": null
     },
     {
       "id": "kplusk-config-tool",
@@ -382,10 +441,10 @@
       "cache_subdirectory": "tools/kplusk",
       "sha256": "95AA33D15C8E13FD8B16075482222BCD9AC2D0D774670B3DAAD5CE4FD8F52D2C",
       "signature": {
-        "policy": "authenticode",
+        "policy": "official-sha256",
         "publisher": "K+K Messtechnik GmbH",
         "member": "KK_FirmwareUpload_Win32_Ver_5.1.0_25-11-28.exe",
-        "evidence": "Get-AuthenticodeSignature: NotSigned; official package retained with Terms_of_use.pdf"
+        "evidence": "Get-AuthenticodeSignature: NotSigned; official package retained with Terms_of_use.pdf; only the pinned official archive and member hashes authorize preparation, not signed status"
       },
       "redistribution": {
         "state": "pending",
@@ -417,7 +476,30 @@
       "validation": {
         "state": "pending",
         "evidence": "Official FXE configuration and post-change LAN verification are recorded in runtime hardware-tests; clean Windows 10/11 package acceptance remains pending"
-      }
+      },
+      "dependencies": [],
+      "download_sources": [
+        {
+          "url": "https://kplusk-messtechnik.de/downloads/files/KK_FirmwareUpload_Win_Ver_5.1.0_25-11-28.zip",
+          "kind": "official-direct"
+        }
+      ],
+      "archive_members": [
+        {
+          "member": "KK_FirmwareUpload_Win32_Ver_5.1.0_25-11-28.exe",
+          "path": "tools/kplusk/KK_FirmwareUpload_Win32_Ver_5.1.0_25-11-28.exe",
+          "size": 3563008,
+          "sha256": "769427bdc115ad006c5116e987505b6d2334cc882546392183c9d96b1c7cb0d9"
+        },
+        {
+          "member": "Terms_of_use.pdf",
+          "path": "tools/kplusk/Terms_of_use.pdf",
+          "size": 91404,
+          "sha256": "df68c7b704ab8f61747a0955ed70bc01bc5978855135b5498fee34b2acfdb8c6"
+        }
+      ],
+      "installer_entry": null,
+      "size": 1489237
     },
     {
       "id": "kplusk-library-win",
@@ -443,10 +525,10 @@
       "cache_subdirectory": "tools/kplusk",
       "sha256": "7F457FA4039B3C4F0B6E16C096650419BEB33ED9115F5A548D3FB7A438EEDB2F",
       "signature": {
-        "policy": "authenticode",
+        "policy": "official-sha256",
         "publisher": "K+K Messtechnik GmbH",
         "member": "KK_Library_64.dll",
-        "evidence": "DLL is retained from the official archive; Authenticode status is NotSigned"
+        "evidence": "DLL is retained from the official archive; Authenticode status is NotSigned; only the pinned official archive and member hashes authorize preparation, not signed status"
       },
       "redistribution": {
         "state": "pending",
@@ -478,7 +560,54 @@
       "validation": {
         "state": "pending",
         "evidence": "Official protocol connection passed on the current FXE; project adapter and clean Windows package acceptance remain pending"
-      }
+      },
+      "dependencies": [],
+      "download_sources": [
+        {
+          "url": "https://kplusk-messtechnik.de/downloads/files/KK-Library_Win_Ver_21.2.2_25-11-28.zip",
+          "kind": "official-direct"
+        }
+      ],
+      "archive_members": [
+        {
+          "member": "Changelog.txt",
+          "path": "tools/kplusk/runtime/Changelog.txt",
+          "size": 8612,
+          "sha256": "3a1435e53117b00372c3fd1190d0032cb9794cef56c443d2de4d5e1d77d4a7aa"
+        },
+        {
+          "member": "KK_FX80E.dll",
+          "path": "tools/kplusk/runtime/KK_FX80E.dll",
+          "size": 3269632,
+          "sha256": "ec029cfc0593b36d55a49e4490c1435ded52bdc6c32d1ed2befb64a3ffae819a"
+        },
+        {
+          "member": "kk_library.h",
+          "path": "tools/kplusk/runtime/kk_library.h",
+          "size": 8891,
+          "sha256": "f5f91e0b0419ad118ffe2841638e164f53788f3badf1fbaec2eab7bd6e22b935"
+        },
+        {
+          "member": "KK_Library_64.dll",
+          "path": "tools/kplusk/runtime/KK_Library_64.dll",
+          "size": 5076480,
+          "sha256": "9b46f8603b75c8142739f69d27df81ac7036f5fc5343b0cda7097987863dd566"
+        },
+        {
+          "member": "Library_ReadMe.txt",
+          "path": "tools/kplusk/runtime/Library_ReadMe.txt",
+          "size": 1906,
+          "sha256": "ca997be2a7e2386ad5940ce85442a24f97c103fef13840137f8febd02da40653"
+        },
+        {
+          "member": "Terms_of_use.pdf",
+          "path": "tools/kplusk/runtime/Terms_of_use.pdf",
+          "size": 91404,
+          "sha256": "df68c7b704ab8f61747a0955ed70bc01bc5978855135b5498fee34b2acfdb8c6"
+        }
+      ],
+      "installer_entry": null,
+      "size": 2962990
     },
     {
       "id": "kplusk-python-wrapper",
@@ -504,10 +633,10 @@
       "cache_subdirectory": "tools/kplusk",
       "sha256": "56C2BBFD51320F593DCC92429706D2B2DE0A91A715D38026102B123587646EB0",
       "signature": {
-        "policy": "authenticode",
+        "policy": "official-sha256",
         "publisher": "K+K Messtechnik GmbH",
         "member": null,
-        "evidence": "Official source archive; archive has no Authenticode member"
+        "evidence": "Official source archive; archive has no Authenticode member; only the pinned official archive and member hashes authorize preparation, not signed status"
       },
       "redistribution": {
         "state": "pending",
@@ -539,7 +668,50 @@
       "validation": {
         "state": "pending",
         "evidence": "Wrapper used for the official read-only report probe; project adapter integration remains pending"
-      }
+      },
+      "dependencies": [
+        "kplusk-library-win"
+      ],
+      "download_sources": [
+        {
+          "url": "https://kplusk-messtechnik.de/downloads/files/PythonModules_2.1.zip",
+          "kind": "official-direct"
+        }
+      ],
+      "archive_members": [
+        {
+          "member": "kklib.py",
+          "path": "tools/kplusk/runtime/kklib.py",
+          "size": 101889,
+          "sha256": "bc2582776fcf8944ee94d735c9e7036b1399c649c4b1a271e2512f95e8270e41"
+        },
+        {
+          "member": "logreceiver.py",
+          "path": "tools/kplusk/runtime/logreceiver.py",
+          "size": 5710,
+          "sha256": "1bf5e695388b3c929238f7899269acfa545e4dacaeb1d242e3161574db2eef34"
+        },
+        {
+          "member": "reportreceiver.py",
+          "path": "tools/kplusk/runtime/reportreceiver.py",
+          "size": 14962,
+          "sha256": "5974dd45e90cc463a905c27224e803a18f3975d084b64d3de2baf16991e53fff"
+        },
+        {
+          "member": "reportstructreceiver.py",
+          "path": "tools/kplusk/runtime/reportstructreceiver.py",
+          "size": 14677,
+          "sha256": "c3ae042264f03df2455a28882b45f22a95e970c313ef7710549134923331ceb0"
+        },
+        {
+          "member": "ReadMe.txt",
+          "path": "tools/kplusk/runtime/ReadMe.txt",
+          "size": 1257,
+          "sha256": "d46e1439e80aa17d3d68f8f591e079de91f00c284f84cce6b261956608473f95"
+        }
+      ],
+      "installer_entry": null,
+      "size": 26394
     },
     {
       "id": "tserve",
@@ -619,7 +791,17 @@
       "validation": {
         "state": "pending",
         "evidence": "Development installer and signature checks only; driver binding and clean Windows acceptance tracked separately. src/lab_control/instruments/devices/microchip_53100a/deployment.md"
-      }
+      },
+      "dependencies": [],
+      "download_sources": [
+        {
+          "url": "https://www.miles.io/timelab/mchp/setup.exe",
+          "kind": "official-direct"
+        }
+      ],
+      "archive_members": [],
+      "installer_entry": "timelab-1.780a.exe",
+      "size": 51742336
     },
     {
       "id": "tftpd64",
@@ -671,7 +853,17 @@
       "validation": {
         "state": "pending",
         "evidence": "2026-10-02 development-host batch verified the running service, automatic start configuration, UDP 67 listener, firewall/configuration/route readback and local DISCOVER/OFFER. Real instrument REQUEST/ACK, VISA LAN discovery, restart persistence and clean Windows 10/11 acceptance remain pending. Evidence stays in runtime hardware-tests/dhcp batches; installation requirements are in docs/guides/lab-network-deployment.md."
-      }
+      },
+      "dependencies": [],
+      "download_sources": [
+        {
+          "url": "https://github.com/PJO2/tftpd64/releases/download/v4.74/Tftpd64_Service_Installer_v4.74.exe",
+          "kind": "official-direct"
+        }
+      ],
+      "archive_members": [],
+      "installer_entry": "Tftpd64_Service_Installer_v4.74.exe",
+      "size": 820872
     },
     {
       "id": "msvc-runtime",
@@ -732,7 +924,17 @@
       "validation": {
         "state": "pending",
         "evidence": "Development host package and registry detection verified 2026-10-11; clean Windows 10/11 offline acceptance remains pending"
-      }
+      },
+      "dependencies": [],
+      "download_sources": [
+        {
+          "url": "https://aka.ms/vc14/vc_redist.x64.exe",
+          "kind": "official-direct"
+        }
+      ],
+      "archive_members": [],
+      "installer_entry": "vc_redist.x64.exe",
+      "size": 18731856
     }
   ],
   "python_transitive_roots": {

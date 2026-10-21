@@ -358,7 +358,7 @@ class MonitoringDashboard(QWidget):
 
     def _channels(self, device_id: str, record: dict[str, Any]) -> tuple[int, ...]:
         category = instrument_category(record)
-        if category not in {"oscilloscope", "power_supply", "optical_power_meter"}:
+        if category not in {"oscilloscope", "power_supply", "optical_power_meter", "frequency_counter"}:
             return (1,)
         try:
             channels = tuple(self.controller.capabilities(device_id).channels)
@@ -373,7 +373,7 @@ class MonitoringDashboard(QWidget):
         category = instrument_category(record)
         return (
             sources
-            if category in {"power_supply", "signal_generator", "network_analyzer", "phase_noise_analyzer"}
+            if category in {"power_supply", "signal_generator", "network_analyzer", "phase_noise_analyzer", "frequency_counter"}
             else sources[:1]
         )
 

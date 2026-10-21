@@ -21,6 +21,7 @@ from lab_control.ui.controller import WorkspaceController
 from lab_control.ui.pages.device_control.editors import ArrayEditor, ParameterEditor
 from lab_control.ui.pages.device_control.form import OperationEditor
 from lab_control.ui.pages.monitoring.dashboard import ResponsiveGrid
+from lab_control.ui.pages.monitoring.frequency_counter import FrequencyCounterMonitoringPage
 from lab_control.ui.pages.monitoring.optical_power import OpticalPowerMonitoringPage
 from lab_control.ui.pages.monitoring.page import MonitoringPage
 from lab_control.ui.real_window import RealWindow
@@ -138,7 +139,7 @@ def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
     qtbot.addWidget(window)
     window.show()
     try:
-        assert len(runtime.inventory.all()) == 24
+        assert len(runtime.inventory.all()) == 26
         assert not runtime.monitoring.snapshots()
         for category in CATEGORY_LABELS:
             window.navigate("设备管理", category)
@@ -189,6 +190,7 @@ def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
                     PowerMonitoringPage,
                     OpticalPowerMonitoringPage,
                     PhaseNoiseMonitoringPage,
+                    FrequencyCounterMonitoringPage,
                 ),
             )
             if category == "spectrum_analyzer":
@@ -221,6 +223,11 @@ def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
                     assert all(check.isChecked() for check in monitor.channel_checks.values())
                     assert monitor.parameter_card.editor is not None
                     assert set(monitor.parameter_card.editor.editors) == {"value"}
+                    assert not hasattr(monitor, "form")
+                elif category == "frequency_counter":
+                    assert isinstance(monitor, FrequencyCounterMonitoringPage)
+                    assert set(monitor.channel_checks) == set(caps.channels)
+                    assert all(check.isChecked() for check in monitor.channel_checks.values())
                     assert not hasattr(monitor, "form")
                 else:
                     assert set(monitor.form.editors) == {c.name for c in caps.operations}

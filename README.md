@@ -78,4 +78,6 @@ uv build
 
 ## 桌面部署与环境检查
 
-系统设置中的“环境与修复”提供后台检查、修复方案和报告导出；驱动安装及网络修改执行器后续接入。组件登记、离线材料和 EXE 构建见[部署规范](docs/development/desktop-deployment.md)。
+系统设置中的“环境与修复”提供后台检查、修复方案、所选组件下载和报告导出。首次 GUI 运行会显示可跳过的准备页；材料校验完成后，可由用户点击打开厂商安装向导。网络自动配置仍待实现。
+
+Git 只保存开发材料及资源清单，第三方安装包、wheels 和解压运行库使用本机缓存。默认联网版 EXE 自带 Python/Qt，按需准备厂商组件；离线版从验证过的缓存单独构建。参见[部署规范](docs/development/desktop-deployment.md)、[下载资源](docs/generated/download-resources.md)和[缓存恢复说明](deployment/packages/README.md)。
