@@ -36,6 +36,12 @@ def parser() -> argparse.ArgumentParser:
     environment = sub.add_parser("environment", help="Inspect environment without instrument access")
     environment.add_argument("--report", type=Path)
     environment.add_argument("--repair-plan", action="store_true")
+    components = sub.add_parser("components", help="Explicit component download/verification; never install")
+    components.add_argument("component_action", choices=("list", "prepare", "verify"))
+    components.add_argument("--component", action="append", default=[])
+    components.add_argument("--cache", type=Path)
+    components.add_argument("--offline", action="store_true")
+    components.add_argument("--report", type=Path)
     network = sub.add_parser("network", help="Read-only per-computer Ethernet/DHCP deployment planning")
     network.add_argument("network_action", choices=("inspect", "plan", "validate"))
     network.add_argument("--interface", default="")
@@ -101,6 +107,15 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     app: ApplicationRuntime | None = None
     try:
+        if args.action == "components":
+            from lab_control.deployment.environment import export_report
+            from lab_control.deployment.materials import components_cli
+
+            report = components_cli(args)
+            if args.report:
+                export_report(report, args.report)
+            output(report)
+            return 0 if report.get("passed", True) else 2
         if args.action == "export-analysis":
             from lab_control.storage.analysis import export_analysis
 

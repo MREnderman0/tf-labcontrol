@@ -1,28 +1,35 @@
-# 项目离线依赖缓存
+# 本机材料缓存与恢复
 
-这个目录保存已经核验过、可以随仓库分发的 Windows 10/11 x64 安装材料和 Python 依赖。新 clone 后，`scripts/setup-dev.ps1` 会优先使用这里的缓存；只有缓存不完整时才按 `docs/development/environment.md` 使用国内镜像下载。
+Git 仅保留清单、说明、锁定依赖导出和许可；第三方安装包、wheels、归档及解压产物不再随 clone 传输，也不再需要 Git LFS。已有载荷保留在本目录并由忽略规则保护。此次不重写 Git 历史或删除远端 LFS 对象，因此已有 `.git` 不会立即缩小。
 
-## 目录
+[manifest.json](manifest.json)保留迁移前每个载荷的路径、大小、SHA256、来源、签名状态；[组件清单](../components.json)登记用途、版本、依赖闭包、解压映射和安装器入口。厂家许可 PDF 继续留在 Git，分发依据尚未确认的项仍为 pending。
 
-- `installers/`：Python 3.12.10、R&S VISA 7.2.6、PicoSDK 11.1.0.481、Thorlabs OPM 7.0.5320.947、TimeLab 1.780A、Tftpd64 Service 4.74 的官方安装包。它们的来源、大小、SHA256 和签名状态记录在 `manifest.json`，组件用途和安装边界仍以 `deployment/components.json` 为准。
-- `python/`：由 `uv.lock` 导出的锁定依赖清单和 Windows x64 / CPython 3.12 wheelhouse。下载时使用清华 PyPI 镜像，禁止代理和国外 PyPI 回退。
-- `tools/`：项目环境使用的 `uv 0.12.18` 启动文件、Tftpd64 4.74 原始便携归档，以及 `kplusk/` 下的 K+K FXE 配置工具、KK Library、Python wrapper 和官方使用条款。这里的 INI 保持厂商原始内容，现场网卡、地址池及租约须另存本机运行目录；K+K 的静态 IP 配置仍由用户通过 USB 工具确认后执行。
-- `manifest.json`：缓存文件清单及校验信息。
+## 恢复运行材料
 
-## 使用
+新材料默认放入 `%LOCALAPPDATA%\TF-LabControl\maintenance\packages`；仍读取本目录、旧 `.tools/installers`、发行目录和 ProgramData 维护缓存。文件须校验后复用；不完整下载或 LFS 指针不视为可用材料。
+
+在首次运行/环境与修复中选择所需组件，或使用公共 CLI：
+
+```powershell
+.venv-dev\Scripts\python.exe -m lab_control --cli components list
+.venv-dev\Scripts\python.exe -m lab_control --cli components prepare --component rs-visa
+.venv-dev\Scripts\python.exe -m lab_control --cli components prepare --component kplusk-python-wrapper
+.venv-dev\Scripts\python.exe -m lab_control --cli components verify --component rs-visa
+```
+
+K+K wrapper 自动包含库依赖，从已登记官方归档恢复 `tools/kplusk/runtime`。Thorlabs ZIP 校验后只解压指定成员。所有组件准备均不运行安装器或设备工具；GUI 的“打开安装向导”由用户明确点击。详细来源见[下载资源](../../docs/generated/download-resources.md)。
+
+旧 Tftpd64 便携工具及其 INI/CHM 的原始归档、哈希和官方来源仍在 manifest 中；它们不是普通运行依赖，不自动部署或修改网络。原始 INI 不含现场配置，现场网络资料只保存在运行目录。
+
+## 恢复开发材料
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-dev.ps1
+# 单独导出开发 wheelhouse 与 uv，不放进最终运行包
+.venv-dev\Scripts\python.exe scripts/prepare_dev_cache.py --output D:\LabDevCache
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-dev.ps1 -Offline -Build -Cache D:\LabDevCache
 ```
 
-脚本在缓存完整时执行 `uv pip sync deployment/packages/python/requirements.txt --offline --no-index --find-links deployment/packages/python`，再离线安装本项目，并运行依赖一致性检查。构建组也已放入 wheelhouse；需要完整构建依赖时，可以在已创建的环境中执行：
+默认清华镜像，阿里云通过 `-Mirror Aliyun` 显式选择。开发准备按 `uv.lock` 安装运行与开发依赖，`-Build` 追加构建组；完整缓存可离线安装，安装不重写锁文件。Python 3.12 x64 缺失时准备清单中的锁定安装器并提供打开路径，安装后重新运行。开发导出不包含 Python 安装器；完全离线的新电脑须另外按 manifest 准备该安装器，或已安装 Python 3.12 x64。
 
-```powershell
-$env:UV_PROJECT_ENVIRONMENT = '.venv-dev'
-.venv-dev\Scripts\uv.exe pip sync deployment/packages/python/requirements.txt --offline --no-index --find-links deployment/packages/python --python .venv-dev\Scripts\python.exe
-.venv-dev\Scripts\uv.exe pip install --offline --no-index --find-links deployment/packages/python --no-deps --no-build-isolation --python .venv-dev\Scripts\python.exe -e .
-```
-
-`.tools/installers` 仍是下载脚本的临时工作区。下载脚本验证成功后会把材料复制到本目录；部署检查会优先从本目录查找。未完整下载的 PicoSDK `.partial` 文件、临时网络探测文件和未核验的 Thorlabs 材料不会被纳入缓存。
-
-大文件使用 Git LFS 管理。提交并推送本目录后，其他机器需要安装 Git LFS 并执行 `git lfs pull`，否则只会得到指针文件。该缓存不等同于正式发行验收：安装参数、再分发许可、干净系统验证和真实设备验收仍按部署台账保留待完成状态。
+[部署规范](../../docs/development/desktop-deployment.md)说明联网/离线构建及严格发布检查；材料完整不能代替安装验证、许可确认或真实设备验收。迁移路径及原始哈希另见[迁移清单](../payload-migration.json)。

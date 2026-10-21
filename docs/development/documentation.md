@@ -19,6 +19,7 @@
 ```powershell
 .venv-dev\Scripts\python.exe scripts/generate_device_docs.py
 .venv-dev\Scripts\python.exe scripts/generate_device_docs.py --check
+.venv-dev\Scripts\python.exe scripts/generate_download_docs.py --check
 .venv-dev\Scripts\python.exe scripts/check_docs.py
 ```
 

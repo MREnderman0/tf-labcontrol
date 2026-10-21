@@ -22,7 +22,7 @@ JSON 保留 hardware_tested/hardware_passed 兼容字段；固定 false 不代�
 | Joinwit JW8105 | `joinwit.jw8105` | 6 | jw8105-power | [型号卡片](../devices/measurement-analyzers/joinwit-jw8105.md) |
 | 芯明天 XMT（完整型号待核） | `coremorrow.xmt` | 8 | 外部仪器测量输出 | [型号卡片](../devices/power-supplies/coremorrow-xmt.md) |
 | RIGOL M300 | `rigol.m300` | 16 | scalar | [型号卡片](../devices/measurement-analyzers/rigol-m300.md) |
-| K+K FXE | `kplusk.fxe` | 3 | 外部仪器测量输出 | [型号卡片](../devices/measurement-analyzers/kplusk-fxe.md) |
+| K+K FXE | `kplusk.fxe` | 3 | scalar:frequency | [型号卡片](../devices/measurement-analyzers/kplusk-fxe.md) |
 | Siglent SDG6032X | `siglent.sdg6032x` | 36 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/sdg6032x.md) |
 | Keithley 2231A-30-3 | `keithley.2231a` | 15 | power | [型号卡片](../devices/power-supplies/keithley-2231a.md) |
 | Siglent SPD4306X | `siglent.spd4306x` | 22 | power | [型号卡片](../devices/power-supplies/spd4306x.md) |

@@ -23,6 +23,7 @@ def summarize(report: dict[str, Any]) -> dict[str, Any]:
             "official_protocol_connection": "official_protocol_connection",
             "compatibility_connection": "compatibility_connection",
             "parameter_read": "parameter_read",
+            "frequency_read": "frequency_read",
             "parameter_write": "parameter_write",
             "restoration": "restoration",
             "reconnection": "reconnection",
@@ -30,10 +31,15 @@ def summarize(report: dict[str, Any]) -> dict[str, Any]:
         },
         expected_models=("FXE", "K+K FXE", "K+K FXE (完整变体待核对)"),
     )
-    # The project resource grammar accepts a bare K+K IP.  Preserve that
+    # The project resource grammar accepts a bare K+K IP. Preserve that
     # operator-facing value while recording the verified physical interface.
-    summary["interface"] = "LAN"
-    summary["protocol"] = "K+K direct Ethernet via switch"
+    resource = str(report.get("resource", ""))
+    if resource.upper().startswith("USB"):
+        summary["interface"] = "USB"
+        summary["protocol"] = "K+K official USB"
+    else:
+        summary["interface"] = "LAN"
+        summary["protocol"] = "K+K direct Ethernet via switch"
     return summary
 
 

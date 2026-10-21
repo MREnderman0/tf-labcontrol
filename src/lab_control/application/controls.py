@@ -15,6 +15,7 @@ CATEGORY_LABELS = {
     "spectrum_analyzer": "频谱仪",
     "optical_power_meter": "光功率计",
     "multimeter": "万用表",
+    "frequency_counter": "频率计数器",
     "network_analyzer": "网络分析仪",
     "phase_noise_analyzer": "相噪仪",
     "temperature_controller": "温控仪",
@@ -27,6 +28,7 @@ MEASUREMENT_CATEGORIES = {
     "spectrum_analyzer",
     "optical_power_meter",
     "multimeter",
+    "frequency_counter",
     "network_analyzer",
     "phase_noise_analyzer",
     "optical_spectrometer",
@@ -466,6 +468,8 @@ def data_sources(config: ConnectionConfig) -> tuple[DataSource, ...]:
         if any(c.name == "data_stream" and c.available for c in schema.operations):
             result.append(DataSource("data_stream", "相位 / 频率流", "streaming"))
         return tuple(result)
+    if category == "frequency_counter":
+        return (DataSource("frequency", "频率", "scalar", "frequency", "frequency"),)
     if category == "optical_spectrometer":
         label = "光谱曲线（模拟）" if config.transport == "mock" else "光谱曲线"
         return (DataSource("spectrum", label, "spectrum"),)

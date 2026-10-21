@@ -56,6 +56,7 @@ from lab_control.ui.pages.device_control.page import DeviceControlPage
 from lab_control.ui.pages.device_control.power_supply import PowerSupplyPage
 from lab_control.ui.pages.device_control.signal_source import SignalSourcePage
 from lab_control.ui.pages.monitoring.dashboard import MonitoringDashboard
+from lab_control.ui.pages.monitoring.frequency_counter import FrequencyCounterMonitoringPage
 from lab_control.ui.pages.monitoring.optical_power import OpticalPowerMonitoringPage
 from lab_control.ui.pages.monitoring.optical_spectrum import OpticalSpectrumMonitoringPage
 from lab_control.ui.pages.monitoring.oscilloscope import OscilloscopeMonitoringPage
@@ -86,7 +87,7 @@ CATEGORY_DESCRIPTIONS = {
     "spectrum_analyzer": "频率范围、RBW 与轨迹",
     "temperature_controller": "温度读回与稳定状态",
     "optical_power_meter": "光功率、光谱与传感器",
-    "measurement_analyzers": "万用表、网络分析与相位噪声",
+    "measurement_analyzers": "万用表、频率计、网络分析与相位噪声",
     "load_drivers": "电子负载与泵浦驱动",
     "unknown": "待确认身份与设备协议",
 }
@@ -94,7 +95,7 @@ CATEGORY_DESCRIPTIONS = {
 
 def category_for(record: dict[str, Any]) -> str:
     category = instrument_category(record)
-    if category in {"multimeter", "network_analyzer", "phase_noise_analyzer"}:
+    if category in {"multimeter", "network_analyzer", "phase_noise_analyzer", "frequency_counter"}:
         return "measurement_analyzers"
     if category in {"electronic_load", "pump_driver"}:
         return "load_drivers"
@@ -334,6 +335,7 @@ class RealWindow(QMainWindow):
                 PowerMonitoringPage,
                 OpticalPowerMonitoringPage,
                 OpticalSpectrumMonitoringPage,
+                FrequencyCounterMonitoringPage,
             ),
         ):
             page.focus_card(spec)
@@ -367,6 +369,7 @@ class RealWindow(QMainWindow):
             "phase_noise_analyzer",
             "optical_power_meter",
             "optical_spectrometer",
+            "frequency_counter",
         }
         if records is None:
             records = {item["id"]: item for item in self.runtime.inventory.all()}
@@ -445,6 +448,7 @@ class RealWindow(QMainWindow):
             "phase_noise_analyzer",
             "optical_power_meter",
             "optical_spectrometer",
+            "frequency_counter",
         }:
             module = "实时监测"
         elif module == "设备管理" and category == "power_supply":
@@ -512,6 +516,8 @@ class RealWindow(QMainWindow):
                         if category == "optical_spectrometer"
                         else PhaseNoiseMonitoringPage(self.controller)
                         if category == "phase_noise_analyzer"
+                        else FrequencyCounterMonitoringPage(self.controller, self.dashboard.add)
+                        if category == "frequency_counter"
                         else MonitoringPage(self.controller, category, self.dashboard.add)
                     )
                 else:
@@ -543,6 +549,7 @@ class RealWindow(QMainWindow):
                 OpticalPowerMonitoringPage,
                 OpticalSpectrumMonitoringPage,
                 PhaseNoiseMonitoringPage,
+                FrequencyCounterMonitoringPage,
                 SignalSourcePage,
                 PowerSupplyPage,
                 CoreMorrowE00Page,
@@ -780,6 +787,12 @@ class RealWindow(QMainWindow):
         layout.addWidget(self.message)
         self.setCentralWidget(root)
 
+    def prepare_first_run(self) -> None:
+        from lab_control.ui.pages.component_preparation import show_preparation
+
+        show_preparation(self.runtime, self, first_run=True)
+        self.scan()
+
     def scan(self) -> None:
         try:
             self.bridge.watch(self.runtime.discovery.scan(), "scan")
@@ -953,7 +966,8 @@ class RealWindow(QMainWindow):
                     if connection != "disconnected" or device_id in current_records
                     else presence_label(record, state)
                 ),
-                self.controller.slot_notice(record["id"]) or slot_label(record.get("slots", {}).get(self.controller.mode, "")),
+                self.controller.slot_notice(record["id"])
+                or slot_label(record.get("slots", {}).get(self.controller.mode, "")),
             ]
             badges_changed = row.text(3) != texts[3] or row.text(4) != texts[4]
             for index, text in enumerate(texts):
@@ -1147,7 +1161,8 @@ class RealWindow(QMainWindow):
                 "resource": f"{config['transport'].upper()}  ·  {config['resource']}",
                 "aliases": "\n".join(r for r in record["resources"] if r != config["resource"]) or "无",
                 "mode": "通用工作区",
-                "slot": self.controller.slot_notice(record["id"]) or slot_label(record.get("slots", {}).get(self.controller.mode, "")),
+                "slot": self.controller.slot_notice(record["id"])
+                or slot_label(record.get("slots", {}).get(self.controller.mode, "")),
                 "presence": presence_label(record, state),
                 "identity_state": identity_state,
                 "seen": seen.toLocalTime().toString("yyyy-MM-dd HH:mm:ss")
@@ -1402,9 +1417,7 @@ class RealWindow(QMainWindow):
         title = QLabel("添加设备")
         title.setObjectName("panelTitle")
         root.addWidget(title)
-        description = QLabel(
-            "只需要选择型号并填写 IP 或 COM 口。端口、超时和备注已放入高级选项。"
-        )
+        description = QLabel("只需要选择型号并填写 IP 或 COM 口。端口、超时和备注已放入高级选项。")
         description.setObjectName("pageDescription")
         description.setWordWrap(True)
         root.addWidget(description)
@@ -1488,9 +1501,7 @@ class RealWindow(QMainWindow):
 
         def refresh_addresses() -> None:
             entries = self.runtime.static_addresses.entries()
-            selected = {
-                str(item.data(Qt.ItemDataRole.UserRole)) for item in address_list.selectedItems()
-            }
+            selected = {str(item.data(Qt.ItemDataRole.UserRole)) for item in address_list.selectedItems()}
             address_list.blockSignals(True)
             address_list.clear()
             for entry in entries:
@@ -1515,9 +1526,7 @@ class RealWindow(QMainWindow):
         self._refresh_static_address_dialog = refresh_addresses
 
         def selected_ids() -> tuple[str, ...]:
-            return tuple(
-                str(item.data(Qt.ItemDataRole.UserRole)) for item in address_list.selectedItems()
-            )
+            return tuple(str(item.data(Qt.ItemDataRole.UserRole)) for item in address_list.selectedItems())
 
         def scan_addresses(ids: tuple[str, ...]) -> None:
             if not ids:
@@ -1556,6 +1565,7 @@ class RealWindow(QMainWindow):
                 status.setText(str(exc))
 
         save_scan.clicked.connect(save_endpoint)
+
         def remove_selected() -> None:
             self.runtime.static_addresses.remove(set(selected_ids()))
             refresh_addresses()

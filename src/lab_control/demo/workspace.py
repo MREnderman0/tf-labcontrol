@@ -14,6 +14,7 @@ DEMO_MODELS = {
     "spectrum_analyzer": ("rigol.dsa815", "rs.fph"),
     "optical_power_meter": ("thorlabs.pm100d", "sim.optical_power_meter"),
     "multimeter": ("keysight.3458a", "keysight.3458a"),
+    "frequency_counter": ("sim.frequency_counter",) * 2,
     "network_analyzer": ("rs.znb3004", "rs.znb3004"),
     "phase_noise_analyzer": ("microchip.53100a", "microchip.53100a"),
     "temperature_controller": ("sim.temperature_controller",) * 2,

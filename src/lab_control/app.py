@@ -58,7 +58,7 @@ def main() -> int:
     window.show()
     # Every transport is scanned once after the window is shown.  LAN discovery
     # is optional, but serial/VISA discovery must not depend on that setting.
-    QTimer.singleShot(0, window.scan)
+    QTimer.singleShot(0, getattr(window, "prepare_first_run", window.scan))
     result = app.exec()
     runtime.close()
     return result

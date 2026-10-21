@@ -26,6 +26,7 @@ from lab_control.domain.instruments import (
 )
 
 SIMULATED_CATEGORIES: dict[str, dict[str, tuple[str, float, float]]] = {
+    "frequency_counter": {"reference_frequency": ("Hz", 1, 1e12)},
     "temperature_controller": {
         "setpoint": ("degC", -80, 200),
         "ramp": ("degC/min", 0.01, 20),
@@ -138,7 +139,6 @@ class SimulatedInstrument:
             "points": 1001,
             "start_wavelength": 1400,
             "stop_wavelength": 1600,
-            "rbw": 0.1,
         }
         if self.adapter_id == "pico.6404e":
             defaults["timebase"] = 10  # Mock timebase index, not a hardware GetTimebase result.
@@ -326,6 +326,7 @@ class SimulatedInstrument:
                         0.001 * (1550 / self._value(1, "wavelength", 1550)),
                     ),
                     "multimeter": ("V", "reading", 1.25),
+                    "frequency_counter": ("Hz", "frequency", 10_000_000.0),
                     "temperature_controller": ("degC", "temperature", self._value(1, "setpoint", 25)),
                     "electronic_load": ("A", "current", self._value(1, "current", 0.1)),
                     "pump_driver": ("A", "current", self._value(1, "current", 0.1)),

@@ -77,6 +77,8 @@ try {
 
     if (-not $InstallerPath) {
         $InstallerPath = @(
+            (Join-Path $env:LOCALAPPDATA ('TF-LabControl\maintenance\packages\' + $component.filename)),
+            (Join-Path $env:ProgramData ('TF-LabControl\maintenance\packages\' + $component.filename)),
             (Join-Path $root ('deployment\packages\installers\' + $component.filename)),
             (Join-Path $root ('.tools\installers\' + $component.filename)),
             (Join-Path $PSScriptRoot ('packages\' + $component.filename))

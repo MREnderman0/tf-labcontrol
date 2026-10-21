@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import platform
+import time
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -17,7 +18,7 @@ from typing import Any
 
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.runtime import ApplicationRuntime
-from lab_control.domain.instruments import jsonable, utc_now
+from lab_control.domain.instruments import AcquisitionRequest, DeviceError, jsonable, utc_now
 from lab_control.instruments.registry import create_adapter
 from lab_control.storage.repository import application_home
 
@@ -42,6 +43,7 @@ def verify(config: ConnectionConfig, folder: Path) -> dict[str, Any]:
                 "official_protocol_connection",
                 "compatibility_connection",
                 "parameter_read",
+                "frequency_read",
                 "parameter_write",
                 "restoration",
                 "reconnection",
@@ -124,6 +126,65 @@ def verify(config: ConnectionConfig, folder: Path) -> dict[str, Any]:
             "state": "not_tested",
             "reason": "没有修改参数，无恢复动作",
         }
+        try:
+            frequency_request = AcquisitionRequest(
+                kind="scalar",
+                channels=tuple(range(1, 25)),
+                points=1,
+                quantity="frequency",
+            )
+            frequency_batch = None
+            frequency_error: Exception | None = None
+            # A phase-average device needs two cumulative reports before its
+            # read-only Hz estimate can be calculated.  Allow the first
+            # report to arrive after the device's startup queue settles; this
+            # never sends a device command.
+            for attempt in range(16):
+                try:
+                    frequency_batch = adapter.acquire(frequency_request)
+                    break
+                except DeviceError as exc:
+                    frequency_error = exc
+                    if exc.code != "timeout" or attempt == 15:
+                        raise
+                    time.sleep(1.1)
+            if frequency_batch is None:
+                raise frequency_error or DeviceError("K+K frequency report unavailable", "timeout")
+            report["initial_snapshot"]["frequency"] = jsonable(frequency_batch)
+            source_report_type = frequency_batch.configuration.get("source_report_type", "RT_DOUBLE")
+            frequency_reason = (
+                "通过 Multi_GetReportStruct 读取 RT_PHASE 相邻帧并按设备时间戳计算 Hz；未发送设置命令"
+                if frequency_batch.configuration.get("derived_from_phase")
+                else "通过 Multi_GetReportStruct 读取完整 RT_DOUBLE 频率回报；未发送设置命令"
+            )
+            report["stages"]["frequency_read"] = {
+                "state": "passed",
+                "reason": frequency_reason,
+                "source_report_type": source_report_type,
+                "channels": [measurement.channel for measurement in frequency_batch.measurements],
+                "values_hz": [measurement.values[0] for measurement in frequency_batch.measurements],
+            }
+            report_log = frequency_batch.configuration.get("report_log")
+            if report_log:
+                with communication.open("a", encoding="utf-8") as stream:
+                    stream.write(
+                        json.dumps(
+                            {
+                                "time": utc_now(),
+                                "direction": "rx",
+                                "stage": "frequency_read",
+                                "source": "official_library",
+                                "data": report_log,
+                            },
+                            ensure_ascii=False,
+                        )
+                        + "\n"
+                    )
+        except Exception as exc:
+            report["stages"]["frequency_read"] = {
+                "state": "blocked" if getattr(exc, "code", "") == "timeout" else "failed",
+                "reason": str(exc),
+            }
         adapter.close()
         adapter = create_adapter(config, app.visa)
         reconnect_identity = adapter.identify()
@@ -182,10 +243,10 @@ def _record_markdown(report: dict[str, Any], folder: Path) -> str:
         "# K+K FXE 项目兼容层只读批次\n\n"
         f"- 批次目录：`{folder.name}`\n"
         f"- 资源：`{report['resource']}`（经交换机）\n"
-        "- 范围：通过项目注册、官方 K+K Library 工厂进行只读连接、身份元数据、报告读取和重连；未写设置。\n\n"
+        "- 范围：通过项目注册、官方 K+K Library 工厂进行只读连接、身份元数据、二进制频率回报读取和重连；未写设置。\n\n"
         "## 结果\n\n"
         + "\n".join(f"- {name}: **{item['state']}** — {item.get('reason', '')}" for name, item in stages.items())
-        + "\n\n官方报告原文在 `results.json` 的 snapshot/reconnection 字段中保留。报告单位和完整 FXE 变体未确认前，不提供频率数值采集。\n"
+        + "\n\n官方报告原文在 `results.json` 的 snapshot/reconnection 字段中保留；有效 RT_DOUBLE 回报的通道值在 `initial_snapshot.frequency` 中保留。未返回完整回报时，频率阶段保持 blocked/failed，不把空帧当作通过。\n"
     )
 
 

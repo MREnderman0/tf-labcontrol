@@ -80,15 +80,46 @@ def validate_manifest(value: dict) -> list[str]:
         for field in ("signature", "redistribution", "detection", "installation", "validation"):
             if not isinstance(item.get(field), dict):
                 errors.append(f"{key}: {field} must be an object")
+        from lab_control.deployment.materials import safe_relative, sources
+
+        try:
+            for source in sources(item):
+                if not str(source.get("url", "")).startswith("https://"):
+                    errors.append(f"{key}: HTTPS download source required")
+            paths = set()
+            for member in item.get("archive_members", []):
+                safe_relative(member["member"])
+                safe_relative(member["path"])
+                if (
+                    member["path"].casefold() in paths
+                    or not isinstance(member["size"], int)
+                    or member["size"] < 0
+                    or not re.fullmatch(r"[0-9a-fA-F]{64}", member["sha256"])
+                ):
+                    errors.append(f"{key}: invalid archive mapping")
+                paths.add(member["path"].casefold())
+            entry = item.get("installer_entry")
+            if entry:
+                safe_relative(entry)
+                if not entry.lower().endswith(".exe"):
+                    errors.append(f"{key}: installer must be an EXE")
+                if entry != filename and entry not in [m["path"] for m in item.get("archive_members", [])]:
+                    errors.append(f"{key}: installer is not a verified payload member")
+        except (ValueError, KeyError, TypeError) as exc:
+            errors.append(f"{key}: {exc}")
+    for item in value.get("components", []):
+        if any(dep not in seen or dep == item["id"] for dep in item.get("dependencies", [])):
+            errors.append(item["id"] + ": invalid dependency")
     return errors
 
 
 def cache_directories() -> tuple[Path, ...]:
-    folders = [Path(os.environ.get("PROGRAMDATA", Path.home())) / "TF-LabControl/maintenance/packages"]
+    folders = [
+        user_cache(),
+        Path(os.environ.get("PROGRAMDATA", Path.home())) / "TF-LabControl/maintenance/packages",
+    ]
     if not getattr(sys, "frozen", False):
-        # Keep verified installers in the repository so a fresh clone can use
-        # them without downloading again.  The temporary .tools cache remains
-        # as a fallback for files that have not yet been promoted here.
+        # Legacy caches remain readable after payloads leave version control.
         folders.append(Path(__file__).resolve().parents[3] / "deployment/packages")
         folders.append(Path(__file__).resolve().parents[3] / "deployment/packages/installers")
         folders.append(Path(__file__).resolve().parents[3] / ".tools/installers")
@@ -99,12 +130,18 @@ def cache_directories() -> tuple[Path, ...]:
     return tuple(folders)
 
 
+def user_cache() -> Path:
+    return Path(os.environ.get("LOCALAPPDATA", Path.home() / ".cache")) / "TF-LabControl/maintenance/packages"
+
+
 def payload_status(component: dict, caches: tuple[Path, ...], cancel=None) -> dict:
     filename, digest = component["filename"], component["sha256"]
     if not filename or not digest:
         return {"state": "unknown", "reason": "安装材料尚未登记完整"}
     failures = []
-    for folder in caches:
+    # Legacy project caches put installers one directory below the cache root.
+    folders = tuple(dict.fromkeys(p for folder in caches for p in (folder, folder / "installers")))
+    for folder in folders:
         relative_folder = component.get("cache_subdirectory", "")
         path = folder / relative_folder / filename if relative_folder else folder / filename
         if not path.is_file():
@@ -127,7 +164,7 @@ def payload_status(component: dict, caches: tuple[Path, ...], cancel=None) -> di
     }
 
 
-def release_issues(component: dict, caches: tuple[Path, ...]) -> list[str]:
+def release_issues(component: dict, caches: tuple[Path, ...], *, distribution: str = "offline") -> list[str]:
     issues = []
     for field in ("version", "source_page", "url", "filename", "sha256"):
         if not component[field]:
@@ -143,23 +180,23 @@ def release_issues(component: dict, caches: tuple[Path, ...]) -> list[str]:
     if component["detection"].get("kind") == "pending":
         issues.append("installed-component detection pending")
     signature = component["signature"]
-    if signature.get("policy") != "authenticode" or not signature.get("publisher"):
+    if signature.get("policy") not in {"authenticode", "official-sha256"} or not signature.get("publisher"):
         issues.append("signature policy/publisher pending")
+    if distribution == "online":
+        if not component.get("size"):
+            issues.append("download size pending")
+        return issues
     payload = payload_status(component, caches)
     if payload["state"] != "verified":
         issues.append("offline payload " + payload["state"])
-    elif not signature.get("member") and signature.get("publisher"):
-        from lab_control.deployment.windows import signature_status
+    else:
+        from lab_control.deployment.materials import verify_component
 
-        result = signature_status(Path(payload["path"]))
-        if (
-            result.get("status") != "Valid"
-            or signature["publisher"].casefold() not in result.get("subject", "").casefold()
-        ):
-            issues.append("installer signature could not be verified")
-    elif signature.get("member"):
-        # Archive signing needs extraction/verification in the future release stager.
-        issues.append("archive member signature requires release staging verification")
+        verified = verify_component(component, caches)
+        if verified["state"] != "verified":
+            issues.append(
+                "payload/signature verification failed: " + verified.get("error", verified["state"])
+            )
     return issues
 
 

@@ -40,6 +40,7 @@ def test_removed_package_keeps_old_inventory_cli_scan_and_ui_usable(
         card_category = {
             "optical_spectrometer": "optical_power_meter",
             "multimeter": "measurement_analyzers",
+            "frequency_counter": "measurement_analyzers",
             "network_analyzer": "measurement_analyzers",
             "phase_noise_analyzer": "measurement_analyzers",
             "electronic_load": "load_drivers",

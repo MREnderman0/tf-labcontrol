@@ -1,6 +1,8 @@
-# K+K FXE 离线软件包
+# K+K FXE 材料恢复
 
-这些文件来自 K+K Messtechnik 官方下载页，供本项目的维护材料和换电脑操作使用：
+下列材料来自 K+K Messtechnik 官方下载页，供本项目的维护和换电脑操作使用。Git 仅保留本说明及许可 PDF；归档、DLL 和 wrapper 不随 clone 下载。本机旧材料保留在被忽略的原路径。
+
+在“环境与修复 → 准备设备组件”选择 K+K Library 和 Python wrapper，或执行 `python -m lab_control --cli components prepare --component kplusk-python-wrapper`。配置工具另行指定 `--component kplusk-config-tool`。下载到用户维护缓存，按清单安全解压；GUI 不自动启动设备配置/固件更新工具。
 
 - `KK_FirmwareUpload_Win_Ver_5.1.0_25-11-28.zip` 及其中的 `KK_FirmwareUpload_Win32_Ver_5.1.0_25-11-28.exe`：FXE1 Firmware Upload and Configuration Tool。用于通过 USB 读写 FXE 的 IP、子网掩码、网关、CAN ID 和昵称；本项目只引导用户修改网络字段，不自动更新 Firmware 或 Bootloader。
 - `KK-Library_Win_Ver_21.2.2_25-11-28.zip`：Windows 64 位 KK Library 及头文件、许可条款。
@@ -13,4 +15,4 @@
 
 FXE 使用静态 IPv4，不支持依赖 DHCP 的换机流程。新电脑先用 USB 打开配置工具读出完整型号、序列号和原始网络配置，确认实验网口后只修改目标 IP、掩码和网关并点击 `Update Configuration`/`Start Update`；设备重启后拔掉 USB、接交换机，用 KK Library 以 `<IP>[:<Port>]` 直连并读取报告。电脑网卡、交换机和防火墙保持不变，参数读回和官方协议连接分别留档。
 
-`runtime/` is the extracted, hash-verified DLL/wrapper payload used by the project compatibility adapter and directory build; it is not a different vendor version.
+`runtime/` 从官方归档的指定成员逐字节恢复；映射、大小与哈希在 [组件清单](../../../components.json)。未签名归档按官方来源与固定哈希验证，不声称 Authenticode 通过。库加载优先复用完整缓存；离线发行按所选组件闭包装配，联网发行不内置这些载荷。

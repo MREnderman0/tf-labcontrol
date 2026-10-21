@@ -1,6 +1,6 @@
 # K+K FXE 实机只读计划
 
-本入口只接受用户明确指定的 K+K IP 或 `kplusk://IP[:port]`，通过项目 `kplusk.fxe` 工厂执行官方库只读连接、元数据/原始报告读取和一次重连。它不扫描其他地址，不改网卡，不调用设备设置 API，也不进行物理输出测量。
+本入口只接受用户明确指定的 K+K IP 或 `kplusk://IP[:port]`，通过项目 `kplusk.fxe` 工厂执行官方库只读连接、元数据/原始报告读取、二进制频率（或相邻 `RT_PHASE` 帧推导）和一次重连。它不扫描其他地址，不改网卡，不调用设备设置 API，也不进行物理输出测量。
 
 ```powershell
 .venv-dev\Scripts\python.exe -m lab_control.instruments.devices.kplusk_fxe.hardware.readonly `

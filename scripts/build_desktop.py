@@ -1,4 +1,4 @@
-"""Build a test executable or enforce the offline release gate; never install drivers."""
+"""Build online/offline desktop bundles with unchanged release gates; never install drivers."""
 
 from __future__ import annotations
 
@@ -36,49 +36,32 @@ def build_environment() -> dict[str, str]:
     return environment
 
 
-def stage_offline_packages() -> None:
-    """Copy verified repair materials into the directory build beside the EXE."""
+def stage_offline_packages(target: Path, components, caches=None) -> dict:
+    """Stage only the selected runtime materials, never development wheels."""
+    from lab_control.deployment.materials import prepare_components
 
-    source = ROOT / "deployment/packages"
-    target = ROOT / "dist/TF-LabControl/maintenance/packages"
-    installers = source / "installers"
-    if not installers.is_dir():
-        raise FileNotFoundError("deployment/packages/installers is missing")
-    target.mkdir(parents=True, exist_ok=True)
-    # The runtime catalog looks for vendor installers directly in this cache.
-    for item in installers.iterdir():
-        if item.is_file():
-            shutil.copy2(item, target / item.name)
-    for name in ("python", "tools"):
-        folder = source / name
-        if folder.is_dir():
-            shutil.copytree(folder, target / name, dirs_exist_ok=True)
-    for name in ("README.md", "manifest.json"):
-        item = source / name
-        if item.is_file():
-            shutil.copy2(item, target / name)
-    # Keep the external, UAC-separated driver repair entry point with the
-    # maintenance materials so a directory build can repair Problem 39/45
-    # without requiring the source checkout.
-    repair_script = ROOT / "scripts/repair_53100a_driver.ps1"
-    if repair_script.is_file():
-        shutil.copy2(repair_script, target.parent / repair_script.name)
-    vc_guard = ROOT / "scripts/ensure_vc_runtime.ps1"
-    if vc_guard.is_file():
-        shutil.copy2(vc_guard, target.parent / vc_guard.name)
-    kplusk_launcher = ROOT / "scripts/launch-kplusk-config.ps1"
-    if kplusk_launcher.is_file():
-        shutil.copy2(kplusk_launcher, target.parent / kplusk_launcher.name)
-    component_manifest = ROOT / "deployment/components.json"
-    if component_manifest.is_file():
-        shutil.copy2(component_manifest, target.parent / component_manifest.name)
+    report = prepare_components(
+        components, cache=target / "maintenance/packages", caches=caches, download=False
+    )
+    if not report["passed"]:
+        raise ValueError("Offline materials incomplete: " + json.dumps(report, ensure_ascii=False))
+    return report
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--release", action="store_true")
+    parser.add_argument("--distribution", choices=("online", "offline"), default="online")
+    parser.add_argument("--cache", type=Path, action="append")
+    parser.add_argument("--component", action="append", default=[])
+    parser.add_argument("--output", type=Path, help="New output directory; existing builds are preserved")
     args = parser.parse_args()
-    command = [sys.executable, str(ROOT / "scripts/check_deployment.py")]
+    output = (args.output or ROOT / "dist" / args.distribution).resolve()
+    if (output / "TF-LabControl").exists():
+        parser.error("Output already exists; use --output with a new directory to preserve this build")
+    command = [sys.executable, str(ROOT / "scripts/check_deployment.py"), "--distribution", args.distribution]
+    for cache in args.cache or []:
+        command += ["--cache", str(cache.resolve())]
     if args.release:
         command.append("--release")
     subprocess.run(command, cwd=ROOT, check=True)
@@ -86,6 +69,17 @@ def main() -> int:
     from lab_control.deployment.catalog import load_manifest
 
     manifest = load_manifest()
+    components = args.component or [c["id"] for c in manifest["components"]]
+    if args.distribution == "offline":
+        from lab_control.deployment.materials import component_closure, verify_component
+
+        checks = [
+            verify_component(c, tuple(args.cache) if args.cache else None)
+            for c in component_closure(components)
+        ]
+        missing = [c for c in checks if c["state"] != "verified"]
+        if missing:
+            raise ValueError("Offline materials incomplete: " + json.dumps(missing, ensure_ascii=False))
     wanted = set(manifest["python_roots"])
     for name in (*wanted, "pyinstaller", "pyinstaller-hooks-contrib"):
         version = importlib.metadata.version(name)
@@ -105,12 +99,14 @@ def main() -> int:
 
     for name in wanted:
         collect(name)
-    destination = ROOT / "build/deployment"
+    destination = ROOT / "build" / args.distribution / "deployment"
     destination.mkdir(parents=True, exist_ok=True)
     report = {
         "schema_version": 1,
         "kind": "release_manifest",
         "release_ready": args.release,
+        "distribution": args.distribution,
+        "selected_components": components if args.distribution == "offline" else args.component,
         "python": sys.version,
         "target": "windows-x64",
         "components": manifest["components"],
@@ -133,14 +129,35 @@ def main() -> int:
             "-m",
             "PyInstaller",
             "--clean",
-            "--noconfirm",
+            "--distpath",
+            str(output),
+            "--workpath",
+            str(ROOT / "build" / args.distribution / "pyinstaller"),
             str(ROOT / "deployment/labcontrol.spec"),
         ],
         cwd=ROOT,
-        env=build_environment(),
+        env={**build_environment(), "LABCONTROL_BUILD_MANIFEST": str(destination / "release-manifest.json")},
         check=True,
     )
-    stage_offline_packages()
+    target = output / "TF-LabControl"
+    if args.distribution == "offline":
+        stage_offline_packages(target, components, tuple(args.cache) if args.cache else None)
+    maintenance = target / "maintenance"
+    maintenance.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(ROOT / "deployment/components.json", maintenance / "components.json")
+    for name in ("repair_53100a_driver.ps1", "ensure_vc_runtime.ps1", "launch-kplusk-config.ps1"):
+        shutil.copy2(ROOT / "scripts" / name, maintenance / name)
+    print(
+        json.dumps(
+            {
+                "bundle": str(target),
+                "distribution": args.distribution,
+                "bytes": sum(p.stat().st_size for p in target.rglob("*") if p.is_file()),
+                "release_ready": args.release,
+            },
+            ensure_ascii=False,
+        )
+    )
     return 0
 
 
