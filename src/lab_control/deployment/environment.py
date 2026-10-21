@@ -328,11 +328,19 @@ def inspect_environment(
                     ("pm100d" if any(c.transport == "pm100d" for c in configs) else component["sdk"]),
                 ),
             )["sdk"]
-            detail = next(iter(checks.values()))
-            state = {"loadable": "unknown", "missing": "missing", "error": "incompatible"}[detail["state"]]
-            reason = (
-                "DLL 检查：" + json.dumps(detail, ensure_ascii=False) + "；驱动版本与实机兼容性须另行核实"
-            )
+            # K+K uses its own Python wrapper and adjacent DLLs rather than
+            # the generic VendorLibrary SDK table.  Keep the inspection
+            # report usable when a model-specific SDK has no generic checker;
+            # an empty mapping is an unresolved check, not a crash.
+            detail = next(iter(checks.values()), None)
+            if detail is None:
+                state = "unknown"
+                reason = f"SDK {component['sdk']} 未登记通用 DLL 检测器；由型号包运行时路径单独核验"
+            else:
+                state = {"loadable": "unknown", "missing": "missing", "error": "incompatible"}[detail["state"]]
+                reason = (
+                    "DLL 检查：" + json.dumps(detail, ensure_ascii=False) + "；驱动版本与实机兼容性须另行核实"
+                )
         elif key == "msvc-runtime":
             vc = windows.get("vc_runtime") or {}
             if vc.get("Installed") == 1:

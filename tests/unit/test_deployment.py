@@ -118,6 +118,21 @@ def test_inspection_reports_optional_driver_unknown_and_storage_failure(tmp_path
     assert json.loads(path.read_text(encoding="utf-8")) == report
 
 
+def test_inspection_handles_model_specific_sdk_without_generic_checker(tmp_path, monkeypatch):
+    from lab_control.application.config import ConnectionConfig
+
+    monkeypatch.setattr("lab_control.deployment.windows.inspect_windows", lambda cancel: {})
+    report = environment.inspect_environment(
+        tmp_path,
+        (ConnectionConfig("192.0.2.10", "kplusk.fxe", "kplusk"),),
+        caches=(tmp_path,),
+    )
+    by_id = {item["id"]: item for item in report["items"]}
+    assert report["state"] == "complete"
+    assert by_id["kplusk-library-win"]["state"] == "unknown"
+    assert "未登记通用 DLL 检测器" in by_id["kplusk-library-win"]["reason"]
+
+
 @pytest.mark.parametrize(
     ("version", "expected"),
     [("v14.51.36247.0", "ok"), ("v14.34.31823.03", "incompatible")],
