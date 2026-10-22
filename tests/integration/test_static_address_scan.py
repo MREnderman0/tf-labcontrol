@@ -6,6 +6,7 @@ from lab_control.demo.instrument import SimulatedInstrument
 from lab_control.discovery.lan import StaticAddressDiscoveryProvider
 from lab_control.discovery.service import DiscoveryCandidate, DiscoveryService, Inventory
 from lab_control.domain.instruments import DeviceIdentity
+from lab_control.instruments.registry import normalize_discovery_config
 from lab_control.storage.repository import Repository
 
 
@@ -87,6 +88,37 @@ def test_static_scan_persists_model_normalized_tcp_source_config(tmp_path):
         assert record["presenceState"] == "present"
         assert record["config"]["transport"] == "tcp"
         assert record["config"]["source_address"] == "192.168.0.1"
+    finally:
+        if scanner is not None:
+            scanner.close()
+        sessions.close()
+        repository.close()
+
+
+def test_static_scan_normalizes_kplusk_socket_to_library_transport(tmp_path):
+    repository = Repository(tmp_path)
+    leases = ResourceLeases(tmp_path)
+    sessions = SessionManager(leases, repository, SimulatedInstrument)
+    inventory = Inventory(repository)
+    scanner = None
+    try:
+        store = StaticAddressStore(repository)
+        entry = store.add("192.168.0.200", adapter="kplusk.fxe")
+        scanner = DiscoveryService(
+            (StaticAddressDiscoveryProvider(store),),
+            sessions,
+            leases,
+            inventory,
+            lambda _candidate: (DeviceIdentity("K+K", "FXE", "", "70"), "kplusk.fxe"),
+            normalize_discovery_config=normalize_discovery_config,
+            source_addresses=lambda: ("192.168.0.10",),
+        )
+        result = scanner.scan().result(timeout=5)
+        assert result["items"][0]["reason"] == "identified"
+        record = inventory.by_resource(entry.resource)
+        assert record is not None
+        assert record["config"]["resource"] == entry.resource
+        assert record["config"]["transport"] == "kplusk"
     finally:
         if scanner is not None:
             scanner.close()
