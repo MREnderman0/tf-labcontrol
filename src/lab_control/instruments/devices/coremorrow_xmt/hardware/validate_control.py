@@ -285,7 +285,7 @@ def run(resource: str, asset_name: str, baud_rate: int, recovery_zero: bool = Fa
             for channel in CHANNELS:
                 original = initial[str(channel)]
                 restore_target = max(0.0, original)
-                entry: dict[str, Any] = {
+                entry = {
                     "channel": channel,
                     "operation": "voltage",
                     "original": original,

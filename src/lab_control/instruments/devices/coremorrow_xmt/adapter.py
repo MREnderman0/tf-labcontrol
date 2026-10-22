@@ -95,9 +95,14 @@ class CoreMorrowXmtAdapter(ScpiAdapter):
         operations = capability_schema(self.config).operations
         if self.waveform.paused and not self.waveform.normalizing:
             operations = tuple(
-                replace(cap, readable=False, writable=False,
-                        reason="波形运行状态未确认或有波形输出；请先停止波形并进入常规。")
-                if cap.name in {"voltage", "measured_voltage", "raw_channel_data"} else cap
+                replace(
+                    cap,
+                    readable=False,
+                    writable=False,
+                    reason="波形运行状态未确认或有波形输出；请先停止波形并进入常规。",
+                )
+                if cap.name in {"voltage", "measured_voltage", "raw_channel_data"}
+                else cap
                 for cap in operations
             )
         return CapabilitySet("power_supply", channels, operations)
@@ -214,8 +219,16 @@ class CoreMorrowXmtAdapter(ScpiAdapter):
             capability = self.capabilities().get(operation)
             target = channel if capability.channel_scoped else 1
             if operation == "control_state":
-                readings.append(ParameterReading(operation, target, self.waveform.snapshot(), "unavailable",
-                                                 quality=Quality.STALE, error="模式和波形参数无可靠仪器读回"))
+                readings.append(
+                    ParameterReading(
+                        operation,
+                        target,
+                        self.waveform.snapshot(),
+                        "unavailable",
+                        quality=Quality.STALE,
+                        error="模式和波形参数无可靠仪器读回",
+                    )
+                )
                 continue
             readings.append(ParameterReading(operation, target, self.read(operation, target), "instrument"))
         return tuple(readings)

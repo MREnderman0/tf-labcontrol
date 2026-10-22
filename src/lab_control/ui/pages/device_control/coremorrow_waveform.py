@@ -19,7 +19,11 @@ def resolve_mode(state: dict, stored: dict) -> str:
         return "waveform"
     if state.get("source") == "instrument" and state.get("mode") in {"normal", "waveform"}:
         return state["mode"]
-    if len(channels) >= 3 and len(channels) == len(verified) and all(ch.get("mode") == "normal" for ch in verified):
+    if (
+        len(channels) >= 3
+        and len(channels) == len(verified)
+        and all(ch.get("mode") == "normal" for ch in verified)
+    ):
         return "normal"
     # A shutdown restoration command is not a new user page preference.
     # Neither command timestamps nor successful transport prove current mode.
@@ -52,14 +56,24 @@ class CoreMorrowWaveformChannel(QFrame):
         title.setObjectName("coremorrowChannelTitle")
         grid.addWidget(title, 1, 0)
         self.waveform = WorkspaceComboBox()
-        for text, value in (("正弦波", "SIN"), ("方波", "SQUARE"), ("三角波", "TRIANGLE"), ("锯齿波", "SAWTOOTH")):
+        for text, value in (
+            ("正弦波", "SIN"),
+            ("方波", "SQUARE"),
+            ("三角波", "TRIANGLE"),
+            ("锯齿波", "SAWTOOTH"),
+        ):
             self.waveform.addItem(text, value)
         self.inputs: dict[str, QLineEdit] = {}
         self.parameter_sources = dict.fromkeys(capability.parameters, "默认草稿，当前未确认")
         grid.addWidget(QLabel("波形"), 0, 1)
         grid.addWidget(self.waveform, 1, 1)
         for column, (name, label, default) in enumerate(
-            (("frequency", "频率 / Hz", "1"), ("amplitude", "峰峰值 / V", "0.2"), ("offset", "偏移 / V", "0.1")), 2
+            (
+                ("frequency", "频率 / Hz", "1"),
+                ("amplitude", "峰峰值 / V", "0.2"),
+                ("offset", "偏移 / V", "0.1"),
+            ),
+            2,
         ):
             field = QLineEdit(default)
             field.setObjectName("sourceValue")
@@ -85,7 +99,9 @@ class CoreMorrowWaveformChannel(QFrame):
         self.envelope.setWordWrap(True)
         grid.addWidget(self.envelope, 3, 1, 1, 6)
         stored = self.repository.load_workspace(self.key, {})
-        self.restore(stored.get("parameters", {}) if isinstance(stored, dict) else {}, source="上次记录，当前未确认")
+        self.restore(
+            stored.get("parameters", {}) if isinstance(stored, dict) else {}, source="上次记录，当前未确认"
+        )
         self.hydrating = False
         self.waveform.currentIndexChanged.connect(lambda: self.edited("waveform"))
         for name, field in self.inputs.items():
@@ -123,7 +139,9 @@ class CoreMorrowWaveformChannel(QFrame):
         self.waveform.setToolTip(self.parameter_sources["waveform"])
         for name, field in self.inputs.items():
             spec = self.capability.parameters[name]
-            field.setToolTip(f"{spec.minimum:g} ～ {spec.maximum:g} {spec.unit}\n{self.parameter_sources[name]}")
+            field.setToolTip(
+                f"{spec.minimum:g} ～ {spec.maximum:g} {spec.unit}\n{self.parameter_sources[name]}"
+            )
 
     def edited(self, name: str) -> None:
         if self.hydrating:
@@ -136,18 +154,31 @@ class CoreMorrowWaveformChannel(QFrame):
         if self.hydrating:
             return
         self.revision += 1
-        self.repository.save_workspace(self.key, {
-            "schema_version": 1, "updated_at": utc_now(),
-            "parameters": {"waveform": self.waveform.currentData(), **{k: f.text() for k, f in self.inputs.items()}},
-        })
+        self.repository.save_workspace(
+            self.key,
+            {
+                "schema_version": 1,
+                "updated_at": utc_now(),
+                "parameters": {
+                    "waveform": self.waveform.currentData(),
+                    **{k: f.text() for k, f in self.inputs.items()},
+                },
+            },
+        )
 
     def send(self) -> None:
         try:
-            values = {"waveform": self.waveform.currentData(), **{k: float(f.text()) for k, f in self.inputs.items()}}
+            values = {
+                "waveform": self.waveform.currentData(),
+                **{k: float(f.text()) for k, f in self.inputs.items()},
+            }
             values = self.capability.validate(values)
             if any(not math.isfinite(values[k]) for k in self.inputs):
                 raise ValidationError("请输入有效数值")
-            if values["offset"] - values["amplitude"] / 2 < 0 or values["offset"] + values["amplitude"] / 2 > 120:
+            if (
+                values["offset"] - values["amplitude"] / 2 < 0
+                or values["offset"] + values["amplitude"] / 2 > 120
+            ):
                 raise ValidationError("波形上下沿必须在 0 ～ 120 V 内（偏移 ± 峰峰值/2）")
             self.last_error = ""
             self.save()
@@ -161,14 +192,22 @@ class CoreMorrowWaveformChannel(QFrame):
         source = channel.get("source")
         running = channel.get("running") if source == "instrument" else channel.get("commanded_running")
         if source == "instrument":
-            text = "仪器读回：波形运行中" if running is True else "仪器读回：已停止" if running is False else "仪器运行状态未确认"
+            text = (
+                "仪器读回：波形运行中"
+                if running is True
+                else "仪器读回：已停止"
+                if running is False
+                else "仪器运行状态未确认"
+            )
             if any(value != "仪器读回" for value in self.parameter_sources.values()):
                 text += "；未读回参数沿用记录 / 草稿（悬停查看来源）"
         else:
             text = (
-                "波形命令已发送；实际输出未独立确认" if running is True else
-                "停止命令已发送；实际输出未独立确认" if running is False else
-                "上次记录，当前状态未确认；发送前请先停止波形"
+                "波形命令已发送；实际输出未独立确认"
+                if running is True
+                else "停止命令已发送；实际输出未独立确认"
+                if running is False
+                else "上次记录，当前状态未确认；发送前请先停止波形"
             )
             last = channel.get("last_command", {}).get("last_result", {})
             if running is None and last.get("outcome") in {"pending", "uncertain", "rejected", "partial"}:

@@ -46,9 +46,7 @@ class PowerMonitoringPage(QWidget):
         layout.setContentsMargins(14, 10, 14, 12)
         layout.setSpacing(8)
         header = QHBoxLayout()
-        self.selector = DeviceSelector(
-            controller, "power_supply", self, compact=True, surface="monitoring"
-        )
+        self.selector = DeviceSelector(controller, "power_supply", self, compact=True, surface="monitoring")
         header.addWidget(self.selector, 1)
         self.connection = QLabel()
         self.connection.setObjectName("sourceConnectionState")

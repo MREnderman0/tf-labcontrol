@@ -51,6 +51,9 @@ def test_recording_uses_one_run_context_without_full_save_requests_and_monitorin
         service.set_recording(key, False)
         wait_for(lambda: requests[-1].consistency == "live")
         assert not any(r.consistency == "full" for r in requests)
+        # Live display resumes independently of binary draining. A new recording
+        # must still wait for the previous recorder to release its write buffer.
+        wait_for(lambda: service.tasks[key].recorder.binary_done)
         service.set_recording(key, True)
         wait_for(lambda: requests[-1].consistency == "stream" and requests[-1].context_id not in first)
         service.stop(key).result(3)

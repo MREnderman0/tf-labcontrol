@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import threading
 from concurrent.futures import Future
+from dataclasses import replace
 from typing import Any, Callable
 
 from PySide6.QtCore import QObject, Qt, QTimer, Signal
@@ -159,6 +160,10 @@ class WorkspaceController(QObject):
         snapshot = self.runtime.sessions.capability_snapshot(device_id)
         if snapshot and channel in snapshot.channels:
             return snapshot.channels[channel]
+        if snapshot is not None and not snapshot.channels:
+            return replace(
+                control_capabilities(config_from_record(self.records[device_id]), channel), channels=()
+            )
         return control_capabilities(config_from_record(self.records[device_id]), channel)
 
     def has_connected_session(self, device_id: str) -> bool:

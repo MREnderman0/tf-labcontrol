@@ -23,9 +23,12 @@ def recording_save_notice(task: dict[str, Any]) -> str:
     elif state.get("csv_error"):
         message = "分析 CSV 生成失败（已提交的原始数据保留）：" + str(state["csv_error"])
     elif not state.get("binary_done"):
-        message = ("记录中" if task.get("recording") else "记录收尾中") + " · 原始数据已保存 " + str(
-            state.get("committed", 0)
-        ) + " 帧 · 分析 CSV 生成中"
+        message = (
+            ("记录中" if task.get("recording") else "记录收尾中")
+            + " · 原始数据已保存 "
+            + str(state.get("committed", 0))
+            + " 帧 · 分析 CSV 生成中"
+        )
     elif state.get("converted", 0) < state.get("committed", 0):
         message = "原始数据已保存 · 分析 CSV 生成中"
     else:

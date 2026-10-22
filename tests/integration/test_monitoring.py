@@ -72,7 +72,9 @@ def test_monitor_serializes_control_shares_channels_and_records_only_on_request(
         runtime.monitoring.set_recording(device, True)
         wait_for(lambda: bool(runtime.monitoring.snapshots()[device]["last_path"]))
         runtime.monitoring.stop(device).result(timeout=3)
-        snapshots = list(runtime.repository.data_root.glob("单设备采集/*/*_continuous_*/_raw/segment-*.sqlite3"))
+        snapshots = list(
+            runtime.repository.data_root.glob("单设备采集/*/*_continuous_*/_raw/segment-*.sqlite3")
+        )
         assert snapshots
         saved = next(read_frames(snapshots[0]))
         assert saved["configuration"]["monitor_record_session"]

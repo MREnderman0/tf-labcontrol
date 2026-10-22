@@ -52,9 +52,7 @@ def prepare_optical_changes(
     if target["start_wavelength"] > current.get("stop_wavelength", target["stop_wavelength"]):
         order.reverse()
     return [DeviceCommand(name, {"value": target[name]}) for name in order if name in changed] + [
-        DeviceCommand(name, {"value": target[name]})
-        for name in ("rbw", "sensitivity")
-        if name in changed
+        DeviceCommand(name, {"value": target[name]}) for name in ("rbw", "sensitivity") if name in changed
     ]
 
 

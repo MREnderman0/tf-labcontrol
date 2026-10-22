@@ -814,7 +814,7 @@ class DiscoveryService:
                     except DeviceError as exc:
                         candidate = replace(candidate, error=str(exc), error_code=exc.code)
                 normalized_group.append(candidate)
-            group = tuple(normalized_group)
+            group = normalized_group
             for candidate in group:
                 self.inventory.merge(candidate, scan_id, reason="pending_probe")
             # Explicit connection settings win, independently of provider completion order.

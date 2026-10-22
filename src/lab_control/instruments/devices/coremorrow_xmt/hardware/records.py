@@ -9,7 +9,9 @@ ADAPTER_ID = "coremorrow.xmt"
 
 
 def recognizes(report: dict[str, Any], folder: Path) -> bool:
-    return matches(report, folder, ADAPTER_ID, ("XMT-compatible controller (exact model pending)", "CoreMorrow XMT"))
+    return matches(
+        report, folder, ADAPTER_ID, ("XMT-compatible controller (exact model pending)", "CoreMorrow XMT")
+    )
 
 
 def summarize(report: dict[str, Any]) -> dict[str, Any]:
@@ -31,4 +33,3 @@ def publish_report(folder: Path) -> None:
 
     publish(folder, summarize)
     refresh_after_batch(folder)
-

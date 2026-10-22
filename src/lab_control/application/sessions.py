@@ -250,6 +250,11 @@ class SessionManager:
             {
                 **getattr(adapter, "capability_details", {}),
                 "configured_options": list(session.config.options),
+                **(
+                    {"capability_revision": adapter.capability_revision}
+                    if hasattr(adapter, "capability_revision")
+                    else {}
+                ),
             },
             version=previous.version + 1 if previous else 1,
             stale=bool(error),
@@ -605,6 +610,8 @@ class SessionManager:
                 session.last_status = jsonable(result)
             elif operation == "capabilities":
                 snapshot = session.capability_snapshot or self._refresh_capabilities(session)
+                if not snapshot.channels:
+                    raise DeviceError("等待设备通道识别，请重新连接或刷新能力", "invalid_parameter")
                 result = snapshot.channels[next(iter(snapshot.channels))]
             elif operation == "refresh_capabilities":
                 self._invalidate_acquisition(session, "explicit_refresh")
@@ -760,6 +767,20 @@ class SessionManager:
                 )
             raise
         finally:
+            # Model-owned report metadata may change capabilities without an
+            # extra query (including a rejected request for a removed channel).
+            adapter = session.adapter
+            revision = getattr(adapter, "capability_revision", None)
+            previous_revision = (
+                session.capability_snapshot.details.get("capability_revision")
+                if session.capability_snapshot
+                else None
+            )
+            if revision is not None and revision != previous_revision and session.identity:
+                try:
+                    self._refresh_capabilities(session, query=False, changed_only=True)
+                except Exception as exc:
+                    self.repository.audit("capability_publish_failed", device_id=device_id, error=str(exc))
             with self.lock:
                 session.background_read = False
                 session.pending -= 1

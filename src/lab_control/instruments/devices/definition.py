@@ -44,6 +44,8 @@ class DeviceDefinition:
     # the dedicated management surface without changing its protocol profile.
     management_surface: bool = False
     monitoring_surface: bool = True
+    # Explicit, model-owned read-only acceptance entry, also usable by frozen CLI.
+    readonly_check: Callable[..., dict[str, Any]] | None = None
 
     @property
     def adapter_id(self) -> str:

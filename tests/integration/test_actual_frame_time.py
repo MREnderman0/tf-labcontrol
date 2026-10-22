@@ -80,8 +80,10 @@ def test_single_exports_preserve_old_frame_and_channel_timing(tmp_path, layout_v
         batch = immutable_batch(timed_frame())
         with pytest.raises(TypeError):
             batch.timing["version"] = 99
-        context = replace(repository.new_save_context("electronic", "single_frame", identity=batch.identity),
-                          layout_version=layout_version)
+        context = replace(
+            repository.new_save_context("electronic", "single_frame", identity=batch.identity),
+            layout_version=layout_version,
+        )
         folder = repository.export(batch, context=context)
         raw = raw_folder(folder)
         snapshot = json.loads((raw / "snapshot.json").read_text(encoding="utf-8"))
@@ -136,8 +138,10 @@ def test_slow_disk_records_irregular_elapsed_times_without_retimestamping(tmp_pa
     assert [float(row["距记录开始(s)"]) for row in rows] == pytest.approx(expected)
     local_column = next(key for key in rows[0] if key.startswith("本地时间"))
     assert [row[local_column] for row in rows] == [
-        datetime.fromisoformat(f["timestamp"]).astimezone(recording.context.started_at.tzinfo)
-        .strftime("%Y-%m-%d %H:%M:%S.%f") for f in frames
+        datetime.fromisoformat(f["timestamp"])
+        .astimezone(recording.context.started_at.tzinfo)
+        .strftime("%Y-%m-%d %H:%M:%S.%f")
+        for f in frames
     ]
 
 

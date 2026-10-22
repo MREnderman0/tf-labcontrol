@@ -373,7 +373,14 @@ class MonitoringDashboard(QWidget):
         category = instrument_category(record)
         return (
             sources
-            if category in {"power_supply", "signal_generator", "network_analyzer", "phase_noise_analyzer", "frequency_counter"}
+            if category
+            in {
+                "power_supply",
+                "signal_generator",
+                "network_analyzer",
+                "phase_noise_analyzer",
+                "frequency_counter",
+            }
             else sources[:1]
         )
 

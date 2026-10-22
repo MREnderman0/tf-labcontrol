@@ -6,7 +6,6 @@ import pytest
 
 from lab_control.domain.instruments import ValidationError
 from lab_control.domain.spectrum import prepare_optical_changes, wavelength_draft
-from lab_control.instruments.devices.ceyear_6362d import DEFINITION
 from lab_control.instruments.devices.ceyear_6362d.tests.test_contract import adapter
 
 
@@ -15,11 +14,15 @@ def caps():
 
 
 def test_wavelength_draft_clamps_only_the_edited_endpoint():
-    assert wavelength_draft({"start_wavelength": 500, "stop_wavelength": 1800}, "start_wavelength", 600, 1700) == {
+    assert wavelength_draft(
+        {"start_wavelength": 500, "stop_wavelength": 1800}, "start_wavelength", 600, 1700
+    ) == {
         "start_wavelength": 600,
         "stop_wavelength": 1700,
     }
-    assert wavelength_draft({"start_wavelength": 1650, "stop_wavelength": 1600}, "stop_wavelength", 600, 1700) == {
+    assert wavelength_draft(
+        {"start_wavelength": 1650, "stop_wavelength": 1600}, "stop_wavelength", 600, 1700
+    ) == {
         "start_wavelength": 1650,
         "stop_wavelength": 1650,
     }

@@ -14,7 +14,7 @@ from ..protocol import RESOLUTIONS, SENSITIVITIES, values, wavelength_axis
 SETTINGS = (*FRAME_SETTINGS, "active_trace")
 MATRIX = (
     ("points_auto", False),
-    *(('rbw', value) for value in RESOLUTIONS),
+    *(("rbw", value) for value in RESOLUTIONS),
     ("sweep_points", 1001),
     ("sweep_points", 2001),
     *(("sensitivity", value) for value in SENSITIVITIES.values()),
@@ -165,7 +165,9 @@ def restore(
         "differences": delta,
         "scan_command": "leave_stopped" if leave_stopped else original_scan,
         "stop_evidence": stopping,
-        "scan_state_confirmation": "ABORT completed; no restart" if leave_stopped else "panel_confirmation_required",
+        "scan_state_confirmation": "ABORT completed; no restart"
+        if leave_stopped
+        else "panel_confirmation_required",
         "historical_curves_restored": False,
     }
 

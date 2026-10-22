@@ -54,7 +54,9 @@ def test_optical_page_has_four_instrument_settings_and_fixed_interval(
         task = runtime.monitoring.tasks[page.device_id]
         assert task.requests[0].initiate is True and task.requests[0].confirmed is True
         assert task.mode == "general"
-        qtbot.waitUntil(lambda: runtime.monitoring.latest(page.device_id, "spectrum") is not None, timeout=3000)
+        qtbot.waitUntil(
+            lambda: runtime.monitoring.latest(page.device_id, "spectrum") is not None, timeout=3000
+        )
         page.refresh_frame(page.device_id)
         assert page.plot.plot.getAxis("bottom").labelText == "波长"
         assert page.plot.plot.getAxis("left").labelText.startswith("光谱曲线")

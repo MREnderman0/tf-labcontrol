@@ -70,12 +70,18 @@ def test_sdg_disabled_modulation_does_not_implicitly_enable_output():
 
 def test_tserve_mhz_conversion_and_labelled_allan_deviation():
     transport = MockTransport(
-        [("show state", b"Ready"), ("set inputfreq 10", b""), ("show inputfreq", b"10 MHz"),
-         ("show state", b"Collecting"),
-         ("show inputfreq", b"10 MHz"), ("show referencefreq", b"Auto"),
-         ("show adev", b"tau: 0.1 adev: 5.2e-12\r\ntau: 0.2 adev: 4e-12\r\n"),
-         ("show state", b"Collecting"),
-         ("show inputfreq", b"10 MHz"), ("show referencefreq", b"Auto")]
+        [
+            ("show state", b"Ready"),
+            ("set inputfreq 10", b""),
+            ("show inputfreq", b"10 MHz"),
+            ("show state", b"Collecting"),
+            ("show inputfreq", b"10 MHz"),
+            ("show referencefreq", b"Auto"),
+            ("show adev", b"tau: 0.1 adev: 5.2e-12\r\ntau: 0.2 adev: 4e-12\r\n"),
+            ("show state", b"Collecting"),
+            ("show inputfreq", b"10 MHz"),
+            ("show referencefreq", b"Auto"),
+        ]
     )
     transport.open()
     device = PhaseNoiseAdapter(

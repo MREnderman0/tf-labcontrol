@@ -37,6 +37,7 @@ class FrequencyCounterMonitoringPage(QWidget):
         self.controller, self.add_card = controller, add_card
         self.device_id = ""
         self.channel_checks: dict[int, QCheckBox] = {}
+        self.channel_notice = ""
         self.preferences = controller.runtime.repository.load_workspace(
             "monitoring_channels/frequency_counter", {}
         )
@@ -66,7 +67,8 @@ class FrequencyCounterMonitoringPage(QWidget):
         self.channel_frame = QFrame()
         self.channel_frame.setObjectName("operationCard")
         channel_layout = QVBoxLayout(self.channel_frame)
-        channel_layout.addWidget(QLabel("选择显示与记录通道（设备最多 24 路）"))
+        self.channel_title = QLabel("等待通道识别")
+        channel_layout.addWidget(self.channel_title)
         self.channel_grid = QGridLayout()
         channel_layout.addLayout(self.channel_grid)
         layout.addWidget(self.channel_frame)
@@ -117,22 +119,16 @@ class FrequencyCounterMonitoringPage(QWidget):
     def _clear_channels(self) -> None:
         while self.channel_grid.count():
             item = self.channel_grid.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+            widget = item.widget() if item else None
+            if widget:
+                widget.deleteLater()
 
     def select_device(self, device_id: str) -> None:
         self.device_id = device_id
         self._clear_channels()
         self.channel_checks = {}
-        saved = self.preferences.get(self._key(device_id), []) if device_id else []
-        saved_set = set(saved) if isinstance(saved, (list, tuple)) else set()
-        channels = tuple(self.controller.capabilities(device_id).channels) if device_id else ()
-        for index, channel in enumerate(channels):
-            check = QCheckBox(f"CH {channel}")
-            check.setChecked(channel in saved_set if saved_set else True)
-            check.toggled.connect(self.channels_changed)
-            self.channel_checks[channel] = check
-            self.channel_grid.addWidget(check, index // 8, index % 8)
+        self.channel_notice = ""
+        self._sync_channels()
         self.plot.reset()
         self.plot.setVisible(bool(device_id))
         self.channel_frame.setVisible(bool(device_id))
@@ -141,11 +137,38 @@ class FrequencyCounterMonitoringPage(QWidget):
         self.refresh()
         QTimer.singleShot(0, lambda: self.refresh_frame(device_id))
 
+    def _sync_channels(self) -> None:
+        snapshot = (
+            self.controller.runtime.sessions.capability_snapshot(self.device_id) if self.device_id else None
+        )
+        channels = tuple(snapshot.channels) if snapshot is not None else ()
+        self.channel_title.setText(
+            f"选择显示与记录通道（已识别 {len(channels)} 路）" if channels else "等待通道识别"
+        )
+        if channels == tuple(self.channel_checks):
+            return
+        saved = self.preferences.get(self._key(self.device_id))
+        saved_set = set(saved) if isinstance(saved, (list, tuple)) else set(channels)
+        missing = saved_set - set(channels)
+        if missing:
+            self.channel_notice = "已排除当前不可用的通道：" + "、".join(f"CH {ch}" for ch in sorted(missing))
+        self._clear_channels()
+        self.channel_checks = {}
+        for index, channel in enumerate(channels):
+            check = QCheckBox(f"CH {channel}")
+            check.setChecked(channel in saved_set)
+            check.toggled.connect(self.channels_changed)
+            self.channel_checks[channel] = check
+            self.channel_grid.addWidget(check, index // 8, index % 8)
+
     def channels_changed(self) -> None:
         channels = self.channels()
+        self.channel_notice = ""
         self.plot.reset()
         self._save_channels()
-        if self.device_id and self.controller.runtime.monitoring.snapshots().get(self.device_id, {}).get("running"):
+        if self.device_id and self.controller.runtime.monitoring.snapshots().get(self.device_id, {}).get(
+            "running"
+        ):
             try:
                 requests = (
                     (AcquisitionRequest(kind="scalar", channels=channels, points=1, quantity="frequency"),)
@@ -167,7 +190,11 @@ class FrequencyCounterMonitoringPage(QWidget):
             self.timing.commit()
             self.controller.runtime.monitoring.start(
                 self.device_id,
-                (AcquisitionRequest(kind="scalar", channels=self.channels(), points=1, quantity="frequency"),),
+                (
+                    AcquisitionRequest(
+                        kind="scalar", channels=self.channels(), points=1, quantity="frequency"
+                    ),
+                ),
                 **self.timing.options(),
                 mode="general",
             )
@@ -178,7 +205,9 @@ class FrequencyCounterMonitoringPage(QWidget):
     def toggle_monitoring(self) -> None:
         task = self.controller.runtime.monitoring.snapshots().get(self.device_id, {})
         if task.get("running") or task.get("pending"):
-            self.controller.watch(self.controller.runtime.monitoring.stop(self.device_id), lambda _result: self.refresh())
+            self.controller.watch(
+                self.controller.runtime.monitoring.stop(self.device_id), lambda _result: self.refresh()
+            )
         else:
             self.start()
 
@@ -200,7 +229,9 @@ class FrequencyCounterMonitoringPage(QWidget):
             future = self.controller.runtime.monitoring.export_displayed_frame(
                 self.device_id, frame, "general"
             )
-            self.controller.watch(future, lambda path: self.controller.message.emit(f"原始数据已保存 · 分析 CSV 已完成：{path}"))
+            self.controller.watch(
+                future, lambda path: self.controller.message.emit(f"原始数据已保存 · 分析 CSV 已完成：{path}")
+            )
         except Exception as exc:
             self.controller.message.emit(str(exc))
 
@@ -224,12 +255,17 @@ class FrequencyCounterMonitoringPage(QWidget):
             service.displayed(device_id, self.plot.displayed_frame)
 
     def refresh(self) -> None:
+        self._sync_channels()
         state = self.controller.states.get(self.device_id, {})
         task = self.controller.runtime.monitoring.snapshots().get(self.device_id, {})
         connected = state.get("connectionState") in {"connected", "busy"}
         self.connection.setText("已连接" if connected else state.get("connectionState", "未连接"))
         draining = recording_phase(task) == "draining"
-        self.toggle_button.setText("收尾中…" if draining else "停止监测" if task.get("running") else "开始监测")
+        for check in self.channel_checks.values():
+            check.setEnabled(not task.get("recording") and not draining)
+        self.toggle_button.setText(
+            "收尾中…" if draining else "停止监测" if task.get("running") else "开始监测"
+        )
         self.toggle_button.setEnabled(bool(connected and self.channels() and not draining))
         self.record_button.refresh(
             task,
@@ -238,11 +274,23 @@ class FrequencyCounterMonitoringPage(QWidget):
             locked=bool(state.get("controlsLocked")),
         )
         self.save_button.setEnabled(self.plot.displayed_frame is not None and not task.get("display_saving"))
+        waiting = bool(
+            task.get("running")
+            and self.controller.runtime.monitoring.latest(self.device_id, "scalar", "frequency") is None
+        )
         self.status.setText(
             task.get("error")
+            or self.channel_notice
             or task.get("recording_notice")
             or recording_save_notice(task)
-            or ("监测中 · 正在逐帧记录" if task.get("recording") else "监测中 · 未保存数据" if task.get("running") else "监测未开始；只读采集不会修改 K+K 参数。")
+            or ("等待有效读数（相位模式需要两帧）；只读采集不修改设备参数。" if waiting else "")
+            or (
+                "监测中 · 正在逐帧记录"
+                if task.get("recording")
+                else "监测中 · 未保存数据"
+                if task.get("running")
+                else "监测未开始；只读采集不会修改 K+K 参数。"
+            )
         )
         self.timing.refresh(task)
 

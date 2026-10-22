@@ -17,9 +17,7 @@ class Report:
         self.report_type = report_type
         self.header = header
         self.values = values
-        self.content = (
-            struct.pack("<" + "d" * len(values), *values) if content is None else content
-        )
+        self.content = struct.pack("<" + "d" * len(values), *values) if content is None else content
 
     def get_report_type(self):
         return self.report_type

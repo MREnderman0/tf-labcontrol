@@ -33,8 +33,4 @@ def surface_applicable(record: dict[str, Any], surface: str) -> bool:
     definition = DEVICE_DEFINITIONS.get(record.get("adapterId", ""))
     if definition is None:
         return surface == "monitoring"
-    return (
-        definition.management_surface
-        if surface == "management"
-        else definition.monitoring_surface
-    )
+    return definition.management_surface if surface == "management" else definition.monitoring_surface

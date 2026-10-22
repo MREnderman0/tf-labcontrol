@@ -224,7 +224,9 @@ class Repository:
                     write_description(folder, "分析 CSV 生成失败", error=str(exc))
                 except OSError:
                     pass
-                raise DeviceError(f"原始数据已保存至 {folder}；分析 CSV 生成失败：{exc}", "export_failed") from exc
+                raise DeviceError(
+                    f"原始数据已保存至 {folder}；分析 CSV 生成失败：{exc}", "export_failed"
+                ) from exc
         return folder
 
     @staticmethod
@@ -266,6 +268,7 @@ class Repository:
                             *sample_timing,
                         ]
                     )
+
     def report(self, report: dict[str, Any]) -> Path:
         folder = self.root / "reports"
         folder.mkdir(exist_ok=True)

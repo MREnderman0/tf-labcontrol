@@ -41,11 +41,14 @@ class M300Adapter(ScpiAdapter):
                 self.capability_details[f"{operation}_error"] = f"{exc.code}: {exc}"
         from lab_control.domain.instruments import DeviceStatus
 
-        return DeviceStatus(values, errors=tuple(
-            str(self.capability_details[key])
-            for key in sorted(self.capability_details)
-            if key.endswith("_error")
-        ))
+        return DeviceStatus(
+            values,
+            errors=tuple(
+                str(self.capability_details[key])
+                for key in sorted(self.capability_details)
+                if key.endswith("_error")
+            ),
+        )
 
     def read_settings(self, operations: tuple[str, ...], channel: int = 1):
         from lab_control.instruments.settings import cached_reading
@@ -64,7 +67,9 @@ class M300Adapter(ScpiAdapter):
 
     def preflight(self, command: DeviceCommand, parameters: dict[str, Any]) -> None:
         if command.operation in {"monitor_state", "dmm_state"} and not command.confirmed:
-            raise DeviceError("Changing M300 acquisition state requires explicit confirmation", "confirmation_required")
+            raise DeviceError(
+                "Changing M300 acquisition state requires explicit confirmation", "confirmation_required"
+            )
         if command.operation == "dmm_state" and parameters.get("value") and not self.read("dmm_installed"):
             raise Unsupported("M300 DMM module is not installed")
 
@@ -90,11 +95,24 @@ class M300Adapter(ScpiAdapter):
                 else:
                     matches = str(expected).upper() == str(readback).upper()
                 if not matches:
-                    return ApplyResult("rejected", command.operation, parameters, readback, completed, "Readback differs from request")
+                    return ApplyResult(
+                        "rejected",
+                        command.operation,
+                        parameters,
+                        readback,
+                        completed,
+                        "Readback differs from request",
+                    )
             self.configuration[f"1.{command.operation}"] = parameters
             return ApplyResult("success", command.operation, parameters, readback, completed)
         except DeviceError as exc:
-            return ApplyResult("partial" if completed else "uncertain", command.operation, parameters, completed_steps=completed, error=f"{exc.code}: {exc}")
+            return ApplyResult(
+                "partial" if completed else "uncertain",
+                command.operation,
+                parameters,
+                completed_steps=completed,
+                error=f"{exc.code}: {exc}",
+            )
 
     def acquire(self, request: AcquisitionRequest) -> MeasurementBatch:
         request.validate()
@@ -109,7 +127,9 @@ class M300Adapter(ScpiAdapter):
             raise DeviceError("M300 scan list is empty; no measurement was started", "not_configured")
         values = self.read("measurements")
         if len(values) != scan_size:
-            raise DeviceError(f"M300 returned {len(values)} values for {scan_size} scan channels", "parse_error")
+            raise DeviceError(
+                f"M300 returned {len(values)} values for {scan_size} scan channels", "parse_error"
+            )
         return MeasurementBatch(
             self.identity,
             (Measurement("measurement", "instrument", values, metadata={"scan_size": scan_size}),),

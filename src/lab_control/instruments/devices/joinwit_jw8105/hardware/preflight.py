@@ -22,10 +22,7 @@ from lab_control.storage.repository import application_home
 from ..profile import OFFICIAL_DOWNLOAD_URL, OFFICIAL_PRODUCT_URL, PROTOCOL_EVIDENCE
 from .records import publish_report
 
-REASON = (
-    "JW8105 V23.02.02 帧协议已归档并实现；连接回包不提供仪器序列号/固件，"
-    "停止位和实机型号仍需确认"
-        )
+REASON = "JW8105 V23.02.02 帧协议已归档并实现；连接回包不提供仪器序列号/固件，停止位和实机型号仍需确认"
 
 
 def enumerate_selected(resource: str) -> dict[str, Any]:
@@ -34,9 +31,19 @@ def enumerate_selected(resource: str) -> dict[str, Any]:
     from lab_control.transport.visa import VisaRuntime
 
     ports = [
-        {key: getattr(port, key, None) for key in (
-            "device", "description", "hwid", "vid", "pid", "serial_number", "manufacturer", "location"
-        )}
+        {
+            key: getattr(port, key, None)
+            for key in (
+                "device",
+                "description",
+                "hwid",
+                "vid",
+                "pid",
+                "serial_number",
+                "manufacturer",
+                "location",
+            )
+        }
         for port in comports()
         if port.device.upper() == resource
     ]
@@ -92,19 +99,34 @@ def run(resource: str, asset_name: str) -> Path:
         "stages": {
             key: {"status": "not_tested", "reason": "Preflight only; no instrument I/O"}
             for key in (
-                "enumeration", "runtime_paths", "identity", "compatibility_connection", "parameter_read",
-                "parameter_write", "restoration", "reconnection", "physical_output"
+                "enumeration",
+                "runtime_paths",
+                "identity",
+                "compatibility_connection",
+                "parameter_read",
+                "parameter_write",
+                "restoration",
+                "reconnection",
+                "physical_output",
             )
         },
         "notes": [REASON, PROTOCOL_EVIDENCE, "USB bridge serial is not the instrument serial"],
-        "final_state": {"ports_opened": 0, "commands_sent": 0, "settings_modified": False, "instrument_state": "unknown"},
+        "final_state": {
+            "ports_opened": 0,
+            "commands_sent": 0,
+            "settings_modified": False,
+            "instrument_state": "unknown",
+        },
     }
     atomic_json(folder / "results.json", report)
     try:
         lock_root = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "TF-LabControl"
         paths = {
-            "runtime": root, "inventory": root / "inventory.sqlite3", "global_lock": lock_root / "hardware.lock",
-            "device_locks": lock_root / "devices", "batch": folder,
+            "runtime": root,
+            "inventory": root / "inventory.sqlite3",
+            "global_lock": lock_root / "hardware.lock",
+            "device_locks": lock_root / "devices",
+            "batch": folder,
         }
         path_evidence = {}
         for key, path in paths.items():
@@ -122,21 +144,34 @@ def run(resource: str, asset_name: str) -> Path:
         atomic_json(folder / "enumeration.json", evidence)
         report["stages"]["enumeration"] = {
             "status": "passed" if evidence["serial_ports"] else "blocked",
-            "reason": "Selected serial bridge enumerated; protocol available but instrument identity unknown" if evidence["serial_ports"] else "Selected COM port absent",
+            "reason": "Selected serial bridge enumerated; protocol available but instrument identity unknown"
+            if evidence["serial_ports"]
+            else "Selected COM port absent",
         }
         for key in ("identity", "compatibility_connection"):
             report["stages"][key] = {"status": "blocked", "reason": REASON}
-        atomic_json(folder / "official-sources.json", {
-            "product": OFFICIAL_PRODUCT_URL, "downloads": OFFICIAL_DOWNLOAD_URL,
-            "reviewed_on": "2026-10-10", "protocol_status": "user-supplied-v23.02.02",
-            "missing": ["instrument serial/firmware query", "stop-bit confirmation", "full model/firmware applicability"],
-        })
+        atomic_json(
+            folder / "official-sources.json",
+            {
+                "product": OFFICIAL_PRODUCT_URL,
+                "downloads": OFFICIAL_DOWNLOAD_URL,
+                "reviewed_on": "2026-10-10",
+                "protocol_status": "user-supplied-v23.02.02",
+                "missing": [
+                    "instrument serial/firmware query",
+                    "stop-bit confirmation",
+                    "full model/firmware applicability",
+                ],
+            },
+        )
     except BaseException as exc:
         report["error"] = f"{type(exc).__name__}: {exc}"
         raise
     finally:
         report["finished_at"] = utc_now()
-        report["evidence_sha256"] = {p.name: digest(p) for p in folder.glob("*.json") if p.name != "results.json"}
+        report["evidence_sha256"] = {
+            p.name: digest(p) for p in folder.glob("*.json") if p.name != "results.json"
+        }
         atomic_json(folder / "results.json", report)
         rows = [f"| {key} | {item['status']} | {item['reason']} |" for key, item in report["stages"].items()]
         (folder / "record.md").write_text(
@@ -159,7 +194,12 @@ def main() -> int:
     parser.add_argument("--asset-name", required=True)
     args = parser.parse_args()
     folder = run(args.resource, args.asset_name)
-    print(json.dumps({"folder": str(folder), "protocol_status": "available_pending_identity", "ports_opened": 0}, ensure_ascii=False))
+    print(
+        json.dumps(
+            {"folder": str(folder), "protocol_status": "available_pending_identity", "ports_opened": 0},
+            ensure_ascii=False,
+        )
+    )
     return 2
 
 

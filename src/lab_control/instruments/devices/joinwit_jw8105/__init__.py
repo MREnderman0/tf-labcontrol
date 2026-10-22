@@ -12,7 +12,10 @@ DEFINITION = DeviceDefinition(
     profile(),
     Jw8105Adapter,
     DeviceDocumentation(
-        "Joinwit JW8105", "measurement-analyzers/joinwit-jw8105", "RS232；RJ45 选件待核对", "V23.02.02 二进制协议"
+        "Joinwit JW8105",
+        "measurement-analyzers/joinwit-jw8105",
+        "RS232；RJ45 选件待核对",
+        "V23.02.02 二进制协议",
     ),
     Path(__file__).parent,
     deployment_components=("serial-interface",),

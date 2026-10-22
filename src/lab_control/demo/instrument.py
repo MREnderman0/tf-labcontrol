@@ -97,7 +97,15 @@ class SimulatedInstrument:
                     (
                         Capability(
                             "rbw",
-                            {"value": Parameter("number", "nm", 0.02, 2, choices=("0.02", "0.05", "0.1", "0.2", "0.5", "1", "2"))},
+                            {
+                                "value": Parameter(
+                                    "number",
+                                    "nm",
+                                    0.02,
+                                    2,
+                                    choices=("0.02", "0.05", "0.1", "0.2", "0.5", "1", "2"),
+                                )
+                            },
                             readable=True,
                             writable=True,
                             verification="simulated",
@@ -105,7 +113,11 @@ class SimulatedInstrument:
                         ),
                         Capability(
                             "sensitivity",
-                            {"value": Parameter("enum", "", choices=("NORMAL", "MID", "HIGH1", "HIGH2", "HIGH3"))},
+                            {
+                                "value": Parameter(
+                                    "enum", "", choices=("NORMAL", "MID", "HIGH1", "HIGH2", "HIGH3")
+                                )
+                            },
                             readable=True,
                             writable=True,
                             verification="simulated",

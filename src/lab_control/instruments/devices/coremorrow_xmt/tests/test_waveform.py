@@ -17,11 +17,15 @@ PARAMETERS = {"waveform": "SIN", "frequency": 1.0, "amplitude": 0.2, "offset": 0
 
 
 def make_adapter(peer=None):
-    return CoreMorrowXmtAdapter(peer or WirePeer(), DEFINITION.profile, ConnectionConfig("mock://e00-wire", "coremorrow.xmt"))
+    return CoreMorrowXmtAdapter(
+        peer or WirePeer(), DEFINITION.profile, ConnectionConfig("mock://e00-wire", "coremorrow.xmt")
+    )
 
 
 @pytest.mark.parametrize("channel", range(3))
-@pytest.mark.parametrize("shape,code", [("SIN", "5a"), ("SQUARE", "46"), ("TRIANGLE", "53"), ("SAWTOOTH", "4a")])
+@pytest.mark.parametrize(
+    "shape,code", [("SIN", "5a"), ("SQUARE", "46"), ("TRIANGLE", "53"), ("SAWTOOTH", "4a")]
+)
 def test_official_dll_encoding(channel, shape, code):
     # Header, payload and XOR independently captured from the official DLL with
     # WriteArr replaced. These are synthetic data, never a hardware transcript.
@@ -29,15 +33,27 @@ def test_official_dll_encoding(channel, shape, code):
     expected = bytes.fromhex(f"aa 01 14 0f 00 {channel:02x} {code} 00 00 07 d0 00 01 00 00 00 00 03 e8")
     assert frame[:-1] == expected
     assert frame[-1] == 0x8D ^ int(code, 16) ^ channel
-    assert build_waveform_stop(1, channel) == bytes.fromhex(f"aa 01 07 11 00 {channel:02x} {0xBD ^ channel:02x}")
+    assert build_waveform_stop(1, channel) == bytes.fromhex(
+        f"aa 01 07 11 00 {channel:02x} {0xBD ^ channel:02x}"
+    )
 
 
-@pytest.mark.parametrize("change", [
-    {"frequency": 0}, {"frequency": float("nan")}, {"frequency": 10000.1},
-    {"amplitude": -1}, {"amplitude": 0}, {"amplitude": 121},
-    {"offset": 0}, {"offset": 120}, {"offset": float("inf")}, {"waveform": "NOISE"},
-    {"amplitude": 0.0001, "offset": 0.00005},
-])
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"frequency": 0},
+        {"frequency": float("nan")},
+        {"frequency": 10000.1},
+        {"amplitude": -1},
+        {"amplitude": 0},
+        {"amplitude": 121},
+        {"offset": 0},
+        {"offset": 120},
+        {"offset": float("inf")},
+        {"waveform": "NOISE"},
+        {"amplitude": 0.0001, "offset": 0.00005},
+    ],
+)
 def test_invalid_wave_rejected_before_io(change):
     adapter = make_adapter()
     with pytest.raises(ValidationError):
