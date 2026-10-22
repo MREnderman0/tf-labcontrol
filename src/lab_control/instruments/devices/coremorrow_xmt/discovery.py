@@ -7,7 +7,7 @@ acquired the normal process/resource leases; no settings are written here.
 
 from __future__ import annotations
 
-from lab_control.application.config import ConnectionConfig
+from lab_control.domain.connections import ConnectionConfig
 
 # The attached E00 enumerates as an ST USB serial device.  Keep this allowlist
 # deliberately narrow: a generic COM port must remain unconfigured unless its

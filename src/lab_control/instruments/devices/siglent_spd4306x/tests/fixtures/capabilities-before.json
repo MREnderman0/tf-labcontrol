@@ -1,0 +1,741 @@
+{
+  "fixture_origin": "Immutable pre-migration capability and wire contract; software evidence only",
+  "adapter": "siglent.spd4306x",
+  "capabilities": {
+    "category": "power_supply",
+    "channels": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "operations": [
+      {
+        "name": "voltage",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": 0,
+            "maximum": 30,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "10.4 SOURce VOLT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "current",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "A",
+            "minimum": 0,
+            "maximum": 6,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "10.4 SOURce CURR",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "ovp",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": 0,
+            "maximum": 33,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "10.4 SOURce OVP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "ocp",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "A",
+            "minimum": 0,
+            "maximum": 6.6,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "10.4 SOURce OCP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "ovp_enabled",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "10.4 SOURce OVP:STAT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "ocp_enabled",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "10.4 SOURce OCP:STAT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "ocp_delay",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s",
+            "minimum": 0.001,
+            "maximum": 10,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "10.4 SOURce OCP:DEL",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "output",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "10.4 SOURce OUTP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "output_on_delay",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s",
+            "minimum": 0,
+            "maximum": 3600,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "10.4 SOURce OUTP:ON:DEL",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "output_off_delay",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s",
+            "minimum": 0,
+            "maximum": 3600,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "10.4 SOURce OUTP:OFF:DEL",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "list_cycles",
+        "parameters": {
+          "value": {
+            "kind": "integer",
+            "unit": "",
+            "minimum": 1,
+            "maximum": 99999,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "10.4 SOURce LIST:CYCL",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "list_continuous",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "10.4 SOURce LIST:CONT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "list_run",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "10.4 SOURce LIST:RUN",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "all_outputs",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "OUTP:ALL",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "tracking",
+        "parameters": {
+          "value": {
+            "kind": "integer",
+            "unit": "",
+            "minimum": 0,
+            "maximum": 2,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "OUTP:TRACK",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sense_mode",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "2W",
+              "4W"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "10.4 MODE (CH2/CH3)",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "measured_voltage",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "MEAS:VOLT? CH{ch}",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "measured_current",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "MEAS:CURR? CH{ch}",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "measured_power",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "MEAS:POW? CH{ch}",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "ovp_tripped",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "OVP:PROT:STAT? CH{ch}",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "ocp_tripped",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "OCP:PROT:STAT? CH{ch}",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "list_upload",
+        "parameters": {
+          "voltage": {
+            "kind": "array",
+            "unit": "",
+            "minimum": 0,
+            "maximum": 30,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          },
+          "current": {
+            "kind": "array",
+            "unit": "",
+            "minimum": 0,
+            "maximum": 6,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          },
+          "duration": {
+            "kind": "array",
+            "unit": "",
+            "minimum": 0.001,
+            "maximum": 99999,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+        "section": "10.4 LIST subsystem",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      }
+    ]
+  },
+  "profile": {
+    "adapter_id": "siglent.spd4306x",
+    "manufacturer": [
+      "SIGLENT"
+    ],
+    "models": [
+      "SPD4306X"
+    ],
+    "category": "power_supply",
+    "channels": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
+    "revision": "SPD4000X user/programming manual EN01B, chapter 10",
+    "status": [
+      "voltage",
+      "current",
+      "output",
+      "ovp_tripped",
+      "ocp_tripped"
+    ],
+    "identity_query": "*IDN?",
+    "error_query": "",
+    "acquisition": "power",
+    "channel_limits": {
+      "1": {
+        "voltage": 6,
+        "current": 3,
+        "ovp": 6.6,
+        "ocp": 3.3
+      },
+      "4": {
+        "voltage": 6,
+        "current": 3,
+        "ovp": 6.6,
+        "ocp": 3.3
+      }
+    }
+  },
+  "commands": {
+    "voltage": {
+      "writes": [
+        "VOLT CH{ch},{value}"
+      ],
+      "query": "VOLT:SET? CH{ch}",
+      "select": [],
+      "compare": true
+    },
+    "current": {
+      "writes": [
+        "CURR CH{ch},{value}"
+      ],
+      "query": "CURR:SET? CH{ch}",
+      "select": [],
+      "compare": true
+    },
+    "ovp": {
+      "writes": [
+        "OVP CH{ch},{value}"
+      ],
+      "query": "OVP? CH{ch}",
+      "select": [],
+      "compare": true
+    },
+    "ocp": {
+      "writes": [
+        "OCP CH{ch},{value}"
+      ],
+      "query": "OCP? CH{ch}",
+      "select": [],
+      "compare": true
+    },
+    "ovp_enabled": {
+      "writes": [
+        "OVP:STAT CH{ch},{value}"
+      ],
+      "query": "OVP:STAT? CH{ch}",
+      "select": [],
+      "compare": true
+    },
+    "ocp_enabled": {
+      "writes": [
+        "OCP:STAT CH{ch},{value}"
+      ],
+      "query": "OCP:STAT? CH{ch}",
+      "select": [],
+      "compare": true
+    },
+    "ocp_delay": {
+      "writes": [
+        "OCP:DEL CH{ch},{value}"
+      ],
+      "query": "OCP:DEL? CH{ch}",
+      "select": [],
+      "compare": true
+    },
+    "output": {
+      "writes": [
+        "OUTP CH{ch},{value}"
+      ],
+      "query": "OUTP? CH{ch}",
+      "select": [],
+      "compare": true
+    },
+    "output_on_delay": {
+      "writes": [
+        "OUTP:ON:DEL CH{ch},{value}"
+      ],
+      "query": "OUTP:ON:DEL? CH{ch}",
+      "select": [],
+      "compare": true
+    },
+    "output_off_delay": {
+      "writes": [
+        "OUTP:OFF:DEL CH{ch},{value}"
+      ],
+      "query": "OUTP:OFF:DEL? CH{ch}",
+      "select": [],
+      "compare": true
+    },
+    "list_cycles": {
+      "writes": [
+        "LIST:CYCL CH{ch},{value}"
+      ],
+      "query": "LIST:CYCL? CH{ch}",
+      "select": [],
+      "compare": true
+    },
+    "list_continuous": {
+      "writes": [
+        "LIST:CONT CH{ch},{value}"
+      ],
+      "query": "LIST:CONT? CH{ch}",
+      "select": [],
+      "compare": true
+    },
+    "list_run": {
+      "writes": [
+        "LIST:RUN CH{ch},{value}"
+      ],
+      "query": "LIST:RUN? CH{ch}",
+      "select": [],
+      "compare": true
+    },
+    "all_outputs": {
+      "writes": [
+        "OUTP:ALL {value}"
+      ],
+      "query": "OUTP:ALL?",
+      "select": [],
+      "compare": true
+    },
+    "tracking": {
+      "writes": [
+        "OUTP:TRACK {value}"
+      ],
+      "query": "OUTP:TRACK?",
+      "select": [],
+      "compare": true
+    },
+    "sense_mode": {
+      "writes": [
+        "MODE CH{ch},{value}"
+      ],
+      "query": "MODE? CH{ch}",
+      "select": [],
+      "compare": true
+    },
+    "measured_voltage": {
+      "writes": [],
+      "query": "MEAS:VOLT? CH{ch}",
+      "select": [],
+      "compare": false
+    },
+    "measured_current": {
+      "writes": [],
+      "query": "MEAS:CURR? CH{ch}",
+      "select": [],
+      "compare": false
+    },
+    "measured_power": {
+      "writes": [],
+      "query": "MEAS:POW? CH{ch}",
+      "select": [],
+      "compare": false
+    },
+    "ovp_tripped": {
+      "writes": [],
+      "query": "OVP:PROT:STAT? CH{ch}",
+      "select": [],
+      "compare": false
+    },
+    "ocp_tripped": {
+      "writes": [],
+      "query": "OCP:PROT:STAT? CH{ch}",
+      "select": [],
+      "compare": false
+    },
+    "list_upload": {
+      "writes": [],
+      "query": "",
+      "select": [],
+      "compare": true
+    }
+  }
+}

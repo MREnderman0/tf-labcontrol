@@ -134,7 +134,7 @@ class SettingsSync:
         value = (status, error)
         if value != task.last_log:
             task.last_log = value
-            self.sessions.repository.audit(
+            self.sessions.audit.try_record(
                 "settings_sync_state", device_id=device_id, status=status, error=error, batches=task.batches
             )
 
@@ -247,6 +247,6 @@ class SettingsSync:
     def stop(self) -> None:
         self.enabled = False
         for device_id, task in self.tasks.items():
-            self.sessions.repository.audit(
+            self.sessions.audit.try_record(
                 "settings_sync_summary", device_id=device_id, batches=task.batches, failures=task.failures
             )

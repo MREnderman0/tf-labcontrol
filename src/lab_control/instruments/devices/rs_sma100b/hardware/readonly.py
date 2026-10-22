@@ -5,6 +5,8 @@ from lab_control.instruments.devices.rs_sma100b import DEFINITION
 
 from .records import publish_report
 
+assert DEFINITION.profile is not None
+
 EXTRA_QUERIES = (
     "*OPT?",
     "SOUR:POW:OFFS?",

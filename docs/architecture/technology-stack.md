@@ -2,13 +2,13 @@
 
 ## 0.3.0 实际采用状态
 
-当前锁定 Python 3.12、PySide6、PyQtGraph、PyVISA、PySerial、NumPy；使用内置 sqlite3、JSONL/CSV/NPZ、ThreadPoolExecutor 与 Qt Signal，构建为 setuptools wheel。依赖和版本以根目录 pyproject.toml/uv.lock 为准。图形默认软件渲染，显示抽稀不影响原始数据导出。
+当前采用 Python 3.12 x64、PySide6、PyQtGraph、PyVISA、PySerial、NumPy；使用内置 sqlite3、JSONL/CSV/NPZ、ThreadPoolExecutor 与 Qt Signal。setuptools 生成 wheel/sdist，PyInstaller 生成 Windows 目录式 EXE。依赖和版本以根目录 pyproject.toml/uv.lock 为准。图形默认软件渲染，显示抽稀不影响原始数据导出。
 
-下文保留完整工作台的技术选型规划：SciPy、h5py、structlog、PyInstaller 以及独立 32 位 SDK worker 尚未加入本轮应用，不属于已安装/已实现组件。完整运行架构见 [system-architecture.md](system-architecture.md)。
+SciPy、h5py、structlog 以及独立 32 位 SDK worker 仍为后续规划，不属于当前运行依赖。目录式构建已实现，正式应用安装器与跨电脑验收仍未完成。完整运行架构见 [system-architecture.md](system-architecture.md)。
 
 ## 1. 结论
 
-本项目采用 Python 3.12+ 和 PySide6 作为第一版基线。应用是 Windows 桌面端的模块化单体：Qt 负责窗口、导航、表单和绘图容器，应用层负责设备会话、功能槽位、采集编排、监测规则和日志，传输层负责 VISA、串口、TCP 以及厂商 SDK。
+本项目采用 Python 3.12 x64 和 PySide6，支持范围由 `requires-python = ">=3.12,<3.13"` 约束。应用是 Windows 桌面端的模块化单体：Qt 负责窗口、导航、表单和绘图容器，应用层负责设备会话、功能槽位、采集编排、监测规则和日志，传输层负责 VISA、串口、TCP 以及厂商 SDK。
 
 当前不创建自动实验流程，也不拆微服务。单进程管理 6–20 台真实设备；模拟版提供 24 台示例。每设备一个串行 worker，SDK 位数不匹配明确报错；独立 SDK 进程隔离为后续工作。
 
@@ -16,7 +16,7 @@
 
 | 子系统 | 方案 | 采用结论 | 许可证/边界 |
 | --- | --- | --- | --- |
-| 运行时 | Python 3.12+ | 直接采用 | Python Software Foundation License |
+| 运行时 | Python 3.12 x64 | 直接采用，暂不支持 3.13+ | Python Software Foundation License |
 | UI | [PySide6 + Qt Widgets](https://doc.qt.io/qtforpython-6/) | 直接采用 | Qt 社区版 LGPLv3/GPL 或商业许可；发布前做许可证复核 |
 | UI 样式 | 自定义 QSS；Qt Designer 可选 | 直接采用 | 项目自有样式，避免绑定 GPL 主题组件 |
 | VISA | [PyVISA](https://pyvisa.readthedocs.io/en/latest/) + NI-VISA | 直接采用 | PyVISA MIT；NI-VISA 和厂商驱动属于目标机前置条件 |
@@ -31,7 +31,7 @@
 | 诊断日志 | JSONL 审计；[structlog](https://www.structlog.org/) 待扩展 | JSONL 已采用 | structlog 不属于当前依赖 |
 | 并发 | ThreadPoolExecutor + 调度线程 + Qt Signal/快照 | 已采用 | 设备 I/O 禁止在主线程执行 |
 | 依赖管理 | [uv](https://docs.astral.sh/uv/) + `pyproject.toml` + `uv.lock` | 已采用 | uv Apache-2.0 |
-| Windows 打包 | setuptools wheel；[PyInstaller](https://pyinstaller.org/) one-folder 待扩展 | wheel/sdist 已验证 | SDK/驱动仍为外部前置条件 |
+| Windows 打包 | setuptools wheel/sdist；[PyInstaller](https://pyinstaller.org/) one-folder | 已实现目录式构建及冻结 worker 检查 | SDK/驱动独立准备，正式安装器待实现 |
 | 测试 | [pytest](https://docs.pytest.org/)、[pytest-qt](https://pytest-qt.readthedocs.io/) + Mock Transport | 直接采用 | pytest/pytest-qt MIT |
 
 ## 3. 取舍和边界
@@ -40,15 +40,15 @@
 - 不直接采用 [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets)，其 GPLv3 许可不适合作为内部工具的默认耦合项。需要类似视觉时，用自定义 QSS、Qt Widgets 和少量自绘控件实现。
 - 第一版不采用 QML。团队只维护 Python 和 Qt Widgets 一套界面技术，减少 Python 与 QML 的边界调试成本。
 - 不把 [qasync](https://github.com/CabbageDevelopment/qasync) 作为核心并发模型。仪器命令大多是阻塞式 VISA/串口调用，使用 Qt worker 更容易保证每台设备命令串行；后续确有 asyncio 网络设备时再评估 qasync。
-- 不使用自定义二进制作为主数据格式。当前原始批次保存 NPZ/JSON/CSV；未来长时高频记录再考虑 HDF5。
+- 单帧导出保留 NPZ/JSON/CSV；连续记录使用版本化 SQLite/BLOB 分段保存原始帧，再由独立子进程转换分析 CSV。HDF5 尚未引入，格式与兼容规则见[数据模型](../data/data-model.md)。
 - 第一版不强制引入 Parquet。若后续出现大规模表格分析和跨工具查询需求，再增加 Parquet 导出或分析副本。
 - 图表只保留 pyqtgraph 一套主方案，避免同时维护多套交互语义。
 
 ## 4. 运行与部署前置条件
 
-目标机器需要 Python 运行环境、对应的 Qt/PySide6 运行库、NI-VISA Runtime（或经过验证的其他 VISA 实现）、USB/LAN/GPIB/串口驱动，以及厂商 SDK 或 DLL。Thorlabs PM100D 优先走官方 DLL/SDK，不预设通用 SCPI。
+源码开发需要 Python 3.12 x64 和项目环境；目录式 EXE 自带 Python/Qt。目标机器按所选设备准备经过验证的 VISA 实现、USB/LAN/GPIB/串口驱动及厂商 SDK/DLL。Thorlabs PM100D 优先走官方 DLL/SDK，不预设通用 SCPI。
 
-当前发布 wheel/sdist，保留可诊断的目录结构；独立安装已验证源码外入口和 QSS 资源。PyInstaller one-folder 为后续安装器方案。厂商 VISA Runtime、USB 驱动和 SDK 不静默打进应用。
+当前可以构建 wheel/sdist 和 PyInstaller one-folder；源码外入口、QSS 与冻结 worker 有独立检查。联网版按需准备厂商材料，离线版显式装配所选组件及依赖闭包。现行构建步骤和待验收边界以[桌面部署](../development/desktop-deployment.md)为准，不将开发机构建成功等同正式交付。
 
 ## 5. 版本策略
 

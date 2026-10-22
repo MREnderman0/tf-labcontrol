@@ -63,17 +63,17 @@ GUI 的纯监测使用独立 MonitoringService，避免沿用 CLI start_acquisit
 
 ```python
 app.monitoring.start(
-    device_id, (AcquisitionRequest("waveform", (1, 2), 2000),), interval=0.5, mode="electronic"
+    device_id, (AcquisitionRequest("waveform", (1, 2), 2000),), interval=0.5, mode="general"
 )
 app.monitoring.apply(device_id, DeviceCommand("timebase", {"value": 0.001})).result()
 frame = app.monitoring.latest(device_id, "waveform")
-app.monitoring.set_recording(device_id, True, mode="electronic")
+app.monitoring.set_recording(device_id, True, mode="general")
 app.monitoring.stop(device_id).result()  # 不关闭物理输出
 ```
 
 该服务只向原设备 worker 提交整项操作。相同 kind/quantity 合并通道，保存最新 MonitorFrame；参数应用后 configuration_version 增加，旧帧不能重新覆盖新配置画面。rejected/partial/uncertain/错误事件只暂停目标设备；设备原会话继续保留供诊断。CLI 的旧接口与写入/确认要求不变。
 
-纯监测保存有界缓存和审计，显式记录才导出批次。记录任务固定归属模式，用户停止记录前已经开始的批次仍保存；在途记录和写盘结束前保留模式切换锁。详见[实时监测设计](../requirements/realtime-monitoring.md)。
+纯监测保存有界缓存和审计，显式记录才保存批次。当前统一使用 general 工作区，旧模式值仅保留接口及历史元数据兼容。停止记录时，已授权的在途批次仍完成保存；二进制收尾后释放参数锁，CSV 转换继续后台执行。格式与路径见[数据模型](../data/data-model.md)，任务规则见[实时监测设计](../requirements/realtime-monitoring.md)。
 
 台式仪器默认读取当前数据；明确 initiate 才发起单次采集，且需要确认。多通道顺序读取，应使用单次/停止状态保证帧一致；本版不提供跨仪器硬件同步。Pico 必须先显式配置通道；streaming 是有限批次，批次间有空隙。3458A RMEM 会停内部存储，读取也要求确认。TSERVE 数据口不发送命令，只读取配置好的 P/F 格式。
 

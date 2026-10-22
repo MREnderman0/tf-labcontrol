@@ -1,0 +1,521 @@
+{
+  "fixture_origin": "Immutable pre-migration capability and wire contract; software evidence only",
+  "adapter": "keithley.2231a",
+  "capabilities": {
+    "category": "power_supply",
+    "channels": [
+      1,
+      2,
+      3
+    ],
+    "operations": [
+      {
+        "name": "voltage",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": 0,
+            "maximum": 30,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://download.tek.com/manual/077100401_Referencemanual.pdf",
+        "section": "VOLT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "current",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "A",
+            "minimum": 0,
+            "maximum": 3,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://download.tek.com/manual/077100401_Referencemanual.pdf",
+        "section": "CURR",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "output",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://download.tek.com/manual/077100401_Referencemanual.pdf",
+        "section": "CHAN:OUTP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "voltage_limit",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": 0,
+            "maximum": 30,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://download.tek.com/manual/077100401_Referencemanual.pdf",
+        "section": "VOLT:LIM",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "voltage_limit_enabled",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://download.tek.com/manual/077100401_Referencemanual.pdf",
+        "section": "VOLT:LIM:STAT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "timer",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://download.tek.com/manual/077100401_Referencemanual.pdf",
+        "section": "OUTP:TIM",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "timer_delay",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s",
+            "minimum": 0.1,
+            "maximum": 99999.9,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://download.tek.com/manual/077100401_Referencemanual.pdf",
+        "section": "OUTP:TIM:DEL",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "voltage_step",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": 0,
+            "maximum": 30,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://download.tek.com/manual/077100401_Referencemanual.pdf",
+        "section": "VOLT:STEP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "current_step",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "A",
+            "minimum": 0,
+            "maximum": 3,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://download.tek.com/manual/077100401_Referencemanual.pdf",
+        "section": "CURR:STEP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "all_outputs",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://download.tek.com/manual/077100401_Referencemanual.pdf",
+        "section": "OUTP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "coupling",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "SER",
+              "PAR",
+              "TRAC",
+              "OFF"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://download.tek.com/manual/077100401_Referencemanual.pdf",
+        "section": "INSTrument:COMbine",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "measured_voltage",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://download.tek.com/manual/077100401_Referencemanual.pdf",
+        "section": "MEAS:VOLT?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "measured_current",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://download.tek.com/manual/077100401_Referencemanual.pdf",
+        "section": "MEAS:CURR?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "measured_power",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://download.tek.com/manual/077100401_Referencemanual.pdf",
+        "section": "MEAS:POW?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "protection",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://download.tek.com/manual/077100401_Referencemanual.pdf",
+        "section": "STAT:QUES:COND?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      }
+    ]
+  },
+  "profile": {
+    "adapter_id": "keithley.2231a",
+    "manufacturer": [
+      "KEITHLEY",
+      "TEKTRONIX"
+    ],
+    "models": [
+      "2231A-30-3"
+    ],
+    "category": "power_supply",
+    "channels": [
+      1,
+      2,
+      3
+    ],
+    "source": "https://download.tek.com/manual/077100401_Referencemanual.pdf",
+    "revision": "077100401 September 2014, section 5",
+    "status": [
+      "voltage",
+      "current",
+      "output",
+      "protection"
+    ],
+    "identity_query": "*IDN?",
+    "error_query": "SYST:ERR?",
+    "acquisition": "power",
+    "channel_limits": {
+      "3": {
+        "voltage": 5,
+        "voltage_limit": 5
+      }
+    }
+  },
+  "commands": {
+    "voltage": {
+      "writes": [
+        "VOLT {value}"
+      ],
+      "query": "VOLT?",
+      "select": [
+        "INST:NSEL {ch}"
+      ],
+      "compare": true
+    },
+    "current": {
+      "writes": [
+        "CURR {value}"
+      ],
+      "query": "CURR?",
+      "select": [
+        "INST:NSEL {ch}"
+      ],
+      "compare": true
+    },
+    "output": {
+      "writes": [
+        "CHAN:OUTP {value}"
+      ],
+      "query": "CHAN:OUTP?",
+      "select": [
+        "INST:NSEL {ch}"
+      ],
+      "compare": true
+    },
+    "voltage_limit": {
+      "writes": [
+        "VOLT:LIM {value}"
+      ],
+      "query": "VOLT:LIM?",
+      "select": [
+        "INST:NSEL {ch}"
+      ],
+      "compare": true
+    },
+    "voltage_limit_enabled": {
+      "writes": [
+        "VOLT:LIM:STAT {value}"
+      ],
+      "query": "VOLT:LIM:STAT?",
+      "select": [
+        "INST:NSEL {ch}"
+      ],
+      "compare": true
+    },
+    "timer": {
+      "writes": [
+        "OUTP:TIM {value}"
+      ],
+      "query": "OUTP:TIM?",
+      "select": [
+        "INST:NSEL {ch}"
+      ],
+      "compare": true
+    },
+    "timer_delay": {
+      "writes": [
+        "OUTP:TIM:DEL {value}"
+      ],
+      "query": "OUTP:TIM:DEL?",
+      "select": [
+        "INST:NSEL {ch}"
+      ],
+      "compare": true
+    },
+    "voltage_step": {
+      "writes": [
+        "VOLT:STEP {value}"
+      ],
+      "query": "VOLT:STEP?",
+      "select": [
+        "INST:NSEL {ch}"
+      ],
+      "compare": true
+    },
+    "current_step": {
+      "writes": [
+        "CURR:STEP {value}"
+      ],
+      "query": "CURR:STEP?",
+      "select": [
+        "INST:NSEL {ch}"
+      ],
+      "compare": true
+    },
+    "all_outputs": {
+      "writes": [
+        "OUTP {value}"
+      ],
+      "query": "OUTP?",
+      "select": [],
+      "compare": true
+    },
+    "coupling": {
+      "writes": [
+        "INST:COM:{value}"
+      ],
+      "query": "",
+      "select": [],
+      "compare": false
+    },
+    "measured_voltage": {
+      "writes": [],
+      "query": "MEAS:VOLT?",
+      "select": [
+        "INST:NSEL {ch}"
+      ],
+      "compare": false
+    },
+    "measured_current": {
+      "writes": [],
+      "query": "MEAS:CURR?",
+      "select": [
+        "INST:NSEL {ch}"
+      ],
+      "compare": false
+    },
+    "measured_power": {
+      "writes": [],
+      "query": "MEAS:POW?",
+      "select": [
+        "INST:NSEL {ch}"
+      ],
+      "compare": false
+    },
+    "protection": {
+      "writes": [],
+      "query": "STAT:QUES:COND?",
+      "select": [],
+      "compare": false
+    }
+  }
+}

@@ -8,20 +8,20 @@
 
 | 类别 | 附件设备 | 电脑交互方式 | 实际注册 ID / 状态 | 归档 |
 | --- | --- | --- | --- | --- |
-| 信号源 | SDG6032X | USB/LAN VXI-11/Socket | siglent.sdg6032x；待实机 | [卡片](devices/signal-sources/sdg6032x.md) |
-| 电源 | Keithley 2231A | 2231A-001 USB 适配器/COM | keithley.2231a；仅精确匹配 2231A-30-3 | [卡片](devices/power-supplies/keithley-2231a.md) |
+| 信号源 | SDG6032X | USB/LAN VXI-11/Socket | 原附件说明：待实机；现行状态见下方模块索引 | [模块索引](#独立型号模块自动生成) |
+| 电源 | Keithley 2231A | 2231A-001 USB 适配器/COM | 原附件说明：仅精确匹配 2231A-30-3；现行状态见下方模块索引 | [模块索引](#独立型号模块自动生成) |
 | 电源 | PSW160 | 待确认厂家、完整型号与接口 | 不推定为 EA 或其他厂家；不注册真实协议 | [待补卡片](devices/power-supplies/psw160.md) |
-| 电源 | SPD4306X | USB/LAN VISA/Socket | siglent.spd4306x；待实机 | [卡片](devices/power-supplies/spd4306x.md) |
-| 电源 | IT6322 | RS-232/实际已安装 USB/GPIB | itech.it6322；独立旧型号协议 | [卡片](devices/power-supplies/it6322.md) |
-| 示波器 | PicoScope 6404E | USB + ps6000a SDK | pico.6404e；待实机 | [卡片](devices/oscilloscopes/picoscope-6404e.md) |
-| 示波器 | RTM3004 | LAN/USB VISA/SCPI | rs.rtm3004；待实机 | [卡片](devices/oscilloscopes/rtm3004.md) |
-| 示波器 | RTO64 | LAN/USB VISA/SCPI | rs.rto64；RTO6 手册，待实机 | [卡片](devices/oscilloscopes/rto64.md) |
-| 示波器 | WaveRunner 9254 | LAN VICP/VXI-11/USBTMC | lecroy.9254；待实机 | [卡片](devices/oscilloscopes/waverunner-9254.md) |
-| 示波器 | DS1202Z | 原条目待确认后缀；DS1202Z-E 为 USB/LAN VISA | 仅注册 rigol.ds1202ze；不静默改写原型号 | [共同归档](devices/oscilloscopes/rigol-ds1202z.md) |
-| 光功率 | PM100D + S154C | 控制台 USB + TLPMX/旧 PM100D SDK；探头接控制台 | thorlabs.pm100d；待实机 | [卡片](devices/measurement-analyzers/thorlabs-pm100d-s154c.md) |
+| 电源 | SPD4306X | USB/LAN VISA/Socket | 原附件说明：待实机；现行状态见下方模块索引 | [模块索引](#独立型号模块自动生成) |
+| 电源 | IT6322 | RS-232/实际已安装 USB/GPIB | 原附件说明：独立旧型号协议；现行状态见下方模块索引 | [模块索引](#独立型号模块自动生成) |
+| 示波器 | PicoScope 6404E | USB + ps6000a SDK | 原附件说明：待实机；现行状态见下方模块索引 | [模块索引](#独立型号模块自动生成) |
+| 示波器 | RTM3004 | LAN/USB VISA/SCPI | 原附件说明：待实机；现行状态见下方模块索引 | [模块索引](#独立型号模块自动生成) |
+| 示波器 | RTO64 | LAN/USB VISA/SCPI | 原附件说明：RTO6 手册，待实机；现行状态见下方模块索引 | [模块索引](#独立型号模块自动生成) |
+| 示波器 | WaveRunner 9254 | LAN VICP/VXI-11/USBTMC | 原附件说明：待实机；现行状态见下方模块索引 | [模块索引](#独立型号模块自动生成) |
+| 示波器 | DS1202Z | 原条目待确认后缀；DS1202Z-E 为 USB/LAN VISA | 原附件说明：不静默改写原型号；现行状态见下方模块索引 | [模块索引](#独立型号模块自动生成) |
+| 光功率 | PM100D + S154C | 控制台 USB + TLPMX/旧 PM100D SDK；探头接控制台 | 原附件说明：待实机；现行状态见下方模块索引 | [模块索引](#独立型号模块自动生成) |
 | 光功率 | 多通道光功率计 | 待完整型号与 SDK/协议 | 仅类别模拟 | [待补卡片](devices/measurement-analyzers/multi-channel-optical-power-meter.md) |
-| 万用表 | Keysight 3458A | GPIB 控制器/VISA，原生非 SCPI 命令 | keysight.3458a；待实机 | [卡片](devices/measurement-analyzers/keysight-3458a.md) |
-| 网络分析 | ZNB3004 | LAN/USB VISA/SCPI | rs.znb3004；ZNB3000 手册，待实机 | [卡片](devices/measurement-analyzers/rs-znb3004.md) |
+| 万用表 | Keysight 3458A | GPIB 控制器/VISA，原生非 SCPI 命令 | 原附件说明：待实机；现行状态见下方模块索引 | [模块索引](#独立型号模块自动生成) |
+| 网络分析 | ZNB3004 | LAN/USB VISA/SCPI | 原附件说明：ZNB3000 手册，待实机；现行状态见下方模块索引 | [模块索引](#独立型号模块自动生成) |
 | 待确认类别 | GOCA-8-NK2603212 | 待厂家和型号/资产号划分 | 不注册真实命令 | [待补卡片](devices/measurement-analyzers/goca-8.md) |
 | 相噪仪 | 53100A | Microchip USB / TSERVE | 实现与连接路线见下方模块索引；实测按资产查证 | [模块索引](#独立型号模块自动生成) |
 | 温控 | 商用温控仪 | 待型号、串口/以太网/SDK 依据 | 仅类别模拟 | [待补卡片](devices/temperature-load-drivers/temperature-controller.md) |
@@ -38,6 +38,18 @@
 <!-- device-modules:start -->
 | 型号 | 注册 ID | 连接路线 | 归档 |
 | --- | --- | --- | --- |
+| PicoScope 6404E | `pico.6404e` | USB 3.x + ps6000a SDK | [卡片](devices/oscilloscopes/picoscope-6404e.md) |
+| Thorlabs PM100D + S154C | `thorlabs.pm100d` | PM100D USB；S154C 接控制台传感器接口 | [卡片](devices/measurement-analyzers/thorlabs-pm100d-s154c.md) |
+| R&S RTM3004 | `rs.rtm3004` | LAN / USB VISA | [卡片](devices/oscilloscopes/rtm3004.md) |
+| R&S RTO64 | `rs.rto64` | LAN / USB VISA | [卡片](devices/oscilloscopes/rto64.md) |
+| RIGOL DS1202Z（待确认后缀）/ DS1202Z-E | `rigol.ds1202ze` | DS1202Z-E：USB / LAN VISA | [卡片](devices/oscilloscopes/rigol-ds1202z.md) |
+| Teledyne LeCroy WaveRunner 9254 | `lecroy.9254` | LAN VICP（1861）/ VISA VXI-11 或 USBTMC | [卡片](devices/oscilloscopes/waverunner-9254.md) |
+| R&S ZNB3004 | `rs.znb3004` | LAN / USB VISA | [卡片](devices/measurement-analyzers/rs-znb3004.md) |
+| Keysight / Agilent / HP 3458A | `keysight.3458a` | GPIB + USB-GPIB/LAN-GPIB 控制器 | [卡片](devices/measurement-analyzers/keysight-3458a.md) |
+| Siglent SDG6032X | `siglent.sdg6032x` | USB / LAN VXI-11 / 已配置 TCP Socket | [卡片](devices/signal-sources/sdg6032x.md) |
+| Keithley 2231A-30-3 | `keithley.2231a` | 2231A-001 USB 适配器 / 虚拟串口 | [卡片](devices/power-supplies/keithley-2231a.md) |
+| Siglent SPD4306X | `siglent.spd4306x` | USB / LAN VISA / 已配置 TCP Socket | [卡片](devices/power-supplies/spd4306x.md) |
+| ITECH IT6322 | `itech.it6322` | RS-232 / 已安装 USB 或 GPIB 接口 | [卡片](devices/power-supplies/it6322.md) |
 | RIGOL DG5504 Pro | `rigol.dg5504pro` | LAN / USB；优先 PyVISA | [卡片](devices/signal-sources/dg5504-pro.md) |
 | Tektronix AFG31252 | `tek.afg31252` | USB Device / LAN / GPIB（核对实际接口） | [卡片](devices/signal-sources/afg31252.md) |
 | Siglent SDG2082X | `siglent.sdg2082x` | USB USBTMC / LAN VXI-11，经 PyVISA 接入 | [卡片](devices/signal-sources/sdg2082x.md) |

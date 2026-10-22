@@ -22,4 +22,6 @@ DEFINITION = DeviceDefinition(
     factory=create,
     capability_schema=capability_schema,
     discovery_factory=UsbDiscoveryProvider,
+    discovery_connection_only_transports=("tserve",),
+    acquisition_initiate_editable=False,
 )

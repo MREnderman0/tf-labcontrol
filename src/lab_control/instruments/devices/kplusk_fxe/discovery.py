@@ -11,7 +11,7 @@ from __future__ import annotations
 import re
 from dataclasses import replace
 
-from lab_control.application.config import ConnectionConfig
+from lab_control.domain.connections import ConnectionConfig
 
 _SOCKET_RESOURCE = re.compile(r"TCPIP\d*::([^:]+)::(\d+)::SOCKET", re.IGNORECASE)
 

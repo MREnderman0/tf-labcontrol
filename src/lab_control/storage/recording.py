@@ -12,7 +12,7 @@ import io
 import json
 import os
 import sqlite3
-import subprocess
+import subprocess as subprocess
 import sys
 import threading
 import time
@@ -25,8 +25,9 @@ from typing import Any, Callable, Iterator
 
 import numpy as np
 
-from lab_control.application.acquisition_pipeline import FrozenDict, batch_bytes, validate_recorded_batch
+from lab_control.domain.frames import FrozenDict, batch_bytes, validate_recorded_batch
 from lab_control.domain.instruments import MeasurementBatch, ValidationError, jsonable
+from lab_control.domain.recording import RecordingOutcome
 from lab_control.domain.workspace import WORKSPACE_MODES
 from lab_control.storage.frame_timing import TIMING_COLUMNS, timing_columns
 from lab_control.storage.layout import manifest, raw_folder
@@ -296,7 +297,12 @@ class Recording:
         self.csv_lag_seconds = 0.0
         self.accepting, self.binary_done = True, False
         self.finished: Future[list[str]] = Future()
+        self.finished.set_running_or_notify_cancel()
         self.segments = SegmentWriter(self.raw_folder)
+        from lab_control.storage.recording_workers import BinaryRecordingWriter, CsvConversionSupervisor
+
+        self.binary_writer = BinaryRecordingWriter(self)
+        self.csv_supervisor = CsvConversionSupervisor(self)
         self.thread = threading.Thread(target=self._write_loop, name="binary-recording", daemon=True)
         self.csv_thread = threading.Thread(target=self._csv_loop, name="csv-supervisor", daemon=True)
         self.thread.start()
@@ -389,125 +395,23 @@ class Recording:
                 ),
             )
 
+    def outcome(self) -> RecordingOutcome:
+        with self.lock:
+            return RecordingOutcome(
+                tuple(self.segments.paths),
+                self.received,
+                self.committed,
+                self.converted,
+                self.error,
+                self.csv_error,
+                self.pause_reason,
+            )
+
     def _write_loop(self) -> None:
-        try:
-            while True:
-                self.event.clear()
-                with self.lock:
-                    item = self.queue.popleft() if self.queue else None
-                    done = not self.accepting and not self.reserved and item is None
-                if done:
-                    break
-                if item is None:
-                    self.event.wait()
-                    continue
-                sequence, batch, size = item
-                started = time.perf_counter()
-                path = self.segments.append(sequence, batch)
-                with self.lock:
-                    self.committed += 1
-                    self.buffered -= 1
-                    self.buffer_bytes -= size
-                    self.last_path, self.write_seconds = path, time.perf_counter() - started
-                self.wake()
-        except Exception as exc:
-            with self.lock:
-                self.error = str(exc)
-                self.pause_reason = "记录已暂停：二进制写入失败 · " + str(exc)
-                self.accepting = False
-        finally:
-            try:
-                self.segments.close()
-            except Exception as exc:
-                with self.lock:
-                    self.error = self.error or str(exc)
-                    self.pause_reason = "记录已暂停：二进制文件收尾失败 · " + str(exc)
-                    self.accepting = False
-            with self.lock:
-                self.binary_done = True
-            self.csv_event.set()
-            self.wake()
+        self.binary_writer.run()
 
     def _csv_loop(self) -> None:
-        process: subprocess.Popen | None = None
-        target_count = 0
-        next_at = time.monotonic() + self.csv_interval
-        try:
-            while True:
-                self.csv_event.clear()
-                if process is not None and process.poll() is not None:
-                    completed, process = process, None
-                    try:
-                        status_path = self.raw_folder / "csv-status.json"
-                        status = json.loads(status_path.read_text(encoding="utf-8"))
-                    finally:
-                        _CSV_SLOTS.release()
-                    with self.lock:
-                        self.converted = int(status.get("converted", self.converted))
-                        self.csv_seconds = float(status.get("seconds", 0))
-                        self.csv_lag_seconds = float(status.get("csv_lag_seconds", 0))
-                        self.csv_error = status.get("error", "") or (
-                            f"CSV process exited {completed.returncode}" if completed.returncode else ""
-                        )
-                        if not self.csv_error and self.converted < target_count:
-                            self.csv_error = "CSV conversion did not reach the committed target"
-                    next_at = time.monotonic() + self.csv_interval
-                    self.wake()
-                with self.lock:
-                    done, committed, converted, error = (
-                        self.binary_done,
-                        self.committed,
-                        self.converted,
-                        self.csv_error,
-                    )
-                if (
-                    process is None
-                    and committed > converted
-                    and not error
-                    and (done or time.monotonic() >= next_at)
-                    and _CSV_SLOTS.acquire(blocking=False)
-                ):
-                    try:
-                        from lab_control.launcher import worker_command
-
-                        process = subprocess.Popen(
-                            worker_command(self.folder),
-                            stdin=subprocess.DEVNULL,
-                            stdout=subprocess.DEVNULL,
-                            stderr=subprocess.DEVNULL,
-                            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
-                        )
-                        target_count = committed
-                    except Exception:
-                        _CSV_SLOTS.release()
-                        raise
-                if done and process is None and (committed <= converted or error):
-                    break
-                self.csv_event.wait(0.1 if process else min(0.25, max(0.01, next_at - time.monotonic())))
-            if self.folder.exists():
-                _atomic_json(
-                    self.raw_folder / "summary.json",
-                    self.snapshot() | {"version": 1, "segments": self.segments.paths},
-                )
-                self._describe()
-            self.finished.set_result(list(self.segments.paths))
-        except Exception as exc:
-            with self.lock:
-                self.csv_error = str(exc)
-            # Preserve binary writing even if conversion cannot start.
-            self.thread.join()
-            if self.folder.exists():
-                try:
-                    _atomic_json(
-                        self.raw_folder / "summary.json",
-                        self.snapshot() | {"version": 1, "segments": self.segments.paths},
-                    )
-                    self._describe()
-                except OSError:
-                    pass  # The in-memory error/counts remain available if the disk itself failed.
-            self.finished.set_result(list(self.segments.paths))
-        finally:
-            self.wake()
+        self.csv_supervisor.run()
 
     def _describe(self) -> None:
         if self.context.layout_version == 2:

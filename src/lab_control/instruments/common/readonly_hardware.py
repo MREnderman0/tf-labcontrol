@@ -71,6 +71,8 @@ def verify(
     definition: DeviceDefinition, config: ConnectionConfig, folder: Path, extra_queries: tuple[str, ...] = ()
 ) -> dict[str, Any]:
     profile = definition.profile
+    if profile is None or definition.adapter_type is None:
+        raise ValueError("This read-only verifier requires a SCPI model definition")
     allowed = {profile.identity_query, *extra_queries}
     allowed.update(
         spec.query.format(ch=ch)
@@ -123,7 +125,7 @@ def verify(
             if selected.adapter != config.adapter or selected.resource != config.resource:
                 raise DeviceError("Only the explicit asset is allowed", "identity_conflict")
             adapter = create_adapter(selected, runtime.visa)
-            if not isinstance(adapter, definition.adapter_type):
+            if definition.adapter_type is None or not isinstance(adapter, definition.adapter_type):
                 adapter.close()
                 raise DeviceError("Model factory mismatch", "identity_conflict")
             adapter.transport = QueryOnlyTransport(adapter.transport, allowed, transcript)
@@ -264,6 +266,8 @@ def main(
     ):
         parser.error("Require one exact real model configuration with an expected serial")
     config = configs[0]
+    if definition.profile is None:
+        parser.error("This read-only verifier requires a SCPI model definition")
     try:
         asset_name = asset_folder_name(definition.profile.models[0], config.expected_serial, args.asset_name)
     except ValueError as exc:

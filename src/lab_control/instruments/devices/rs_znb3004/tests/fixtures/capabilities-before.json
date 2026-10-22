@@ -1,0 +1,466 @@
+{
+  "fixture_origin": "Immutable pre-migration capability and wire contract; software evidence only",
+  "adapter": "rs.znb3004",
+  "capabilities": {
+    "category": "network_analyzer",
+    "channels": [
+      1,
+      2
+    ],
+    "operations": [
+      {
+        "name": "start_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 100000,
+            "maximum": 4500000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1179_7491_01/ZNB3000_UserManual_en_09.pdf",
+        "section": "SENS1:FREQ:STAR",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "stop_frequency",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 100000,
+            "maximum": 4500000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1179_7491_01/ZNB3000_UserManual_en_09.pdf",
+        "section": "SENS1:FREQ:STOP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "points",
+        "parameters": {
+          "value": {
+            "kind": "integer",
+            "unit": "",
+            "minimum": 2,
+            "maximum": 100001,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1179_7491_01/ZNB3000_UserManual_en_09.pdf",
+        "section": "SENS1:SWE:POIN",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "if_bandwidth",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Hz",
+            "minimum": 1,
+            "maximum": 1000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1179_7491_01/ZNB3000_UserManual_en_09.pdf",
+        "section": "SENS1:BAND",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "averaging",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1179_7491_01/ZNB3000_UserManual_en_09.pdf",
+        "section": "SENS1:AVER",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "averages",
+        "parameters": {
+          "value": {
+            "kind": "integer",
+            "unit": "",
+            "minimum": 1,
+            "maximum": 65536,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1179_7491_01/ZNB3000_UserManual_en_09.pdf",
+        "section": "SENS1:AVER:COUN",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "continuous",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1179_7491_01/ZNB3000_UserManual_en_09.pdf",
+        "section": "INIT1:CONT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sweep_type",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "LIN",
+              "LOG",
+              "SEGM",
+              "POW",
+              "CW"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1179_7491_01/ZNB3000_UserManual_en_09.pdf",
+        "section": "SENS1:SWE:TYPE",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "port_power",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "dBm",
+            "minimum": -50,
+            "maximum": 10,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1179_7491_01/ZNB3000_UserManual_en_09.pdf",
+        "section": "SOUR1:POW{ch}",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "single",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1179_7491_01/ZNB3000_UserManual_en_09.pdf",
+        "section": "INIT1:IMM",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "correction_status",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1179_7491_01/ZNB3000_UserManual_en_09.pdf",
+        "section": "SENS1:CORR:STAT?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trace_catalog",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1179_7491_01/ZNB3000_UserManual_en_09.pdf",
+        "section": "CALC1:PAR:CAT?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "s_parameter",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "S11",
+              "S21",
+              "S12",
+              "S22"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1179_7491_01/ZNB3000_UserManual_en_09.pdf",
+        "section": "CALC1:PAR:SDEF 'LabControl',",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "selected_trace",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1179_7491_01/ZNB3000_UserManual_en_09.pdf",
+        "section": "CALC1:PAR:SEL?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      }
+    ]
+  },
+  "profile": {
+    "adapter_id": "rs.znb3004",
+    "manufacturer": [
+      "Rohde&Schwarz",
+      "Rohde-Schwarz"
+    ],
+    "models": [
+      "ZNB3004"
+    ],
+    "category": "network_analyzer",
+    "channels": [
+      1,
+      2
+    ],
+    "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1179_7491_01/ZNB3000_UserManual_en_09.pdf",
+    "revision": "1179.7491 revision 09, Remote commands",
+    "status": [
+      "start_frequency",
+      "stop_frequency",
+      "points",
+      "correction_status"
+    ],
+    "identity_query": "*IDN?",
+    "error_query": "SYST:ERR?",
+    "acquisition": "vna",
+    "channel_limits": {}
+  },
+  "commands": {
+    "start_frequency": {
+      "writes": [
+        "SENS1:FREQ:STAR {value}"
+      ],
+      "query": "SENS1:FREQ:STAR?",
+      "select": [],
+      "compare": true
+    },
+    "stop_frequency": {
+      "writes": [
+        "SENS1:FREQ:STOP {value}"
+      ],
+      "query": "SENS1:FREQ:STOP?",
+      "select": [],
+      "compare": true
+    },
+    "points": {
+      "writes": [
+        "SENS1:SWE:POIN {value}"
+      ],
+      "query": "SENS1:SWE:POIN?",
+      "select": [],
+      "compare": true
+    },
+    "if_bandwidth": {
+      "writes": [
+        "SENS1:BAND {value}"
+      ],
+      "query": "SENS1:BAND?",
+      "select": [],
+      "compare": true
+    },
+    "averaging": {
+      "writes": [
+        "SENS1:AVER {value}"
+      ],
+      "query": "SENS1:AVER?",
+      "select": [],
+      "compare": true
+    },
+    "averages": {
+      "writes": [
+        "SENS1:AVER:COUN {value}"
+      ],
+      "query": "SENS1:AVER:COUN?",
+      "select": [],
+      "compare": true
+    },
+    "continuous": {
+      "writes": [
+        "INIT1:CONT {value}"
+      ],
+      "query": "INIT1:CONT?",
+      "select": [],
+      "compare": true
+    },
+    "sweep_type": {
+      "writes": [
+        "SENS1:SWE:TYPE {value}"
+      ],
+      "query": "SENS1:SWE:TYPE?",
+      "select": [],
+      "compare": true
+    },
+    "port_power": {
+      "writes": [
+        "SOUR1:POW{ch} {value}"
+      ],
+      "query": "SOUR1:POW{ch}?",
+      "select": [],
+      "compare": true
+    },
+    "single": {
+      "writes": [
+        "INIT1:IMM"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "correction_status": {
+      "writes": [],
+      "query": "SENS1:CORR:STAT?",
+      "select": [],
+      "compare": false
+    },
+    "trace_catalog": {
+      "writes": [],
+      "query": "CALC1:PAR:CAT?",
+      "select": [],
+      "compare": false
+    },
+    "s_parameter": {
+      "writes": [
+        "CALC1:PAR:SDEF 'LabControl','{value}'",
+        "CALC1:PAR:SEL 'LabControl'"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "selected_trace": {
+      "writes": [],
+      "query": "CALC1:PAR:SEL?",
+      "select": [],
+      "compare": false
+    }
+  }
+}

@@ -1,0 +1,224 @@
+{
+  "fixture_origin": "Immutable pre-migration capability and wire contract; software evidence only",
+  "adapter": "pico.6404e",
+  "capabilities": {
+    "category": "oscilloscope",
+    "channels": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "operations": [
+      {
+        "name": "channel",
+        "parameters": {
+          "enabled": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          },
+          "range": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "0.01",
+              "0.02",
+              "0.05",
+              "0.1",
+              "0.2",
+              "0.5",
+              "1",
+              "2",
+              "5",
+              "10",
+              "20"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          },
+          "coupling": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "AC",
+              "DC",
+              "DC50"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          },
+          "offset": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": -20,
+            "maximum": 20,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.picotech.com/helpfiles/6000a-api/",
+        "section": "ps6000aSetChannelOn/Off",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "timebase",
+        "parameters": {
+          "value": {
+            "kind": "integer",
+            "unit": "",
+            "minimum": 0,
+            "maximum": 1000000,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.picotech.com/helpfiles/6000a-api/",
+        "section": "ps6000aGetTimebase",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sample_interval",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s",
+            "minimum": 1e-09,
+            "maximum": 1,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.picotech.com/helpfiles/6000a-api/",
+        "section": "ps6000aRunStreaming",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger",
+        "parameters": {
+          "enabled": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          },
+          "threshold": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": -20,
+            "maximum": 20,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          },
+          "direction": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "RISING",
+              "FALLING"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          },
+          "timeout_us": {
+            "kind": "integer",
+            "unit": "",
+            "minimum": 0,
+            "maximum": 10000000,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.picotech.com/helpfiles/6000a-api/",
+        "section": "ps6000aSetSimpleTrigger",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "block",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.picotech.com/helpfiles/6000a-api/",
+        "section": "ps6000aRunBlock/GetValues",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "streaming",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.picotech.com/helpfiles/6000a-api/",
+        "section": "ps6000aRunStreaming/GetStreamingLatestValues",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      }
+    ]
+  },
+  "profile": null,
+  "commands": {}
+}

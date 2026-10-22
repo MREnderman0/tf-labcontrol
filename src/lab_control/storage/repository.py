@@ -15,6 +15,7 @@ import numpy as np
 
 from lab_control.domain.instruments import DeviceIdentity, MeasurementBatch, jsonable, utc_now
 from lab_control.domain.workspace import GENERAL
+from lab_control.storage.audit import AuditSink
 from lab_control.storage.frame_timing import TIMING_COLUMNS, timing_columns
 from lab_control.storage.paths import BatchSaveContext, SaveContext, SaveKind
 from lab_control.storage.runtime import runtime_home
@@ -30,6 +31,7 @@ class Repository:
         self.simulation = simulation
         self.root.mkdir(parents=True, exist_ok=True)
         self.lock = threading.RLock()
+        self.audit_sink = AuditSink(lambda event, **details: self.audit(event, **details))
         self.db = sqlite3.connect(self.root / "inventory.sqlite3", check_same_thread=False)
         self.db.execute("PRAGMA journal_mode=WAL")
         self.db.execute("CREATE TABLE IF NOT EXISTS inventory (id TEXT PRIMARY KEY, document TEXT NOT NULL)")

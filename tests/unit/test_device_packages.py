@@ -30,9 +30,13 @@ def test_declared_capabilities_units_ranges_and_wire_templates(definition):
         for parameter in operation["parameters"].values():
             parameter.setdefault("resolution", None)
     assert (
-        jsonable(registry.describe(ConnectionConfig("metadata://test", profile.adapter_id)))
+        jsonable(registry.describe(ConnectionConfig("metadata://test", definition.adapter_id)))
         == before["capabilities"]
     )
+    if profile is None:
+        assert before["profile"] is None and definition.adapter_type is None
+        assert definition.factory is not None and definition.capability_schema is not None
+        return
     assert jsonable({key: getattr(profile, key) for key in before["profile"]}) == before["profile"]
     actual = {
         name: {"writes": spec.writes, "query": spec.query, "select": spec.select, "compare": spec.compare}
@@ -59,7 +63,17 @@ def test_model_package_has_no_legacy_or_cross_model_imports(definition):
                 else ([alias.name for alias in node.names] if isinstance(node, ast.Import) else [])
             )
             for module in filter(None, modules):
-                assert module != "lab_control.instruments.signal_sources", path
+                assert module not in {
+                    "lab_control.instruments.signal_sources",
+                    "lab_control.instruments.power_supplies",
+                    "lab_control.instruments.oscilloscopes",
+                    "lab_control.instruments.analyzers",
+                    "lab_control.instruments.acquisition",
+                    "lab_control.instruments.pico",
+                    "lab_control.instruments.optical",
+                }, path
+                if "hardware" not in path.parts:
+                    assert module != "lab_control.application.config", path
                 if module.startswith("lab_control.instruments.devices."):
                     assert module in shared or module == own or module.startswith(own + "."), (path, module)
 
@@ -76,11 +90,13 @@ def test_registry_rejects_duplicate_model_ids():
 def test_removed_model_is_unavailable_before_opening_any_resource(monkeypatch, removed):
     definition = registry.DEVICE_DEFINITIONS[removed]
     monkeypatch.delitem(registry.DEVICE_DEFINITIONS, removed)
-    monkeypatch.delitem(registry.PROFILES, removed)
+    monkeypatch.delitem(registry.PROFILES, removed, raising=False)
+    monkeypatch.delitem(registry.SDK_ADAPTERS, removed, raising=False)
     monkeypatch.setattr(
         registry, "transport_for", lambda *args: pytest.fail("Removed model opened transport")
     )
-    identity = DeviceIdentity(definition.profile.manufacturer[0], definition.profile.models[0], "TEST")
+    metadata = definition.profile or definition.model
+    identity = DeviceIdentity(metadata.manufacturer[0], metadata.models[0], "TEST")
     assert registry.match(identity) == ""
     config = ConnectionConfig("USB::TEST", removed, expected_serial="TEST")
     with pytest.raises(Unsupported):
@@ -89,6 +105,8 @@ def test_removed_model_is_unavailable_before_opening_any_resource(monkeypatch, r
         registry.create_adapter(config, None)
     for other in registry.DEVICE_DEFINITIONS.values():
         assert registry.describe(ConnectionConfig("metadata://test", other.adapter_id)).operations
+        if other.adapter_type is None:
+            continue
         assert isinstance(
             registry.build_scpi_adapter(ConnectionConfig("mock://test", other.adapter_id), MockTransport([])),
             other.adapter_type,

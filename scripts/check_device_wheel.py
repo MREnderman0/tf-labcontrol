@@ -18,11 +18,14 @@ import socket
 import sys
 from pathlib import Path
 
+import ctypes
 import pyvisa
 
 def forbidden(*args, **kwargs):
     raise AssertionError("Metadata inspection attempted hardware access")
 
+ctypes.CDLL = forbidden
+ctypes.WinDLL = forbidden
 pyvisa.ResourceManager = forbidden
 socket.create_connection = forbidden
 root = Path(sys.argv[1]).resolve()
@@ -39,18 +42,19 @@ for definition in registry.DEVICE_DEFINITIONS.values():
     config = ConnectionConfig("metadata://test", definition.adapter_id)
     assert registry.describe(config).operations
     transport = MockTransport([])
-    assert type(registry.build_scpi_adapter(config, transport)) is definition.adapter_type
+    if definition.adapter_type is not None:
+        assert type(registry.build_scpi_adapter(config, transport)) is definition.adapter_type
     assert not transport.history
     for file in ("README.md", "hardware/README.md", "hardware/records.py", "tests/fixtures/control.json", "tests/fixtures/capabilities-before.json"):
         assert (definition.root / file).is_file(), file
-    importlib.import_module(definition.adapter_type.__module__.rsplit(".", 1)[0] + ".hardware.readonly")
-    records = importlib.import_module(definition.adapter_type.__module__.rsplit(".", 1)[0] + ".hardware.records")
+    importlib.import_module("lab_control.instruments.devices." + definition.root.name + ".hardware.readonly")
+    records = importlib.import_module("lab_control.instruments.devices." + definition.root.name + ".hardware.records")
     from lab_control.storage.hardware_records import validate
     summary = records.summarize({"stages": {"physical_output": "not_tested"}})
     assert summary["adapter_id"] == definition.adapter_id
     assert not summary["identity_verified"] and not validate(summary)
     if (definition.root / "hardware/validate_usb.py").exists():
-        verification = importlib.import_module(definition.adapter_type.__module__.rsplit(".", 1)[0] + ".hardware.validate_usb")
+        verification = importlib.import_module("lab_control.instruments.devices." + definition.root.name + ".hardware.validate_usb")
         evidence = verification.capture_sources(root / "evidence")
         assert evidence["source_sha256"]
         assert evidence["project_head"].startswith("Installed package")

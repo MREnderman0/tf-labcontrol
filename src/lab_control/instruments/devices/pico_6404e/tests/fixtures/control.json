@@ -1,0 +1,5 @@
+{
+  "fixture_origin": "SDK call fixtures are exercised in test_sdk.py; not a wire transcript",
+  "adapter": "pico.6404e",
+  "operation": "channel"
+}

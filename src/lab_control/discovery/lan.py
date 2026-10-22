@@ -11,9 +11,9 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
-from lab_control.application.config import ConnectionConfig
 from lab_control.application.static_addresses import StaticAddressStore
 from lab_control.discovery.service import DiscoveryCandidate, Inventory
+from lab_control.domain.connections import ConnectionConfig
 from lab_control.domain.instruments import DeviceError, ValidationError
 from lab_control.transport.visa import VisaRuntime
 

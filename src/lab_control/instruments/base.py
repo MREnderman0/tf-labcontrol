@@ -5,7 +5,7 @@ import re
 from dataclasses import dataclass, field, replace
 from typing import Any, Callable
 
-from lab_control.application.config import ConnectionConfig
+from lab_control.domain.connections import ConnectionConfig
 from lab_control.domain.instruments import (
     AcquisitionRequest,
     ApplyResult,
@@ -143,13 +143,7 @@ class ScpiAdapter:
         for payload in self.connection_commands:
             self.transport.write(payload)
         raw = self.transport.query(self.profile.identity_query)
-        if self.profile.identity_query == "ID?":
-            model = raw.decode("ascii").strip().strip('"')
-            if re.sub(r"\s", "", model).upper() in {"HP3458A", "KEYSIGHT3458A", "AGILENT3458A"}:
-                model = "3458A"
-            identity = DeviceIdentity("Keysight", model, confidence="model_only", raw=model)
-        else:
-            identity = identity_from_scpi(raw)
+        identity = self.decode_identity(raw)
 
         def normalize(value: str) -> str:
             return re.sub(r"[\s_-]", "", value).upper()
@@ -164,6 +158,9 @@ class ScpiAdapter:
             raise DeviceError("Manufacturer does not match adapter", "identity_conflict")
         self.identity = identity
         return identity
+
+    def decode_identity(self, raw: bytes) -> DeviceIdentity:
+        return identity_from_scpi(raw)
 
     def capabilities(self) -> CapabilitySet:
         operations = []
@@ -358,15 +355,16 @@ class ScpiAdapter:
         return tuple(item.format(**context) for item in spec.writes)
 
     def acquire(self, request: AcquisitionRequest) -> MeasurementBatch:
-        from lab_control.instruments.acquisition import acquire
-
         request.validate()
         if any(channel not in self.profile.channels for channel in request.channels):
             raise ValidationError("Invalid acquisition channel")
         if self.identity is None:
             raise DeviceError("Identify the instrument before acquisition", "identity_required")
-        values = acquire(self, request)
+        values = self.acquire_measurements(request)
         return MeasurementBatch(self.identity, values, dict(self.configuration))
+
+    def acquire_measurements(self, request: AcquisitionRequest):
+        raise Unsupported("This instrument does not expose a measured data acquisition route")
 
     def close(self) -> None:
         self.transport.close()

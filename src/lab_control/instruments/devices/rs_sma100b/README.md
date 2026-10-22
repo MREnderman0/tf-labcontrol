@@ -26,7 +26,7 @@ LAN 接通并不保证出现在 VISA 的自动枚举列表。对已知资产，�
 
 `__init__.py` 提供设备定义/文档元数据，`adapter.py` 包含全部型号命令与动态查询；`tests/` 包含范围、失效、会话隔离和相关界面集成测试；`hardware/readonly.py` 提供只读复核，`hardware/validate_control.py` 提供显式运行的 RF OFF 验证，详见[硬件入口说明](hardware/README.md)。
 
-`tests/fixtures/capabilities-before.json` 保留迁移前基线；`capabilities-current.json` 记录本轮选件门控、路径 1 命令映射、共享 LF 控制、动态列表范围和扫频操作扩展后的契约。真实通信记录不进入源码。
+`tests/fixtures/capabilities-before.json` 保留迁移前基线；`capabilities-current.json` 记录本轮选件门控、路径 1 命令映射、共享 LF 控制、动态列表范围和扫频操作扩展后的契约。静态整机能力查询与按通道查询现统一经过本型号选件校验；未声明 K720/K24 不再展示虚假的可用调制或可写非正弦形状。当前契约同步此描述修复，迁移前基线保持不变。真实通信记录不进入源码。
 
 只依赖公共领域类型、SCPI 基类和通用硬件记录工具。型号工厂、文档生成与导入不加载 VISA、不打开仪器，也不导入其他型号包。
 

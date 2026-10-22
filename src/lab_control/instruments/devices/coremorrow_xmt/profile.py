@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from lab_control.application.config import ConnectionConfig
+from lab_control.domain.connections import ConnectionConfig
 from lab_control.domain.instruments import Capability, CapabilitySet, ValidationError
 from lab_control.instruments.base import CommandSpec, Profile, enum, parameter
 

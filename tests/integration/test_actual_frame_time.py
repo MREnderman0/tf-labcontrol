@@ -62,10 +62,10 @@ def test_session_clocks_measure_actual_work_even_when_wall_clock_moves_back(tmp_
             utc = iter(("2026-01-01T01:00:02+00:00", "2026-01-01T01:00:01+00:00"))
             with monkeypatch.context() as m:
                 m.setattr(
-                    "lab_control.application.sessions.time",
+                    "lab_control.application.session_operations.time",
                     SimpleNamespace(perf_counter=lambda: next(clocks)),
                 )
-                m.setattr("lab_control.application.sessions.utc_now", lambda: next(utc))
+                m.setattr("lab_control.application.session_operations.utc_now", lambda: next(utc))
                 batch = runtime.sessions._acquire(session, request)
             assert batch.timestamp == "2026-01-01T01:00:01+00:00"
             assert batch.timing["read_duration_seconds"] == pytest.approx(elapsed)

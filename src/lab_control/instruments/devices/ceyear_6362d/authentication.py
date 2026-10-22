@@ -8,7 +8,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from lab_control.application.config import ConnectionConfig, canonical_resource
+from lab_control.domain.connections import ConnectionConfig, canonical_resource
 from lab_control.domain.instruments import DeviceError, DeviceIdentity
 from lab_control.instruments.base import identity_from_scpi
 from lab_control.storage.repository import application_home

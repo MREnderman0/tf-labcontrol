@@ -2,7 +2,7 @@
 
 实机验证的原始批次与派生摘要遵循[记录规范](../testing/records.md)。`summary.json` 和 `overview/` 仅用于离线证据检索，不参与库存状态、会话或控制判断；原始通信、快照和恢复文件保留原样。
 
-领域对象定义在 domain/instruments.py，持久化由 storage/repository.py 完成。新记录统一使用设置中的数据保存一级目录；新记录的工作区标识为 `general`，不增加目录层；旧接口仍接受 `electronic`、`optical` 元数据。历史 data/electronic 与 data/optical 保留原样。
+身份、能力及测量定义在 domain/instruments.py，连接值对象在 domain/connections.py，不可变帧与容量校验在 domain/frames.py，记录完成证据在 domain/recording.py。原 application 导入路径保留兼容，存储层直接依赖领域契约。持久化由 storage/repository.py 等存储模块完成。新记录统一使用设置中的数据保存一级目录；新记录的工作区标识为 `general`，不增加目录层；旧接口仍接受 `electronic`、`optical` 元数据。历史 data/electronic 与 data/optical 保留原样。
 
 `AcquisitionRequest.consistency` 支持 `full`、`live`、`stream`，默认 `full`；`stream` 需要本次运行的非空 `context_id` 且不能启动物理扫描。批次 `validation=cached` 表示曲线为新读取、配置沿用已有快照，`settings_timestamps` 保留原时间。连续记录缓存帧在 `performance.acquisition_context_id` 中带来源编号，监测缓存不具备记录来源；不能把后者当作完整记录帧。手动显示快照可导出监测缓存及 live 帧，但保留原校验级别、时间及配置来源，不升级为 full。`_session_configuration_version` 和 `monitor_*` 是软件调度元数据，不是仪器读回。历史文件保持原样。
 
@@ -95,6 +95,8 @@ snapshots 返回 stableDeviceId、sessionId、resource、adapterId、connectionS
 0.3.0 增加 monitoring、recording、configurationVersion、controlPending。监测任务存在时会话持续 busy，批次间也不会误允许断开。recording 在在途记录或写盘尚未结束时继续为真，用于参数锁。控制前值来自已读回/已接受缓存，并写入 operation_requested.before；没有历史值时为 null，不虚构。
 
 发现状态：unknown/identified/stale/unreachable/conflict。identified 要求当前存在证据与身份记录同时成立；仅保存历史 identity 不代表本次已发现。candidate 与 duplicate 是设计概念，本版候选通过 candidates 集合保存，重复资源通过合并或 conflict 表达，不增加虚假的连接状态。连接状态：connecting/connected/busy/degraded/error；没有会话即 disconnected。
+
+`RecordingOutcome` 是不可变完成证据，包含路径、received/committed/converted 计数、binary_error、csv_error 和 pause_reason。它不改变旧 SQLite 或 CSV 文件格式；失败记录仍保留已提交文件和准确计数，不能将路径列表存在解释为整批保存成功。应用的记录对象集合仅保留在途任务和最后一批，历史结果以磁盘证据为准。恢复/清理审计写入失败时，AuditSink 在内存保留最近 32 项错误快照；这不是已经持久化的审计日志。
 
 扫描失败、取消或部分 provider 失败不覆盖连接快照。只有完整成功覆盖的发现来源才能把未出现的资源标记 stale。configured 地址表示配置存在，不代表网络设备在线。
 

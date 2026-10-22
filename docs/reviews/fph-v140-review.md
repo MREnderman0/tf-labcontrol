@@ -1,3 +1,4 @@
+<!-- docs: historical -->
 # FPH02 V1.40 接入与界面验收（2026-09-27）
 
 本轮保留固件 V1.40，独立型号实现及限制见 [FPH02 维护源](../../src/lab_control/instruments/devices/rs_fph/README.md)。真实身份、地址、参数、通信与性能证据仅位于正式运行目录；截图全部为隔离 Mock。

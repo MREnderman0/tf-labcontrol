@@ -1,0 +1,718 @@
+{
+  "fixture_origin": "Immutable pre-migration capability and wire contract; software evidence only",
+  "adapter": "rs.rtm3004",
+  "capabilities": {
+    "category": "oscilloscope",
+    "channels": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "operations": [
+      {
+        "name": "channel_enabled",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+        "section": "CHAN{ch}:STAT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "scale",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V/div",
+            "minimum": 0.001,
+            "maximum": 10,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+        "section": "CHAN{ch}:SCAL",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "offset",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": -10,
+            "maximum": 10,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+        "section": "CHAN{ch}:OFFS",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "coupling",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "DCL",
+              "ACL",
+              "GND",
+              "DC"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+        "section": "CHAN{ch}:COUP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "probe_attenuation",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "ratio",
+            "minimum": 0.1,
+            "maximum": 10000,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+        "section": "PROB{ch}:SET:ATT:MAN",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_level",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": -10,
+            "maximum": 10,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+        "section": "TRIG:A:LEV{ch}",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "timebase",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s/div",
+            "minimum": 1e-10,
+            "maximum": 50,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+        "section": "TIM:SCAL",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "time_position",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s",
+            "minimum": -100,
+            "maximum": 100,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+        "section": "TIM:POS",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_source",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "CH1",
+              "CH2",
+              "CH3",
+              "CH4",
+              "EXT"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+        "section": "TRIG:A:SOUR",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_mode",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "AUTO",
+              "NORM"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+        "section": "TRIG:A:MODE",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "record_length",
+        "parameters": {
+          "value": {
+            "kind": "integer",
+            "unit": "",
+            "minimum": 1000,
+            "maximum": 10000000,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+        "section": "ACQ:POIN",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "acquisition_count",
+        "parameters": {
+          "value": {
+            "kind": "integer",
+            "unit": "",
+            "minimum": 1,
+            "maximum": 1000000,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+        "section": "ACQ:NSIN:COUN",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "run",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+        "section": "RUN",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "stop",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+        "section": "STOP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "single",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+        "section": "SING",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "waveform_header",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+        "section": "CHAN{ch}:DATA:HEAD?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "acquisition_mode",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "REFR",
+              "AVER",
+              "ENV"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+        "section": "ACQ:TYPE",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "averages",
+        "parameters": {
+          "value": {
+            "kind": "integer",
+            "unit": "",
+            "minimum": 2,
+            "maximum": 1024,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+        "section": "ACQ:AVER:COUN",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "decimation",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "SAMP",
+              "PDET",
+              "HRES"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+        "section": "CHAN:TYPE",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "bandwidth_limit",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "FULL",
+              "B20"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+        "section": "CHAN{ch}:BAND",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "segmented",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+        "section": "ACQ:SEGM:STAT",
+        "verification": "documented_pending_hardware",
+        "option": "segmented_memory",
+        "available": false,
+        "reason": "missing option segmented_memory"
+      }
+    ]
+  },
+  "profile": {
+    "adapter_id": "rs.rtm3004",
+    "manufacturer": [
+      "Rohde&Schwarz",
+      "Rohde-Schwarz"
+    ],
+    "models": [
+      "RTM3004"
+    ],
+    "category": "oscilloscope",
+    "channels": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+    "revision": "1335.9090 revision 12",
+    "status": [
+      "channel_enabled",
+      "scale",
+      "timebase",
+      "trigger_mode"
+    ],
+    "identity_query": "*IDN?",
+    "error_query": "SYST:ERR?",
+    "acquisition": "rtm",
+    "channel_limits": {}
+  },
+  "commands": {
+    "channel_enabled": {
+      "writes": [
+        "CHAN{ch}:STAT {value}"
+      ],
+      "query": "CHAN{ch}:STAT?",
+      "select": [],
+      "compare": true
+    },
+    "scale": {
+      "writes": [
+        "CHAN{ch}:SCAL {value}"
+      ],
+      "query": "CHAN{ch}:SCAL?",
+      "select": [],
+      "compare": true
+    },
+    "offset": {
+      "writes": [
+        "CHAN{ch}:OFFS {value}"
+      ],
+      "query": "CHAN{ch}:OFFS?",
+      "select": [],
+      "compare": true
+    },
+    "coupling": {
+      "writes": [
+        "CHAN{ch}:COUP {value}"
+      ],
+      "query": "CHAN{ch}:COUP?",
+      "select": [],
+      "compare": true
+    },
+    "probe_attenuation": {
+      "writes": [
+        "PROB{ch}:SET:ATT:MAN {value}"
+      ],
+      "query": "PROB{ch}:SET:ATT:MAN?",
+      "select": [],
+      "compare": true
+    },
+    "trigger_level": {
+      "writes": [
+        "TRIG:A:LEV{ch} {value}"
+      ],
+      "query": "TRIG:A:LEV{ch}?",
+      "select": [],
+      "compare": true
+    },
+    "timebase": {
+      "writes": [
+        "TIM:SCAL {value}"
+      ],
+      "query": "TIM:SCAL?",
+      "select": [],
+      "compare": true
+    },
+    "time_position": {
+      "writes": [
+        "TIM:POS {value}"
+      ],
+      "query": "TIM:POS?",
+      "select": [],
+      "compare": true
+    },
+    "trigger_source": {
+      "writes": [
+        "TRIG:A:SOUR {value}"
+      ],
+      "query": "TRIG:A:SOUR?",
+      "select": [],
+      "compare": true
+    },
+    "trigger_mode": {
+      "writes": [
+        "TRIG:A:MODE {value}"
+      ],
+      "query": "TRIG:A:MODE?",
+      "select": [],
+      "compare": true
+    },
+    "record_length": {
+      "writes": [
+        "ACQ:POIN {value}"
+      ],
+      "query": "ACQ:POIN?",
+      "select": [],
+      "compare": true
+    },
+    "acquisition_count": {
+      "writes": [
+        "ACQ:NSIN:COUN {value}"
+      ],
+      "query": "ACQ:NSIN:COUN?",
+      "select": [],
+      "compare": true
+    },
+    "run": {
+      "writes": [
+        "RUN"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "stop": {
+      "writes": [
+        "STOP"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "single": {
+      "writes": [
+        "SING"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "waveform_header": {
+      "writes": [],
+      "query": "CHAN{ch}:DATA:HEAD?",
+      "select": [],
+      "compare": false
+    },
+    "acquisition_mode": {
+      "writes": [
+        "ACQ:TYPE {value}"
+      ],
+      "query": "ACQ:TYPE?",
+      "select": [],
+      "compare": true
+    },
+    "averages": {
+      "writes": [
+        "ACQ:AVER:COUN {value}"
+      ],
+      "query": "ACQ:AVER:COUN?",
+      "select": [],
+      "compare": true
+    },
+    "decimation": {
+      "writes": [
+        "CHAN:TYPE {value}"
+      ],
+      "query": "CHAN:TYPE?",
+      "select": [],
+      "compare": true
+    },
+    "bandwidth_limit": {
+      "writes": [
+        "CHAN{ch}:BAND {value}"
+      ],
+      "query": "CHAN{ch}:BAND?",
+      "select": [],
+      "compare": true
+    },
+    "segmented": {
+      "writes": [
+        "ACQ:SEGM:STAT {value}"
+      ],
+      "query": "ACQ:SEGM:STAT?",
+      "select": [],
+      "compare": true
+    }
+  }
+}

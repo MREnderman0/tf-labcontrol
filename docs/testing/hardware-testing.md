@@ -4,7 +4,7 @@
 
 现有部分资产已有通信和输出关闭下的控制证据；每项验收仍须核对对应资产、接口、固件和测试范围。软件实现与物理性能验收分别判定。
 
-各独立型号的测试入口及已提供的完整控制验证流程见[信号源型号导航](../devices/signal-sources/README.md)。只读复核与输出关闭的控制验证分开执行；逐台实际结果保存在运行目录，不能从型号清单推断某台设备或某个接口已验收。
+各独立型号的测试入口及已提供的完整控制验证流程见[型号导航](../devices/README.md)。只读复核与输出关闭的控制验证分开执行；逐台实际结果保存在运行目录，不能从型号清单推断某台设备或某个接口已验收。
 
 ## 1. Windows 环境
 
@@ -34,9 +34,9 @@ VISA/厂商程序确认能识别后，释放其仪器会话再连接本软件。
 常用环境检查：
 
 ```powershell
-uv run lab-control-cli doctor
-uv run lab-control-cli models
-uv run lab-control-cli --config "$env:LOCALAPPDATA\TF-LabControl\config\bench.toml" scan
+.venv-dev\Scripts\lab-control-cli.exe doctor
+.venv-dev\Scripts\lab-control-cli.exe models
+.venv-dev\Scripts\lab-control-cli.exe --config "$env:LOCALAPPDATA\TF-LabControl\config\bench.toml" scan
 ```
 
 扫描不自动连接；SDK 只枚举。已有连接扫描使用缓存；新地址可能是活动设备别名时会延后身份探测。显示 unknown、driver error、probe timeout 或 deferred 均应保留并说明原因。
@@ -48,10 +48,10 @@ uv run lab-control-cli --config "$env:LOCALAPPDATA\TF-LabControl\config\bench.to
 ```powershell
 $cfg = "$env:LOCALAPPDATA\TF-LabControl\config\bench.toml"
 $resource = "TCPIP0::192.0.2.10::inst0::INSTR"
-uv run lab-control-cli --config $cfg --resource $resource identity
-uv run lab-control-cli --config $cfg --resource $resource capabilities
-uv run lab-control-cli --config $cfg --resource $resource status
-uv run lab-control-cli --config $cfg --resource $resource test
+.venv-dev\Scripts\lab-control-cli.exe --config $cfg --resource $resource identity
+.venv-dev\Scripts\lab-control-cli.exe --config $cfg --resource $resource capabilities
+.venv-dev\Scripts\lab-control-cli.exe --config $cfg --resource $resource status
+.venv-dev\Scripts\lab-control-cli.exe --config $cfg --resource $resource test
 ```
 
 预期：厂家、型号、序列号/可信度与面板一致；未发送复位、输出或采集启动命令；报告路径在控制台显示。无序列号（例如 3458A）保持型号级身份。53100A 本机空闲连接使用独立 USB 描述符读回，外部 TSERVE 要求 show serial；不能用自定义服务标题伪装硬件确认。
@@ -63,8 +63,8 @@ uv run lab-control-cli --config $cfg --resource $resource test
 先检查负载、输出状态和安全范围，选择该型号能力中一项保守值。默认 set 只显示目标；实际写入需要 --write，危险动作还需要 --confirm。
 
 ```powershell
-uv run lab-control-cli --config $cfg --resource $resource set frequency --parameters config/examples/frequency.json --write
-uv run lab-control-cli --config $cfg --resource $resource set output --parameters config/examples/output-off.json --write --confirm
+.venv-dev\Scripts\lab-control-cli.exe --config $cfg --resource $resource set frequency --parameters config/examples/frequency.json --write
+.venv-dev\Scripts\lab-control-cli.exe --config $cfg --resource $resource set output --parameters config/examples/output-off.json --write --confirm
 ```
 
 output 示例适用于有该能力的型号；GPD 整机使用 all_outputs。输出开启需自行提供 UTF-8 JSON `{"value": true}` 并核对目标和接线。幅度使用 Vpp；AFG/DG 先显式设置 amplitude_unit 为 VPP。设置已经开启的输出也会改变信号，不能只对“打开输出”做物理核对。
@@ -85,9 +85,9 @@ output 示例适用于有该能力的型号；GPD 整机使用 all_outputs。输
 波形与批次采集：
 
 ```powershell
-uv run lab-control-cli --config $cfg --resource $resource acquire --kind waveform --points 1000
-uv run lab-control-cli --config $cfg --resource $resource acquire --kind spectrum --initiate --confirm
-uv run lab-control-cli --config $cfg --resource $resource stream --kind scalar --count 10 --interval 0.5
+.venv-dev\Scripts\lab-control-cli.exe --config $cfg --resource $resource acquire --kind waveform --points 1000
+.venv-dev\Scripts\lab-control-cli.exe --config $cfg --resource $resource acquire --kind spectrum --initiate --confirm
+.venv-dev\Scripts\lab-control-cli.exe --config $cfg --resource $resource stream --kind scalar --count 10 --interval 0.5
 ```
 
 按目标类型选择其中一条，不把 spectrum 请求发给示波器。Pico 使用 [examples/pico.py](../../examples/pico.py) 先配置通道。CLI 每次独立连接，SDK 中仅缓存的通道配置不能依赖上一次 CLI 调用；需要多步骤在同一个 Python 示例会话完成。
@@ -99,34 +99,28 @@ uv run lab-control-cli --config $cfg --resource $resource stream --kind scalar -
 同机单进程执行，显式列出参与的资源：
 
 ```powershell
-uv run lab-control-cli --config $cfg scan-stress --resources "资源A" "资源B" --repeats 5 --capture-resource "资源A" --kind waveform --points 1000
+.venv-dev\Scripts\lab-control-cli.exe --config $cfg scan-stress --resources "资源A" "资源B" --repeats 5 --capture-resource "资源A" --kind waveform --points 1000
 ```
 
 根据仪器需求另加 --initiate --confirm。该工具连接指定设备，保存扫描前后 sessionId、逐项结果和采集路径；单台连接失败单独记录，其他设备继续检查。报告的 software_checks_passed 仍不代表现场完成所有物理验收。
 
-现场扩大到 6–20 台，至少各覆盖一次 VISA USB、LAN、GPIB、COM、SDK。确认扫描前后原句柄/会话保持，采集不断开；反复扫描和取消，不新增控制查询。GUI 中保持选中设备和滚动位置，切换模式只改变适用性。
+现场扩大到 6–20 台，至少各覆盖一次 VISA USB、LAN、GPIB、COM、SDK。确认扫描前后原句柄/会话保持，采集不断开；反复扫描和取消，不新增控制查询。GUI 中保持选中设备和滚动位置，切换页面不重建会话或停止采集。当前界面使用通用工作区，不提供旧电子／光子模式切换。
 
 分别模拟未连接设备拔出、已连接设备拔出/插回、驱动缺失、端口占用、错误地址、身份超时、SDK 缺失/位数不匹配。发现状态与会话错误应独立变化；历史身份和有效数据不丢失。USB+LAN 双接时先扫描识别合并，验证只有一条物理库存和两个候选资源；身份冲突保留诊断，不自动覆盖资产。
 
 ## 7. 数据与失败反馈
 
-CLI acquire/stream、GUI 显式记录或保存会生成 snapshot.json、UTF-8 BOM samples.csv 和 samples.npz；GUI 纯监测不生成实验数据文件。ZNB 示例另存 Touchstone。报告位于 reports，日志位于 logs。使用 LAB_CONTROL_HOME 可改根目录；模拟数据另存 simulation。超时、断线、传感器缺失和解析错误使用质量标记/空数组，不以零值补齐。
+CLI `acquire` 与 GUI 保存当前帧在本批目录的 `_raw` 中保存 `snapshot.json` 和 `samples.npz`；CLI `stream` 与 GUI 连续记录使用 `_raw/segment-*.sqlite3` 保存逐帧原始数据，不逐帧生成 NPZ。新目录顶层提供 `记录说明.txt`、`数据_00001.csv` 等分析文件，连续曲线另有 `帧索引.csv`；旧版 `samples.csv` 布局仍可读取。完整目录与恢复方法见[文件与反馈](../guides/control-and-monitoring.md#文件与反馈)和[数据模型](../data/data-model.md#实际存储结构)。
+
+GUI 纯监测不生成实验数据文件，显式记录和保存才写盘。ZNB 示例另存 Touchstone。报告位于 `reports`，日志位于 `logs`；使用 `LAB_CONTROL_HOME` 可改运行根目录，模拟数据另存 `simulation`。数据保存一级目录可在软件设置中指定。超时、断线、传感器缺失和解析错误保留诊断；无效帧不得显示或保存，不以零值补齐。
 
 现场记录模板可复制 [config/examples/hardware-result.json](../../config/examples/hardware-result.json)。反馈时提供：报告、对应日志片段、配置（删除不希望分享的地址/序列号）、完整型号/固件/驱动、触发步骤、预期和实际读回、波形/频谱文件及仪器面板对比。不要把“success”直接改成全设备已验收。
 
 ## 8. 显式 pytest 硬件入口
 
-只读测试默认跳过。退出真实 GUI 后，指定准确目标才会执行：
+本节保留旧锚点。顶层 `tests/hardware/test_readonly.py` 已退役并无条件跳过，即使残留 `LAB_CONTROL_HARDWARE_CONFIG` / `LAB_CONTROL_HARDWARE_RESOURCE` 也不会连接设备。普通软件检查不提供启用真实硬件的开关。
 
-```powershell
-$env:LAB_CONTROL_HARDWARE_CONFIG = $cfg
-$env:LAB_CONTROL_HARDWARE_RESOURCE = $resource
-uv run pytest tests/hardware -m hardware -v
-Remove-Item Env:LAB_CONTROL_HARDWARE_CONFIG
-Remove-Item Env:LAB_CONTROL_HARDWARE_RESOURCE
-```
-
-顶层 pytest 硬件入口仅作历史测试入口说明，不作为当前规范化留档入口。现场优先使用型号包的硬件脚本，核对正式运行目录和全局锁，并按记录规范保存每次结果。每个型号完成身份、基础控制、状态、采集、单位/时轴和故障恢复后，才在现场验收记录中确认“可控”；高级功能逐项记录，不能自动沿用基础验收结论。
+现场使用[型号维护源](../devices/README.md)中对应包的 `hardware/README.md` 和脚本，核对完整型号、序列号、正式运行目录、授权范围及进程锁；按[记录规范](records.md)保存通过、失败、跳过或停止的结果。只读预检必须跳过会修改格式的连接初始化。每个型号完成身份、基础控制、状态、采集、单位/时轴和故障恢复后，才在现场验收记录中确认“可控”；高级功能逐项记录，不能自动沿用基础验收结论。
 
 ## 9. 0.3.0 页面现场验收
 
@@ -136,11 +130,12 @@ Remove-Item Env:LAB_CONTROL_HARDWARE_RESOURCE
 | --- | --- | --- |
 | 分类调参 | 核对设备/槽位/物理通道，输入带单位值；先取消确认，再明确执行 | 面板与请求/读回对应；取消无输出变化；整机与通道操作未混淆 |
 | 草稿与 SDK 来源 | 编辑未应用值，读取现值、切页再返回 | 草稿保留；仪器读回、本会话缓存和未知来源明确 |
-| 上传/列表 | 导入小规模 UTF-8 文件，预览/范围检查，按型号步骤上传 | 导入点数、文件、设备状态、面板数据；上传不自动打开输出 |
 | 多通道与坐标 | 示波器接已知信号，频谱选择普通/零跨度，网络选择 S 参数 | 电压/时间/频率轴、dB/相位及单位与仪器一致；实际点数记录 |
 | 实时调参 | 监测期间修改一个影响曲线的参数；返回总览、扫描并缩放窗口 | 日志顺序为完成读取→设置/读回→新批次；sessionId 不变，其他仪器继续 |
-| 监测与记录 | 仅监测后查看 data；显式记录、停止记录、保存当前数据 | 纯监测无实验文件；记录和保存有原始 NPZ/CSV/快照；写盘结束后可切模式 |
+| 监测与记录 | 仅监测后查看实际保存目录；显式记录、停止记录、保存当前帧 | 纯监测无实验文件；单帧有快照/NPZ，连续记录有 SQLite；二者均有分析 CSV；停止后二进制收尾释放参数锁，CSV 可继续后台转换 |
 | 失败恢复 | 目标设备超时/拔线，观察最后画面、错误及其他设备 | 仅目标暂停、质量/错误可解释，不补零；手动处理并重连，不恢复输出 |
-| 总览布局 | 同源多卡片，标题定位通道，单列至四列窗口，模式切换 | 不额外打开会话；卡片重排不重启采集；模式布局互不覆盖 |
+| 总览布局 | 核对每台已连接设备的卡片、参与采样选择与共享采样间隔；调整窗口宽度、切换设备页并返回 | 卡片自动排列；布局变化不额外打开会话或重启采集；切页后保留任务与最后有效帧 |
+
+上传、列表、调制等高级功能仅按型号已声明的 CLI／底层接口另行验收；当前简洁信号源页面不提供这些高级分组，不能将其列为 GUI 操作。
 
 停止软件监测后，另行核对仪器仍处于原输出/运行状态；确需停止仪器或关输出时使用对应独立动作。报告继续标记具体能力待验收，不能将软件检查通过写成物理验证通过。

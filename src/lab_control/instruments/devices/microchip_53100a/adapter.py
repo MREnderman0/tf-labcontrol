@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 
 import numpy as np
 
-from lab_control.application.config import ConnectionConfig
+from lab_control.domain.connections import ConnectionConfig
 from lab_control.domain.instruments import (
     AcquisitionRequest,
     ApplyResult,

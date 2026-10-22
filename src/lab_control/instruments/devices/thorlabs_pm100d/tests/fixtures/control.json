@@ -1,0 +1,5 @@
+{
+  "fixture_origin": "SDK call fixtures are exercised in test_sdk.py; not a wire transcript",
+  "adapter": "thorlabs.pm100d",
+  "operation": "wavelength"
+}

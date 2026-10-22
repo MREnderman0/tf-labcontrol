@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 from lab_control.application.catalog import mode_applicable
 from lab_control.application.config import config_from_record
 from lab_control.application.controls import CATEGORY_LABELS, MEASUREMENT_CATEGORIES, DataSource, data_sources
+from lab_control.instruments.registry import DEVICE_DEFINITIONS
 from lab_control.ui.controller import WorkspaceController
 from lab_control.ui.pages.device_control.form import ControlForm
 from lab_control.ui.pages.monitoring.plot import LivePlot
@@ -180,8 +181,9 @@ class MonitoringPage(QWidget):
                 self.channel_row.addWidget(check)
             self.channel_row.addStretch()
             adapter = self.controller.records[device_id]["adapterId"]
-            self.initiate.setChecked(adapter in {"pico.6404e", "keysight.3458a"})
-            self.initiate.setEnabled(adapter not in {"pico.6404e", "microchip.53100a"})
+            definition = DEVICE_DEFINITIONS.get(adapter)
+            self.initiate.setChecked(bool(definition and definition.acquisition_initiate_default))
+            self.initiate.setEnabled(definition is None or definition.acquisition_initiate_editable)
         self.plot.reset()
         self.source_changed()
         if self.category in MEASUREMENT_CATEGORIES:
@@ -237,13 +239,14 @@ class MonitoringPage(QWidget):
         try:
             self.controller.ensure_applicable(device_id)
             adapter = self.controller.records[device_id]["adapterId"]
+            definition = DEVICE_DEFINITIONS.get(adapter)
             confirmed = False
-            if self.initiate.isChecked() or adapter == "keysight.3458a":
+            if self.initiate.isChecked() or (definition and definition.acquisition_requires_confirmation):
                 answer = QMessageBox.question(
                     self,
                     "确认采集行为",
                     f"设备：{self.selector.combo.currentText()}\n通道：{self.channels()}\n"
-                    "将按所选方式启动仪器采集或读取存储。3458A 的存储读取可能停止内部记录。\n"
+                    "将按所选方式启动仪器采集或读取存储；可能停止仪器内部记录。\n"
                     "本次授权用于当前监测任务的每批读取；不改变其他设备输出。",
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                     QMessageBox.StandardButton.No,

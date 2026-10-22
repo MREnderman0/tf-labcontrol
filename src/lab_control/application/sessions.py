@@ -8,28 +8,30 @@ from dataclasses import dataclass, field, replace
 from typing import Any, Callable
 from uuid import uuid4
 
-from lab_control.application.acquisition_pipeline import immutable_batch, validate_cadence
+from lab_control.application.acquisition_pipeline import validate_cadence
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.leases import ResourceLeases
+from lab_control.application.recorded_acquisition import RecordedAcquisitionRunner
+from lab_control.application.recordings import retain_recording
+from lab_control.application.session_operations import SessionOperations
 from lab_control.domain.instruments import (
     AcquisitionRequest,
     CapabilitySnapshot,
     ControlUpdate,
-    DeviceCommand,
     DeviceError,
     DeviceIdentity,
     InstrumentAdapter,
-    Measurement,
     MeasurementBatch,
     ParameterReading,
-    Quality,
     jsonable,
     utc_now,
 )
+from lab_control.domain.recording import RecordingError
 from lab_control.domain.workspace import GENERAL
+from lab_control.storage.audit import AuditSink
 from lab_control.storage.recording import Recording
 from lab_control.storage.repository import Repository
-from lab_control.transport.diagnostics import AcquisitionStatistics, capture_io
+from lab_control.transport.diagnostics import AcquisitionStatistics
 
 
 @dataclass(frozen=True)
@@ -85,11 +87,19 @@ class SessionManager:
         factory: Callable[[ConnectionConfig], InstrumentAdapter],
     ) -> None:
         self.leases, self.repository, self.factory = leases, repository, factory
+        self.audit = getattr(repository, "audit_sink", None) or AuditSink(
+            lambda event, **details: repository.audit(event, **details)
+        )
         self.sessions: dict[str, DeviceSession] = {}
         self.lock = threading.RLock()
         self.listeners: list[Callable[[dict[str, Any]], None]] = []
         self.recordings: list[Recording] = []
         self.maintenance_active = False
+        self._closing = False
+        self._closed = False
+        self._close_lock = threading.Lock()
+        self.operations = SessionOperations(self)
+        self.acquisition_runner = RecordedAcquisitionRunner(self)
 
     def subscribe(self, callback: Callable[[dict[str, Any]], None]) -> Callable[[], None]:
         with self.lock:
@@ -110,7 +120,7 @@ class SessionManager:
             try:
                 listener(message)
             except Exception as exc:
-                self.repository.audit("listener_error", error=str(exc))
+                self.audit.try_record("listener_error", error=str(exc))
 
     def snapshots(self) -> tuple[dict[str, Any], ...]:
         with self.lock:
@@ -201,7 +211,8 @@ class SessionManager:
         with self.lock:
             session = self.sessions.get(device_id)
             if (
-                session is None
+                self._closing
+                or session is None
                 or session.closing
                 or session.pending
                 or session.control_group
@@ -269,7 +280,7 @@ class SessionManager:
             return previous
         with self.lock:
             session.capability_snapshot = snapshot
-        self.repository.audit("capabilities_refreshed", device_id=session.device_id, snapshot=snapshot)
+        self.audit.try_record("capabilities_refreshed", device_id=session.device_id, snapshot=snapshot)
         if failure:
             raise failure
         return snapshot
@@ -282,7 +293,27 @@ class SessionManager:
         expected_firmware: str = "",
         configure_acquisition: bool = True,
     ) -> Future[DeviceIdentity]:
+        # Reservation and worker submission are one admission transaction. Close
+        # must not drain the worker in the gap before opening has been queued.
         with self.lock:
+            return self._connect_locked(
+                device_id,
+                config,
+                expected_firmware=expected_firmware,
+                configure_acquisition=configure_acquisition,
+            )
+
+    def _connect_locked(
+        self,
+        device_id: str,
+        config: ConnectionConfig,
+        *,
+        expected_firmware: str,
+        configure_acquisition: bool,
+    ) -> Future[DeviceIdentity]:
+        with self.lock:
+            if self._closing:
+                raise DeviceError("Session manager is closing", "runtime_closing")
             if self.maintenance_active:
                 raise DeviceError("安装向导运行期间暂停连接", "maintenance_busy")
             if self.leases.owner("discovery:unknown_alias"):
@@ -352,7 +383,7 @@ class SessionManager:
                         session.acquisition_preparation = deepcopy(
                             getattr(adapter, "acquisition_preparation", {})
                         )
-                        self.repository.audit(
+                        self.audit.try_record(
                             "acquisition_prepared",
                             device_id=device_id,
                             result=session.acquisition_preparation,
@@ -365,7 +396,7 @@ class SessionManager:
                     session.last_error = "能力读取失败：" + str(exc)
                     if getattr(exc, "code", "") in {"timeout", "disconnected"}:
                         session.state = "degraded"
-                self.repository.audit("connected", device_id=device_id, identity=identity, config=config)
+                self.audit.try_record("connected", device_id=device_id, identity=identity, config=config)
                 self.emit("connected", device_id, identity=jsonable(identity))
                 return identity
             except Exception as exc:
@@ -373,7 +404,7 @@ class SessionManager:
                     try:
                         session.adapter.close()
                     except Exception as cleanup_error:
-                        self.repository.audit("cleanup_failed", device_id=device_id, error=str(cleanup_error))
+                        self.audit.try_record("cleanup_failed", device_id=device_id, error=str(cleanup_error))
                     session.adapter = None
                 with self.lock:
                     session.state, session.last_error = "error", str(exc)
@@ -395,6 +426,8 @@ class SessionManager:
 
     def submit(self, device_id: str, operation: str, argument: Any = None) -> Future[Any]:
         with self.lock:
+            if self._closing:
+                raise DeviceError("Session manager is closing", "runtime_closing")
             session = self.sessions[device_id]
             if session.closing or session.state not in {"connected", "busy"}:
                 raise DeviceError(
@@ -421,15 +454,16 @@ class SessionManager:
             session.pending += 1
             if self._controls_instrument(operation, argument):
                 session.control_pending += 1
-        return session.worker.submit(
-            self._execute, session, operation, argument, submitted_at=time.perf_counter()
-        )
+            return session.worker.submit(
+                self._execute, session, operation, argument, submitted_at=time.perf_counter()
+            )
 
     def set_monitoring(self, device_id: str, enabled: bool, recording: bool = False) -> None:
         with self.lock:
             session = self.sessions[device_id]
             if enabled and (
-                session.closing
+                self._closing
+                or session.closing
                 or session.state not in {"connected", "busy"}
                 or (session.stream_future and not session.stream_future.done())
                 or (recording and (session.control_group or session.control_pending))
@@ -460,14 +494,16 @@ class SessionManager:
                 raise DeviceError("采集模式需要调整；请先停止记录并等待收尾，再开始监测", "unsupported")
             session.control_pending += 1
             session.configuration_version += 1
-        self.repository.audit("acquisition_setup_started", device_id=session.device_id)
         try:
+            # Setup can write instrument state, so persist its admission before I/O.
+            # Keep this inside the cleanup boundary so audit failure releases the guard.
+            self.repository.audit("acquisition_setup_started", device_id=session.device_id)
             update = prepare()
             if not isinstance(update, ControlUpdate) or not update.complete:
                 raise DeviceError("采集模式调整未返回完整核验结果", "acquisition_setup_failed")
             self._cache_readings(session, update.readings)
             self._refresh_capabilities(session, query=False)
-            self.repository.audit(
+            self.audit.try_record(
                 "acquisition_setup_completed",
                 device_id=session.device_id,
                 update=update,
@@ -476,7 +512,7 @@ class SessionManager:
             return True
         except Exception as exc:
             self._invalidate_acquisition(session, "error")
-            self.repository.audit(
+            self.audit.try_record(
                 "acquisition_setup_failed",
                 device_id=session.device_id,
                 error=str(exc),
@@ -490,79 +526,7 @@ class SessionManager:
     def _acquire(
         self, session: DeviceSession, request: AcquisitionRequest, submitted_at: float | None = None
     ) -> MeasurementBatch:
-        if session.adapter is None:
-            raise DeviceError("No adapter", "disconnected")
-        request.validate()
-        if request.waveform_extent != "default" and request.waveform_extent not in getattr(
-            session.adapter, "waveform_extents", ()
-        ):
-            raise DeviceError("Requested waveform extent is not supported by this model", "unsupported")
-        if (
-            request.consistency == "stream"
-            and not getattr(session.adapter, "supports_stream_acquisition", False)
-        ) or (
-            request.consistency == "live" and not getattr(session.adapter, "supports_live_acquisition", False)
-        ):
-            request = replace(request, consistency="full")
-        started = time.perf_counter()
-        started_utc = utc_now()
-        with capture_io() as capture:
-            try:
-                try:
-                    batch = session.adapter.acquire(request)
-                except DeviceError as exc:
-                    if exc.code != "acquisition_setup_required" or not self._prepare_acquisition_state(
-                        session
-                    ):
-                        raise
-                    # Only this explicit, pre-waveform setup condition permits a
-                    # second read. Transport/parser failures never enter this path.
-                    batch = session.adapter.acquire(request)
-            except Exception as exc:
-                self.repository.audit(
-                    "acquisition_transition_timing"
-                    if getattr(exc, "code", "") == "configuration_changed"
-                    else "acquisition_io_failed",
-                    device_id=session.device_id,
-                    performance=capture.summary(),
-                    code=getattr(exc, "code", "device_error"),
-                )
-                self._invalidate_acquisition(session, "error")
-                raise
-        completed = time.perf_counter()
-        completed_utc = utc_now()
-        performance = {
-            **batch.performance,
-            **capture.summary(),
-            "acquisition_seconds": completed - started,
-            "received_at_monotonic": completed,
-            "queue_seconds": max(0, started - submitted_at) if submitted_at is not None else 0,
-        }
-        with self.lock:
-            summary = session.acquisition_statistics.add(performance, batch.validation)
-        if summary is not None:
-            self.repository.audit("acquisition_statistics", device_id=session.device_id, summary=summary)
-        if capture.details:
-            self.repository.audit(
-                "acquisition_io_details", device_id=session.device_id, commands=capture.details
-            )
-        return replace(
-            batch,
-            timestamp=completed_utc,
-            time_basis="host_utc_at_read_completed; waveform axes from instrument",
-            timing={
-                "version": 1,
-                "host_read_started_at": started_utc,
-                "host_read_completed_at": completed_utc,
-                "read_duration_seconds": completed - started,
-                "clock_source": "host_utc; durations=monotonic",
-            },
-            performance=performance,
-            configuration={
-                **batch.configuration,
-                "_session_configuration_version": session.configuration_version,
-            },
-        )
+        return self.operations.acquire(session, request, submitted_at)
 
     def _execute(
         self,
@@ -573,224 +537,7 @@ class SessionManager:
         quiet: bool = False,
         submitted_at: float | None = None,
     ) -> Any:
-        device_id = session.device_id
-        with self.lock:
-            session.background_read = False
-            if session.state in {"error", "degraded"}:
-                session.pending -= 1
-                if self._controls_instrument(operation, argument):
-                    session.control_pending -= 1
-                raise DeviceError("Previous I/O failed; queued command was not sent", "disconnected")
-            session.state, session.active_task = "busy", operation
-            session.background_read = quiet and operation == "read_settings"
-        if not quiet:
-            self.emit("task_started", device_id, operation=operation)
-        try:
-            adapter = session.adapter
-            if adapter is None:
-                raise DeviceError("No adapter", "disconnected")
-            if not quiet and operation not in {"acquire", "observe"}:
-                self.repository.audit(
-                    "operation_requested",
-                    device_id=device_id,
-                    operation=operation,
-                    argument=argument,
-                    before=session.settings.get((argument.channel, argument.operation))
-                    if isinstance(argument, DeviceCommand)
-                    else None,
-                )
-            result: Any
-            if operation == "identify":
-                result = adapter.identify()
-                if session.identity and result.key != session.identity.key:
-                    raise DeviceError("Identity changed in existing session", "identity_conflict")
-                session.identity = result
-            elif operation == "status":
-                result = adapter.read_status()
-                session.last_status = jsonable(result)
-            elif operation == "capabilities":
-                snapshot = session.capability_snapshot or self._refresh_capabilities(session)
-                if not snapshot.channels:
-                    raise DeviceError("等待设备通道识别，请重新连接或刷新能力", "invalid_parameter")
-                result = snapshot.channels[next(iter(snapshot.channels))]
-            elif operation == "refresh_capabilities":
-                self._invalidate_acquisition(session, "explicit_refresh")
-                result = self._refresh_capabilities(session)
-                if self._prepare_acquisition_state(session):
-                    result = session.capability_snapshot
-            elif operation == "read_settings":
-                if not quiet:
-                    self._invalidate_acquisition(session, "explicit_read")
-                operations, channel = argument
-                result = adapter.read_settings(tuple(operations), channel)
-                # Model-owned caches may now imply different channel ranges/permissions.
-                # Publish only actual changes, without extra I/O or identical audit snapshots.
-                if callable(getattr(adapter, "capabilities_for_channel", None)):
-                    self._refresh_capabilities(session, query=False, changed_only=True)
-                self._cache_readings(session, result)
-            elif operation == "apply":
-                if not isinstance(argument, DeviceCommand):
-                    raise TypeError("Expected DeviceCommand")
-                snapshot = self._refresh_capabilities(session)
-                if snapshot.stale:
-                    raise DeviceError("Refresh instrument ranges before writing", "invalid_parameter")
-                if argument.channel not in snapshot.channels:
-                    raise DeviceError("Invalid channel", "invalid_parameter")
-                snapshot.channels[argument.channel].get(argument.operation).validate(argument.parameters)
-                # Even an interrupted write can change hardware. Invalidate older reads
-                # before I/O, including paths where the adapter raises instead of returning.
-                with self.lock:
-                    session.configuration_version += 1
-                # Opted-in models own selective invalidation, including failure paths.
-                if not getattr(adapter, "supports_control_updates", False):
-                    self._invalidate_acquisition(session, "apply")
-                try:
-                    result = adapter.apply(argument)
-                finally:
-                    self._refresh_capabilities(session, query=False)
-                if result.outcome == "success":
-                    try:
-                        self._refresh_capabilities(session)
-                    except Exception as exc:
-                        # Do not replay an already completed write when the subsequent refresh fails.
-                        session.last_error = "设置已执行，能力刷新失败：" + str(exc)
-                        session.state = "degraded"
-                if result.outcome != "success":
-                    session.last_error = result.error or result.outcome
-                else:
-                    if session.state != "degraded":
-                        session.last_error = ""
-                    session.settings[(argument.channel, argument.operation)] = ParameterReading(
-                        argument.operation,
-                        argument.channel,
-                        result.readback if result.readback is not None else result.requested,
-                        "session_cache",
-                        result.timestamp,
-                    )
-                if result.outcome in {"uncertain", "partial"}:
-                    session.state = "degraded"
-                if result.outcome == "success" and session.state != "degraded" and result.control_update:
-                    self._cache_readings(session, result.control_update.readings)
-                elif result.outcome != "success":
-                    self._invalidate_acquisition(session, "error")
-            elif operation == "observe":
-                if not isinstance(argument, AcquisitionRequest):
-                    raise TypeError("Expected AcquisitionRequest")
-                argument.validate()
-                readings = adapter.read_settings((argument.quantity,), argument.channels[0])
-                self._cache_readings(session, readings)
-                reading = readings[0]
-                value = reading.value
-                if isinstance(value, dict):
-                    value = value.get("value")
-                cap = adapter.capabilities().get(argument.quantity)
-                spec = cap.parameters.get("value")
-                result = MeasurementBatch(
-                    session.identity or DeviceIdentity("", ""),
-                    (
-                        Measurement(
-                            argument.quantity,
-                            spec.unit if spec else "",
-                            [float(value)] if isinstance(value, (float, int, bool)) else [],
-                            argument.channels[0],
-                            quality=reading.quality,
-                            metadata={"display_value": value, "source": reading.source},
-                        ),
-                    ),
-                    {},
-                )
-            else:
-                if not isinstance(argument, AcquisitionRequest):
-                    raise TypeError("Expected AcquisitionRequest")
-                result = self._acquire(session, argument, submitted_at)
-            if operation in {"acquire", "observe"}:
-                # Optional, model-owned readings tied to this exact acquisition. No inferred
-                # settings from arbitrary configuration dictionaries or extra device queries.
-                acquisition_readings = getattr(adapter, "acquisition_readings", None)
-                if operation == "acquire" and callable(acquisition_readings):
-                    self._cache_readings(session, acquisition_readings(result))
-                result = replace(
-                    result,
-                    configuration={
-                        **result.configuration,
-                        "_session_configuration_version": session.configuration_version,
-                    },
-                )
-            if not quiet and operation not in {"acquire", "observe"}:
-                self.repository.audit(
-                    "operation_completed",
-                    device_id=device_id,
-                    operation=operation,
-                    result=result
-                    if operation not in {"acquire", "observe"}
-                    else {"timestamp": result.timestamp},
-                )
-            if not quiet:
-                self.emit("result", device_id, operation=operation, result=result)
-            return result
-        except Exception as exc:
-            self._invalidate_acquisition(session, "error")
-            code = getattr(exc, "code", "device_error")
-            if operation == "acquire" and code == "configuration_changed":
-                # A complete reply with changing axis/settings is an invalid frame,
-                # not a broken transport. Never publish it or replay any control.
-                with self.lock:
-                    session.configuration_version += 1
-                self.repository.audit("acquisition_discarded", device_id=device_id, code=code, error=str(exc))
-                raise
-            if code not in {
-                "unsupported",
-                "invalid_parameter",
-                "confirmation_required",
-                "missing_option",
-                "acquisition_budget_exceeded",
-                "acquisition_setup_required",
-            }:
-                session.state = "degraded"
-            session.last_error = str(exc)
-            if not quiet:
-                self.repository.audit(
-                    "operation_failed", device_id=device_id, operation=operation, code=code, error=str(exc)
-                )
-            if not quiet:
-                self.emit("error", device_id, error=str(exc), code=code)
-            if (
-                operation == "acquire"
-                and isinstance(exc, DeviceError)
-                and code in {q.value for q in Quality} | {"sdk_error", "acquisition_failed"}
-            ):
-                quality = Quality(code) if code in Quality._value2member_map_ else Quality.PARSE_ERROR
-                return MeasurementBatch(
-                    session.identity or DeviceIdentity("", ""),
-                    (Measurement(argument.kind, "", [], quality=quality, metadata={"error": str(exc)}),),
-                    {"request": jsonable(argument)},
-                )
-            raise
-        finally:
-            # Model-owned report metadata may change capabilities without an
-            # extra query (including a rejected request for a removed channel).
-            adapter = session.adapter
-            revision = getattr(adapter, "capability_revision", None)
-            previous_revision = (
-                session.capability_snapshot.details.get("capability_revision")
-                if session.capability_snapshot
-                else None
-            )
-            if revision is not None and revision != previous_revision and session.identity:
-                try:
-                    self._refresh_capabilities(session, query=False, changed_only=True)
-                except Exception as exc:
-                    self.repository.audit("capability_publish_failed", device_id=device_id, error=str(exc))
-            with self.lock:
-                session.background_read = False
-                session.pending -= 1
-                if self._controls_instrument(operation, argument):
-                    session.control_pending -= 1
-                session.active_task = "monitoring" if session.monitoring else ""
-                if session.state == "busy":
-                    session.state = "busy" if session.monitoring else "connected"
-            if not quiet:
-                self.emit("task_finished", device_id)
+        return self.operations.execute(session, operation, argument, quiet=quiet, submitted_at=submitted_at)
 
     def start_acquisition(
         self,
@@ -823,7 +570,8 @@ class SessionManager:
         with self.lock:
             session = self.sessions[device_id]
             if (
-                session.pending
+                self._closing
+                or session.pending
                 or session.monitoring
                 or session.control_group
                 or session.state != "connected"
@@ -852,119 +600,42 @@ class SessionManager:
                 raise DeviceError("Adapter does not support finite instrument runs", "unsupported")
             recording = self.repository.create_recording(mode, context=context, csv_interval=csv_interval)
             session.direct_recording = recording
-            self.recordings.append(recording)
+            retain_recording(self.recordings, recording, self.lock)
             session.stop.clear()
             session.pending = 1
             session.active_task = "continuous_acquisition"
             session.state = "busy"
 
-        def stream() -> list[str]:
-            run = None
-            stream_request = replace(
+            session.stream_future = session.worker.submit(
+                self.acquisition_runner.run,
+                session,
                 request,
-                consistency="stream"
-                if getattr(session.adapter, "supports_stream_acquisition", False) and not request.initiate
-                else "full",
-                context_id=uuid4().hex,
-            )
-            self.repository.audit(
-                "stream_started",
-                device_id=device_id,
-                request=request,
+                recording,
                 interval=interval,
                 count=count,
                 mode=mode,
+                cadence=cadence,
+                record_interval=record_interval,
+                run_factory=run_factory,
             )
-            try:
-                run = run_factory(request, session.stop) if run_factory else None
-                index = 0
-                next_save = 0.0
-                while run is not None or (not session.stop.is_set() and (count is None or index < count)):
-                    if session.adapter is None:
-                        break
-                    started = time.monotonic()
-                    save_due = started >= next_save
-                    if save_due and not recording.reserve(
-                        max(65536, request.points * len(request.channels) * 32 + 4096)
-                    ):
-                        if run is not None:
-                            raise DeviceError(
-                                recording.pause_reason or "Recording buffer full; instrument run stopped",
-                                "recording_paused",
-                            )
-                        break
-                    try:
-                        batch = immutable_batch(
-                            next(run) if run is not None else self._acquire(session, stream_request)
-                        )
-                    except StopIteration:
-                        recording.cancel_reservation()
-                        break
-                    if save_due:
-                        if not recording.submit(batch):
-                            if run is not None:
-                                raise DeviceError(
-                                    recording.pause_reason
-                                    or "Recording rejected frame; instrument run stopped",
-                                    "recording_paused",
-                                )
-                            break
-                        next_save = started + (record_interval or 0)
-                    self.emit("measurement", device_id, batch=batch, path=recording.last_path)
-                    index += 1
-                    if run is None and session.stop.wait(
-                        0 if cadence == "fastest" else max(0, started + interval - time.monotonic())
-                    ):
-                        break
-                recording.finish()
-                recording.thread.join()
-                if run is not None and recording.error:
-                    raise DeviceError(recording.error, "recording_failed")
-                return list(recording.segments.paths)
-            except Exception as exc:
-                session.last_error, session.state = str(exc), "degraded"
-                self.repository.audit("stream_failed", device_id=device_id, error=str(exc))
-                self.emit("error", device_id, error=str(exc))
-                raise
-            finally:
-                cleanup_error = None
-                try:
-                    if run is not None:
-                        run.close()
-                except Exception as exc:
-                    session.last_error, session.state = str(exc), "degraded"
-                    self.repository.audit("stream_cleanup_failed", device_id=device_id, error=str(exc))
-                    self.emit("error", device_id, error=str(exc))
-                    cleanup_error = exc
-                finally:
-                    recording.cancel_reservation()
-                    recording.finish()
-                    recording.thread.join()
-                self.repository.audit(
-                    "stream_stopped",
-                    device_id=device_id,
-                    batches=recording.committed,
-                    requested_stop=session.stop.is_set(),
-                )
-                with self.lock:
-                    session.pending, session.active_task = 0, ""
-                    if session.state == "busy":
-                        session.state = "connected"
-                self.emit("task_finished", device_id)
-                if cleanup_error is not None:
-                    raise cleanup_error
-
-        with self.lock:
-            session.stream_future = session.worker.submit(stream)
             result: Future[Any] = Future()
+            # Publication cancellation cannot undo already submitted instrument I/O.
+            result.set_running_or_notify_cancel()
 
             def completed(worker: Future[Any]) -> None:
                 def converted(_finished: Future[Any]) -> None:
                     try:
                         paths = worker.result()
-                        if run_factory and (recording.error or recording.csv_error):
-                            raise DeviceError(recording.error or recording.csv_error, "recording_failed")
+                        if recording.error or recording.csv_error:
+                            raise RecordingError(recording.outcome())
                         result.set_result(paths)
+                    except RecordingError as exc:
+                        # The binary worker can fail before CSV finishes. Publish
+                        # the final evidence, preserving the failure classification.
+                        failure = RecordingError(recording.outcome(), exc.code)
+                        for note in getattr(exc, "__notes__", ()):
+                            failure.add_note(note)
+                        result.set_exception(failure)
                     except Exception as exc:
                         result.set_exception(exc)
 
@@ -997,6 +668,7 @@ class SessionManager:
             adapter = session.adapter
             if adapter is None:
                 return
+            failure = None
             try:
                 release = getattr(adapter, "release_control", None)
                 if release and session.identity is not None:
@@ -1006,42 +678,79 @@ class SessionManager:
                         release()
                     except Exception as exc:
                         raise DeviceError(f"返回本地控制未确认：{exc}", "disconnected") from exc
-                    self.repository.audit(
+                    self.audit.try_record(
                         "control_released",
                         device_id=device_id,
                         note="Release command sent; physical panel state is not independently verified",
                     )
             except Exception as exc:
-                self.repository.audit("control_release_failed", device_id=device_id, error=str(exc))
-                raise
+                self.audit.try_record("control_release_failed", device_id=device_id, error=str(exc))
+                failure = exc
             finally:
-                adapter.close()
+                try:
+                    adapter.close()
+                except Exception as exc:
+                    if failure is None:
+                        failure = exc
+                    else:
+                        failure.add_note(f"Adapter close failed: {exc}")
+            if failure is not None:
+                raise failure
 
+        errors = []
         try:
             session.worker.submit(teardown).result()
-        finally:
-            session.worker.shutdown(wait=True)
-            self.leases.release(device_id)
-            with self.lock:
-                del self.sessions[device_id]
-            self.repository.audit(
-                "disconnected", device_id=device_id, note="Physical output state is unchanged/unknown"
-            )
-            self.emit("disconnected", device_id)
+        except Exception as exc:
+            errors.append(exc)
+        for cleanup in (lambda: session.worker.shutdown(wait=True), lambda: self.leases.release(device_id)):
+            try:
+                cleanup()
+            except Exception as exc:
+                errors.append(exc)
+        with self.lock:
+            del self.sessions[device_id]
+        self.audit.try_record(
+            "disconnected", device_id=device_id, note="Physical output state is unchanged/unknown"
+        )
+        self.emit("disconnected", device_id)
+        if errors:
+            for secondary in errors[1:]:
+                errors[0].add_note(f"Additional disconnect failure: {secondary}")
+            raise errors[0]
 
     def close(self) -> None:
+        with self._close_lock:
+            self._close_once()
+
+    def _close_once(self) -> None:
+        if self._closed:
+            return
+        with self.lock:
+            self._closing = True
         errors = []
         for session in tuple(self.sessions.values()):
             session.stop.set()
         for device_id, session in tuple(self.sessions.items()):
             try:
                 session.worker.submit(lambda: None).result()
+            except Exception as exc:
+                errors.append(exc)
+            try:
                 if session.direct_recording:
                     session.direct_recording.finish().result()
+            except Exception as exc:
+                errors.append(exc)
+            try:
                 self.disconnect(device_id, drain_reads=True)
             except Exception as exc:
                 errors.append(exc)
-        for recording in self.recordings:
-            recording.finish().result()
+        for recording in tuple(self.recordings):
+            try:
+                recording.finish().result()
+            except Exception as exc:
+                errors.append(exc)
+        self._closed = True
         if errors:
+            for secondary in errors[1:]:
+                errors[0].add_note(f"Additional cleanup failure: {secondary}")
             raise errors[0]

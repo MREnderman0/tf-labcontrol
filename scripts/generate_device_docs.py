@@ -1,7 +1,7 @@
 """Generate capability inventory and model implementation sections without opening hardware.
 
 Run with: uv run python scripts/generate_device_docs.py [--check]
-Independent model notes live in their packages; legacy notes remain here.
+All model notes and protocol metadata live in their packages.
 Commands and capabilities always come from the registry.
 """
 
@@ -17,9 +17,7 @@ from pathlib import Path
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.controls import CATEGORY_LABELS, COMMON, MEASUREMENT_CATEGORIES, OPERATION_LABELS
 from lab_control.domain.instruments import jsonable
-from lab_control.instruments.base import ScpiAdapter
-from lab_control.instruments.registry import DEVICE_DEFINITIONS, PENDING, PROFILES, describe
-from lab_control.transport.base import MockTransport
+from lab_control.instruments.registry import DEVICE_DEFINITIONS, PENDING, PROFILES, describe_definition
 
 ROOT = Path(__file__).resolve().parents[1]
 MODEL_CARD_MARKER = "<!-- Generated from an independent device package; edit its README.md. -->"
@@ -35,104 +33,7 @@ CATEGORY_FOLDERS = {
 }
 
 # adapter, card, display name, connection, driver, model-specific acceptance boundary
-LEGACY_MODELS = [
-    (
-        "siglent.sdg6032x",
-        "signal-sources/sdg6032x",
-        "Siglent SDG6032X",
-        "USB / LAN VXI-11 / 已配置 TCP Socket",
-        "VISA Runtime；直接 TCP 不需要 VISA",
-        "BSWV/MDWV/SWWV/BTWV 是复合命令。先显式启用调制/扫频/突发，再设置子参数；不会替用户启用。WVDT 使用小端有符号 16 位数据，二进制末尾不追加换行。建议先用 USB/VXI-11 验证上传。",
-    ),
-    (
-        "keithley.2231a",
-        "power-supplies/keithley-2231a",
-        "Keithley 2231A-30-3",
-        "2231A-001 USB 适配器 / 虚拟串口",
-        "专用 USB 适配器驱动；PySerial 或 VISA ASRL",
-        "附件只写 2231A；实机身份必须为 2231A-30-3。INST:NSEL 后设置和读回在同一 worker 中执行。CHAN:OUTP 是选中通道，OUTP 是整机；CH3 限制 5 V。串并联/跟踪必须先核对接线。",
-    ),
-    (
-        "siglent.spd4306x",
-        "power-supplies/spd4306x",
-        "Siglent SPD4306X",
-        "USB / LAN VISA / 已配置 TCP Socket",
-        "64 位 VISA Runtime 或直接 TCP",
-        "四通道；CH1/4 6 V、3 A；CH2/3 30 V、6 A。命令格式 VOLT CH2,值；设定读回 VOLT:SET? CH2。远端采样仅 CH2/3。列表上传不执行列表。未发送手册未列出的 SYST:ERR?。",
-    ),
-    (
-        "itech.it6322",
-        "power-supplies/it6322",
-        "ITECH IT6322",
-        "RS-232 / 已安装 USB 或 GPIB 接口",
-        "相应接口驱动；VISA 或 PySerial",
-        "依据 ITECH IT6322-402205 V2.2 厂家手册（经销商托管副本），不能套用 IT6300 新系列命令。OUTP 控制选中通道；VOLT:PROT 在该型号代表电压上限，不能当成硬件 OVP 跳闸值。",
-    ),
-    (
-        "pico.6404e",
-        "oscilloscopes/picoscope-6404e",
-        "PicoScope 6404E",
-        "USB 3.x + ps6000a SDK",
-        "PicoSDK 64 位、ps6000a.dll 和 USB 驱动",
-        "显式选择序列号，使用 8 位模式；先设置通道，再 block 或 streaming。6404E 的 1 MΩ 量程为 ±10 mV～±20 V，50 Ω 最大 ±5 V；偏移上限在 ≤1 V 量程为 ±1.25 V，较大量程为 ±20 V，依据[6000E 数据表第 31 页](https://www.picotech.com/download/datasheets/picoscope-6000e-series-data-sheet.pdf)。不能使用共享 SDK 枚举中的 50 V 量程。触发阈值按配置偏移转换为 ADC 计数。SDK 缓冲区保持到 Stop 和解除注册后才释放。streaming 为有限批次，批次间有间隔，尚未承诺无缝长时间数据流。",
-    ),
-    (
-        "rs.rtm3004",
-        "oscilloscopes/rtm3004",
-        "R&S RTM3004",
-        "LAN / USB VISA",
-        "64 位 VISA Runtime",
-        "探头倍率 PROB:SET:ATT:MAN；导出 ASCII 电压及 XINC/XOR 时间轴。支持平均、采样/峰值/高分辨率设置；当前导出只接受每点一个值，峰值/包络双值数据会拒绝。分段开关需要 segmented_memory 选件，逐段时间戳导出待扩展。",
-    ),
-    (
-        "rs.rto64",
-        "oscilloscopes/rto64",
-        "R&S RTO64",
-        "LAN / USB VISA",
-        "64 位 VISA Runtime",
-        "使用 RTO6 手册；时间偏移 TIM:HOR:POS。导出前明确选择单通道数据格式，ASCII 波形按 HEAD 轴缩放。多通道按顺序读取；应先单次采集/前面板停止，避免跨帧数据，尚无硬件同步多设备采集。",
-    ),
-    (
-        "lecroy.9254",
-        "oscilloscopes/waverunner-9254",
-        "Teledyne LeCroy WaveRunner 9254",
-        "LAN VICP（1861）/ VISA VXI-11 或 USBTMC",
-        "VICP 直接 TCP 不需要 VISA；其他路线需 VISA",
-        "VICP 使用完整 8 字节头和 DATA/EOI 分段。WAVEDESC 提供字节序、单位、增益、偏移、有效点范围；当前仅接受单段波形。普通 TCP transport 不可代替 VICP。",
-    ),
-    (
-        "rigol.ds1202ze",
-        "oscilloscopes/rigol-ds1202z",
-        "RIGOL DS1202Z（待确认后缀）/ DS1202Z-E",
-        "DS1202Z-E：USB / LAN VISA",
-        "64 位 VISA Runtime",
-        "附件原型号 DS1202Z 保留待补信息；仅 DS1202Z-E 身份可匹配此实现。两通道；当前读取 NORM 屏幕波形，不宣称导出全部存储深度。BYTE 缩放包含 YORigin/YREFerence。",
-    ),
-    (
-        "thorlabs.pm100d",
-        "measurement-analyzers/thorlabs-pm100d-s154c",
-        "Thorlabs PM100D + S154C",
-        "PM100D USB；S154C 接控制台传感器接口",
-        "Thorlabs OPM、匹配的 TLPMX 或旧版 PM100D 64 位 DLL/驱动",
-        "两个后端分别调用带通道/不带通道 ABI。初始化 reset=0；不切换驱动、不复位。波长范围通过 SDK 查询当前探头；不把 S154C 当成控制台型号。归零需遮光后明确确认。",
-    ),
-    (
-        "keysight.3458a",
-        "measurement-analyzers/keysight-3458a",
-        "Keysight / Agilent / HP 3458A",
-        "GPIB + USB-GPIB/LAN-GPIB 控制器",
-        "控制器驱动和 64 位 VISA Runtime",
-        "使用原生 ID?/FUNC/NPLC/NRDGS/RMEM，不发送 *IDN?。HP 3458A/HP3458A 响应归一为型号；无序列号时不自动确认物理同一性。FUNC? 同时返回功能码和量程。读取 RMEM 会停止内部存储，故即使不 initiate 也需 --confirm。",
-    ),
-    (
-        "rs.znb3004",
-        "measurement-analyzers/rs-znb3004",
-        "R&S ZNB3004",
-        "LAN / USB VISA",
-        "64 位 VISA Runtime",
-        "使用 ZNB3000 手册。当前实现两端口逻辑 S11/S21/S12/S22；s_parameter 显式创建并选择 LabControl 轨迹。读取复数 SDAT 和 STIM 频率轴，保存修正状态；不执行校准向导。四条同频率轴轨迹才能导出 .s2p。",
-    ),
-]
+LEGACY_MODELS = []  # Compatibility name; model metadata is owned by catalog packages.
 
 
 def render(definitions=None) -> dict[Path, str]:
@@ -147,7 +48,7 @@ def render(definitions=None) -> dict[Path, str]:
             "",
         )
         for d in definitions.values()
-    ] + LEGACY_MODELS
+    ]
     for field, label in ((0, "adapter ID"), (1, "card path")):
         values = [row[field] for row in models]
         if len(values) != len(set(values)):
@@ -163,13 +64,7 @@ def render(definitions=None) -> dict[Path, str]:
         config = ConnectionConfig("metadata://only", adapter)
         definition = definitions.get(adapter)
         profile = definition.profile if definition else PROFILES.get(adapter)
-        caps = (
-            definition.capability_schema(config)
-            if definition and definition.capability_schema
-            else ScpiAdapter(MockTransport([]), profile, config).capabilities()
-            if definition
-            else describe(config)
-        )
+        caps = describe_definition(definition, config)
         page = (
             ("实时监测" if caps.category in MEASUREMENT_CATEGORIES else "设备管理")
             + " / "
@@ -187,14 +82,9 @@ def render(definitions=None) -> dict[Path, str]:
             "category": caps.category,
             "control_page": page,
             "channels": caps.channels,
-            "source": profile.source if profile else caps.operations[0].source,
-            "revision": profile.revision if profile else "SDK headers/examples",
-            "acquisition": profile.acquisition
-            if profile
-            else {
-                "pico.6404e": "block/streaming",
-                "thorlabs.pm100d": "scalar",
-            }[adapter],
+            "source": profile.source if profile else definition.model.source,
+            "revision": profile.revision if profile else definition.model.revision,
+            "acquisition": profile.acquisition if profile else definition.model.acquisition,
             "channel_limits": profile.channel_limits if profile else {},
             "hardware_passed": False,
             "operations": [],
@@ -379,7 +269,7 @@ def render(definitions=None) -> dict[Path, str]:
     device_navigation = [
         "# 设备型号导航（自动生成）",
         "",
-        "独立型号的维护源在各自包内。旧型号暂保留原实现；未注册条目仅作为资料需求。实测结果按具体资产、接口和固件查看。",
+        "全部已注册型号的维护源在各自包内；未注册条目仅作为资料需求。实测结果按具体资产、接口和固件查看。",
         "",
         "[原始设备条目对应](../device-research-index.md) · [新设备接入流程](../testing/onboarding.md) · [能力矩阵](../generated/capability-matrix.md)",
         "",

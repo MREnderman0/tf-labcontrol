@@ -1,0 +1,288 @@
+{
+  "fixture_origin": "Immutable pre-migration capability and wire contract; software evidence only",
+  "adapter": "itech.it6322",
+  "capabilities": {
+    "category": "power_supply",
+    "channels": [
+      1,
+      2,
+      3
+    ],
+    "operations": [
+      {
+        "name": "voltage",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": 0,
+            "maximum": 30,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://jdingtech.com.tw/Official/sharefile/ITECH_Protocol_IT6322_V1.0.0.1.pdf",
+        "section": "VOLT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "current",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "A",
+            "minimum": 0,
+            "maximum": 3,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://jdingtech.com.tw/Official/sharefile/ITECH_Protocol_IT6322_V1.0.0.1.pdf",
+        "section": "CURR",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "voltage_limit",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": 0,
+            "maximum": 30,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://jdingtech.com.tw/Official/sharefile/ITECH_Protocol_IT6322_V1.0.0.1.pdf",
+        "section": "VOLT:PROT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "output",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "https://jdingtech.com.tw/Official/sharefile/ITECH_Protocol_IT6322_V1.0.0.1.pdf",
+        "section": "OUTP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "timer_delay",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s",
+            "minimum": 0,
+            "maximum": 999999,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://jdingtech.com.tw/Official/sharefile/ITECH_Protocol_IT6322_V1.0.0.1.pdf",
+        "section": "OUTP:TIM:DATA",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "measured_voltage",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://jdingtech.com.tw/Official/sharefile/ITECH_Protocol_IT6322_V1.0.0.1.pdf",
+        "section": "MEAS:VOLT?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "measured_current",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://jdingtech.com.tw/Official/sharefile/ITECH_Protocol_IT6322_V1.0.0.1.pdf",
+        "section": "MEAS:CURR?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "measured_power",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://jdingtech.com.tw/Official/sharefile/ITECH_Protocol_IT6322_V1.0.0.1.pdf",
+        "section": "MEAS:POW?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      }
+    ]
+  },
+  "profile": {
+    "adapter_id": "itech.it6322",
+    "manufacturer": [
+      "ITECH"
+    ],
+    "models": [
+      "IT6322"
+    ],
+    "category": "power_supply",
+    "channels": [
+      1,
+      2,
+      3
+    ],
+    "source": "https://jdingtech.com.tw/Official/sharefile/ITECH_Protocol_IT6322_V1.0.0.1.pdf",
+    "revision": "Manufacturer manual IT6322-402205 V2.2 (2018-03-30), distributor-hosted copy, chapters 3-8",
+    "status": [
+      "voltage",
+      "current",
+      "output"
+    ],
+    "identity_query": "*IDN?",
+    "error_query": "SYST:ERR?",
+    "acquisition": "power",
+    "channel_limits": {
+      "3": {
+        "voltage": 5,
+        "voltage_limit": 5
+      }
+    }
+  },
+  "commands": {
+    "voltage": {
+      "writes": [
+        "VOLT {value}"
+      ],
+      "query": "VOLT?",
+      "select": [
+        "INST:NSEL {ch}"
+      ],
+      "compare": true
+    },
+    "current": {
+      "writes": [
+        "CURR {value}"
+      ],
+      "query": "CURR?",
+      "select": [
+        "INST:NSEL {ch}"
+      ],
+      "compare": true
+    },
+    "voltage_limit": {
+      "writes": [
+        "VOLT:PROT {value}"
+      ],
+      "query": "VOLT:PROT?",
+      "select": [
+        "INST:NSEL {ch}"
+      ],
+      "compare": true
+    },
+    "output": {
+      "writes": [
+        "OUTP {value}"
+      ],
+      "query": "OUTP?",
+      "select": [
+        "INST:NSEL {ch}"
+      ],
+      "compare": true
+    },
+    "timer_delay": {
+      "writes": [
+        "OUTP:TIM:DATA {value}"
+      ],
+      "query": "OUTP:TIM:DATA?",
+      "select": [
+        "INST:NSEL {ch}"
+      ],
+      "compare": true
+    },
+    "measured_voltage": {
+      "writes": [],
+      "query": "MEAS:VOLT?",
+      "select": [
+        "INST:NSEL {ch}"
+      ],
+      "compare": false
+    },
+    "measured_current": {
+      "writes": [],
+      "query": "MEAS:CURR?",
+      "select": [
+        "INST:NSEL {ch}"
+      ],
+      "compare": false
+    },
+    "measured_power": {
+      "writes": [],
+      "query": "MEAS:POW?",
+      "select": [
+        "INST:NSEL {ch}"
+      ],
+      "compare": false
+    }
+  }
+}

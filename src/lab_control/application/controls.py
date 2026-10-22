@@ -6,7 +6,7 @@ from dataclasses import dataclass, replace
 
 from lab_control.application.config import ConnectionConfig
 from lab_control.domain.instruments import AcquisitionRequest, CapabilitySet
-from lab_control.instruments.registry import PROFILES, describe
+from lab_control.instruments.registry import DEVICE_DEFINITIONS, PROFILES, describe
 
 CATEGORY_LABELS = {
     "signal_generator": "信号源",
@@ -450,7 +450,8 @@ def data_sources(config: ConnectionConfig) -> tuple[DataSource, ...]:
         )
     if category == "oscilloscope":
         sources = [DataSource("waveform", "时域波形", "waveform")]
-        if config.adapter == "pico.6404e":
+        definition = DEVICE_DEFINITIONS.get(config.adapter)
+        if definition and "streaming" in definition.acquisition_kinds:
             sources.append(DataSource("streaming", "Streaming 波形", "streaming"))
         return tuple(sources)
     if category == "spectrum_analyzer":

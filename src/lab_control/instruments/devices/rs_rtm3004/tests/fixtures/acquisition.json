@@ -1,0 +1,40 @@
+{
+  "fixture_origin": "Synthetic protocol regression; preserves pre-migration command sequence and scaling, not hardware evidence",
+  "kind": "waveform",
+  "confirmed": false,
+  "points": 3,
+  "exchanges": [
+    [
+      "FORM ASC",
+      ""
+    ],
+    [
+      "CHAN1:DATA:HEAD?",
+      "0,2,3,1"
+    ],
+    [
+      "CHAN1:DATA?",
+      "1,2,3"
+    ],
+    [
+      "CHAN1:DATA:XOR?",
+      "-1"
+    ],
+    [
+      "CHAN1:DATA:XINC?",
+      ".5"
+    ]
+  ],
+  "values": [
+    1,
+    2,
+    3
+  ],
+  "axis": [
+    -1,
+    -0.5,
+    0
+  ],
+  "unit": "V",
+  "bad_query": "CHAN1:DATA?"
+}

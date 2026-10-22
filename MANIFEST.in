@@ -1,4 +1,4 @@
-include README.md pyproject.toml uv.lock .python-version run.bat
+include README.md pyproject.toml uv.lock .python-version run.bat conftest.py
 include direction-approved.md
 prune design/reviews
 recursive-include design/approved *.png

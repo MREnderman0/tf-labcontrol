@@ -97,15 +97,23 @@ class WorkspaceController(QObject):
         if not self.runtime.closed:
             self._job_wakeup.emit()
 
-    def _deliver_jobs(self) -> None:
-        if self.runtime.closed:
-            return
-        self.states = {s["stableDeviceId"]: s for s in self.runtime.sessions.snapshots()}
+    def _take_completed_jobs(self) -> list[Job]:
         completed: list[Job] = []
         pending: list[Job] = []
         for job in self.jobs:
             (completed if job[0].done() else pending).append(job)
         self.jobs = pending
+        return completed
+
+    def _deliver_jobs(self) -> None:
+        if self.runtime.closed:
+            return
+        completed = self._take_completed_jobs()
+        if completed:
+            self.refresh_snapshot()
+        self._invoke_jobs(completed)
+
+    def _invoke_jobs(self, completed: list[Job]) -> None:
         for future, callback, on_error in completed:
             try:
                 value = future.result()
@@ -116,13 +124,21 @@ class WorkspaceController(QObject):
                     on_error(exc)
                 self.message.emit(str(exc))
 
+    def refresh_snapshot(self) -> None:
+        """Read each service once; all workspace views consume this shared cache."""
+        if not self.runtime.closed:
+            self.records = {r["id"]: r for r in self.runtime.inventory.all()}
+            self.states = {s["stableDeviceId"]: s for s in self.runtime.sessions.snapshots()}
+
     def poll(self) -> None:
         if self.runtime.closed:
             self.timer.stop()
             return
-        self.records = {r["id"]: r for r in self.runtime.inventory.all()}
-        self.states = {s["stableDeviceId"]: s for s in self.runtime.sessions.snapshots()}
-        self._deliver_jobs()
+        # Freeze the completion batch before reading state. Jobs that finish while
+        # the snapshot is copied keep their queued wakeup and receive a newer cache.
+        completed = self._take_completed_jobs()
+        self.refresh_snapshot()
+        self._invoke_jobs(completed)
         self.refreshed.emit()
         state = self.states.get(self.sync_device, {})
         signature = (

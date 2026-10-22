@@ -1,0 +1,28 @@
+{
+  "fixture_origin": "Synthetic protocol regression; preserves pre-migration command sequence and scaling, not hardware evidence",
+  "kind": "scalar",
+  "confirmed": true,
+  "points": 3,
+  "exchanges": [
+    [
+      "OFORMAT ASCII",
+      ""
+    ],
+    [
+      "FUNC?",
+      "1,10"
+    ],
+    [
+      "RMEM 1,3",
+      "1,2,3"
+    ]
+  ],
+  "values": [
+    1,
+    2,
+    3
+  ],
+  "axis": null,
+  "unit": "V",
+  "bad_query": "RMEM 1,3"
+}

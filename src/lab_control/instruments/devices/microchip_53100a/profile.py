@@ -1,6 +1,6 @@
 """53100A / TimeLab TSERVE metadata; importing this module never opens hardware."""
 
-from lab_control.application.config import ConnectionConfig
+from lab_control.domain.connections import ConnectionConfig
 from lab_control.domain.instruments import Capability, CapabilitySet, Parameter
 from lab_control.instruments.base import CommandSpec, Profile
 

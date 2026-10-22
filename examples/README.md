@@ -3,8 +3,8 @@
 所有示例调用同一个 `ApplicationRuntime` / `SessionManager`，不另写 VISA 或 SDK 通信代码。配置必须显式提供，`--resource` 必须精确匹配一项；默认只读身份、能力和状态。
 
 ```powershell
-uv run python examples/signal_generator.py --config config/examples/mock.toml --resource mock://signal --mock
-uv run python examples/acquisition.py --config config/examples/mock.toml --resource mock://scope --mock --capture --kind waveform --points 64
+.venv-dev\Scripts\python.exe examples/signal_generator.py --config config/examples/mock.toml --resource mock://signal --mock
+.venv-dev\Scripts\python.exe examples/acquisition.py --config config/examples/mock.toml --resource mock://scope --mock --capture --kind waveform --points 64
 ```
 
 真实配置替换为现场文件，去掉 `--mock`。写入必须加 `--write`；输出、触发、波形上传和启动采集等动作还需 `--confirm`。这些是命令行显式授权标志，不是示例自动确认。
