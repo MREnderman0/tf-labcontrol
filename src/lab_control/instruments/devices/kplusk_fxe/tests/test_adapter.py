@@ -109,9 +109,17 @@ class FakeLibrary:
 
     def get_kk_report(self, source: int):
         assert source == self._source
-        return self.binary_reports.pop(0) if self.binary_reports else type("Empty", (), {
-            "get_report_type": lambda self: 0,
-        })()
+        return (
+            self.binary_reports.pop(0)
+            if self.binary_reports
+            else type(
+                "Empty",
+                (),
+                {
+                    "get_report_type": lambda self: 0,
+                },
+            )()
+        )
 
 
 def config(resource: str = "192.0.2.10") -> ConnectionConfig:
@@ -154,7 +162,7 @@ def test_kplusk_url_and_no_setting_replay() -> None:
     adapter.close()
 
 
-def test_empty_report_is_not_saved_as_measurement() -> None:
+def test_empty_report_is_not_saved_as_measurement(fake_clock) -> None:
     library = FakeLibrary([None])
     adapter = KpluskFxeAdapter(config(), library)
     reading = adapter.read_settings(("report",))[0]
@@ -179,15 +187,118 @@ def test_binary_frequency_acquisition_filters_channels_without_writes() -> None:
     adapter.close()
 
 
-def test_phase_average_reports_produce_read_only_frequency_delta() -> None:
+def test_phase_average_reports_produce_read_only_frequency_delta(fake_clock) -> None:
     library = FakeLibrary()
-    library.binary_reports = [PhaseReport((1_000_000.25, 2_000_000.5), 1000)]
+    library.binary_reports = [
+        PhaseReport((1_000_000.25, 2_000_000.5), 1000),
+        PhaseReport((11_000_000.25, 22_000_000.5), 2000),
+    ]
     adapter = KpluskFxeAdapter(config(), library)
-    with pytest.raises(DeviceError, match="frequency report"):
-        adapter.acquire(AcquisitionRequest(kind="scalar", channels=(1, 2), quantity="frequency"))
-    library.binary_reports.append(PhaseReport((11_000_000.25, 22_000_000.5), 2000))
     batch = adapter.acquire(AcquisitionRequest(kind="scalar", channels=(1, 2), quantity="frequency"))
     assert [measurement.values[0] for measurement in batch.measurements] == [10_000_000.0, 20_000_000.0]
     assert batch.configuration["derived_from_phase"] is True
     assert batch.configuration["source_report_type"] == "RT_PHASE"
     adapter.close()
+
+
+def test_many_messages_do_not_exhaust_wait_and_channels_are_detected(fake_clock):
+    library = FakeLibrary()
+    library.binary_reports = [LogReport("7015; timestamp") for _ in range(150)] + [
+        BinaryReport((1.0, 2.0, 3.0, 4.0))
+    ]
+    adapter = KpluskFxeAdapter(config(), library)
+    assert adapter.capabilities().channels == ()
+    adapter.refresh_capabilities()
+    assert adapter.capabilities().channels == (1, 2, 3, 4)
+    assert adapter.capability_details["detected_channel_count"] == 4
+    batch = adapter.acquire(AcquisitionRequest(kind="scalar", channels=(1, 4), quantity="frequency"))
+    assert [m.values[0] for m in batch.measurements] == [1.0, 4.0]
+    assert fake_clock.now < 1
+
+
+def test_status_retains_measurements_and_metadata_does_not_poll(fake_clock):
+    library = FakeLibrary()
+    library.binary_reports = [BinaryReport((1.0, 2.0, 3.0, 4.0))]
+    adapter = KpluskFxeAdapter(config(), library)
+    adapter.read_settings(("firmware_version", "user_id"))
+    assert len(library.binary_reports) == 1
+    adapter.read_status()
+    assert not library.binary_reports and len(adapter.reports.pending) == 1
+    batch = adapter.acquire(AcquisitionRequest(kind="scalar", channels=(1, 4), quantity="frequency"))
+    assert len(batch.measurements) == 2
+
+
+def test_missing_selected_channel_fails_whole_frame(fake_clock):
+    library = FakeLibrary()
+    library.binary_reports = [BinaryReport((1.0, 2.0, 3.0, 4.0))]
+    adapter = KpluskFxeAdapter(config(), library)
+    with pytest.raises(DeviceError, match="所选通道不存在") as exc:
+        adapter.acquire(AcquisitionRequest(kind="scalar", channels=(1, 5), quantity="frequency"))
+    assert exc.value.code == "invalid_parameter"
+
+
+def test_delayed_initial_phase_pair_waits_without_retry(fake_clock):
+    class DelayedLibrary(FakeLibrary):
+        def get_kk_report(self, source):
+            if fake_clock.now >= 7 and not self.binary_reports:
+                self.binary_reports = [PhaseReport((100.0,), 1000), PhaseReport((200.0,), 2000)]
+            return super().get_kk_report(source)
+
+    adapter = KpluskFxeAdapter(config(), DelayedLibrary())
+    batch = adapter.acquire(AcquisitionRequest(kind="scalar", channels=(1,), quantity="frequency"))
+    assert batch.measurements[0].values[0] == 100
+    assert 7 <= fake_clock.now < 8
+
+
+@pytest.mark.parametrize("timestamp,header", [(1000, 0x19C0), (0, 0x19C0), (2000, 0x1900)])
+def test_phase_discontinuity_requires_new_baseline(fake_clock, timestamp, header):
+    library = FakeLibrary()
+    library.binary_reports = [PhaseReport((100.0,), 1000), PhaseReport((110.0,), timestamp, header)]
+    adapter = KpluskFxeAdapter(config(), library)
+    with pytest.raises(DeviceError, match="frequency report"):
+        adapter.acquire(AcquisitionRequest(kind="scalar", channels=(1,), quantity="frequency"))
+    assert fake_clock.now == pytest.approx(30)
+
+
+def test_report_queue_overflow_is_explicit(fake_clock):
+    library = FakeLibrary()
+    library.binary_reports = [BinaryReport((1.0,)) for _ in range(65)]
+    adapter = KpluskFxeAdapter(config(), library)
+    for _ in range(8):
+        adapter.read_status()
+    with pytest.raises(DeviceError) as exc:
+        adapter.read_status()
+    assert exc.value.code == "buffer_overflow"
+    assert len(adapter.reports.pending) == 64
+
+
+def test_large_phase_integer_preserves_fractional_frequency(fake_clock):
+    class PrecisePhase(PhaseReport):
+        def __init__(self, high, low, device_ms):
+            super().__init__((0.0,), device_ms)
+            self.high, self.low = high, low
+
+        def get_content(self):
+            return struct.pack("<qd", self.high, self.low)
+
+    library = FakeLibrary()
+    library.binary_reports = [PrecisePhase(2**60, 0.25, 1000), PrecisePhase(2**60 + 10, 0.75, 2000)]
+    adapter = KpluskFxeAdapter(config(), library)
+    batch = adapter.acquire(AcquisitionRequest(kind="scalar", channels=(1,), quantity="frequency"))
+    assert batch.measurements[0].values[0] == 10.5
+
+
+def test_real_error_is_not_reported_as_wait_timeout(fake_clock):
+    class ErrorReport(LogReport):
+        def get_report_type(self):
+            return 1
+
+        def get_error_text(self):
+            return "device disconnected"
+
+    library = FakeLibrary()
+    library.binary_reports = [ErrorReport("device disconnected")]
+    adapter = KpluskFxeAdapter(config(), library)
+    with pytest.raises(DeviceError, match="device disconnected") as exc:
+        adapter.acquire(AcquisitionRequest(kind="scalar", channels=(1,), quantity="frequency"))
+    assert exc.value.code == "device_error" and fake_clock.now == 0

@@ -70,6 +70,12 @@ def parser() -> argparse.ArgumentParser:
     stress.add_argument("--points", type=int, default=1000)
     stress.add_argument("--initiate", action="store_true")
     stress.add_argument("--confirm", action="store_true")
+    readonly = sub.add_parser(
+        "verify-readonly", help="Run the selected model's documented read-only acceptance"
+    )
+    readonly.add_argument("--folder", type=Path, required=True)
+    readonly.add_argument("--duration", type=float, default=60)
+    readonly.add_argument("--input-condition", default="未核对")
     apply = sub.add_parser("set")
     apply.add_argument("operation")
     apply.add_argument("--parameters", type=Path, required=True, help="UTF-8 JSON file of typed parameters")
@@ -178,6 +184,26 @@ def main(argv: list[str] | None = None) -> int:
             from dataclasses import replace
 
             configs = tuple(replace(config, transport="mock") for config in configs)
+        if args.action == "verify-readonly":
+            from lab_control.instruments.registry import DEVICE_DEFINITIONS
+
+            if args.mock or not args.resource or not args.adapter:
+                raise ValueError("Specify one explicit real --resource and --adapter")
+            selected = [c for c in configs if c.resource == args.resource and c.adapter == args.adapter]
+            definition = DEVICE_DEFINITIONS.get(args.adapter)
+            if len(selected) != 1 or definition is None or definition.readonly_check is None:
+                raise ValueError("The selected model has no registered read-only acceptance entry")
+            if not 1 <= args.duration <= 3600:
+                raise ValueError("Read-only duration must be 1..3600 seconds")
+            report = definition.readonly_check(
+                selected[0],
+                args.folder,
+                duration=args.duration,
+                root=args.home,
+                input_condition=args.input_condition,
+            )
+            output(report)
+            return 0 if report.get("checks_passed") else 1
         with ApplicationRuntime(configs, root=args.home, hardware=not args.mock) as app:
             if args.action == "doctor":
                 output(app.diagnostics())

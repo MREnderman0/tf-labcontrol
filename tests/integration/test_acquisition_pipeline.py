@@ -91,7 +91,9 @@ def test_buffer_pause_keeps_monitoring_and_releases_lock_after_binary_drain(tmp_
         service.stop(key).result(5)
         recorder = service.tasks[key].recorder
         assert recorder.received == recorder.committed == recorder.converted == 2
-        assert sum(len(list(read_frames(path))) for path in recorder.raw_folder.glob("segment-*.sqlite3")) == 2
+        assert (
+            sum(len(list(read_frames(path))) for path in recorder.raw_folder.glob("segment-*.sqlite3")) == 2
+        )
 
 
 @pytest.mark.parametrize("cadence,interval", [("bad", 1), ("interval", 0.1), ("fastest", 0)])

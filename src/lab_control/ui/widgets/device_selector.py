@@ -79,7 +79,13 @@ class DeviceSelector(QWidget):
         if record:
             identity = record["identity"]
             serial = identity.get("serial") or record["config"].get("expected_serial") or "未识别"
-            serial_label = "序列号" if identity.get("serial") else "资产序列号（配置）" if record["config"].get("expected_serial") else "序列号"
+            serial_label = (
+                "序列号"
+                if identity.get("serial")
+                else "资产序列号（配置）"
+                if record["config"].get("expected_serial")
+                else "序列号"
+            )
             self.info.setText(
                 f"{identity.get('model') or record['adapterId']}  ·  {record['config']['resource']}\n"
                 f"{serial_label}：{serial}  ·  "

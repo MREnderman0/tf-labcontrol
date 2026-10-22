@@ -84,10 +84,15 @@ class CoreMorrowE00Channel(ParameterGroup):
         self.direction.setObjectName("coremorrowDirection")
         self.direction.addItem("正+", 1)
         self.direction.addItem("负−", -1)
-        saved_direction = controller.runtime.repository.load_workspace(f"coremorrow-e00/direction/{device_id}/{channel}", 1)
+        saved_direction = controller.runtime.repository.load_workspace(
+            f"coremorrow-e00/direction/{device_id}/{channel}", 1
+        )
         self.direction.setCurrentIndex(1 if saved_direction == -1 else 0)
-        self.direction.currentIndexChanged.connect(lambda: controller.runtime.repository.save_workspace(
-            f"coremorrow-e00/direction/{device_id}/{channel}", self.direction.currentData()))
+        self.direction.currentIndexChanged.connect(
+            lambda: controller.runtime.repository.save_workspace(
+                f"coremorrow-e00/direction/{device_id}/{channel}", self.direction.currentData()
+            )
+        )
         step_row.addWidget(self.direction)
         step_label = QLabel("步长")
         step_label.setObjectName("coremorrowControlLabel")
@@ -239,9 +244,7 @@ class CoreMorrowE00Channel(ParameterGroup):
             self.actual_display.display(f"{float(value):.4f}")
             self.channel_status.setText("正常" if health == "正常" else health)
             self.actual_detail.setText(f"实际读回：{float(value):.6g} V")
-            self.actual_display.setToolTip(
-                f"{frame.reading.timestamp}\n原始读回：{frame.reading.value}"
-            )
+            self.actual_display.setToolTip(f"{frame.reading.timestamp}\n原始读回：{frame.reading.value}")
         else:
             self.actual_display.display("----")
             self.channel_status.setText(health)
@@ -263,7 +266,9 @@ class CoreMorrowE00Channel(ParameterGroup):
             self.channel_status.setText("读回已暂停")
             self.actual_display.display("----")
             self.actual_detail.setText(
-                f"历史读回：{float(value):.4f} V" if isinstance(value, (float, int)) else "波形状态未确认，暂无当前读回"
+                f"历史读回：{float(value):.4f} V"
+                if isinstance(value, (float, int))
+                else "波形状态未确认，暂无当前读回"
             )
             self.apply_button.setEnabled(False)
             self.step_button.setEnabled(False)
@@ -339,7 +344,10 @@ class CoreMorrowE00Page(PowerSupplyPage):
         if self.device_id in self.controller.group_devices or self.command_pending:
             self.selector.select(self.device_id)
             return
-        if not device_id and self.controller.states.get(self.device_id, {}).get("connectionState") in {"error", "degraded"}:
+        if not device_id and self.controller.states.get(self.device_id, {}).get("connectionState") in {
+            "error",
+            "degraded",
+        }:
             # Keep failed-operation evidence and recovery controls visible. A new
             # connection is required before the session will permit another write.
             return
@@ -427,9 +435,14 @@ class CoreMorrowE00Page(PowerSupplyPage):
         if isinstance(details, dict) and version != self._control_version:
             self.control_state = details
             self._control_version = version
-        available = bool(connected and not self.initializing and not self.command_pending
-                         and not state.get("controlPending") and not state.get("controlsLocked")
-                         and self.device_id not in self.controller.group_devices)
+        available = bool(
+            connected
+            and not self.initializing
+            and not self.command_pending
+            and not state.get("controlPending")
+            and not state.get("controlsLocked")
+            and self.device_id not in self.controller.group_devices
+        )
         self.mode_selector.setEnabled(available)
         self.normal_button.setEnabled(available)
         self.normal_button.setToolTip("停止后恢复已保存的直流值；通信异常时须先重新连接。")
@@ -443,8 +456,10 @@ class CoreMorrowE00Page(PowerSupplyPage):
 
     def _save_mode(self) -> None:
         if self.device_id:
-            self.controller.runtime.repository.save_workspace(f"coremorrow-e00/mode/{self.device_id}",
-                {"schema_version": 1, "mode": self.control_mode, "updated_at": utc_now()})
+            self.controller.runtime.repository.save_workspace(
+                f"coremorrow-e00/mode/{self.device_id}",
+                {"schema_version": 1, "mode": self.control_mode, "updated_at": utc_now()},
+            )
 
     def _present_mode(self, mode: str) -> None:
         self.control_mode = mode
@@ -486,7 +501,11 @@ class CoreMorrowE00Page(PowerSupplyPage):
             data = status.values.get("control_state", {}) if status else {}
             self.control_state = data if isinstance(data, dict) else {}
             current = self.controller.states.get(device_id, {})
-            self._control_version = (session_id, current.get("configurationVersion"), current.get("capabilityVersion"))
+            self._control_version = (
+                session_id,
+                current.get("configurationVersion"),
+                current.get("capabilityVersion"),
+            )
             self._present_mode(resolve_mode(self.control_state, self._saved_mode()))
             for ch, panel in self.wave_panels.items():
                 channel_state = self.control_state.get("channels", {}).get(str(ch), {})
@@ -499,14 +518,19 @@ class CoreMorrowE00Page(PowerSupplyPage):
             self.mode_status.setText("仪器状态已读回" if verified else "上次记录 / 默认值，当前状态未确认")
             last_result = self.control_state.get("last_result", {})
             if not verified and last_result.get("outcome") in {"pending", "uncertain", "rejected", "partial"}:
-                self.mode_status.setText("上次操作未完成或失败，当前状态未确认：" + str(last_result.get("error") or "执行结果未知"))
+                self.mode_status.setText(
+                    "上次操作未完成或失败，当前状态未确认：" + str(last_result.get("error") or "执行结果未知")
+                )
             if error:
                 self.mode_status.setToolTip(str(error))
             self.refresh()
 
         try:
-            self.controller.watch(self.controller.runtime.sessions.submit(device_id, "status"),
-                                  lambda status: finish(status), lambda error: finish(error=error))
+            self.controller.watch(
+                self.controller.runtime.sessions.submit(device_id, "status"),
+                lambda status: finish(status),
+                lambda error: finish(error=error),
+            )
         except Exception as exc:
             finish(error=exc)
 
@@ -514,7 +538,9 @@ class CoreMorrowE00Page(PowerSupplyPage):
         if self._hydrating or not self.device_id:
             return
         mode = self.mode_selector.currentData()
-        if mode == "normal" and (self.control_state.get("polling_paused") or self.control_state.get("restore_available")):
+        if mode == "normal" and (
+            self.control_state.get("polling_paused") or self.control_state.get("restore_available")
+        ):
             self._present_mode(self.control_mode)
             self.command("normal_mode", 1, {})
             return
@@ -549,9 +575,11 @@ class CoreMorrowE00Page(PowerSupplyPage):
                 self._save_mode()
                 restored = result.adaptation.get("restored", False)
                 self.mode_status.setText(
-                    ("直流值已恢复并读回核实；已返回标准波形模式"
-                     if restored else
-                     "停止命令已发送；无原直流快照，请明确设定电压；已返回标准波形模式")
+                    (
+                        "直流值已恢复并读回核实；已返回标准波形模式"
+                        if restored
+                        else "停止命令已发送；无原直流快照，请明确设定电压；已返回标准波形模式"
+                    )
                 )
             else:
                 if channel in self.wave_panels:
@@ -563,8 +591,12 @@ class CoreMorrowE00Page(PowerSupplyPage):
             self.refresh()
 
         try:
-            self.controller.apply(device_id, DeviceCommand(operation, parameters, channel, True),
-                                  lambda result: complete(result), lambda error: complete(error=error))
+            self.controller.apply(
+                device_id,
+                DeviceCommand(operation, parameters, channel, True),
+                lambda result: complete(result),
+                lambda error: complete(error=error),
+            )
         except Exception as exc:
             complete(error=exc)
 

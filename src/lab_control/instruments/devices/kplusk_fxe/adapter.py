@@ -12,7 +12,8 @@ import importlib
 import os
 import re
 import sys
-import time
+from collections.abc import Callable
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -34,7 +35,8 @@ from lab_control.domain.instruments import (
 from lab_control.instruments.base import ScpiAdapter
 
 from .profile import capability_schema, profile
-from .protocol import FrequencyReport, parse_frequency_report, parse_phase_report, validate_channels
+from .protocol import FrequencyReport, PhaseReport, validate_channels
+from .reports import ReportReader
 
 _SOCKET_RESOURCE = re.compile(r"TCPIP\d*::([^:]+)::(\d+)::SOCKET", re.IGNORECASE)
 
@@ -151,7 +153,7 @@ class KpluskFxeAdapter(ScpiAdapter):
         # (config, NativeLib).  Supporting both keeps registration/contract
         # tests hardware-free without weakening the explicit factory path.
         self._last_reports: list[str] = []
-        self._previous_phase: Any | None = None
+        self._previous_phase: PhaseReport | None = None
         if config is not None:
             super().__init__(transport_or_config, profile_or_library, config)
             self.library: Any | None = None
@@ -168,6 +170,7 @@ class KpluskFxeAdapter(ScpiAdapter):
         _result_error(result, "open connection")
         self._mock = False
         self._closed = False
+        self.reports = ReportReader(library, self.source_id)
 
     def _native(self) -> Any:
         if self.library is None:
@@ -175,7 +178,23 @@ class KpluskFxeAdapter(ScpiAdapter):
         return self.library
 
     def capabilities(self) -> CapabilitySet:
-        return capability_schema(self.config)
+        schema = capability_schema(self.config)
+        if self._mock:
+            return schema
+        self.capability_details = {
+            "channel_detection": "detected" if self.reports.channel_count else "pending",
+            "detected_channel_count": self.reports.channel_count or None,
+            "report_interval_ms": self.reports.interval_ms or None,
+        }
+        return replace(schema, channels=tuple(range(1, self.reports.channel_count + 1)))
+
+    @property
+    def capability_revision(self) -> int:
+        return 0 if self._mock else self.reports.revision
+
+    def refresh_capabilities(self) -> None:
+        if not self._mock and not self.reports.channel_count:
+            self.reports.wait(self.reports.clock() + 30)
 
     def identify(self) -> DeviceIdentity:
         if self._mock:
@@ -209,17 +228,7 @@ class KpluskFxeAdapter(ScpiAdapter):
                 reports.append(str(data))
             self._last_reports = reports
             return tuple(reports)
-        for _ in range(limit):
-            report = library.get_kk_report(self.source_id)
-            report_type = int(getattr(report.get_report_type(), "value", report.get_report_type()))
-            if report_type == 0:
-                break
-            if report_type == 1:
-                text = getattr(report, "get_error_text", lambda: "K+K report error")() or "K+K report error"
-                raise DeviceError(str(text), "device_error")
-            reports.append(str(report.to_log_str()))
-        self._last_reports = reports
-        return tuple(reports)
+        return self.reports.read_logs(limit)
 
     def read_status(self) -> DeviceStatus:
         if self._mock:
@@ -242,18 +251,17 @@ class KpluskFxeAdapter(ScpiAdapter):
     def read_settings(self, operations: tuple[str, ...], channel: int = 1) -> tuple[ParameterReading, ...]:
         if self._mock:
             return super().read_settings(operations, channel)
-        self._context(channel, {})
         allowed = {"firmware_version", "user_id", "report"}
         unknown = set(operations) - allowed
         if unknown:
             raise Unsupported(f"K+K settings are not available: {sorted(unknown)}")
         library = self._native()
-        values: dict[str, Any] = {
-            "firmware_version": int(library.get_firmware_version(self.source_id)),
-            "user_id": int(library.get_user_id(self.source_id)),
-            "report": self._read_reports(),
+        getters: dict[str, Callable[[], Any]] = {
+            "firmware_version": lambda: int(library.get_firmware_version(self.source_id)),
+            "user_id": lambda: int(library.get_user_id(self.source_id)),
+            "report": self._read_reports,
         }
-        return tuple(ParameterReading(name, 1, values[name], "instrument") for name in operations)
+        return tuple(ParameterReading(name, 1, getters[name](), "instrument") for name in operations)
 
     def apply(self, command: DeviceCommand) -> ApplyResult:
         if self._mock:
@@ -274,50 +282,49 @@ class KpluskFxeAdapter(ScpiAdapter):
         channels = validate_channels(request.channels)
         if self.identity is None:
             self.identify()
-        library = self._native()
-        latest: Any | None = None
+        latest: FrequencyReport | None = None
         latest_log = ""
         source_report_type = "RT_DOUBLE"
         derived_from_phase = False
-        # The official library queues timestamps, messages and heartbeat
-        # reports alongside measurement reports.  Drain a bounded number of
-        # complete reports without sending a command or replaying a read.
-        for _ in range(30):
-            report = library.get_kk_report(self.source_id)
-            decoded = parse_frequency_report(report)
-            if decoded is not None:
-                latest = decoded
-                latest_log = getattr(report, "to_log_str", lambda: "")() or ""
-                break
-            phase = parse_phase_report(report)
-            if phase is not None:
-                previous = self._previous_phase
-                self._previous_phase = phase
-                if previous is None or len(previous.values) != len(phase.values):
-                    continue
-                elapsed_ms = phase.device_ms - previous.device_ms
-                if elapsed_ms <= 0:
-                    elapsed_ms = phase.interval_ms
-                deltas = tuple(current - old for old, current in zip(previous.values, phase.values, strict=True))
-                if elapsed_ms <= 0 or any(delta < 0 for delta in deltas):
-                    continue
-                latest = FrequencyReport(
-                    phase.header,
-                    phase.device_ms,
-                    tuple(delta * 1000.0 / elapsed_ms for delta in deltas),
+        deadline = self.reports.clock() + self.reports.wait_seconds()
+        while self.reports.clock() < deadline:
+            decoded, latest_log = self.reports.next(deadline)
+            count = len(decoded.parts) if isinstance(decoded, PhaseReport) else len(decoded.values)
+            missing = tuple(channel for channel in channels if channel > count)
+            if missing:
+                raise DeviceError(
+                    f"K+K 当前报告仅有 {count} 路；所选通道不存在：{missing}", "invalid_parameter"
                 )
-                latest_log = getattr(report, "to_log_str", lambda: "")() or ""
-                source_report_type = "RT_PHASE"
-                derived_from_phase = True
+            if isinstance(decoded, FrequencyReport):
+                self._previous_phase = None
+                latest = decoded
                 break
-            if int(getattr(report.get_report_type(), "value", report.get_report_type())) == 0:
-                # Multi_GetReportStruct is non-blocking in the shipped
-                # wrapper.  Poll at a bounded cadence so the FXE2's periodic
-                # measurement report is not missed between heartbeats.
-                time.sleep(0.2)
+            previous, self._previous_phase = self._previous_phase, decoded
+            if (
+                previous is None
+                or previous.header != decoded.header
+                or len(previous.parts) != count
+                or previous.device_ms < 0
+                or decoded.device_ms <= previous.device_ms
+            ):
                 continue
+            elapsed_ms = decoded.device_ms - previous.device_ms
+            # Subtract integer periods before conversion to double. A long-running
+            # counter can exceed double's exact integer range without losing Hz precision.
+            deltas = tuple(
+                (high - old_high) + (low - old_low)
+                for (old_high, old_low), (high, low) in zip(previous.parts, decoded.parts, strict=True)
+            )
+            if any(delta < 0 for delta in deltas):
+                continue
+            latest = FrequencyReport(
+                decoded.header, decoded.device_ms, tuple(d * 1000 / elapsed_ms for d in deltas)
+            )
+            source_report_type, derived_from_phase = "RT_PHASE", True
+            break
         if latest is None:
             raise DeviceError("K+K did not return a frequency report", "timeout")
+        assert self.identity is not None
         selected = tuple(
             Measurement(
                 "frequency",
@@ -332,10 +339,7 @@ class KpluskFxeAdapter(ScpiAdapter):
                 },
             )
             for channel in channels
-            if channel <= len(latest.values)
         )
-        if not selected:
-            raise DeviceError("K+K frequency report has no selected channel", "sensor_missing")
         return MeasurementBatch(
             self.identity,
             selected,

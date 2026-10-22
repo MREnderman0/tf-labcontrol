@@ -51,9 +51,9 @@ def test_exact_identity_and_capability_sources(profile):
         raw = fixture.get("identity_reply", raw.decode()).encode()
     if profile.identity_query == "ID?":
         raw = b"3458A"
-    exchanges = [
-        (command, reply.encode()) for command, reply in fixture.get("identity_exchanges", [])
-    ] or [(profile.identity_query, raw)]
+    exchanges = [(command, reply.encode()) for command, reply in fixture.get("identity_exchanges", [])] or [
+        (profile.identity_query, raw)
+    ]
     device, transport = adapter(profile.adapter_id, exchanges)
     for payload in reversed(device.connection_commands):
         transport.exchanges.appendleft((payload, b""))

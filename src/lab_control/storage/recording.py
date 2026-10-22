@@ -380,8 +380,13 @@ class Recording:
                 folder=str(self.folder),
                 started_local=self.context.started_at.isoformat(),
                 started_utc=self.context.started_utc,
-                analysis_state=("failed" if self.csv_error else "complete" if self.binary_done
-                                and self.converted >= self.committed else "generating"),
+                analysis_state=(
+                    "failed"
+                    if self.csv_error
+                    else "complete"
+                    if self.binary_done and self.converted >= self.committed
+                    else "generating"
+                ),
             )
 
     def _write_loop(self) -> None:
@@ -509,8 +514,9 @@ class Recording:
             from lab_control.storage.analysis import write_description
 
             error = self.error or self.csv_error
-            write_description(self.folder, "保存未完整完成" if error else "原始数据已保存；分析 CSV 已完成",
-                              error=error)
+            write_description(
+                self.folder, "保存未完整完成" if error else "原始数据已保存；分析 CSV 已完成", error=error
+            )
 
 
 def csv_worker(folder: Path) -> int:

@@ -20,7 +20,9 @@ def monitoring_options(controller, device_id: str, mode: str) -> dict:
     reset_on_launch = category in {"spectrum_analyzer", "oscilloscope", "power_supply"}
     # A spectrum scan is a complete instrument sweep. Ten seconds is the
     # conservative first-run cadence; a saved per-device value still wins.
-    default_interval = 10.0 if category == "optical_spectrometer" else 1.0 if category == "power_supply" else 0.5
+    default_interval = (
+        10.0 if category == "optical_spectrometer" else 1.0 if category == "power_supply" else 0.5
+    )
     default_cadence = "interval" if reset_on_launch or category == "optical_spectrometer" else "fastest"
     key = f"monitor-timing/{mode}/{device_id}"
     preferences = controller.runtime.monitoring_preferences
@@ -74,7 +76,9 @@ def save_monitoring_interval(
     options["cadence"] = (
         "interval"
         if category == "power_supply"
-        else cadence if cadence is not None else options.get("cadence", "interval")
+        else cadence
+        if cadence is not None
+        else options.get("cadence", "interval")
     )
     controller.runtime.monitoring.set_intervals(device_id, **options)
     key = f"monitor-timing/{mode}/{device_id}"

@@ -8,8 +8,7 @@ from lab_control.instruments.base import CommandSpec, Profile
 
 OFFICIAL_DOWNLOADS = "https://kplusk-messtechnik.de/downloads/index.html"
 OFFICIAL_LIBRARY_MANUAL = (
-    "https://kplusk-messtechnik.de/downloads/files/"
-    "Manual_KK-Library_MultiSource_Ver_21.1.0_25-06-03.pdf"
+    "https://kplusk-messtechnik.de/downloads/files/Manual_KK-Library_MultiSource_Ver_21.1.0_25-06-03.pdf"
 )
 
 

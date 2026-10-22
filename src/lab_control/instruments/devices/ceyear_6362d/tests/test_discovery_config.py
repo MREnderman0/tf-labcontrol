@@ -19,9 +19,9 @@ def test_select_source_address_uses_a_deterministic_reachable_physical_source():
         calls.append((host, port, source))
         return source if source == "192.168.0.1" else None
 
-    assert select_source_address(
-        "192.168.5.241", 10001, ("198.18.0.1", "192.168.0.1"), probe
-    ) == "192.168.0.1"
+    assert (
+        select_source_address("192.168.5.241", 10001, ("198.18.0.1", "192.168.0.1"), probe) == "192.168.0.1"
+    )
     assert calls == [("192.168.5.241", 10001, "192.168.0.1")]
 
 

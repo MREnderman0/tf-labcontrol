@@ -130,9 +130,7 @@ def test_disconnect_clears_open_popup_and_returns_to_overview(workspace, qtbot, 
         assert window.stack.currentWidget() is window.overview_page
 
 
-def test_submenus_only_show_connected_categories_and_restore_after_reconnect(
-    workspace, monkeypatch
-):
+def test_submenus_only_show_connected_categories_and_restore_after_reconnect(workspace, monkeypatch):
     window, runtime, ids = workspace
 
     def tabs(module):

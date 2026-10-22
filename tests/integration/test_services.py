@@ -107,9 +107,7 @@ def test_runtime_can_configure_one_metadata_only_resource_before_connecting(tmp_
             DiscoveryCandidate(ConnectionConfig("mock://unknown", transport="mock"), "serial"),
             "scan",
         )
-        app.configure_device(
-            record["id"], ConnectionConfig("mock://unknown", "rigol.dg5504pro", "mock")
-        )
+        app.configure_device(record["id"], ConnectionConfig("mock://unknown", "rigol.dg5504pro", "mock"))
         configured = next(item for item in app.inventory.all() if item["id"] == record["id"])
         assert configured["adapterId"] == "rigol.dg5504pro"
         assert configured["candidates"]["mock://unknown"]["source"] == "configured"
@@ -146,7 +144,12 @@ def test_metadata_duplicate_does_not_block_explicit_configuration(tmp_path):
 def test_serial_scan_uses_usb_bridge_identity_when_com_number_changes(tmp_path):
     repo = Repository(tmp_path)
     inventory = Inventory(repo)
-    descriptor = {"vid": 1027, "pid": 24577, "usb_serial": "BRIDGE-A", "usb_instance_id": "VID_0403&PID_6001\\BRIDGE-A"}
+    descriptor = {
+        "vid": 1027,
+        "pid": 24577,
+        "usb_serial": "BRIDGE-A",
+        "usb_instance_id": "VID_0403&PID_6001\\BRIDGE-A",
+    }
     original = inventory.merge(
         DiscoveryCandidate(
             ConnectionConfig("COM7", transport="serial", usb_instance_id=descriptor["usb_instance_id"]),
@@ -176,9 +179,15 @@ def test_serial_provider_publishes_every_port_with_stable_usb_id(monkeypatch):
     import serial.tools.list_ports
 
     ports = (
-        SimpleNamespace(device="COM7", description="JW", vid=1027, pid=24577, serial_number="A", location="1"),
-        SimpleNamespace(device="COM9", description="JW", vid=1027, pid=24577, serial_number="B", location="2"),
-        SimpleNamespace(device="COM3", description="Unknown", vid=None, pid=None, serial_number=None, location=None),
+        SimpleNamespace(
+            device="COM7", description="JW", vid=1027, pid=24577, serial_number="A", location="1"
+        ),
+        SimpleNamespace(
+            device="COM9", description="JW", vid=1027, pid=24577, serial_number="B", location="2"
+        ),
+        SimpleNamespace(
+            device="COM3", description="Unknown", vid=None, pid=None, serial_number=None, location=None
+        ),
     )
     monkeypatch.setattr(serial.tools.list_ports, "comports", lambda: ports)
     candidates = SerialDiscoveryProvider().enumerate()
@@ -211,12 +220,16 @@ def test_configured_serial_model_is_scanned_on_each_matching_usb_bridge(tmp_path
         def enumerate(self):
             return (
                 DiscoveryCandidate(
-                    ConnectionConfig("COM7", transport="serial", usb_instance_id=descriptor_a["usb_instance_id"]),
+                    ConnectionConfig(
+                        "COM7", transport="serial", usb_instance_id=descriptor_a["usb_instance_id"]
+                    ),
                     "serial",
                     descriptor_a,
                 ),
                 DiscoveryCandidate(
-                    ConnectionConfig("COM9", transport="serial", usb_instance_id=descriptor_b["usb_instance_id"]),
+                    ConnectionConfig(
+                        "COM9", transport="serial", usb_instance_id=descriptor_b["usb_instance_id"]
+                    ),
                     "serial",
                     descriptor_b,
                 ),
@@ -352,7 +365,9 @@ def test_chinese_config_and_export(tmp_path):
     assert "测试" in (target / "_raw" / "snapshot.json").read_text(encoding="utf-8")
     assert (target / "数据_00001.csv").read_text(encoding="utf-8-sig").startswith("帧号,点序号,")
     assert (
-        json.loads((target / "_raw" / "snapshot.json").read_text(encoding="utf-8"))["measurements"][0]["quality"]
+        json.loads((target / "_raw" / "snapshot.json").read_text(encoding="utf-8"))["measurements"][0][
+            "quality"
+        ]
         == "simulated"
     )
     repo.close()

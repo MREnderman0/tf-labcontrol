@@ -164,8 +164,11 @@ def render(definitions=None) -> dict[Path, str]:
         definition = definitions.get(adapter)
         profile = definition.profile if definition else PROFILES.get(adapter)
         caps = (
-            definition.capability_schema(config) if definition and definition.capability_schema
-            else ScpiAdapter(MockTransport([]), profile, config).capabilities() if definition else describe(config)
+            definition.capability_schema(config)
+            if definition and definition.capability_schema
+            else ScpiAdapter(MockTransport([]), profile, config).capabilities()
+            if definition
+            else describe(config)
         )
         page = (
             ("实时监测" if caps.category in MEASUREMENT_CATEGORIES else "设备管理")

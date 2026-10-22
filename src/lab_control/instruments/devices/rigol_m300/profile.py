@@ -34,7 +34,12 @@ def m300() -> Profile:
         "system_version": read_command("system_version", "SYST:VERS?", scoped=False),
         "measurements": read_command("measurements", "READ?", scoped=False),
     }
-    commands["trigger_source"] = replace(commands["trigger_source"], decode=partial(choice, choices=("IMM", "TIM", "BUS", "EXT", "ALAR1", "ALAR2", "ALAR3", "ALAR4", "ABS")))
+    commands["trigger_source"] = replace(
+        commands["trigger_source"],
+        decode=partial(
+            choice, choices=("IMM", "TIM", "BUS", "EXT", "ALAR1", "ALAR2", "ALAR3", "ALAR4", "ABS")
+        ),
+    )
     commands["trigger_interval"] = replace(commands["trigger_interval"], decode=number)
     commands["monitor_state"] = replace(commands["monitor_state"], decode=boolean)
     commands["dmm_state"] = replace(commands["dmm_state"], decode=boolean)

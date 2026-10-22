@@ -238,7 +238,8 @@ def verify(
         "scope": "6362D B.11; explicit selected LAN asset; no network/source/calibration changes",
         "execution_mode": "transfer_only" if transfer_only else "control" if control else "readonly",
         "environment": {
-            "python": platform.python_version(), "platform": platform.platform(),
+            "python": platform.python_version(),
+            "platform": platform.platform(),
             "pyvisa": importlib.metadata.version("PyVISA"),
         },
         "source_sha256": {
@@ -337,9 +338,14 @@ def verify(
         mark("monitoring")
         if auto_single_frames:
             if start_scan:
-                raise DeviceError("Automatic single-scan validation requires original scan stopped", "backup_unreliable")
+                raise DeviceError(
+                    "Automatic single-scan validation requires original scan stopped", "backup_unreliable"
+                )
             if auto_single_frames < 5 or auto_record_frames < 10 or not 0.5 <= auto_interval <= 60:
-                raise DeviceError("Automatic single-scan validation needs at least 5 frames, 10 recorded frames and a 0.5..60 s interval", "invalid_parameter")
+                raise DeviceError(
+                    "Automatic single-scan validation needs at least 5 frames, 10 recorded frames and a 0.5..60 s interval",
+                    "invalid_parameter",
+                )
         if start_scan and not auto_single_frames:
             apply("repeat")
         with app.monitoring.lock:
@@ -347,7 +353,12 @@ def verify(
             app.monitoring.start(
                 key,
                 (
-                    AcquisitionRequest("spectrum", points=2001, initiate=bool(auto_single_frames), confirmed=bool(auto_single_frames)),
+                    AcquisitionRequest(
+                        "spectrum",
+                        points=2001,
+                        initiate=bool(auto_single_frames),
+                        confirmed=bool(auto_single_frames),
+                    ),
                 ),
                 cadence="interval" if auto_single_frames else "fastest",
                 interval=auto_interval if auto_single_frames else 0.5,
@@ -373,7 +384,9 @@ def verify(
                     deadline = time.monotonic() + 30
                     while not task.recorder.binary_done:
                         if time.monotonic() > deadline:
-                            raise DeviceError("Recording drain did not finish before parameter change", "monitor_failed")
+                            raise DeviceError(
+                                "Recording drain did not finish before parameter change", "monitor_failed"
+                            )
                         time.sleep(0.2)
                 # Change each exposed optical setting while the scanner is live;
                 # session serialization drops any frame carrying the old snapshot.
@@ -389,7 +402,12 @@ def verify(
                     result = apply(operation, value)
                     actual = run(lambda op=operation: adapter.read(op))
                     report["monitoring_parameter_changes"].append(
-                        {"operation": operation, "requested": value, "readback": actual, "result": jsonable(result)}
+                        {
+                            "operation": operation,
+                            "requested": value,
+                            "readback": actual,
+                            "result": jsonable(result),
+                        }
                     )
                 app.monitoring.set_recording(key, True)
                 deadline = time.monotonic() + max(180, auto_record_frames * auto_interval + 60)
@@ -397,7 +415,9 @@ def verify(
                     if task.error or not task.running:
                         raise DeviceError(task.error or "Monitoring stopped", "monitor_failed")
                     if time.monotonic() > deadline:
-                        raise DeviceError("Automatic single-scan recording deadline exceeded", "monitor_failed")
+                        raise DeviceError(
+                            "Automatic single-scan recording deadline exceeded", "monitor_failed"
+                        )
                     time.sleep(0.2)
                 after_change = report.get("recorded_metadata", [])[before_recorded:]
                 if any(
@@ -405,11 +425,16 @@ def verify(
                     or abs(float(frame["axis_stop"]) - 1558) > 1e-6
                     for frame in after_change
                 ):
-                    raise DeviceError("A pre-change optical frame was recorded after configuration change", "configuration_changed")
+                    raise DeviceError(
+                        "A pre-change optical frame was recorded after configuration change",
+                        "configuration_changed",
+                    )
                 report["monitoring_parameter_changes_summary"] = {
                     "recorded_before_change": before_recorded,
                     "recorded_after_change": len(after_change),
-                    "post_change_axes": sorted({(frame["axis_start"], frame["axis_stop"]) for frame in after_change}),
+                    "post_change_axes": sorted(
+                        {(frame["axis_start"], frame["axis_stop"]) for frame in after_change}
+                    ),
                     "recording_disabled_during_change": True,
                 }
             else:
@@ -433,7 +458,9 @@ def verify(
         if not task.sequence:
             raise DeviceError("No valid monitoring frames", "monitor_failed")
         if auto_single_frames and recorded < auto_record_frames:
-            raise DeviceError("Automatic single-scan recording did not retain enough frames", "monitor_failed")
+            raise DeviceError(
+                "Automatic single-scan recording did not retain enough frames", "monitor_failed"
+            )
         if not auto_single_frames and recorded != task.sequence:
             raise DeviceError("Metadata recording did not retain every monitoring frame", "monitor_failed")
         if start_scan and not auto_single_frames:
@@ -507,11 +534,7 @@ def verify(
                 raise DeviceError("Other active traces have no qualified recovery", "backup_unreliable")
             if count:
                 for axis in ("X", "Y"):
-                    raw = run(
-                        lambda: read_trace(
-                            wire, trace, axis, original["transfer_format"], count
-                        )
-                    )
+                    raw = run(lambda: read_trace(wire, trace, axis, original["transfer_format"], count))
                     report["trace_backups"][trace][axis] = {
                         "bytes": len(raw),
                         "sha256": hashlib.sha256(raw).hexdigest(),
@@ -535,7 +558,9 @@ def verify(
                 wire.writes_allowed = True
                 wire.patterns = [r":FORMAT:DATA (?:ASCII|REAL,32|REAL,64)"]
                 changed = True
-                report["final_state"] = "Transfer format validation in progress; original format restoration pending"
+                report["final_state"] = (
+                    "Transfer format validation in progress; original format restoration pending"
+                )
                 transfer_tests(False)
         else:
             attributes = {trace: info["attribute"] for trace, info in report["trace_backups"].items()}
@@ -624,7 +649,8 @@ def verify(
                     adapter.transport.capture_curves = False
                     if leave_stopped:
                         adapter.transport.patterns += [
-                            r":TRACE:ATTRIBUTE:TR[A-G] (?:WRITE|FIX)", r":TRACE:ACTIVE TR[A-G]"
+                            r":TRACE:ATTRIBUTE:TR[A-G] (?:WRITE|FIX)",
+                            r":TRACE:ACTIVE TR[A-G]",
                         ]
                 if transfer_only:
                     run(lambda: adapter.set_transfer_format(original["transfer_format"]))
@@ -643,8 +669,12 @@ def verify(
                 else:
                     report["restoration"] = run(
                         lambda: restore(
-                            adapter, original, original_scan, trigger,
-                            leave_stopped=leave_stopped, attributes=attributes if leave_stopped else None,
+                            adapter,
+                            original,
+                            original_scan,
+                            trigger,
+                            leave_stopped=leave_stopped,
+                            attributes=attributes if leave_stopped else None,
                         )
                     )
                 save(folder / "restoration-differences.json", report["restoration"]["differences"])
@@ -726,14 +756,27 @@ def main() -> int:
     parser.add_argument("--original-scan", choices=("stopped", "repeat"), default="unknown")
     parser.add_argument("--trigger", choices=("absent", "off"), default="unknown")
     parser.add_argument(
-        "--leave-stopped", action="store_true",
+        "--leave-stopped",
+        action="store_true",
         help="User-authorized waiver of original running state; preserve trigger settings and finish stopped",
     )
     parser.add_argument("--x-atol-nm", type=float)
     parser.add_argument("--y-atol-db", type=float)
-    parser.add_argument("--auto-single-frames", type=int, default=0, help="Run one confirmed single scan per monitoring frame")
-    parser.add_argument("--auto-record-frames", type=int, default=10, help="Valid metadata-only frames required after the live setting change")
-    parser.add_argument("--auto-interval", type=float, default=10.0, help="Target interval for automatic single scans (0.5..60 s)")
+    parser.add_argument(
+        "--auto-single-frames", type=int, default=0, help="Run one confirmed single scan per monitoring frame"
+    )
+    parser.add_argument(
+        "--auto-record-frames",
+        type=int,
+        default=10,
+        help="Valid metadata-only frames required after the live setting change",
+    )
+    parser.add_argument(
+        "--auto-interval",
+        type=float,
+        default=10.0,
+        help="Target interval for automatic single scans (0.5..60 s)",
+    )
     args = parser.parse_args()
     configs = load_config(args.config)
     if len(configs) != 1:

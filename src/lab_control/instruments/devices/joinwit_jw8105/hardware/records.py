@@ -13,7 +13,9 @@ def recognizes(report: dict[str, Any], folder: Path) -> bool:
 
 
 def summarize(report: dict[str, Any]) -> dict[str, Any]:
-    return normalize(report, adapter_id=ADAPTER_ID, model="JW8105", stage_names={}, expected_models=("JW8105",))
+    return normalize(
+        report, adapter_id=ADAPTER_ID, model="JW8105", stage_names={}, expected_models=("JW8105",)
+    )
 
 
 def publish_report(folder: Path) -> None:

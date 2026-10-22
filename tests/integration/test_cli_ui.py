@@ -129,9 +129,7 @@ def test_optical_card_groups_spectrometer_and_power_meter(qtbot, tmp_path):
         runtime.close()
 
 
-def test_power_surfaces_route_coremorrow_to_management_and_other_supplies_to_monitoring(
-    qtbot, tmp_path
-):
+def test_power_surfaces_route_coremorrow_to_management_and_other_supplies_to_monitoring(qtbot, tmp_path):
     runtime = ApplicationRuntime(root=tmp_path, hardware=False)
     coremorrow = runtime.add(ConnectionConfig("mock://coremorrow", "coremorrow.xmt", "mock"))
     generic = runtime.add(ConnectionConfig("mock://generic-power", "gwinstek.gpd4303s", "mock"))

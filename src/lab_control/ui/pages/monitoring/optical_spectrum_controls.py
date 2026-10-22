@@ -128,7 +128,9 @@ class OpticalSpectrumControls(QFrame):
             current, target = self.current(), self.target()
             if len(current) != len(self.editors):
                 raise DeviceError("等待四项有效读回后再应用")
-            self.pending = prepare_optical_changes(current, target, self.controller.capabilities(self.device_id))
+            self.pending = prepare_optical_changes(
+                current, target, self.controller.capabilities(self.device_id)
+            )
             if self.pending:
                 self._begin(False)
                 self._next_command()
@@ -202,7 +204,9 @@ class OpticalSpectrumControls(QFrame):
         self.controller.watch(
             self.controller.runtime.sessions.submit(self.device_id, "read_settings", (tuple(names), 1)),
             self._read_done,
-            lambda exc: self.finish(("参数读取失败：" if self.refresh_only else "设置已执行，读回未确认：") + str(exc)),
+            lambda exc: self.finish(
+                ("参数读取失败：" if self.refresh_only else "设置已执行，读回未确认：") + str(exc)
+            ),
         )
 
     def _read_done(self, readings) -> None:
@@ -223,7 +227,10 @@ class OpticalSpectrumControls(QFrame):
         self.busy_changed.emit(False)
         if failed:
             done = "、".join(self.completed) or "无"
-            rest = "、".join(command.operation for command in self.pending if command.operation != failed) or "无"
+            rest = (
+                "、".join(command.operation for command in self.pending if command.operation != failed)
+                or "无"
+            )
             text += f" · 已完成：{done} · 失败：{failed} · 未执行：{rest}"
         self.status.setText(text)
         self.refresh()
@@ -238,7 +245,11 @@ class OpticalSpectrumControls(QFrame):
             and not state.get("capabilityStale", True)
             and self.device_id not in self.controller.group_devices
         )
-        self.apply_button.setEnabled(available and len(self.current()) == len(self.editors) and any(op.dirty for op in self.editors.values()))
+        self.apply_button.setEnabled(
+            available
+            and len(self.current()) == len(self.editors)
+            and any(op.dirty for op in self.editors.values())
+        )
         self.refresh_button.setEnabled(available)
         self.busy_changed.emit(self.running)
 
@@ -249,7 +260,8 @@ class OpticalSpectrumControls(QFrame):
             for name, op in self.editors.items():
                 frame = frames.get((1, name))
                 if frame is None or (frame.session_id, frame.configuration_version) != (
-                    state.get("sessionId"), state.get("configurationVersion")
+                    state.get("sessionId"),
+                    state.get("configurationVersion"),
                 ):
                     continue
                 token = (frame.session_id, frame.configuration_version, frame.sequence)

@@ -12,10 +12,12 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMessageBox,
+    QPlainTextEdit,
     QPushButton,
     QScrollArea,
     QSizePolicy,
     QTabWidget,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -648,12 +650,7 @@ class SignalSourcePage(QWidget):
             for ch in schema.channels:
                 self.advanced_channel.addItem(f"CH {ch}", ch)
                 caps = self.controller.capabilities(device_id, ch).operations
-                main = [
-                    cap
-                    for name in PRIMARY_CONTROLS
-                    for cap in caps
-                    if cap.name == name
-                ]
+                main = [cap for name in PRIMARY_CONTROLS for cap in caps if cap.name == name]
                 card = QFrame()
                 card.setObjectName("channelPanel")
                 card.setProperty("simplified", True)
@@ -842,7 +839,12 @@ class SignalSourcePage(QWidget):
             if snapshot
             else "未连接 · 显示型号文档范围，实机范围待确认"
         )
-        if hasattr(self, "details") and self.tabs.currentWidget() is self.details and self.isVisible():
+        details = getattr(self, "details", None)
+        if (
+            isinstance(details, (QPlainTextEdit, QTextEdit))
+            and self.tabs.currentWidget() is details
+            and self.isVisible()
+        ):
             record = self.controller.records.get(self.device_id, {})
             identity = record.get("identity", {})
             text = (
@@ -861,8 +863,8 @@ class SignalSourcePage(QWidget):
                 f"CH {channel} {name}：{concise(frame.reading.value)} · {frame.reading.timestamp}"
                 for (channel, name), frame in sorted(frames.items())
             )
-            if self.details.toPlainText() != text:
-                self.details.setPlainText(text)
+            if details.toPlainText() != text:
+                details.setPlainText(text)
         self.refresh_button.setToolTip(self.range_status.text())
         self.refresh_button.setText("范围已过期 ↻" if snapshot and snapshot.stale else "刷新范围")
 

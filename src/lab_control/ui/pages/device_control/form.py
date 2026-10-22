@@ -457,8 +457,9 @@ class OperationEditor(QFrame):
             if self.workspace_mode is None:
                 self.controller.apply(self.device_id, command, self.applied, self.failed)
             else:
-                self.controller.apply(self.device_id, command, self.applied, self.failed,
-                                      workspace_mode=self.workspace_mode)
+                self.controller.apply(
+                    self.device_id, command, self.applied, self.failed, workspace_mode=self.workspace_mode
+                )
         except Exception as exc:
             self.failed(exc)
 

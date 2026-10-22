@@ -337,7 +337,9 @@ def inspect_environment(
                 state = "unknown"
                 reason = f"SDK {component['sdk']} 未登记通用 DLL 检测器；由型号包运行时路径单独核验"
             else:
-                state = {"loadable": "unknown", "missing": "missing", "error": "incompatible"}[detail["state"]]
+                state = {"loadable": "unknown", "missing": "missing", "error": "incompatible"}[
+                    detail["state"]
+                ]
                 reason = (
                     "DLL 检查：" + json.dumps(detail, ensure_ascii=False) + "；驱动版本与实机兼容性须另行核实"
                 )

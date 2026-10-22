@@ -95,8 +95,10 @@ def test_normal_voltage_edit_enabled_after_explicit_stop(wave_ui, qtbot):
     assert field.input.text() == "0.3"
 
 
-@pytest.mark.parametrize("field,text", [("frequency", ""), ("frequency", "nan"), ("frequency", "0"),
-                                        ("amplitude", "-1"), ("offset", "120")])
+@pytest.mark.parametrize(
+    "field,text",
+    [("frequency", ""), ("frequency", "nan"), ("frequency", "0"), ("amplitude", "-1"), ("offset", "120")],
+)
 def test_invalid_input_never_writes(wave_ui, qtbot, field, text):
     page, peer, _, _ = wave_ui
     prepare(page, qtbot)
@@ -128,10 +130,18 @@ def test_verified_state_wins_and_partial_parameters_keep_drafts(wave_ui, qtbot, 
     panel = page.wave_panels[1]
     panel.inputs["offset"].setText("0.3")
     adapter = runtime.sessions.sessions[key].adapter
-    state = {"source": "instrument", "mode": "waveform", "channels": {
-        "1": {"source": "instrument", "mode": "waveform", "running": True,
-              "parameters": {"frequency": 2.0}}
-    }}
+    state = {
+        "source": "instrument",
+        "mode": "waveform",
+        "channels": {
+            "1": {
+                "source": "instrument",
+                "mode": "waveform",
+                "running": True,
+                "parameters": {"frequency": 2.0},
+            }
+        },
+    }
     monkeypatch.setattr(adapter, "read_status", lambda: DeviceStatus({"control_state": deepcopy(state)}))
     page.request_state()
     qtbot.waitUntil(lambda: not page.initializing, timeout=5000)
@@ -175,9 +185,15 @@ def test_late_state_query_does_not_replace_new_user_draft(wave_ui, qtbot, monkey
     def late_read():
         entered.set()
         assert release.wait(5)
-        return DeviceStatus({"control_state": {"channels": {
-            "1": {"source": "instrument", "mode": "waveform", "parameters": {"frequency": 2}}
-        }}})
+        return DeviceStatus(
+            {
+                "control_state": {
+                    "channels": {
+                        "1": {"source": "instrument", "mode": "waveform", "parameters": {"frequency": 2}}
+                    }
+                }
+            }
+        )
 
     monkeypatch.setattr(runtime.sessions.sessions[key].adapter, "read_status", late_read)
     page.request_state()
@@ -197,9 +213,13 @@ def test_runtime_restart_preserves_device_drafts_without_output(qapp, qtbot, tmp
     for attempt in range(2):
         runtime = ApplicationRuntime(root=tmp_path, hardware=False)
         peers = {f"mock://saved-{i}": WirePeer() for i in (1, 2)}
-        runtime.sessions.factory = lambda config: CoreMorrowXmtAdapter(peers[config.resource], DEFINITION.profile, config)
+        runtime.sessions.factory = lambda config: CoreMorrowXmtAdapter(
+            peers[config.resource], DEFINITION.profile, config
+        )
         if attempt == 0:
-            device_ids = [runtime.add(ConnectionConfig(address, "coremorrow.xmt", "mock")) for address in peers]
+            device_ids = [
+                runtime.add(ConnectionConfig(address, "coremorrow.xmt", "mock")) for address in peers
+            ]
         for key in device_ids:
             runtime.connect(key).result(5)
         window = RealWindow(runtime)
@@ -245,10 +265,21 @@ def test_three_wave_rows_fit_without_horizontal_scroll(wave_ui, qtbot):
     assert all(panel.isVisible() for panel in panels)
     assert all(not panel.isVisible() for panel in page.panels.values())
     assert page.scroll_area.horizontalScrollBar().maximum() == 0, (
-        page.width(), page.scroll_area.viewport().width(), page.body.minimumSizeHint().width(),
-        [(w.objectName(), w.minimumSizeHint().width(), w.width()) for w in
-         (panels[0], panels[0].waveform, *panels[0].inputs.values(), panels[0].send_button, panels[0].stop_button,
-          panels[0].status, panels[0].envelope)]
+        page.width(),
+        page.scroll_area.viewport().width(),
+        page.body.minimumSizeHint().width(),
+        [
+            (w.objectName(), w.minimumSizeHint().width(), w.width())
+            for w in (
+                panels[0],
+                panels[0].waveform,
+                *panels[0].inputs.values(),
+                panels[0].send_button,
+                panels[0].stop_button,
+                panels[0].status,
+                panels[0].envelope,
+            )
+        ],
     )
 
 
@@ -257,9 +288,26 @@ def test_mode_resolution_never_promotes_command_records_to_instrument_state():
     assert resolve_mode({}, {"mode": "waveform"}) == "waveform"
     assert resolve_mode({"source": "instrument", "mode": "normal"}, {"mode": "waveform"}) == "normal"
     assert resolve_mode({"source": "command_record", "mode": "normal"}, {"mode": "waveform"}) == "waveform"
-    assert resolve_mode({"last_mode": "normal", "last_mode_at": "2026-10-16"},
-                        {"mode": "waveform", "updated_at": "2026-10-15"}) == "waveform"
-    assert resolve_mode({"channels": {"1": {"source": "instrument", "mode": "normal"}}},
-                        {"mode": "waveform"}) == "waveform"
-    assert resolve_mode({"channels": {"1": {"source": "instrument", "mode": "normal"},
-                                    "2": {"source": "instrument", "mode": "waveform"}}}, {}) == "waveform"
+    assert (
+        resolve_mode(
+            {"last_mode": "normal", "last_mode_at": "2026-10-16"},
+            {"mode": "waveform", "updated_at": "2026-10-15"},
+        )
+        == "waveform"
+    )
+    assert (
+        resolve_mode({"channels": {"1": {"source": "instrument", "mode": "normal"}}}, {"mode": "waveform"})
+        == "waveform"
+    )
+    assert (
+        resolve_mode(
+            {
+                "channels": {
+                    "1": {"source": "instrument", "mode": "normal"},
+                    "2": {"source": "instrument", "mode": "waveform"},
+                }
+            },
+            {},
+        )
+        == "waveform"
+    )

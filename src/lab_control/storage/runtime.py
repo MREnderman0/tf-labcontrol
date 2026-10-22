@@ -50,7 +50,10 @@ def runtime_home() -> Path:
     textual paths. Once the inventory exists, use its final physical parent so
     storage, locks and hardware evidence address one root consistently.
     """
-    logical = Path(os.environ.get("LAB_CONTROL_HOME") or Path(os.environ.get("LOCALAPPDATA", Path.home())) / "TF-LabControl")
+    logical = Path(
+        os.environ.get("LAB_CONTROL_HOME")
+        or Path(os.environ.get("LOCALAPPDATA", Path.home())) / "TF-LabControl"
+    )
     marker = logical / "inventory.sqlite3"
     if marker.exists():
         try:

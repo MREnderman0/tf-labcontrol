@@ -221,7 +221,9 @@ class Ceyear6362DAdapter(ScpiAdapter):
             raise DeviceError("TRA has no complete trace", "no_data")
         fmt = before["transfer_format"]
         if fmt == "REAL,32":
-            raise Unsupported("6362D REAL32 acquisition is not hardware qualified; no automatic format change")
+            raise Unsupported(
+                "6362D REAL32 acquisition is not hardware qualified; no automatic format change"
+            )
         order = protocol.BINARY_QUALIFICATIONS.get(self.identity.firmware)
         if fmt != "ASCII" and order is None:
             raise Unsupported("Binary byte order for this 6362D software has not been qualified")

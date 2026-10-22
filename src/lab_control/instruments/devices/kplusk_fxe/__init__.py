@@ -8,6 +8,13 @@ from .adapter import KpluskFxeAdapter, create
 from .discovery import normalize_discovery_config
 from .profile import capability_schema, profile
 
+
+def _readonly_check(*args, **kwargs):
+    from .hardware.readonly import verify
+
+    return verify(*args, **kwargs)
+
+
 DEFINITION = DeviceDefinition(
     profile(),
     KpluskFxeAdapter,
@@ -23,6 +30,7 @@ DEFINITION = DeviceDefinition(
     capability_schema=capability_schema,
     identity_requires_adapter=True,
     discovery_config=normalize_discovery_config,
+    readonly_check=_readonly_check,
 )
 
 __all__ = ["DEFINITION", "KpluskFxeAdapter"]

@@ -32,4 +32,3 @@ def normalize_discovery_config(
     # Socket form; the adapter passes their explicit host:port to the library.
     resource = host if int(port) == 10001 else config.resource
     return replace(config, resource=resource, transport="kplusk", source_address="")
-

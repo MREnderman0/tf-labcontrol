@@ -287,7 +287,8 @@ class MonitoringPage(QWidget):
                 service = self.controller.runtime.monitoring
                 future = service.export_displayed_frame(self.selector.device_id, frame, self.controller.mode)
                 self.controller.watch(
-                    future, lambda path: self.controller.message.emit(f"原始数据已保存 · 分析 CSV 已完成：{path}")
+                    future,
+                    lambda path: self.controller.message.emit(f"原始数据已保存 · 分析 CSV 已完成：{path}"),
                 )
                 self.refresh()
             except Exception as exc:

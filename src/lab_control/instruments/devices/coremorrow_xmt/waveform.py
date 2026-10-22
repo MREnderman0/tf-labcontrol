@@ -50,9 +50,14 @@ class WaveformControl:
             "source": "unavailable",
             "reason": "此协议尚无已验证的模式、运行状态和波形参数读回；显示命令记录，当前物理输出未确认。",
             "channels": {
-                str(ch): {"mode": None, "running": None, "parameters": {}, "source": "unavailable",
-                          "commanded_running": self.running.get(ch),
-                          "last_command": deepcopy(self.journal.get("channels", {}).get(str(ch), {}))}
+                str(ch): {
+                    "mode": None,
+                    "running": None,
+                    "parameters": {},
+                    "source": "unavailable",
+                    "commanded_running": self.running.get(ch),
+                    "last_command": deepcopy(self.journal.get("channels", {}).get(str(ch), {})),
+                }
                 for ch in self.adapter.channels
             },
             "polling_paused": self.paused,
@@ -68,8 +73,11 @@ class WaveformControl:
 
     def _begin(self, operation: str, channel: int, parameters: dict) -> None:
         self.journal["last_result"] = {
-            "operation": operation, "channel": channel, "parameters": deepcopy(parameters),
-            "outcome": "pending", "timestamp": utc_now(),
+            "operation": operation,
+            "channel": channel,
+            "parameters": deepcopy(parameters),
+            "outcome": "pending",
+            "timestamp": utc_now(),
         }
         if operation != "normal_mode":
             record = self.journal["channels"].setdefault(str(channel), {})
@@ -91,8 +99,13 @@ class WaveformControl:
         return result
 
     def _unknown(self, operation: str, parameters: dict, error: Exception, steps: int) -> ApplyResult:
-        result = ApplyResult("uncertain", operation, parameters, completed_steps=steps,
-                             error=f"命令结果未确认；未自动重发，未声称已恢复：{error}")
+        result = ApplyResult(
+            "uncertain",
+            operation,
+            parameters,
+            completed_steps=steps,
+            error=f"命令结果未确认；未自动重发，未声称已恢复：{error}",
+        )
         channel = self.journal.get("last_result", {}).get("channel", 1)
         self.journal["last_result"] = {**jsonable(result), "channel": channel}
         if operation != "normal_mode":
@@ -116,9 +129,12 @@ class WaveformControl:
             if any(not math.isfinite(v) or not -0.01 <= v <= 120.01 for v in voltages):
                 raise ValidationError("当前直流读回超出可恢复范围，未发送波形。")
             self.journal["restore_voltage"] = {
-                str(ch): min(120.0, max(0.0, value)) for ch, value in zip(self.adapter.channels, voltages, strict=True)
+                str(ch): min(120.0, max(0.0, value))
+                for ch, value in zip(self.adapter.channels, voltages, strict=True)
             }
-            self.journal["restore_original_readback"] = dict(zip(map(str, self.adapter.channels), voltages, strict=True))
+            self.journal["restore_original_readback"] = dict(
+                zip(map(str, self.adapter.channels), voltages, strict=True)
+            )
         self._begin("standard_waveform", channel, parameters)
         self.running[channel] = None
         self.owned = True
@@ -127,12 +143,21 @@ class WaveformControl:
             self.running[channel] = True
             self.journal["channels"][str(channel)] = {
                 **self.journal["channels"].get(str(channel), {}),
-                "parameters": deepcopy(parameters), "commanded_running": True,
-                "source": "command_record", "timestamp": utc_now(),
+                "parameters": deepcopy(parameters),
+                "commanded_running": True,
+                "source": "command_record",
+                "timestamp": utc_now(),
             }
             self.journal.update(last_mode="waveform", last_mode_at=utc_now())
-            return self._finish(ApplyResult("success", "standard_waveform", parameters, completed_steps=1,
-                                          adaptation={"source": "command_record", "acknowledged": False}))
+            return self._finish(
+                ApplyResult(
+                    "success",
+                    "standard_waveform",
+                    parameters,
+                    completed_steps=1,
+                    adaptation={"source": "command_record", "acknowledged": False},
+                )
+            )
         except Exception as exc:
             self.running[channel] = None
             return self._unknown("standard_waveform", parameters, exc, 1)
@@ -145,10 +170,20 @@ class WaveformControl:
             self.running[channel] = False
             old = self.journal["channels"].get(str(channel), {})
             self.journal["channels"][str(channel)] = {
-                **old, "commanded_running": False, "source": "command_record", "timestamp": utc_now(),
+                **old,
+                "commanded_running": False,
+                "source": "command_record",
+                "timestamp": utc_now(),
             }
-            return self._finish(ApplyResult("success", "waveform_stop", {}, completed_steps=1,
-                                          adaptation={"source": "command_record", "acknowledged": False}))
+            return self._finish(
+                ApplyResult(
+                    "success",
+                    "waveform_stop",
+                    {},
+                    completed_steps=1,
+                    adaptation={"source": "command_record", "acknowledged": False},
+                )
+            )
         except Exception as exc:
             self.running[channel] = None
             return self._unknown("waveform_stop", {}, exc, 1)
@@ -158,8 +193,12 @@ class WaveformControl:
 
         backup = self.journal.get("restore_voltage", {})
         if backup and (
-            not isinstance(backup, dict) or set(backup) != set(map(str, self.adapter.channels))
-            or any(type(v) not in (int, float) or not math.isfinite(v) or not 0 <= v <= 120 for v in backup.values())
+            not isinstance(backup, dict)
+            or set(backup) != set(map(str, self.adapter.channels))
+            or any(
+                type(v) not in (int, float) or not math.isfinite(v) or not 0 <= v <= 120
+                for v in backup.values()
+            )
         ):
             raise ValidationError("直流恢复快照无效；可逐路停止，不能自动恢复。")
         self._begin("normal_mode", 1, {})
@@ -183,14 +222,26 @@ class WaveformControl:
             final = dict(zip(map(str, self.adapter.channels), self.adapter._read_voltages(), strict=True))
             if any(abs(final[ch] - value) > 0.01 for ch, value in backup.items()):
                 raise DeviceError("最终读回与恢复快照不符", "restoration_failed")
-            self.journal["restoration"] = {"original": deepcopy(backup), "final": final, "timestamp": utc_now()}
+            self.journal["restoration"] = {
+                "original": deepcopy(backup),
+                "final": final,
+                "timestamp": utc_now(),
+            }
             self.journal.pop("restore_voltage", None)
             self.journal.update(last_mode="normal", last_mode_at=utc_now())
             for channel in self.adapter.channels:
                 old = self.journal["channels"].get(str(channel), {})
                 self.journal["channels"][str(channel)] = {**old, "commanded_running": False}
-            result = self._finish(ApplyResult("success", "normal_mode", {}, final, steps,
-                                             adaptation={"restored": bool(backup), "source": "instrument_voltage_only"}))
+            result = self._finish(
+                ApplyResult(
+                    "success",
+                    "normal_mode",
+                    {},
+                    final,
+                    steps,
+                    adaptation={"restored": bool(backup), "source": "instrument_voltage_only"},
+                )
+            )
             self.owned = False
             return result
         except Exception as exc:

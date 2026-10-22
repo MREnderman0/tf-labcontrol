@@ -39,7 +39,12 @@ class PhaseReport:
 
     header: int
     device_ms: int
-    values: tuple[float, ...]
+    parts: tuple[tuple[int, float], ...]
+
+    @property
+    def values(self) -> tuple[float, ...]:
+        """Approximate display values only; subtraction must use ``parts``."""
+        return tuple(high + low for high, low in self.parts)
 
     @property
     def interval_ms(self) -> int:
@@ -75,7 +80,7 @@ def parse_frequency_report(report: Any) -> FrequencyReport | None:
     if not 1 <= count <= MAX_CHANNELS:
         raise DeviceError(f"K+K frequency report channel count is invalid: {count}", "parse_error")
     content = report.get_content()
-    if content is None or len(content) < count * 8:
+    if content is None or len(content) != count * 8:
         raise DeviceError("K+K frequency report is truncated", "parse_error")
     values = struct.unpack("<" + "d" * count, bytes(content[: count * 8]))
     if not all(math.isfinite(value) for value in values):
@@ -101,27 +106,20 @@ def parse_phase_report(report: Any) -> PhaseReport | None:
     count = int(report.get_channel_count())
     if not 1 <= count <= MAX_CHANNELS:
         raise DeviceError(f"K+K phase report channel count is invalid: {count}", "parse_error")
-    phases = getattr(report, "get_phases", None)
-    if callable(phases):
-        values = tuple(float(value.to_float()) for value in phases())
-    else:
-        content = report.get_content()
-        if content is None or len(content) < count * 16:
-            raise DeviceError("K+K phase report is truncated", "parse_error")
-        values = tuple(
-            float(high) + float(low)
-            for high, low in (
-                struct.unpack_from("<qd", bytes(content), index * 16) for index in range(count)
-            )
-        )
-    if len(values) != count or not all(math.isfinite(value) for value in values):
-        raise DeviceError("K+K phase report contains a non-finite value", "parse_error")
+    content = report.get_content()
+    if content is None or len(content) != count * 16:
+        raise DeviceError("K+K phase report is truncated", "parse_error")
+    parts = tuple(struct.unpack_from("<qd", bytes(content), index * 16) for index in range(count))
+    if not all(math.isfinite(low) and abs(low) < 1 for _, low in parts):
+        raise DeviceError("K+K phase report contains an invalid fractional value", "parse_error")
     device_ms = int(getattr(report, "get_device_ms", lambda: -1)())
-    return PhaseReport(header, device_ms, values)
+    return PhaseReport(header, device_ms, parts)
 
 
 def validate_channels(channels: tuple[int, ...]) -> tuple[int, ...]:
-    if not channels or any(type(channel) is not int or not 1 <= channel <= MAX_CHANNELS for channel in channels):
+    if not channels or any(
+        type(channel) is not int or not 1 <= channel <= MAX_CHANNELS for channel in channels
+    ):
         raise ValidationError(f"K+K channels must be unique integers in 1..{MAX_CHANNELS}")
     if len(set(channels)) != len(channels):
         raise ValidationError("K+K channels must not be repeated")

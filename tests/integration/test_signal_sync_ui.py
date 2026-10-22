@@ -425,7 +425,6 @@ def test_old_sequence_and_hidden_advanced_settings_are_ignored(synced, qtbot):
     assert window.controller.mode == "general"
 
 
-
 def test_fast_navigation_and_reconnect_use_new_session_readback(synced, qtbot):
     window, page, runtime, key, _ = synced
     previous = runtime.sessions.sessions[key].session_id

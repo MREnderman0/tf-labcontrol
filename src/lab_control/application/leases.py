@@ -40,15 +40,10 @@ class ResourceLeases:
             if unknown_alias in keys:
                 if identified and unknown_alias in self._owners and self._owners[unknown_alias] != owner:
                     raise DeviceError("Resource is owned by another session or probe", "resource_busy")
-                if not identified and (
-                    unknown_alias in self._owners or self._shared_unknown_owners
-                ):
+                if not identified and (unknown_alias in self._owners or self._shared_unknown_owners):
                     raise DeviceError("Resource is owned by another session or probe", "resource_busy")
             if any(
-                key != unknown_alias
-                and key in self._owners
-                and self._owners[key] != owner
-                for key in keys
+                key != unknown_alias and key in self._owners and self._owners[key] != owner for key in keys
             ):
                 raise DeviceError("Resource is owned by another session or probe", "resource_busy")
             pending: dict[str, FileLease] = {}
@@ -98,7 +93,9 @@ class FileLease:
 
     def __init__(self, path: Path, *, shared: bool = False, code: str = "resource_busy") -> None:
         self.path = path
-        self._owner_metadata = path.with_suffix(path.suffix + ".owner.json") if code == "process_busy" else None
+        self._owner_metadata = (
+            path.with_suffix(path.suffix + ".owner.json") if code == "process_busy" else None
+        )
         self._owner_token = uuid.uuid4().hex if self._owner_metadata and not shared else ""
         path.parent.mkdir(parents=True, exist_ok=True)
         self.stream = path.open("a+b")

@@ -42,7 +42,7 @@ class OpticalSpectrumMonitoringPage(MonitoringPage):
         self.controller, self.add_card = controller, add_card
         self.device_id = ""
         self.mode = "general"
-        self.source: DataSource | None = None
+        self.data_source: DataSource | None = None
         self.controls: OpticalSpectrumControls | None = None
         # Compatibility surface for older workspace integrations; the visible
         # editor set is the four-item controls panel above.
@@ -132,15 +132,15 @@ class OpticalSpectrumMonitoringPage(MonitoringPage):
             self.controls.hide()
             self.controls.deleteLater()
             self.controls = None
-        self.source = None
+        self.data_source = None
         self.splitter.setVisible(bool(device_id))
         self.empty.setVisible(not device_id)
         if device_id:
             config = config_from_record(self.controller.records[device_id])
-            self.form.editors = {
-                cap.name: cap for cap in self.controller.capabilities(device_id).operations
-            }
-            self.source = next((source for source in data_sources(config) if source.kind == "spectrum"), None)
+            self.form.editors = {cap.name: cap for cap in self.controller.capabilities(device_id).operations}
+            self.data_source = next(
+                (source for source in data_sources(config) if source.kind == "spectrum"), None
+            )
             self.controls = OpticalSpectrumControls(self.controller, device_id, self.right)
             self.right_layout.addWidget(self.controls)
             self.controls.busy_changed.connect(lambda busy: self.selector.setEnabled(not busy))
@@ -160,7 +160,7 @@ class OpticalSpectrumMonitoringPage(MonitoringPage):
         self.selector.select(spec["device_id"])
 
     def toggle_monitoring(self) -> None:
-        if not self.source or not self.device_id:
+        if not self.data_source or not self.device_id:
             return
         service = self.controller.runtime.monitoring
         task = service.snapshots().get(self.device_id, {})
@@ -172,7 +172,7 @@ class OpticalSpectrumMonitoringPage(MonitoringPage):
             self.timing.commit()
             service.start(
                 self.device_id,
-                (self.source.request((1,), points=2000, initiate=True, confirmed=True),),
+                (self.data_source.request((1,), points=2000, initiate=True, confirmed=True),),
                 **self.timing.options(),
                 mode=self.mode,
             )
@@ -207,8 +207,8 @@ class OpticalSpectrumMonitoringPage(MonitoringPage):
         self.plot.fit_current()
 
     def pin(self) -> None:
-        if self.source:
-            self.add_card(self.device_id, self.source.key, (1,))
+        if self.data_source:
+            self.add_card(self.device_id, self.data_source.key, (1,))
 
     def refresh(self) -> None:
         if self.device_id != self.selector.device_id and not (self.controls and self.controls.running):
@@ -220,29 +220,47 @@ class OpticalSpectrumMonitoringPage(MonitoringPage):
         self.timing.refresh(task)
         self.actual.setText(self.timing.actual.text())
         connected = state.get("connectionState") in {"connected", "busy"}
-        self.connection.setText("已连接" if connected else state_label(state.get("connectionState", "disconnected")))
+        self.connection.setText(
+            "已连接" if connected else state_label(state.get("connectionState", "disconnected"))
+        )
         self.start_button.setText("暂停监测" if task.get("running") else "开始监测")
         self.start_button.setEnabled(connected and not (self.controls and self.controls.running))
-        self.record_button.refresh(task, connected=connected, busy=bool(self.controls and self.controls.running), locked=bool(state.get("controlsLocked")))
+        self.record_button.refresh(
+            task,
+            connected=connected,
+            busy=bool(self.controls and self.controls.running),
+            locked=bool(state.get("controlsLocked")),
+        )
         update_recording_frame(self.chart, task)
         self.save_action.setEnabled(
-            self.plot.displayed_frame is not None and not task.get("display_saving") and not task.get("capture_saving")
+            self.plot.displayed_frame is not None
+            and not task.get("display_saving")
+            and not task.get("capture_saving")
         )
         self.status.setText(
             task.get("error")
             or task.get("recording_notice")
             or recording_save_notice(task)
             or task.get("notice")
-            or ("设置中 · 曲线读取暂停" if self.controls and self.controls.running else
-                "记录收尾中 · 正在排空已接收数据" if recording_phase(task) == "draining" else
-                "正在记录原始数据" if task.get("recording") else
-                "监测中 · 每周期单次扫描" if task.get("running") else "监测已暂停 · 保留最后一帧")
+            or (
+                "设置中 · 曲线读取暂停"
+                if self.controls and self.controls.running
+                else "记录收尾中 · 正在排空已接收数据"
+                if recording_phase(task) == "draining"
+                else "正在记录原始数据"
+                if task.get("recording")
+                else "监测中 · 每周期单次扫描"
+                if task.get("running")
+                else "监测已暂停 · 保留最后一帧"
+            )
         )
 
     def refresh_frame(self, device_id: str) -> None:
-        if device_id != self.device_id or not self.isVisible() or not self.source:
+        if device_id != self.device_id or not self.isVisible() or not self.data_source:
             return
-        frame = self.controller.runtime.monitoring.latest(device_id, self.source.kind, self.source.quantity)
+        frame = self.controller.runtime.monitoring.latest(
+            device_id, self.data_source.kind, self.data_source.quantity
+        )
         if frame:
-            self.plot.show_frame(frame, self.source, (1,))
+            self.plot.show_frame(frame, self.data_source, (1,))
             self.controller.runtime.monitoring.displayed(device_id, frame)

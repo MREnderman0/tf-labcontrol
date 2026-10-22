@@ -37,8 +37,11 @@ def validate_waveform(parameters: dict) -> dict:
     """Validate both the requested and quantized positive voltage envelope."""
     if parameters.get("waveform") not in WAVE_CODES:
         raise ValidationError("不支持的标准波形")
-    for name, low, high in (("frequency", WAVE_FREQUENCY_MIN, WAVE_FREQUENCY_MAX),
-                            ("amplitude", 0.0001, 120.0), ("offset", 0.0, 120.0)):
+    for name, low, high in (
+        ("frequency", WAVE_FREQUENCY_MIN, WAVE_FREQUENCY_MAX),
+        ("amplitude", 0.0001, 120.0),
+        ("offset", 0.0, 120.0),
+    ):
         value = parameters.get(name)
         if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
             raise ValidationError(f"{name}: 必须为有限数值")
@@ -59,14 +62,17 @@ def build_standard_waveform(address: int, channel_index: int, parameters: dict) 
     payload = (
         bytes((channel_index, WAVE_CODES[parameters["waveform"]]))
         + encode_voltage_data(parameters["amplitude"])
-        + integer.to_bytes(2, "big") + fraction.to_bytes(2, "big")
+        + integer.to_bytes(2, "big")
+        + fraction.to_bytes(2, "big")
         + encode_voltage_data(parameters["offset"])
     )
     return build_frame(address, STANDARD_WAVE_COMMAND, 0, payload)
 
 
 def build_waveform_stop(address: int, channel_index: int) -> bytes:
-    return build_frame(address, STANDARD_WAVE_STOP_COMMAND, 0, bytes((_byte(channel_index, "channel_index"),)))
+    return build_frame(
+        address, STANDARD_WAVE_STOP_COMMAND, 0, bytes((_byte(channel_index, "channel_index"),))
+    )
 
 
 @dataclass(frozen=True)

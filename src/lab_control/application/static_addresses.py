@@ -116,7 +116,11 @@ class StaticAddress:
         if not isinstance(value, dict):
             raise ValidationError("静态地址列表数据格式无效")
         address = str(value.get("address", ""))
-        kind = str(value.get("kind", "serial" if re.fullmatch(r"(?:COM|ASRL)\s*\d+(?:::INSTR)?", address, re.I) else "ip"))
+        kind = str(
+            value.get(
+                "kind", "serial" if re.fullmatch(r"(?:COM|ASRL)\s*\d+(?:::INSTR)?", address, re.I) else "ip"
+            )
+        )
         return cls(
             str(value.get("id") or uuid4().hex),
             address,

@@ -68,7 +68,11 @@ def _config(resource: str, baud_rate: int) -> ConnectionConfig:
 
 
 def _enumerate(resource: str) -> dict[str, Any]:
-    result: dict[str, Any] = {"requested": resource, "serial_ports": [], "visa_alias": f"ASRL{resource[3:]}::INSTR"}
+    result: dict[str, Any] = {
+        "requested": resource,
+        "serial_ports": [],
+        "visa_alias": f"ASRL{resource[3:]}::INSTR",
+    }
     try:
         from serial.tools import list_ports
 
@@ -117,9 +121,33 @@ def run(resource: str, asset_name: str, baud_rate: int) -> Path:
             "process_id": os.getpid(),
             "executable": sys.executable,
         },
-        "source_sha256": {path.name: digest(path) for path in (Path(__file__), Path(__file__).parents[1] / "adapter.py", Path(__file__).parents[1] / "protocol.py", Path(__file__).parents[1] / "transport.py")},
-        "stages": {key: {"status": "not_tested", "reason": "Not reached"} for key in ("enumeration", "identity", "compatibility_connection", "parameter_read", "parameter_write", "restoration", "reconnection", "physical_output")},
-        "notes": [OFFICIAL_SITE, VENDOR_HEADER_EVIDENCE, "Exact model, instrument serial and raw-data units remain pending vendor confirmation."],
+        "source_sha256": {
+            path.name: digest(path)
+            for path in (
+                Path(__file__),
+                Path(__file__).parents[1] / "adapter.py",
+                Path(__file__).parents[1] / "protocol.py",
+                Path(__file__).parents[1] / "transport.py",
+            )
+        },
+        "stages": {
+            key: {"status": "not_tested", "reason": "Not reached"}
+            for key in (
+                "enumeration",
+                "identity",
+                "compatibility_connection",
+                "parameter_read",
+                "parameter_write",
+                "restoration",
+                "reconnection",
+                "physical_output",
+            )
+        },
+        "notes": [
+            OFFICIAL_SITE,
+            VENDOR_HEADER_EVIDENCE,
+            "Exact model, instrument serial and raw-data units remain pending vendor confirmation.",
+        ],
         "final_state": "No instrument I/O attempted yet",
         "final_outputs": {"settings_modified": False, **counters},
     }
@@ -136,7 +164,10 @@ def run(resource: str, asset_name: str, baud_rate: int) -> Path:
         evidence = _enumerate(resource.upper())
         atomic_json(folder / "enumeration.json", evidence)
         report["enumeration"] = evidence
-        report["stages"]["enumeration"] = {"status": "passed" if evidence["serial_ports"] else "blocked", "reason": "Selected COM port enumerated without opening it"}
+        report["stages"]["enumeration"] = {
+            "status": "passed" if evidence["serial_ports"] else "blocked",
+            "reason": "Selected COM port enumerated without opening it",
+        }
         if not evidence["serial_ports"]:
             raise DeviceError("Selected COM port is absent", "driver_missing")
 
@@ -145,7 +176,9 @@ def run(resource: str, asset_name: str, baud_rate: int) -> Path:
 
         def factory(selected: ConnectionConfig):
             if selected.resource != config.resource or selected.adapter != config.adapter:
-                raise DeviceError("Only the explicitly selected CoreMorrow resource is allowed", "identity_conflict")
+                raise DeviceError(
+                    "Only the explicitly selected CoreMorrow resource is allowed", "identity_conflict"
+                )
             adapter = create_adapter(selected, runtime.visa)
             counters["ports_opened"] += 1
             adapter.transport = TraceTransport(adapter.transport, transcript, counters)  # type: ignore[attr-defined]
@@ -154,33 +187,72 @@ def run(resource: str, asset_name: str, baud_rate: int) -> Path:
         runtime.sessions.factory = factory
         identity = runtime.sessions.connect(device_id, config, configure_acquisition=False).result(timeout=90)
         report["identity"] = jsonable(identity)
-        report["stages"]["identity"] = {"status": "passed", "reason": "XMT configuration frame parsed; exact model and serial remain unresolved"}
-        report["stages"]["compatibility_connection"] = {"status": "passed", "reason": "Project session, resource lease and CoreMorrow adapter connected"}
+        report["stages"]["identity"] = {
+            "status": "passed",
+            "reason": "XMT configuration frame parsed; exact model and serial remain unresolved",
+        }
+        report["stages"]["compatibility_connection"] = {
+            "status": "passed",
+            "reason": "Project session, resource lease and CoreMorrow adapter connected",
+        }
 
         def call(operation: str, argument: Any = None) -> Any:
             return runtime.sessions.submit(device_id, operation, argument).result(timeout=90)
 
         current_stage = "parameter_read"
-        readings = {"status": jsonable(call("status")), "raw_channel_data": {str(channel): jsonable(call("read_settings", (("raw_channel_data",), channel))) for channel in range(1, 4)}}
+        readings = {
+            "status": jsonable(call("status")),
+            "raw_channel_data": {
+                str(channel): jsonable(call("read_settings", (("raw_channel_data",), channel)))
+                for channel in range(1, 4)
+            },
+        }
         report["initial_snapshot"] = readings
-        report["stages"]["parameter_read"] = {"status": "passed", "reason": "Configuration and three raw channel frames read and validated"}
-        report["stages"]["parameter_write"] = {"status": "not_tested", "reason": "Read-only scope; adapter rejects all writes"}
+        report["stages"]["parameter_read"] = {
+            "status": "passed",
+            "reason": "Configuration and three raw channel frames read and validated",
+        }
+        report["stages"]["parameter_write"] = {
+            "status": "not_tested",
+            "reason": "Read-only scope; adapter rejects all writes",
+        }
         report["stages"]["restoration"] = {"status": "not_tested", "reason": "No settings were changed"}
 
         current_stage = "reconnection"
         runtime.sessions.disconnect(device_id, drain_reads=True)
-        reconnected = runtime.sessions.connect(device_id, config, configure_acquisition=False).result(timeout=90)
+        reconnected = runtime.sessions.connect(device_id, config, configure_acquisition=False).result(
+            timeout=90
+        )
         reconnect_status = call("status")
-        report["reconnections"] = [{"identity": jsonable(reconnected), "status": jsonable(reconnect_status), "identity_matches": reconnected == identity}]
-        report["stages"]["reconnection"] = {"status": "passed" if reconnected == identity else "failed", "reason": "Session released and reopened once"}
-        report["stages"]["physical_output"] = {"status": "not_tested", "reason": "No calibrated external measurement was connected"}
+        report["reconnections"] = [
+            {
+                "identity": jsonable(reconnected),
+                "status": jsonable(reconnect_status),
+                "identity_matches": reconnected == identity,
+            }
+        ]
+        report["stages"]["reconnection"] = {
+            "status": "passed" if reconnected == identity else "failed",
+            "reason": "Session released and reopened once",
+        }
+        report["stages"]["physical_output"] = {
+            "status": "not_tested",
+            "reason": "No calibrated external measurement was connected",
+        }
         report["final_state"] = "Read-only compatibility test passed; no settings or outputs were changed"
     except Exception as exc:
         code = getattr(exc, "code", type(exc).__name__)
         report["error"] = str(exc)
         report["error_code"] = code
-        report["stages"][current_stage] = {"status": "blocked" if code in {"resource_busy", "timeout", "driver_missing", "connection_failed", "disconnected"} else "failed", "reason": str(exc)}
-        report["final_state"] = "No settings were sent; final instrument state is unknown after the reported error"
+        report["stages"][current_stage] = {
+            "status": "blocked"
+            if code in {"resource_busy", "timeout", "driver_missing", "connection_failed", "disconnected"}
+            else "failed",
+            "reason": str(exc),
+        }
+        report["final_state"] = (
+            "No settings were sent; final instrument state is unknown after the reported error"
+        )
     finally:
         if runtime is not None:
             try:
@@ -189,9 +261,14 @@ def run(resource: str, asset_name: str, baud_rate: int) -> Path:
             finally:
                 runtime.close()
         report["finished_at"] = utc_now()
-        report["evidence_sha256"] = {path.name: digest(path) for path in folder.glob("*.json") if path.name != "results.json"}
+        report["evidence_sha256"] = {
+            path.name: digest(path) for path in folder.glob("*.json") if path.name != "results.json"
+        }
         save()
-        rows = "\n".join(f"| {key} | {value.get('status')} | {value.get('reason', '')} |" for key, value in report["stages"].items())
+        rows = "\n".join(
+            f"| {key} | {value.get('status')} | {value.get('reason', '')} |"
+            for key, value in report["stages"].items()
+        )
         (folder / "record.md").write_text(
             f"# 芯明天 XMT 只读真机测试 / {resource}\n\n时间：{report['started_at']} 至 {report['finished_at']}。\n\n"
             f"## 结论\n\n{report['final_state']}\n\n| 项目 | 结果 | 说明 |\n| --- | --- | --- |\n{rows}\n\n"
@@ -210,10 +287,14 @@ def main() -> int:
     args = parser.parse_args()
     folder = run(args.resource, args.asset_name, args.baud_rate)
     report = json.loads((folder / "results.json").read_text(encoding="utf-8"))
-    print(json.dumps({"folder": str(folder), "stages": report["stages"], "final_state": report["final_state"]}, ensure_ascii=False))
+    print(
+        json.dumps(
+            {"folder": str(folder), "stages": report["stages"], "final_state": report["final_state"]},
+            ensure_ascii=False,
+        )
+    )
     return int(bool(report.get("error")))
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
