@@ -26,6 +26,7 @@ from lab_control.application.config import config_from_record
 from lab_control.application.controls import CATEGORY_LABELS, data_sources, slot_label
 from lab_control.domain.instruments import AcquisitionRequest, DeviceError
 from lab_control.domain.readback import boolean_value
+from lab_control.instruments.registry import DEVICE_DEFINITIONS
 from lab_control.ui.controller import WorkspaceController
 from lab_control.ui.pages.monitoring.recording_state import (
     recording_phase,
@@ -671,12 +672,17 @@ class MonitoringDashboard(QWidget):
             if not sources:
                 self.controller.message.emit(f"{spec['title']} 暂无可用数据源")
                 continue
-            initiate = record.get("adapterId") in {"pico.6404e", "keysight.3458a"}
+            definition = DEVICE_DEFINITIONS.get(record.get("adapterId", ""))
+            initiate = bool(definition and definition.acquisition_initiate_default)
+            requires_confirmation = initiate or bool(
+                definition and definition.acquisition_requires_confirmation
+            )
             requests = tuple(
-                source.request(channels, initiate=initiate, confirmed=initiate) for source in sources
+                source.request(channels, initiate=initiate, confirmed=requires_confirmation)
+                for source in sources
             )
             grouped.append((record["id"], requests, card.interval.value(), self._recording_mode(record)))
-            if initiate:
+            if requires_confirmation:
                 dangerous.append(device_label(record))
         return grouped, dangerous
 

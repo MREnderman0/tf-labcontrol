@@ -11,6 +11,18 @@ from importlib import import_module
 from lab_control.instruments.devices.definition import DeviceDefinition
 
 DEVICE_MODULES = (
+    "lab_control.instruments.devices.pico_6404e",
+    "lab_control.instruments.devices.thorlabs_pm100d",
+    "lab_control.instruments.devices.rs_rtm3004",
+    "lab_control.instruments.devices.rs_rto64",
+    "lab_control.instruments.devices.rigol_ds1202ze",
+    "lab_control.instruments.devices.lecroy_waverunner9254",
+    "lab_control.instruments.devices.rs_znb3004",
+    "lab_control.instruments.devices.keysight_3458a",
+    "lab_control.instruments.devices.siglent_sdg6032x",
+    "lab_control.instruments.devices.keithley_2231a",
+    "lab_control.instruments.devices.siglent_spd4306x",
+    "lab_control.instruments.devices.itech_it6322",
     "lab_control.instruments.devices.rigol_dg5504pro",
     "lab_control.instruments.devices.tek_afg31252",
     "lab_control.instruments.devices.siglent_sdg2082x",

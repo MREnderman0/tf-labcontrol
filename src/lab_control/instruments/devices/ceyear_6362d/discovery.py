@@ -12,7 +12,7 @@ import socket
 from dataclasses import replace
 from typing import Callable
 
-from lab_control.application.config import ConnectionConfig
+from lab_control.domain.connections import ConnectionConfig
 from lab_control.domain.instruments import DeviceError
 
 _SOCKET_RESOURCE = re.compile(r"TCPIP\d*::([^:]+)::(\d+)::SOCKET", re.IGNORECASE)

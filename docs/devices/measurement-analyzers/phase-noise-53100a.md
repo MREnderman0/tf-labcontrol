@@ -14,6 +14,8 @@ USB 使用厂家 TimeLab 驱动，项目通过 TSERVE64 访问；不发送 VISA/
 
 外部服务的 `show serial` 必须返回真实序列号并匹配预期目标。本机托管服务允许独立读回所选 USB 的标准身份描述符，来源标为 `usb_descriptor`；不以配置值、系统枚举缓存或可修改的服务标题证明身份。服务版本独立保存；未能解析硬件固件时保持未知。
 
+型号元数据将 `tserve` 声明为扫描只保留候选、显式连接后确认身份的传输；扫描不为身份探测启动服务。此策略不扩大到未列出的传输，也不改变其既有支持边界。
+
 ## 连接与驱动
 
 Windows 10/11 x64；组件 ID `tserve`，详见[组件台账](../../../deployment/components.json)及[材料与安装依据](../../../src/lab_control/instruments/devices/microchip_53100a/deployment.md)。材料为 Miles Design 官方 TimeLab 1.780A 正式版，下载缓存及安装包签名/哈希已登记；安装结果、驱动签名及设备条件以运行目录为准。分发许可和干净目标电脑验收仍须核实，不将开发机结果视为发布通过。

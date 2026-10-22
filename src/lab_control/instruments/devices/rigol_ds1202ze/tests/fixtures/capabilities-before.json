@@ -1,0 +1,727 @@
+{
+  "fixture_origin": "Immutable pre-migration capability and wire contract; software evidence only",
+  "adapter": "rigol.ds1202ze",
+  "capabilities": {
+    "category": "oscilloscope",
+    "channels": [
+      1,
+      2
+    ],
+    "operations": [
+      {
+        "name": "channel_enabled",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+        "section": "CHAN{ch}:DISP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "scale",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V/div",
+            "minimum": 0.001,
+            "maximum": 10,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+        "section": "CHAN{ch}:SCAL",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "offset",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": -100,
+            "maximum": 100,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+        "section": "CHAN{ch}:OFFS",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "coupling",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "AC",
+              "DC",
+              "GND"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+        "section": "CHAN{ch}:COUP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "probe_attenuation",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "0.01",
+              "0.1",
+              "1",
+              "10",
+              "100",
+              "1000"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+        "section": "CHAN{ch}:PROB",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "bandwidth_limit",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "OFF",
+              "20M"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+        "section": "CHAN{ch}:BWL",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "invert",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+        "section": "CHAN{ch}:INV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "timebase",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s/div",
+            "minimum": 5e-09,
+            "maximum": 50,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+        "section": "TIM:SCAL",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "time_position",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s",
+            "minimum": -100,
+            "maximum": 100,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+        "section": "TIM:OFFS",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_source",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "CHAN1",
+              "CHAN2",
+              "EXT",
+              "AC"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+        "section": "TRIG:EDGE:SOUR",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_slope",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "POS",
+              "NEG",
+              "RFAL"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+        "section": "TRIG:EDGE:SLOP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_level",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": -100,
+            "maximum": 100,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+        "section": "TRIG:EDGE:LEV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_mode",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "AUTO",
+              "NORM",
+              "SING"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+        "section": "TRIG:SWE",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "acquisition_mode",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "NORM",
+              "AVER",
+              "PEAK",
+              "HRES"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+        "section": "ACQ:TYPE",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "averages",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "2",
+              "4",
+              "8",
+              "16",
+              "32",
+              "64",
+              "128",
+              "256",
+              "512",
+              "1024"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+        "section": "ACQ:AVER",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "record_length",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "AUTO",
+              "12000",
+              "120000",
+              "1200000",
+              "12000000",
+              "24000000"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+        "section": "ACQ:MDEP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "run",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+        "section": "RUN",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "stop",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+        "section": "STOP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "single",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+        "section": "SING",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "force_trigger",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+        "section": "TFOR",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_status",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+        "section": "TRIG:STAT?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      }
+    ]
+  },
+  "profile": {
+    "adapter_id": "rigol.ds1202ze",
+    "manufacturer": [
+      "RIGOL"
+    ],
+    "models": [
+      "DS1202Z-E"
+    ],
+    "category": "oscilloscope",
+    "channels": [
+      1,
+      2
+    ],
+    "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
+    "revision": "DS1000Z-E Programming Guide",
+    "status": [
+      "channel_enabled",
+      "scale",
+      "timebase",
+      "trigger_status"
+    ],
+    "identity_query": "*IDN?",
+    "error_query": "SYST:ERR?",
+    "acquisition": "rigol_scope",
+    "channel_limits": {}
+  },
+  "commands": {
+    "channel_enabled": {
+      "writes": [
+        "CHAN{ch}:DISP {value}"
+      ],
+      "query": "CHAN{ch}:DISP?",
+      "select": [],
+      "compare": true
+    },
+    "scale": {
+      "writes": [
+        "CHAN{ch}:SCAL {value}"
+      ],
+      "query": "CHAN{ch}:SCAL?",
+      "select": [],
+      "compare": true
+    },
+    "offset": {
+      "writes": [
+        "CHAN{ch}:OFFS {value}"
+      ],
+      "query": "CHAN{ch}:OFFS?",
+      "select": [],
+      "compare": true
+    },
+    "coupling": {
+      "writes": [
+        "CHAN{ch}:COUP {value}"
+      ],
+      "query": "CHAN{ch}:COUP?",
+      "select": [],
+      "compare": true
+    },
+    "probe_attenuation": {
+      "writes": [
+        "CHAN{ch}:PROB {value}"
+      ],
+      "query": "CHAN{ch}:PROB?",
+      "select": [],
+      "compare": true
+    },
+    "bandwidth_limit": {
+      "writes": [
+        "CHAN{ch}:BWL {value}"
+      ],
+      "query": "CHAN{ch}:BWL?",
+      "select": [],
+      "compare": true
+    },
+    "invert": {
+      "writes": [
+        "CHAN{ch}:INV {value}"
+      ],
+      "query": "CHAN{ch}:INV?",
+      "select": [],
+      "compare": true
+    },
+    "timebase": {
+      "writes": [
+        "TIM:SCAL {value}"
+      ],
+      "query": "TIM:SCAL?",
+      "select": [],
+      "compare": true
+    },
+    "time_position": {
+      "writes": [
+        "TIM:OFFS {value}"
+      ],
+      "query": "TIM:OFFS?",
+      "select": [],
+      "compare": true
+    },
+    "trigger_source": {
+      "writes": [
+        "TRIG:EDGE:SOUR {value}"
+      ],
+      "query": "TRIG:EDGE:SOUR?",
+      "select": [],
+      "compare": true
+    },
+    "trigger_slope": {
+      "writes": [
+        "TRIG:EDGE:SLOP {value}"
+      ],
+      "query": "TRIG:EDGE:SLOP?",
+      "select": [],
+      "compare": true
+    },
+    "trigger_level": {
+      "writes": [
+        "TRIG:EDGE:LEV {value}"
+      ],
+      "query": "TRIG:EDGE:LEV?",
+      "select": [],
+      "compare": true
+    },
+    "trigger_mode": {
+      "writes": [
+        "TRIG:SWE {value}"
+      ],
+      "query": "TRIG:SWE?",
+      "select": [],
+      "compare": true
+    },
+    "acquisition_mode": {
+      "writes": [
+        "ACQ:TYPE {value}"
+      ],
+      "query": "ACQ:TYPE?",
+      "select": [],
+      "compare": true
+    },
+    "averages": {
+      "writes": [
+        "ACQ:AVER {value}"
+      ],
+      "query": "ACQ:AVER?",
+      "select": [],
+      "compare": true
+    },
+    "record_length": {
+      "writes": [
+        "ACQ:MDEP {value}"
+      ],
+      "query": "ACQ:MDEP?",
+      "select": [],
+      "compare": true
+    },
+    "run": {
+      "writes": [
+        "RUN"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "stop": {
+      "writes": [
+        "STOP"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "single": {
+      "writes": [
+        "SING"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "force_trigger": {
+      "writes": [
+        "TFOR"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "trigger_status": {
+      "writes": [],
+      "query": "TRIG:STAT?",
+      "select": [],
+      "compare": false
+    }
+  }
+}

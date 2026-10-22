@@ -161,7 +161,7 @@ def test_settle_deadline_does_not_save_late_inflight_frame(tmp_path, monkeypatch
                 configuration_wait_deadline=100,
             )
             service.tasks[key] = task
-            monkeypatch.setattr("lab_control.application.monitoring.time.monotonic", lambda: 100)
+            monkeypatch.setattr("lab_control.application.monitor_scheduler.time.monotonic", lambda: 100)
             service._tick()
             monkeypatch.undo()
             assert not task.running and task.configuration_wait_expired
@@ -226,7 +226,7 @@ def test_completed_slow_frame_does_not_add_an_extra_refresh_delay(tmp_path, monk
             (request,), "electronic", 0.5, pending=future, pending_request=request, last_started_at=10
         )
         with runtime.monitoring.lock:
-            monkeypatch.setattr("lab_control.application.monitoring.time.monotonic", lambda: 11.5)
+            monkeypatch.setattr("lab_control.application.monitor_scheduler.time.monotonic", lambda: 11.5)
             runtime.monitoring._finish_batch(key, task)
             assert task.next_at == 10.5 and task.acquisition_seconds == 1.5
             monkeypatch.undo()

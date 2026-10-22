@@ -1,0 +1,548 @@
+{
+  "fixture_origin": "Immutable pre-migration capability and wire contract; software evidence only",
+  "adapter": "keysight.3458a",
+  "capabilities": {
+    "category": "multimeter",
+    "channels": [
+      1
+    ],
+    "operations": [
+      {
+        "name": "function",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "DCV",
+              "ACV",
+              "ACDCV",
+              "DCI",
+              "ACI",
+              "ACDCI",
+              "OHM",
+              "OHMF",
+              "FREQ",
+              "PER"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-01343/user-manuals/9018-01343.pdf",
+        "section": "FUNC",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "range",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "function-dependent",
+            "minimum": 1e-09,
+            "maximum": 1000000000.0,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-01343/user-manuals/9018-01343.pdf",
+        "section": "RANGE",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "autorange",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "ON",
+              "OFF"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-01343/user-manuals/9018-01343.pdf",
+        "section": "ARANGE",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "integration",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "PLC",
+            "minimum": 0.0001,
+            "maximum": 1000,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-01343/user-manuals/9018-01343.pdf",
+        "section": "NPLC",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "resolution",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "%",
+            "minimum": 1e-06,
+            "maximum": 100,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-01343/user-manuals/9018-01343.pdf",
+        "section": "RES",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "autozero",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "ON",
+              "OFF",
+              "ONCE"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-01343/user-manuals/9018-01343.pdf",
+        "section": "AZERO",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "delay",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s",
+            "minimum": 0,
+            "maximum": 6000,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-01343/user-manuals/9018-01343.pdf",
+        "section": "DELAY",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_source",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "AUTO",
+              "EXT",
+              "HOLD",
+              "SYN"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-01343/user-manuals/9018-01343.pdf",
+        "section": "TRIG",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_arm",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "AUTO",
+              "EXT",
+              "HOLD"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-01343/user-manuals/9018-01343.pdf",
+        "section": "TARM",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "memory",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "OFF",
+              "FIFO",
+              "LIFO"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-01343/user-manuals/9018-01343.pdf",
+        "section": "MEM",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "output_format",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "ASCII"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-01343/user-manuals/9018-01343.pdf",
+        "section": "OFORMAT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "function_status",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-01343/user-manuals/9018-01343.pdf",
+        "section": "FUNC?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "integration_status",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-01343/user-manuals/9018-01343.pdf",
+        "section": "NPLC?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "errors",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-01343/user-manuals/9018-01343.pdf",
+        "section": "ERR?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "temperature",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-01343/user-manuals/9018-01343.pdf",
+        "section": "TEMP?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "sample_count",
+        "parameters": {
+          "value": {
+            "kind": "integer",
+            "unit": "",
+            "minimum": 1,
+            "maximum": 1000000,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-01343/user-manuals/9018-01343.pdf",
+        "section": "NRDGS",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      }
+    ]
+  },
+  "profile": {
+    "adapter_id": "keysight.3458a",
+    "manufacturer": [
+      "KEYSIGHT",
+      "AGILENT",
+      "HEWLETT-PACKARD"
+    ],
+    "models": [
+      "3458A"
+    ],
+    "category": "multimeter",
+    "channels": [
+      1
+    ],
+    "source": "https://www.keysight.com/us/en/assets/9018-01343/user-manuals/9018-01343.pdf",
+    "revision": "03458-90014, Command reference",
+    "status": [
+      "function_status",
+      "integration_status"
+    ],
+    "identity_query": "ID?",
+    "error_query": "",
+    "acquisition": "dmm",
+    "channel_limits": {}
+  },
+  "commands": {
+    "function": {
+      "writes": [
+        "FUNC {value}"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "range": {
+      "writes": [
+        "RANGE {value}"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "autorange": {
+      "writes": [
+        "ARANGE {value}"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "integration": {
+      "writes": [
+        "NPLC {value}"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "resolution": {
+      "writes": [
+        "RES {value}"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "autozero": {
+      "writes": [
+        "AZERO {value}"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "delay": {
+      "writes": [
+        "DELAY {value}"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "trigger_source": {
+      "writes": [
+        "TRIG {value}"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "trigger_arm": {
+      "writes": [
+        "TARM {value}"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "memory": {
+      "writes": [
+        "MEM {value}"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "output_format": {
+      "writes": [
+        "OFORMAT {value}"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    },
+    "function_status": {
+      "writes": [],
+      "query": "FUNC?",
+      "select": [],
+      "compare": false
+    },
+    "integration_status": {
+      "writes": [],
+      "query": "NPLC?",
+      "select": [],
+      "compare": false
+    },
+    "errors": {
+      "writes": [],
+      "query": "ERR?",
+      "select": [],
+      "compare": false
+    },
+    "temperature": {
+      "writes": [],
+      "query": "TEMP?",
+      "select": [],
+      "compare": false
+    },
+    "sample_count": {
+      "writes": [
+        "NRDGS {value},AUTO"
+      ],
+      "query": "",
+      "select": [],
+      "compare": true
+    }
+  }
+}

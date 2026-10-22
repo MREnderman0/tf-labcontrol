@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from lab_control.application.config import ConnectionConfig
+from lab_control.domain.connections import ConnectionConfig
 from lab_control.domain.instruments import DeviceError, Unsupported
 from lab_control.transport.streams import SerialTransport
 from lab_control.transport.visa import VisaRuntime, VisaTransport

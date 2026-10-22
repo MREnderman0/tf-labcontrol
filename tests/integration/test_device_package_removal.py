@@ -15,9 +15,11 @@ def test_removed_package_keeps_old_inventory_cli_scan_and_ui_usable(
     qtbot, tmp_path, monkeypatch, capsys, removed
 ):
     monkeypatch.delitem(registry.DEVICE_DEFINITIONS, removed)
-    monkeypatch.delitem(registry.PROFILES, removed)
+    monkeypatch.delitem(registry.PROFILES, removed, raising=False)
+    monkeypatch.delitem(registry.SDK_ADAPTERS, removed, raising=False)
     assert main(["models"]) == 0
-    models = json.loads(capsys.readouterr().out)["models"]
+    catalog = json.loads(capsys.readouterr().out)
+    models = set(catalog["models"]) | set(catalog["sdk"])
     remaining = next(key for key in registry.DEVICE_DEFINITIONS if key != removed)
     assert removed not in models and remaining in models
     configs = (

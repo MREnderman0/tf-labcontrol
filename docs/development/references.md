@@ -22,6 +22,8 @@ K+K FXE 的官方资料和离线软件由[实验网络部署与换电脑](../gui
 
 型号手册由[各型号说明](../devices/README.md)维护；厂商驱动按[开发环境](environment.md)和[实机指南](../testing/hardware-testing.md)配置。Python 实际依赖以 pyproject.toml 与 uv.lock 为准。
 
+开发与厂商材料按[缓存恢复说明](../../deployment/packages/README.md)维护；[K+K 缓存说明](../../deployment/packages/tools/kplusk/README.md)仅说明材料来源和恢复边界，不替代型号说明或实机记录。
+
 [DSA815 上位机与通信实现调研](../../src/lab_control/instruments/devices/rigol_dsa815/communication-research.md)记录 UltraSpectrum/UltraSigma、Lab::Measurement、emc-toolkit 和 ngscopeclient/scopehal 的资料及固定源码版本。它们是通信设计参考，未作为新增运行依赖引入；复用要求见[采集规则](../architecture/live-acquisition.md)。
 
 SciPy、h5py、structlog 属于后续候选或历史设想。PyInstaller 已用于[桌面测试版构建](desktop-deployment.md)，完整安装器和自动修复执行器尚未交付。软件 Mock 验证不替代目标固件与选件实测。

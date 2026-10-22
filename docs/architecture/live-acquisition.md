@@ -31,7 +31,23 @@
 
 连续记录与直接 start_acquisition 共享公共发布契约和记录器。分段 SQLite/BLOB 格式为版本 1，每 60 秒或 64 MiB 轮转，数组保留 dtype/形状/字节序；配置及原设置时间按内容版本存储。独立子进程在界面路径固定每 5 秒转换已提交数据为 CSV（底层显式参数保留 1～3600 秒兼容），全局最多两个转换进程，每次运行只有一个转换在途。界面记录逐帧保存，CSV 周期只控制转换时间。停止记录排空二进制并补齐 CSV；仪器锁在二进制收尾后释放，不等待 CSV。CSV 失败单独报告，不回滚二进制；文件偏移与提交序号检查点支持恢复转换，未提交尾部会先截断。单帧手动导出和历史 JSON/CSV/NPZ 格式保留。
 
-实现入口：`application/sessions.py`、`application/monitoring.py`；共享控件为 `ui/pages/monitoring/timing.py`。单设备多个页面共享会话和采集，不创建第二连接。单次导出仍是独立用户动作。
+公共入口继续是 `application/sessions.py`、`application/monitoring.py` 和 `storage/recording.py`，旧调用签名及补丁入口保留。内部职责集中在以下模块，不改变原线程或锁的归属：
+
+| 职责 | 维护模块 |
+| --- | --- |
+| 不可变帧、有效性与容量计算 | `domain/frames.py`；原 `application/acquisition_pipeline.py` 保留兼容导出 |
+| 单次操作、采集与配置读回 | `application/session_operations.py`，使用原设备 worker |
+| 直接连续采集与二进制收尾 | `application/recorded_acquisition.py` |
+| 完成通知、调度 tick 与期限 | `application/monitor_scheduler.py`，复用原监测线程和锁 |
+| 显示帧、新读帧及存储帧导出 | `application/frame_exports.py`；状态类型位于 `monitoring_state.py` |
+| 二进制消费、CSV 子进程监督 | `storage/recording_workers.py` |
+| 记录完成证据及在途集合 | `domain/recording.py`、`application/recordings.py` |
+
+共享控件仍为 `ui/pages/monitoring/timing.py`。单设备多个页面共享会话和采集，不创建第二连接；单次导出仍是独立用户动作。记录集合仅保留在途任务和最后一批，完成后清理旧对象；成功路径兼容已有路径列表，失败通过携带 `RecordingOutcome` 的记录错误保留已提交文件、计数及二进制/CSV 错误，不把写盘失败返回为成功。
+
+二进制或 CSV 失败统一使用 `recording_failed`，缓冲拒绝使用 `recording_paused`；异常的 `outcome` 保存最终结果。已经接受的采集、保存和记录完成 Future 不允许通过 `cancel()` 撤销已执行的 I/O；停止仍使用既有 stop 接口并等待收尾。构造失败和关闭按资源逐项清理，附加清理错误保留为异常 notes，不遮盖首个错误。
+
+恢复和清理路径的诊断经 `storage/audit.py` 有界保留失败证据，可从 `runtime.diagnostics()["audit_errors"]` 查看；不因审计写盘失败跳过后续资源释放。要求在设备操作前持久化的严格审计仍保持失败语义。诊断失败不触发设备写入重试，也不覆盖原始设备错误。
 
 型号可提供只读的 `capability_revision`，当完整报告确认通道或报告模式变化时递增。会话在任务收尾比较能力版本，仅从型号缓存发布变化后的能力快照，不额外访问设备；未知通道的空快照不得在界面回退为型号最大通道数。协议判定及缓冲留在型号包。
 

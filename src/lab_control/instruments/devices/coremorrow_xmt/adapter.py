@@ -13,7 +13,7 @@ import time
 from dataclasses import replace
 from typing import Any
 
-from lab_control.application.config import ConnectionConfig
+from lab_control.domain.connections import ConnectionConfig
 from lab_control.domain.instruments import (
     AcquisitionRequest,
     ApplyResult,

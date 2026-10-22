@@ -8,6 +8,18 @@ JSON 保留 hardware_tested/hardware_passed 兼容字段；固定 false 不代�
 
 | 型号 | 注册 ID | 操作数 | 采集 | 详情 |
 | --- | --- | --- | --- | --- |
+| PicoScope 6404E | `pico.6404e` | 6 | block/streaming | [型号卡片](../devices/oscilloscopes/picoscope-6404e.md) |
+| Thorlabs PM100D + S154C | `thorlabs.pm100d` | 8 | scalar | [型号卡片](../devices/measurement-analyzers/thorlabs-pm100d-s154c.md) |
+| R&S RTM3004 | `rs.rtm3004` | 21 | rtm | [型号卡片](../devices/oscilloscopes/rtm3004.md) |
+| R&S RTO64 | `rs.rto64` | 16 | rto | [型号卡片](../devices/oscilloscopes/rto64.md) |
+| RIGOL DS1202Z（待确认后缀）/ DS1202Z-E | `rigol.ds1202ze` | 21 | rigol_scope | [型号卡片](../devices/oscilloscopes/rigol-ds1202z.md) |
+| Teledyne LeCroy WaveRunner 9254 | `lecroy.9254` | 14 | lecroy | [型号卡片](../devices/oscilloscopes/waverunner-9254.md) |
+| R&S ZNB3004 | `rs.znb3004` | 14 | vna | [型号卡片](../devices/measurement-analyzers/rs-znb3004.md) |
+| Keysight / Agilent / HP 3458A | `keysight.3458a` | 16 | dmm | [型号卡片](../devices/measurement-analyzers/keysight-3458a.md) |
+| Siglent SDG6032X | `siglent.sdg6032x` | 36 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/sdg6032x.md) |
+| Keithley 2231A-30-3 | `keithley.2231a` | 15 | power | [型号卡片](../devices/power-supplies/keithley-2231a.md) |
+| Siglent SPD4306X | `siglent.spd4306x` | 22 | power | [型号卡片](../devices/power-supplies/spd4306x.md) |
+| ITECH IT6322 | `itech.it6322` | 8 | power | [型号卡片](../devices/power-supplies/it6322.md) |
 | RIGOL DG5504 Pro | `rigol.dg5504pro` | 41 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/dg5504-pro.md) |
 | Tektronix AFG31252 | `tek.afg31252` | 37 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/afg31252.md) |
 | Siglent SDG2082X | `siglent.sdg2082x` | 42 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/sdg2082x.md) |
@@ -23,18 +35,6 @@ JSON 保留 hardware_tested/hardware_passed 兼容字段；固定 false 不代�
 | 芯明天 XMT（完整型号待核） | `coremorrow.xmt` | 8 | 外部仪器测量输出 | [型号卡片](../devices/power-supplies/coremorrow-xmt.md) |
 | RIGOL M300 | `rigol.m300` | 16 | scalar | [型号卡片](../devices/measurement-analyzers/rigol-m300.md) |
 | K+K FXE | `kplusk.fxe` | 3 | scalar:frequency | [型号卡片](../devices/measurement-analyzers/kplusk-fxe.md) |
-| Siglent SDG6032X | `siglent.sdg6032x` | 36 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/sdg6032x.md) |
-| Keithley 2231A-30-3 | `keithley.2231a` | 15 | power | [型号卡片](../devices/power-supplies/keithley-2231a.md) |
-| Siglent SPD4306X | `siglent.spd4306x` | 22 | power | [型号卡片](../devices/power-supplies/spd4306x.md) |
-| ITECH IT6322 | `itech.it6322` | 8 | power | [型号卡片](../devices/power-supplies/it6322.md) |
-| PicoScope 6404E | `pico.6404e` | 6 | block/streaming | [型号卡片](../devices/oscilloscopes/picoscope-6404e.md) |
-| R&S RTM3004 | `rs.rtm3004` | 21 | rtm | [型号卡片](../devices/oscilloscopes/rtm3004.md) |
-| R&S RTO64 | `rs.rto64` | 16 | rto | [型号卡片](../devices/oscilloscopes/rto64.md) |
-| Teledyne LeCroy WaveRunner 9254 | `lecroy.9254` | 14 | lecroy | [型号卡片](../devices/oscilloscopes/waverunner-9254.md) |
-| RIGOL DS1202Z（待确认后缀）/ DS1202Z-E | `rigol.ds1202ze` | 21 | rigol_scope | [型号卡片](../devices/oscilloscopes/rigol-ds1202z.md) |
-| Thorlabs PM100D + S154C | `thorlabs.pm100d` | 8 | scalar | [型号卡片](../devices/measurement-analyzers/thorlabs-pm100d-s154c.md) |
-| Keysight / Agilent / HP 3458A | `keysight.3458a` | 16 | dmm | [型号卡片](../devices/measurement-analyzers/keysight-3458a.md) |
-| R&S ZNB3004 | `rs.znb3004` | 14 | vna | [型号卡片](../devices/measurement-analyzers/rs-znb3004.md) |
 
 ## 未实现 / 待补项
 

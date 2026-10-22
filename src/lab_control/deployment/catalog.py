@@ -227,7 +227,7 @@ def required_components(configs, *, lan: bool = False, dhcp: bool = False) -> se
         if config.resource.upper().startswith("GPIB"):
             required.add("gpib-interface")
         if (config.transport == "serial" or config.resource.upper().startswith("ASRL")) and not (
-            config.adapter == "gwinstek.gpd4303s" or config.adapter == "keithley.2231a"
+            definition is not None and definition.serial_driver_managed
         ):
             required.add("serial-interface")
     return required

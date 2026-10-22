@@ -46,7 +46,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-dev.ps1 -Build
 
 构建默认 `online`，输出 `dist/online/TF-LabControl`；离线输出 `dist/offline/TF-LabControl`。已有目录不覆盖，使用 `--output` 指定新目录。联网版不带厂商安装包、wheelhouse、uv 或 Python 安装器。离线版仅装配所选组件及依赖，构建前核验材料；未指定组件代表全部登记组件，存在缺项就报告失败，不悄悄忽略。开发材料通过独立脚本导出。
 
-构建验证运行/构建工具版本，生成 `build/<distribution>/deployment/release-manifest.json` 随 EXE 发布，记录依赖闭包、清单/锁文件哈希、模式及所选组件。维护脚本放 `maintenance`，目录须整体分发，测试包不等于正式安装包。源码 sdist 排除全部评审截图，Git 中的设计基线与评审证据保持不变。
+构建按当前目标环境解析锁文件 marker，核验运行和构建工具的完整适用依赖闭包；包缺失、版本漂移或锁项歧义都会在打包前失败。使用 PyInstaller 已锁定并登记的 packaging 解析工具，不新增运行依赖。`build/<distribution>/deployment/release-manifest.json` 随 EXE 发布，运行包和构建包版本来自实际核验结果，同时记录清单/锁文件哈希、模式及所选组件。维护脚本放 `maintenance`，目录须整体分发，测试包不等于正式安装包。源码 sdist 排除全部评审截图，Git 中的设计基线与评审证据保持不变。
 
 `--release` 保留原有来源、安装、签名策略、分发、目标环境等门禁；联网模式不要求已携带载荷，离线模式额外验证实际材料及解压签名。已有待验收项保持阻断，不因仓库瘦身通过。安装向导可用不等于严格发布通过。
 

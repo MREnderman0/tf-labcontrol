@@ -4,7 +4,7 @@ import pytest
 
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.runtime import ApplicationRuntime
-from lab_control.domain.instruments import DeviceCommand, DeviceError
+from lab_control.domain.instruments import AcquisitionRequest, DeviceCommand, DeviceError
 from lab_control.instruments.registry import build_scpi_adapter
 from lab_control.transport.base import MockTransport
 from lab_control.transport.visa import VisaTransport
@@ -40,6 +40,39 @@ def device(exchanges):
 
 def refresh(voltage="2", current="0.1", status=b"\x87"):
     return [("STATUS?", status), ("VSET3?", voltage.encode()), ("ISET3?", current.encode())]
+
+
+@pytest.mark.parametrize("initiate", [False, True])
+def test_registry_scalar_acquisition_preserves_channel_values_and_query_only_protocol(initiate):
+    exchanges = [
+        ("REMOTE", b""),
+        ("*IDN?", b"GW INSTEK,GPD-4303S,SN:TEST,V2.12"),
+        ("VOUT1?", b"3.000V"),
+        ("IOUT1?", b"0.125A"),
+        ("VOUT3?", b"5.000V"),
+        ("IOUT3?", b"0.250A"),
+        ("VOUT4?", b"2.000V"),
+        ("IOUT4?", b"0.050A"),
+    ]
+    adapter, wire = device(exchanges)
+    assert wire.history == []
+    adapter.transport.transition_interval = 0
+    identity = adapter.identify()
+
+    batch = adapter.acquire(
+        AcquisitionRequest(kind="scalar", channels=(1, 3, 4), initiate=initiate, confirmed=initiate)
+    )
+
+    assert batch.identity == identity
+    assert [(item.channel, item.quantity, item.unit, list(item.values)) for item in batch.measurements] == [
+        (1, "voltage", "V", [3.0]),
+        (1, "current", "A", [0.125]),
+        (3, "voltage", "V", [5.0]),
+        (3, "current", "A", [0.25]),
+        (4, "voltage", "V", [2.0]),
+        (4, "current", "A", [0.05]),
+    ]
+    assert wire.history == [command for command, _ in exchanges]
 
 
 @pytest.mark.parametrize("value", range(256))

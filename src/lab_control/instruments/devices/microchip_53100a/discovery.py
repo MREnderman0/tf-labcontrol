@@ -1,6 +1,6 @@
 """USB observations are not hardware identity or acquisition evidence."""
 
-from lab_control.application.config import ConnectionConfig
+from lab_control.domain.connections import ConnectionConfig
 from lab_control.instruments.common.windows_usb import enumerate_usb
 
 

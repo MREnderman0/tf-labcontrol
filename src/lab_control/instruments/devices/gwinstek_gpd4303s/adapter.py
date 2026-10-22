@@ -5,7 +5,7 @@ from dataclasses import replace
 from functools import partial
 from typing import Any
 
-from lab_control.application.config import ConnectionConfig
+from lab_control.domain.connections import ConnectionConfig
 from lab_control.domain.instruments import (
     ApplyResult,
     Capability,
@@ -108,6 +108,11 @@ class Gpd4303sAdapter(ScpiAdapter):
         identity = super().identify()
         self.local_control = False
         return identity
+
+    def acquire_measurements(self, request):
+        from lab_control.instruments.common.scalar import acquire_power
+
+        return acquire_power(self, request)
 
     def release_control(self) -> None:
         """Normal-session teardown only; LOCAL has no query/ack and preserves outputs."""

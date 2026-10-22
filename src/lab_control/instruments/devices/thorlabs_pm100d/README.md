@@ -1,0 +1,56 @@
+# Thorlabs PM100D + S154C
+
+注册 ID：`thorlabs.pm100d`。本包是协议、范围、样本和型号说明的维护源。
+
+<a id="1-型号与可信度"></a>
+<a id="5-官方命令api-依据"></a>
+<a id="6-当前统一能力"></a>
+## 能力与协议
+
+逻辑类别 `optical_power_meter`；通道 `[1]`。命令与范围保持迁移前契约，见 [能力基线](tests/fixtures/capabilities-before.json) 和 [控制样本](tests/fixtures/control.json)。
+
+[厂家资料](https://github.com/Thorlabs/Light_Analysis_Examples/blob/main/Python/Thorlabs%20PMxxx%20Power%20Meters/TLPMX_dll/TLPMX.py)；版本：SDK headers/examples (existing implementation)。样本是软件协议夹具，不是实机抓包。
+
+<a id="2-电脑物理连接"></a>
+<a id="3-windows-前置条件"></a>
+<a id="4-资源与枚举"></a>
+## 连接与驱动
+
+`tlpmx` 与 `pm100d` 传输在扫描阶段仅保留候选；型号元数据要求用户显式连接后核验身份，不由扫描初始化或复位控制台。
+
+PM100D USB；S154C 接控制台传感器接口；Thorlabs OPM、匹配的 TLPMX 或旧版 PM100D 64 位 DLL/驱动。复用既有组件 `thorlabs-opm`，材料、版本、哈希及验证状态以 [公共清单](../../../../../deployment/components.json) 为准；本次迁移不新增或升级依赖。现场接口、驱动安装与恢复仍须逐项核对。
+
+<a id="7-控制读回与采集"></a>
+## 单位与限制
+
+两个后端分别调用带通道/不带通道 ABI。初始化 reset=0；不切换驱动、不复位。波长范围通过 SDK 查询当前探头；不把 S154C 当成控制台型号。归零需遮光后明确确认。
+
+数值范围和通道限制见能力基线；实验限制可进一步收紧。超时不重放设置，断开软件连接不等于输出关闭。
+
+<a id="9-python-落点"></a>
+## 文件与公共依赖
+
+`adapter.py` / `protocol.py`（若有）维护本型号实现；`tests` 保存迁移契约和协议夹具；`hardware` 保存硬件计划及离线记录转换。公共层仅提供会话、传输、通用校验和存储，不依赖其他型号。
+
+<a id="10-mock-与实机验收"></a>
+## 测试入口与实机状态
+
+软件回归：`.venv-dev/Scripts/python.exe -m pytest src/lab_control/instruments/devices/thorlabs_pm100d/tests tests/unit/test_adapters.py tests/unit/test_extended_protocols.py tests/unit/test_sdk.py`。
+
+| 功能 | 接口及条件 | 验证范围 / 状态 | 证据位置 |
+| --- | --- | --- | --- |
+| 能力、身份、范围与协议 | Mock / SDK 替身 | 迁移前契约与离线回归；不代表实机验收 | 包内 tests 与公共集成测试 |
+| 枚举、连接、读写、恢复、重连 | 每台实际资产分别核验 | 本次迁移未访问硬件 | 运行目录 hardware-tests |
+| 物理输出或测量精度 | 接线及参考源待明确 | not_tested；软件通过不推断物理性能 | 运行目录批次 |
+
+<a id="8-限制和故障处理"></a>
+## 已知限制与待测
+
+| 功能或问题 | 限制 / 原因 | 后续验证 |
+| --- | --- | --- |
+| 厂商固件及接口差异 | 沿用原实现，未新增实机证据 | 按 [硬件计划](hardware/README.md) 逐接口测试 |
+| 采集与高级功能 | 两个后端分别调用带通道/不带通道 ABI。初始化 reset=0；不切换驱动、不复位。波长范围通过 SDK 查询当前探头；不把 S154C 当成控制台型号。归零需遮光后明确确认。 | 不放宽既有限制；有依据后另行实现 |
+
+## 扩展与移除
+
+修改本包并更新唯一 catalog 注册与生成文档。移除时保留用户配置及实机历史；旧导入位置仅为兼容转导出。

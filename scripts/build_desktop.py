@@ -16,6 +16,57 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def verified_packages(lock: dict, roots, *, environment: dict[str, str] | None = None) -> list[dict]:
+    """Check the applicable installed closure before recording any release versions.
+
+    packaging is already a locked, inventoried dependency of PyInstaller. It is
+    used only by this build tool, never added to the application runtime.
+    """
+    from packaging.markers import Marker, default_environment
+    from packaging.utils import canonicalize_name
+
+    target = {**default_environment(), **(environment or {}), "extra": ""}
+    packages: dict[str, list[dict]] = {}
+    for package in lock["package"]:
+        packages.setdefault(canonicalize_name(package["name"]), []).append(package)
+    verified: dict[str, dict] = {}
+
+    def visit(reference: dict) -> None:
+        if reference.get("marker") and not Marker(reference["marker"]).evaluate(target):
+            return
+        name = canonicalize_name(reference["name"])
+        candidates = [
+            package
+            for package in packages.get(name, [])
+            if (not reference.get("version") or package["version"] == reference["version"])
+            and (not reference.get("source") or package.get("source") == reference["source"])
+            and (
+                not package.get("resolution-markers")
+                or any(Marker(marker).evaluate(target) for marker in package["resolution-markers"])
+            )
+        ]
+        if len(candidates) != 1:
+            raise ValueError(f"Expected one applicable locked package for {name}, found {len(candidates)}")
+        package = candidates[0]
+        if name in verified:
+            if verified[name]["version"] != package["version"]:
+                raise ValueError(f"Conflicting locked versions for {name}")
+            return
+        try:
+            installed = importlib.metadata.version(name)
+        except importlib.metadata.PackageNotFoundError as exc:
+            raise ValueError(f"Locked dependency is not installed: {name}") from exc
+        if installed != package["version"]:
+            raise ValueError(f"{name} installed {installed}, lock requires {package['version']}")
+        verified[name] = {"name": name, "version": installed}
+        for dependency in package.get("dependencies", []):
+            visit(dependency)
+
+    for name in roots:
+        visit({"name": name})
+    return [verified[name] for name in sorted(verified)]
+
+
 def build_environment() -> dict[str, str]:
     environment = dict(os.environ)
     windows = Path(environment.get("WINDIR", r"C:\Windows"))
@@ -80,25 +131,8 @@ def main() -> int:
         missing = [c for c in checks if c["state"] != "verified"]
         if missing:
             raise ValueError("Offline materials incomplete: " + json.dumps(missing, ensure_ascii=False))
-    wanted = set(manifest["python_roots"])
-    for name in (*wanted, "pyinstaller", "pyinstaller-hooks-contrib"):
-        version = importlib.metadata.version(name)
-        expected = next(p["version"] for p in lock["package"] if p["name"].lower() == name.lower())
-        if version != expected:
-            raise ValueError(f"{name} installed {version}, lock requires {expected}")
-    by_name = {p["name"]: p for p in lock["package"]}
-    included = set()
-
-    def collect(name):
-        key = name.lower()
-        if key in included:
-            return
-        included.add(key)
-        for dependency in by_name[key].get("dependencies", []):
-            collect(dependency["name"])
-
-    for name in wanted:
-        collect(name)
+    packages = verified_packages(lock, manifest["python_roots"])
+    build_packages = verified_packages(lock, ("pyinstaller", "pyinstaller-hooks-contrib"))
     destination = ROOT / "build" / args.distribution / "deployment"
     destination.mkdir(parents=True, exist_ok=True)
     report = {
@@ -110,7 +144,8 @@ def main() -> int:
         "python": sys.version,
         "target": "windows-x64",
         "components": manifest["components"],
-        "packages": [{"name": name, "version": by_name[name]["version"]} for name in sorted(included)],
+        "packages": packages,
+        "build_packages": build_packages,
         "build_tools": {
             name: importlib.metadata.version(name) for name in ("pyinstaller", "pyinstaller-hooks-contrib")
         },

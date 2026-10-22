@@ -1,0 +1,48 @@
+{
+  "fixture_origin": "Synthetic protocol regression; preserves pre-migration command sequence and scaling, not hardware evidence",
+  "kind": "s_parameters",
+  "confirmed": false,
+  "points": 2,
+  "exchanges": [
+    [
+      "FORM ASC",
+      ""
+    ],
+    [
+      "CALC1:DATA? SDAT",
+      "1,2,3,4"
+    ],
+    [
+      "CALC1:DATA:STIM?",
+      "100,200"
+    ],
+    [
+      "SENS1:CORR:STAT?",
+      "1"
+    ],
+    [
+      "CALC1:PAR:CAT?",
+      "'LabControl','S21'"
+    ],
+    [
+      "CALC1:PAR:SEL?",
+      "'LabControl'"
+    ]
+  ],
+  "values": [
+    [
+      1,
+      2
+    ],
+    [
+      3,
+      4
+    ]
+  ],
+  "axis": [
+    100,
+    200
+  ],
+  "unit": "ratio",
+  "bad_query": "CALC1:DATA? SDAT"
+}

@@ -90,25 +90,6 @@ def test_every_numeric_limit_and_confirmation_enforced(profile):
     assert transport.history == []
 
 
-def test_keithley_select_set_readback_atomic_sequence():
-    device, transport = adapter(
-        "keithley.2231a",
-        [("INST:NSEL 2", b""), ("VOLT 2.5", b""), ("VOLT?", b"2.500"), ("SYST:ERR?", b"0,No error")],
-    )
-    assert device.apply(DeviceCommand("voltage", {"value": 2.5}, 2)).outcome == "success"
-    assert len(transport.history) == 4
-    with pytest.raises(ValidationError):
-        device.apply(DeviceCommand("voltage", {"value": 6}, 3))
-
-
-def test_spd_uses_channel_argument_and_no_invented_error_queue():
-    device, transport = adapter("siglent.spd4306x", [("VOLT CH2,12", b""), ("VOLT:SET? CH2", b"12")])
-    assert device.apply(DeviceCommand("voltage", {"value": 12}, 2)).outcome == "success"
-    assert not transport.exchanges
-    with pytest.raises(ValidationError):
-        device.apply(DeviceCommand("voltage", {"value": 12}, 1))
-
-
 def test_unknown_no_commands_and_exact_suffix():
     unknown = UnknownDeviceAdapter(DeviceIdentity("", "DS1202Z"))
     with pytest.raises(Unsupported):

@@ -1,3 +1,4 @@
+<!-- docs: historical -->
 # DHO924 接入与空输入功能验证
 
 日期：2026-09-27。本轮接入精确型号 RIGOL DHO924，适配标识 `rigol.dho924`，不扩展到 DHO924S 或其他 DHO 型号。[型号维护源](../../src/lab_control/instruments/devices/rigol_dho924/README.md)包含范围、协议、限制和硬件入口；本页记录本轮验证条件与结果。

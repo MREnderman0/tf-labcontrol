@@ -123,7 +123,8 @@ class ApplicationRuntime:
                 providers += (self.static_address_provider,)
                 sdk_groups: dict[tuple[str, str], list[ConnectionConfig]] = {}
                 for config in configurations:
-                    if config.transport in {"tlpmx", "pico"}:
+                    definition = DEVICE_DEFINITIONS.get(config.adapter)
+                    if definition and config.transport in definition.discovery_transports:
                         sdk_groups.setdefault((config.transport, config.sdk_path), []).append(config)
                 providers += tuple(VendorSdkDiscoveryProvider(tuple(group)) for group in sdk_groups.values())
             self.discovery = DiscoveryService(
@@ -141,10 +142,25 @@ class ApplicationRuntime:
             from lab_control.application.bulk_connection import BulkConnectionService
 
             self.bulk_connection = BulkConnectionService(self)
-        except Exception:
-            self.repository.close()
-            if self.process_lease:
-                self.process_lease.close()
+        except Exception as failure:
+            # Construction can fail after the scheduler or discovery worker starts.
+            # Unwind every resource actually acquired, preserving the original error.
+            for name in (
+                "bulk_connection",
+                "monitoring",
+                "discovery",
+                "sessions",
+                "visa",
+                "repository",
+                "process_lease",
+            ):
+                resource = getattr(self, name, None)
+                if resource is not None:
+                    try:
+                        resource.close()
+                    except Exception as exc:
+                        failure.add_note(f"{name} cleanup failed: {exc}")
+            self.closed = True
             raise
 
     def probe(self, candidate: DiscoveryCandidate) -> tuple[DeviceIdentity, str]:
@@ -375,6 +391,7 @@ class ApplicationRuntime:
             "platform": platform.platform(),
             "root": str(self.repository.root),
             "profiles": len(self.configurations),
+            "audit_errors": self.repository.audit_sink.failures(),
         }
         try:
             result["visa"] = str(self.visa.manager.visalib)
@@ -410,28 +427,35 @@ class ApplicationRuntime:
         with self.discovery.lock:
             self.discovery.closing = True
         errors = []
-        try:
-            for cleanup in (
-                self.bulk_connection.close,
-                self.monitoring.close,
-                self.discovery.close,
-                self.sessions.close,
-                self.visa.close,
-            ):
+        for resource in (
+            self.bulk_connection,
+            self.monitoring,
+            self.discovery,
+            self.sessions,
+            self.visa,
+            self.repository,
+            self.process_lease,
+        ):
+            if resource is not None:
                 try:
-                    cleanup()
+                    resource.close()
                 except Exception as exc:
                     errors.append(exc)
-        finally:
-            self.repository.close()
-            if self.process_lease:
-                self.process_lease.close()
-            self.closed = True
+        self.closed = True
         if errors:
+            for secondary in errors[1:]:
+                errors[0].add_note(f"Additional cleanup failure: {secondary}")
             raise errors[0]
 
     def __enter__(self):
         return self
 
-    def __exit__(self, *_args):
-        self.close()
+    def __exit__(self, _exc_type, exc_value, _traceback):
+        try:
+            self.close()
+        except Exception as cleanup_error:
+            if exc_value is None:
+                raise
+            exc_value.add_note(f"Runtime cleanup failed: {cleanup_error}")
+            for note in getattr(cleanup_error, "__notes__", ()):
+                exc_value.add_note(note)

@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from urllib.parse import urlparse
 
-from lab_control.application.config import ConnectionConfig
+from lab_control.domain.connections import ConnectionConfig
 from lab_control.domain.instruments import (
     CapabilitySet,
     DeviceError,
@@ -11,14 +11,9 @@ from lab_control.domain.instruments import (
     InstrumentAdapter,
     Unsupported,
 )
-from lab_control.instruments.analyzers import PROFILES as ANALYZERS
 from lab_control.instruments.base import Profile, ScpiAdapter
 from lab_control.instruments.devices.catalog import load_definitions
-from lab_control.instruments.oscilloscopes import PROFILES as SCOPES
-from lab_control.instruments.power_supplies import PROFILES as POWERS
-from lab_control.instruments.power_supplies import PowerAdapter
-from lab_control.instruments.signal_sources import PROFILES as SIGNALS
-from lab_control.instruments.signal_sources import SignalGeneratorAdapter
+from lab_control.instruments.devices.definition import DeviceDefinition
 from lab_control.transport.base import MockTransport, Transport
 from lab_control.transport.streams import ScpiSocketTransport, SerialTransport, VicpTransport
 from lab_control.transport.visa import VisaRuntime, VisaTransport
@@ -36,18 +31,9 @@ def collect_profiles(profiles: tuple[Profile, ...]) -> dict[str, Profile]:
 
 
 PROFILES = collect_profiles(
-    (
-        *(definition.profile for definition in DEVICE_DEFINITIONS.values()),
-        *SIGNALS,
-        *POWERS,
-        *SCOPES,
-        *ANALYZERS,
-    )
+    (*(definition.profile for definition in DEVICE_DEFINITIONS.values() if definition.profile is not None),)
 )
-SDK_ADAPTERS = {
-    "thorlabs.pm100d": "optical_power_meter",
-    "pico.6404e": "oscilloscope",
-}
+SDK_ADAPTERS = {d.adapter_id: d.category for d in DEVICE_DEFINITIONS.values() if d.profile is None}
 PENDING = {
     "PSW160": "Manufacturer and complete suffix required",
     "DS1202Z": "Confirm exact suffix; DS1202Z-E adapter is deliberately not an alias",
@@ -66,27 +52,25 @@ def describe(config: ConnectionConfig, channel: int | None = None) -> Capability
         from lab_control.demo.instrument import SimulatedInstrument
 
         return SimulatedInstrument(config).capabilities()
-    if config.adapter in PROFILES:
-        definition = DEVICE_DEFINITIONS.get(config.adapter)
-        if definition and definition.capability_schema:
-            caps = definition.capability_schema(config)
-            if channel is not None and channel not in caps.channels:
-                raise Unsupported(f"Invalid channel {channel}")
-            return caps
-        if channel is None:
-            return ScpiAdapter(MockTransport([]), PROFILES[config.adapter], config).capabilities()
-        adapter = build_scpi_adapter(config, MockTransport([]))
-        return adapter.capabilities_for_channel(channel)
-    from lab_control.instruments.optical import PowerMeterAdapter
-    from lab_control.instruments.pico import PicoAdapter
-
-    schemas = {
-        "thorlabs.pm100d": PowerMeterAdapter.capability_schema,
-        "pico.6404e": PicoAdapter.capability_schema,
-    }
-    if config.adapter not in schemas:
+    definition = DEVICE_DEFINITIONS.get(config.adapter)
+    if definition is None:
         raise Unsupported(f"设备适配器不可用或已移除：{config.adapter}")
-    return schemas[config.adapter](config)
+    return describe_definition(definition, config, channel)
+
+
+def describe_definition(
+    definition: DeviceDefinition, config: ConnectionConfig, channel: int | None = None
+) -> CapabilitySet:
+    """Inspect an explicit definition, including isolated documentation registries."""
+    if definition.capability_schema:
+        caps = definition.capability_schema(config)
+        if channel is not None and channel not in caps.channels:
+            raise Unsupported(f"Invalid channel {channel}")
+        return caps
+    if definition.profile is None or definition.adapter_type is None:
+        raise Unsupported(f"No pure capability schema for {definition.adapter_id}")
+    adapter = definition.adapter_type(MockTransport([]), definition.profile, config)
+    return adapter.capabilities() if channel is None else adapter.capabilities_for_channel(channel)
 
 
 def match(identity: DeviceIdentity) -> str:
@@ -105,6 +89,11 @@ def transport_for(config: ConnectionConfig, runtime: VisaRuntime) -> Transport:
     definition = DEVICE_DEFINITIONS.get(config.adapter)
     if definition and definition.transport_factory:
         return definition.transport_factory(config, runtime)
+    return default_transport_for(config, runtime)
+
+
+def default_transport_for(config: ConnectionConfig, runtime: VisaRuntime) -> Transport:
+    """Build a standard transport without any model protocol decisions."""
     if config.transport == "visa":
         return VisaTransport(
             runtime,
@@ -112,7 +101,6 @@ def transport_for(config: ConnectionConfig, runtime: VisaRuntime) -> Transport:
             config.timeout,
             config.terminator,
             config.baud_rate,
-            line_framing=config.adapter == "keysight.3458a",
         )
     if config.transport == "serial":
         return SerialTransport(config.resource, config.baud_rate, config.timeout, config.terminator.encode())
@@ -154,48 +142,25 @@ def build_scpi_adapter(config: ConnectionConfig, transport: Transport) -> ScpiAd
 
     The caller owns opening/closing the transport. This function performs no I/O.
     """
-    if config.adapter not in PROFILES:
+    definition = DEVICE_DEFINITIONS.get(config.adapter)
+    if definition is None or definition.profile is None or definition.adapter_type is None:
         raise Unsupported(f"设备适配器不可用或已移除：{config.adapter}")
-    profile = PROFILES[config.adapter]
-    if config.adapter in DEVICE_DEFINITIONS:
-        return DEVICE_DEFINITIONS[config.adapter].adapter_type(transport, profile, config)
-    adapter_class = (
-        SignalGeneratorAdapter
-        if profile.category == "signal_generator"
-        else PowerAdapter
-        if profile.category == "power_supply"
-        else ScpiAdapter
-    )
-    return adapter_class(transport, profile, config)
+    return definition.adapter_type(transport, definition.profile, config)
 
 
 def create_adapter(config: ConnectionConfig, runtime: VisaRuntime) -> InstrumentAdapter:
     if config.transport == "mock":
         from lab_control.demo.instrument import SimulatedInstrument
 
-        if (
-            config.adapter not in PROFILES
-            and config.adapter not in SDK_ADAPTERS
-            and not config.adapter.startswith("sim.")
-        ):
+        if config.adapter not in DEVICE_DEFINITIONS and not config.adapter.startswith("sim."):
             raise Unsupported(f"设备适配器不可用或已移除：{config.adapter}")
         return SimulatedInstrument(config)
-    if config.transport in {"pico", "tlpmx", "pm100d"} and not config.sdk_path:
-        from dataclasses import replace
-
-        from lab_control.application.environment import find_sdk
-
-        config = replace(config, sdk_path=find_sdk(config.transport))
-    if config.adapter == "thorlabs.pm100d" and config.transport in {"tlpmx", "pm100d"}:
-        from lab_control.instruments.optical import PowerMeterAdapter
-
-        return PowerMeterAdapter(config)
-    if config.adapter == "pico.6404e" and config.transport == "pico":
-        from lab_control.instruments.pico import PicoAdapter
-
-        return PicoAdapter(config)
     definition = DEVICE_DEFINITIONS.get(config.adapter)
-    if definition and definition.factory:
+    if definition is None:
+        raise Unsupported(f"设备适配器不可用或已移除：{config.adapter}")
+    if definition.supported_transports and config.transport not in definition.supported_transports:
+        raise Unsupported(f"Unsupported transport for {config.adapter}: {config.transport}")
+    if definition.factory:
         return definition.factory(config)
     if config.adapter not in PROFILES:
         raise Unsupported(f"设备适配器不可用或已移除：{config.adapter}")

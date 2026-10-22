@@ -2,6 +2,14 @@
 
 每份报告只描述对应批次的环境、范围和证据；自动化、离屏及人工检查分开记录。截图保留 design/reviews 原位置。历史测试数量与结论仅对应各报告批次。
 
+现行操作以[使用指南](../guides/control-and-monitoring.md)为准，工程步骤以[软件验证](../development/software-validation.md)及[部署规范](../development/desktop-deployment.md)为准；本目录不滚动更新旧批次的通过数字。
+
+- [系统性优化提交前复审（2026-10-22）](precommit-review-2026-10-22.md)
+- [系统性工程优化与文档治理验证（2026-10-22）](engineering-2026-10-22.md)
+- [文档入口整理记录（2026-10-22）](documentation-maintenance-2026-10-22.md)
+- [电源四宫格原批次评审](power-supply-review.md)
+- [频谱紧凑界面原批次评审](spectrum-review.md)
+
 - [源码仓库瘦身与首次准备验收（2026-10-19）](repository-slimming-review.md)
 
 - [相噪仪定时采集与 ADEV/MDEV 工作区（2026-09-29）](phase-workspace-review.md)

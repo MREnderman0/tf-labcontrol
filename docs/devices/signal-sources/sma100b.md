@@ -30,7 +30,7 @@ LAN 接通并不保证出现在 VISA 的自动枚举列表。对已知资产，�
 
 `__init__.py` 提供设备定义/文档元数据，`adapter.py` 包含全部型号命令与动态查询；`tests/` 包含范围、失效、会话隔离和相关界面集成测试；`hardware/readonly.py` 提供只读复核，`hardware/validate_control.py` 提供显式运行的 RF OFF 验证，详见[硬件入口说明](../../../src/lab_control/instruments/devices/rs_sma100b/hardware/README.md)。
 
-`tests/fixtures/capabilities-before.json` 保留迁移前基线；`capabilities-current.json` 记录本轮选件门控、路径 1 命令映射、共享 LF 控制、动态列表范围和扫频操作扩展后的契约。真实通信记录不进入源码。
+`tests/fixtures/capabilities-before.json` 保留迁移前基线；`capabilities-current.json` 记录本轮选件门控、路径 1 命令映射、共享 LF 控制、动态列表范围和扫频操作扩展后的契约。静态整机能力查询与按通道查询现统一经过本型号选件校验；未声明 K720/K24 不再展示虚假的可用调制或可写非正弦形状。当前契约同步此描述修复，迁移前基线保持不变。真实通信记录不进入源码。
 
 只依赖公共领域类型、SCPI 基类和通用硬件记录工具。型号工厂、文档生成与导入不加载 VISA、不打开仪器，也不导入其他型号包。
 
@@ -80,21 +80,21 @@ LAN 接通并不保证出现在 VISA 的自动枚举列表。对已知资产，�
 | `sweep_dwell` | value: number s [0.001, 100] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
 | `reference_clock` | value: enum  INT/EXT | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
 | `output` | value: boolean  [None, None] | 整机 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
-| `am_enabled` | value: boolean  [None, None] | 整机 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
-| `am_source` | value: enum  INT/EXT/LF2/EXT2/NOIS | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
-| `am_frequency` | value: number Hz [0.1, 1000000.0] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
-| `am_shape` | value: enum  SIN/SQU/TRI/TRAP/PULS | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
-| `fm_enabled` | value: boolean  [None, None] | 整机 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
-| `fm_source` | value: enum  INT/EXT/LF2/EXT2/NOIS | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
-| `fm_frequency` | value: number Hz [0.1, 1000000.0] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
-| `fm_shape` | value: enum  SIN/SQU/TRI/TRAP/PULS | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
-| `pm_enabled` | value: boolean  [None, None] | 整机 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
-| `pm_source` | value: enum  INT/EXT/LF2/EXT2/NOIS | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
-| `pm_frequency` | value: number Hz [0.1, 1000000.0] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
-| `pm_shape` | value: enum  SIN/SQU/TRI/TRAP/PULS | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
-| `am_depth` | value: number % [0, 100] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
-| `fm_deviation` | value: number Hz [0, 1000000.0] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
-| `pm_deviation` | value: number rad [0, 20] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
+| `am_enabled` | value: boolean  [None, None] | 整机 | 读/写 | 需要 | 缺选件/配置 |
+| `am_source` | value: enum  INT/EXT/LF2/EXT2/NOIS | 整机 | 读/写 | 无需 | 缺选件/配置 |
+| `am_frequency` | value: number Hz [0.1, 1000000.0] | 整机 | 读/写 | 无需 | 缺选件/配置 |
+| `am_shape` | value: enum  SIN | 整机 | 读 | 无需 | 缺选件/配置 |
+| `fm_enabled` | value: boolean  [None, None] | 整机 | 读/写 | 需要 | 缺选件/配置 |
+| `fm_source` | value: enum  INT/EXT/LF2/EXT2/NOIS | 整机 | 读/写 | 无需 | 缺选件/配置 |
+| `fm_frequency` | value: number Hz [0.1, 1000000.0] | 整机 | 读/写 | 无需 | 缺选件/配置 |
+| `fm_shape` | value: enum  SIN | 整机 | 读 | 无需 | 缺选件/配置 |
+| `pm_enabled` | value: boolean  [None, None] | 整机 | 读/写 | 需要 | 缺选件/配置 |
+| `pm_source` | value: enum  INT/EXT/LF2/EXT2/NOIS | 整机 | 读/写 | 无需 | 缺选件/配置 |
+| `pm_frequency` | value: number Hz [0.1, 1000000.0] | 整机 | 读/写 | 无需 | 缺选件/配置 |
+| `pm_shape` | value: enum  SIN | 整机 | 读 | 无需 | 缺选件/配置 |
+| `am_depth` | value: number % [0, 100] | 整机 | 读/写 | 无需 | 缺选件/配置 |
+| `fm_deviation` | value: number Hz [0, 1000000.0] | 整机 | 读/写 | 无需 | 缺选件/配置 |
+| `pm_deviation` | value: number rad [0, 20] | 整机 | 读/写 | 无需 | 缺选件/配置 |
 | `pulse_enabled` | value: boolean  [None, None] | 整机 | 读/写 | 需要 | 缺选件/配置 |
 | `list_mode` | value: enum  AUTO/STEP | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
 | `list_trigger_source` | value: enum  AUTO/SING/EXT | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |

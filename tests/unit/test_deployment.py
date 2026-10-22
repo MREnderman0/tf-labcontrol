@@ -17,6 +17,53 @@ from lab_control.launcher import worker_command
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def test_builder_checks_transitive_versions_and_platform_markers(monkeypatch):
+    builder = runpy.run_path(str(ROOT / "scripts/build_desktop.py"))
+    lock = {
+        "package": [
+            {
+                "name": "root",
+                "version": "1",
+                "dependencies": [
+                    {"name": "Child_Name"},
+                    {"name": "foreign", "marker": "sys_platform == 'darwin'"},
+                ],
+            },
+            {"name": "child-name", "version": "2", "dependencies": [{"name": "root"}]},
+            {"name": "foreign", "version": "3"},
+        ]
+    }
+    versions = {"root": "1", "child-name": "2"}
+    monkeypatch.setattr("importlib.metadata.version", versions.__getitem__)
+    verify = builder["verified_packages"]
+    assert verify(lock, ["Root"], environment={"sys_platform": "win32"}) == [
+        {"name": "child-name", "version": "2"},
+        {"name": "root", "version": "1"},
+    ]
+    versions["child-name"] = "9"
+    with pytest.raises(ValueError, match="child-name installed 9, lock requires 2"):
+        verify(lock, ["root"], environment={"sys_platform": "win32"})
+
+
+def test_builder_rejects_missing_or_ambiguous_dependencies(monkeypatch):
+    import importlib.metadata
+
+    verify = runpy.run_path(str(ROOT / "scripts/build_desktop.py"))["verified_packages"]
+    lock = {"package": [{"name": "root", "version": "1"}]}
+
+    def missing(name):
+        raise importlib.metadata.PackageNotFoundError(name)
+
+    monkeypatch.setattr(importlib.metadata, "version", missing)
+    with pytest.raises(ValueError, match="not installed: root"):
+        verify(lock, ["root"])
+    with pytest.raises(ValueError, match="found 0"):
+        verify(lock, ["unknown"])
+    lock["package"].append({"name": "root", "version": "2"})
+    with pytest.raises(ValueError, match="found 2"):
+        verify(lock, ["root"])
+
+
 def test_inventory_and_runtime_import_coverage():
     check = runpy.run_path(str(ROOT / "scripts/check_deployment.py"))["check"]
     result = check()

@@ -17,4 +17,5 @@ DEFINITION = DeviceDefinition(
     ),
     Path(__file__).parent,
     deployment_components=("rs-visa", "ftdi-vcp"),
+    serial_driver_managed=True,
 )

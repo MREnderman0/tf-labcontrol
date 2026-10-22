@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import BinaryIO
 from uuid import uuid4
 
-from lab_control.application.config import ConnectionConfig
+from lab_control.domain.connections import ConnectionConfig
 from lab_control.domain.instruments import DeviceError
 from lab_control.storage.repository import application_home
 

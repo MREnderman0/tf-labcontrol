@@ -21,12 +21,9 @@
 
 ## 查看测试记录
 
-- [频谱仪紧凑监测与标记](ui-spectrum-review.md)
-- 光学光谱仪实时监测页面与补测以型号包 README 及运行目录批次为准
-- [电源四宫格操作与验收](ui-power-supply-review.md)
-
 - [实机记录与离线台账](testing/records.md)：逐台、逐接口、逐项目及待核对项
 - [软件验证](development/software-validation.md)、[界面验收记录](reviews/README.md)
+- [频谱界面原批次评审](reviews/spectrum-review.md)、[电源四宫格原批次评审](reviews/power-supply-review.md)：历史证据，现行行为见使用指南
 - [历史档案](archive/README.md)：历史数字和设想不代表当前状态
 
 ## 开发维护
@@ -34,7 +31,7 @@
 - [开发环境](development/environment.md)、[依赖与资料](development/references.md)
 - [桌面部署与环境修复](development/desktop-deployment.md)：组件台账、联网/离线构建和设置内准备
 - [依赖下载资源](generated/download-resources.md)：按清单生成的国内镜像/官方直连地址与验证状态
-- [文档维护约定及迁移清单](development/documentation.md)
+- [文档维护约定及兼容入口](development/documentation.md)
 - [系统架构](architecture/system-architecture.md)、[技术栈](architecture/technology-stack.md)、[前端架构](architecture/frontend-framework.md)
 - [兼容接口](protocols/device-compatibility.md)、[传输协议](protocols/visa-scpi.md)、[数据模型](data/data-model.md)
 - [需求与实现边界](requirements/overview.md)

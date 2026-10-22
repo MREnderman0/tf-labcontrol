@@ -1,32 +1,67 @@
-<!-- Generated from scripts/generate_device_docs.py legacy metadata. -->
+<!-- Generated from an independent device package; edit its README.md. -->
+
+维护源：[包内 README](../../../src/lab_control/instruments/devices/pico_6404e/README.md)。修改维护源后重新生成。
 
 # PicoScope 6404E
 
-维护源：[旧型号文档元数据](../../../scripts/generate_device_docs.py)。本型号尚未迁入独立包，能力来自注册表；不要直接修改本页。
+注册 ID：`pico.6404e`。本包是协议、范围、样本和型号说明的维护源。
 
-## 1. 型号与可信度
+<a id="1-型号与可信度"></a>
+<a id="5-官方命令api-依据"></a>
+<a id="6-当前统一能力"></a>
+## 能力与协议
 
-注册 ID：`pico.6404e`。型号精确匹配；软件实现与具体资产的实测结果分别记录。附件简写和身份别名见本卡片说明。软件连接成功不等于验收通过。
+逻辑类别 `oscilloscope`；通道 `[1, 2, 3, 4]`。命令与范围保持迁移前契约，见 [能力基线](../../../src/lab_control/instruments/devices/pico_6404e/tests/fixtures/capabilities-before.json) 和 [控制样本](../../../src/lab_control/instruments/devices/pico_6404e/tests/fixtures/control.json)。
 
-## 2. 电脑物理连接
+[厂家资料](https://www.picotech.com/helpfiles/6000a-api/)；版本：SDK headers/examples (existing implementation)。样本是软件协议夹具，不是实机抓包。
 
-USB 3.x + ps6000a SDK。接口和选件以设备背板、固件与现场盘点为准。
+<a id="2-电脑物理连接"></a>
+<a id="3-windows-前置条件"></a>
+<a id="4-资源与枚举"></a>
+## 连接与驱动
 
-## 3. Windows 前置条件
+`pico` 传输在扫描阶段仅保留枚举候选；型号元数据要求用户显式连接后核验身份，不由扫描创建 SDK 仪器会话。
 
-PicoSDK 64 位、ps6000a.dll 和 USB 驱动。安装步骤见[实机测试指南](../../testing/hardware-testing.md)；DLL 放在厂商安装位置，通过绝对路径加载，不复制进源码。
+USB 3.x + ps6000a SDK；PicoSDK 64 位、ps6000a.dll 和 USB 驱动。复用既有组件 `pico-sdk`，材料、版本、哈希及验证状态以 [公共清单](../../../deployment/components.json) 为准；本次迁移不新增或升级依赖。现场接口、驱动安装与恢复仍须逐项核对。
 
-## 4. 资源与枚举
+<a id="7-控制读回与采集"></a>
+## 单位与限制
 
-连接模板见[config/examples](../../../config/examples/README.md)。VISA 使用扫描返回的完整资源；串口填写确认的 COM/波特率；Pico 使用 `PICO::序列号`；PM100D 使用 SDK 枚举的资源。扫描只枚举 SDK，不打开 SDK 仪器。
+显式选择序列号，使用 8 位模式；先设置通道，再 block 或 streaming。6404E 的 1 MΩ 量程为 ±10 mV～±20 V，50 Ω 最大 ±5 V；偏移上限在 ≤1 V 量程为 ±1.25 V，较大量程为 ±20 V，依据[6000E 数据表第 31 页](https://www.picotech.com/download/datasheets/picoscope-6000e-series-data-sheet.pdf)。不能使用共享 SDK 枚举中的 50 V 量程。触发阈值按配置偏移转换为 ADC 计数。SDK 缓冲区保持到 Stop 和解除注册后才释放。streaming 为有限批次，批次间有间隔，尚未承诺无缝长时间数据流。
 
-## 5. 官方命令/API 依据
+数值范围和通道限制见能力基线；实验限制可进一步收紧。超时不重放设置，断开软件连接不等于输出关闭。
 
-[厂家资料](https://www.picotech.com/helpfiles/6000a-api/)；版本：SDK headers/examples。逐操作命令定位、参数和模板见[自动生成能力清单](../../generated/capability-matrix.json)。测试样本是按手册编写的夹具，尚非实机抓包。
+<a id="9-python-落点"></a>
+## 文件与公共依赖
 
-## 6. 当前统一能力
+`adapter.py` / `protocol.py`（若有）维护本型号实现；`tests` 保存迁移契约和协议夹具；`hardware` 保存硬件计划及离线记录转换。公共层仅提供会话、传输、通用校验和存储，不依赖其他型号。
 
-逻辑类别 `oscilloscope`；通道 `(1, 2, 3, 4)`。`None` 表示该侧未在通用参数层给出数值边界；适配器仍执行关联参数与通道校验。未列出的操作返回 `unsupported`。
+<a id="10-mock-与实机验收"></a>
+## 测试入口与实机状态
+
+软件回归：`.venv-dev/Scripts/python.exe -m pytest src/lab_control/instruments/devices/pico_6404e/tests tests/unit/test_adapters.py tests/unit/test_extended_protocols.py tests/unit/test_sdk.py`。
+
+| 功能 | 接口及条件 | 验证范围 / 状态 | 证据位置 |
+| --- | --- | --- | --- |
+| 能力、身份、范围与协议 | Mock / SDK 替身 | 迁移前契约与离线回归；不代表实机验收 | 包内 tests 与公共集成测试 |
+| 枚举、连接、读写、恢复、重连 | 每台实际资产分别核验 | 本次迁移未访问硬件 | 运行目录 hardware-tests |
+| 物理输出或测量精度 | 接线及参考源待明确 | not_tested；软件通过不推断物理性能 | 运行目录批次 |
+
+<a id="8-限制和故障处理"></a>
+## 已知限制与待测
+
+| 功能或问题 | 限制 / 原因 | 后续验证 |
+| --- | --- | --- |
+| 厂商固件及接口差异 | 沿用原实现，未新增实机证据 | 按 [硬件计划](../../../src/lab_control/instruments/devices/pico_6404e/hardware/README.md) 逐接口测试 |
+| 采集与高级功能 | 显式选择序列号，使用 8 位模式；先设置通道，再 block 或 streaming。6404E 的 1 MΩ 量程为 ±10 mV～±20 V，50 Ω 最大 ±5 V；偏移上限在 ≤1 V 量程为 ±1.25 V，较大量程为 ±20 V，依据[6000E 数据表第 31 页](https://www.picotech.com/download/datasheets/picoscope-6000e-series-data-sheet.pdf)。不能使用共享 SDK 枚举中的 50 V 量程。触发阈值按配置偏移转换为 ADC 计数。SDK 缓冲区保持到 Stop 和解除注册后才释放。streaming 为有限批次，批次间有间隔，尚未承诺无缝长时间数据流。 | 不放宽既有限制；有依据后另行实现 |
+
+## 扩展与移除
+
+修改本包并更新唯一 catalog 注册与生成文档。移除时保留用户配置及实机历史；旧导入位置仅为兼容转导出。
+
+## 注册能力（自动生成）
+
+范围、单位及命令来自当前注册定义；资产级实测结果见运行目录。
 
 | 操作 | 参数 / 单位 / 范围 | 作用域 | 方向 | 额外确认 | 状态 |
 | --- | --- | --- | --- | --- | --- |
@@ -36,25 +71,3 @@ PicoSDK 64 位、ps6000a.dll 和 USB 驱动。安装步骤见[实机测试指南
 | `trigger` | enabled: boolean  [None, None]; threshold: number V [-20, 20]; direction: enum  RISING/FALLING; timeout_us: integer  [0, 10000000] | 通道 | /写 | 无需 | 软件已实现；实测按资产查证 |
 | `block` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
 | `streaming` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
-
-## 7. 控制、读回与采集
-
-页面入口：**实时监测 / 示波器**。参数由当前注册能力生成；常用、高级、状态与诊断分组。只读采集能力通过监测页的单次/开始操作使用；缺选件项显示原因且禁用。详细操作见[控制与监测指南](../../guides/control-and-monitoring.md)。
-
-采集路线：`block/streaming`。`apply` 返回成功、拒绝、部分执行或不确定；只有提供读回命令的操作才有硬件读回，不能将 SDK 已接收设置描述成测量值。`status` 显式读取，扫描和总览定时刷新不会额外采集。
-
-显式选择序列号，使用 8 位模式；先设置通道，再 block 或 streaming。6404E 的 1 MΩ 量程为 ±10 mV～±20 V，50 Ω 最大 ±5 V；偏移上限在 ≤1 V 量程为 ±1.25 V，较大量程为 ±20 V，依据[6000E 数据表第 31 页](https://www.picotech.com/download/datasheets/picoscope-6000e-series-data-sheet.pdf)。不能使用共享 SDK 枚举中的 50 V 量程。触发阈值按配置偏移转换为 ADC 计数。SDK 缓冲区保持到 Stop 和解除注册后才释放。streaming 为有限批次，批次间有间隔，尚未承诺无缝长时间数据流。
-
-## 8. 限制和故障处理
-
-单设备单 worker 串行执行。数值范围是软件保守边界，仍需核对负载、频率、探头和接线条件。输出/触发等动作要求明确确认；超时不重发、不自动回滚，先诊断再重连。断开软件连接不表示输出关闭。错误数据使用质量标记，不能以零值代替。
-
-## 9. Python 落点
-
-通过 `ApplicationRuntime` → `SessionManager.submit()` → 注册表 `pico.6404e` 调用；SCPI 型号共用所属类别的实现和独立 `Profile`，不创建空壳同名类。源码见 [instruments](../../../src/lab_control/instruments/)；示例见 [examples](../../../examples/README.md)。
-
-## 10. Mock 与实机验收
-
-软件：身份精确匹配、参数越界、未知能力和控制夹具；SDK 使用函数替身验证参数/句柄/缓冲区。完整结果以 `pytest` 报告为准，不能从该表推断全部高级命令已逐项验证。
-
-现场按[统一验收步骤](../../testing/hardware-testing.md)记录完整身份、固件、驱动、资源、每个测试操作、请求、读回、原始错误、数据文件和恢复结果。按授权范围先只读，再控制/采集和恢复。`hardware_passed=false` 是保留的型号级兼容字段，不代表具体资产失败或尚未测试；逐项结论见运行目录摘要。

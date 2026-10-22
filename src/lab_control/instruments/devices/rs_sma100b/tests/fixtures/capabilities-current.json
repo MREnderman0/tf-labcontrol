@@ -15,7 +15,8 @@
             "maximum": 3000000000.0,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -39,7 +40,8 @@
             "maximum": 18,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -67,7 +69,8 @@
               "LIST"
             ],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -91,7 +94,8 @@
             "maximum": 3000000000.0,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -115,7 +119,8 @@
             "maximum": 3000000000.0,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -142,7 +147,8 @@
               "LOG"
             ],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -166,7 +172,8 @@
             "maximum": 100,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -193,7 +200,8 @@
               "EXT"
             ],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -217,7 +225,8 @@
             "maximum": null,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -241,7 +250,8 @@
             "maximum": null,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -252,8 +262,8 @@
         "section": "SOUR:AM1:STAT",
         "verification": "documented_pending_hardware",
         "option": "",
-        "available": true,
-        "reason": ""
+        "available": false,
+        "reason": "missing option SMAB-K720"
       },
       {
         "name": "am_source",
@@ -271,7 +281,8 @@
               "NOIS"
             ],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -282,8 +293,8 @@
         "section": "SOUR:AM1:SOUR",
         "verification": "documented_pending_hardware",
         "option": "",
-        "available": true,
-        "reason": ""
+        "available": false,
+        "reason": "missing option SMAB-K720"
       },
       {
         "name": "am_frequency",
@@ -295,7 +306,8 @@
             "maximum": 1000000.0,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -306,8 +318,8 @@
         "section": "SOUR:LFO1:FREQ",
         "verification": "documented_pending_hardware",
         "option": "",
-        "available": true,
-        "reason": ""
+        "available": false,
+        "reason": "missing option SMAB-K720"
       },
       {
         "name": "am_shape",
@@ -318,26 +330,23 @@
             "minimum": null,
             "maximum": null,
             "choices": [
-              "SIN",
-              "SQU",
-              "TRI",
-              "TRAP",
-              "PULS"
+              "SIN"
             ],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
-        "writable": true,
+        "writable": false,
         "requires_confirmation": false,
         "channel_scoped": false,
         "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
         "section": "SOUR:LFO1:SHAP",
         "verification": "documented_pending_hardware",
         "option": "",
-        "available": true,
-        "reason": ""
+        "available": false,
+        "reason": "missing option SMAB-K720"
       },
       {
         "name": "fm_enabled",
@@ -349,7 +358,8 @@
             "maximum": null,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -360,8 +370,8 @@
         "section": "SOUR:FM1:STAT",
         "verification": "documented_pending_hardware",
         "option": "",
-        "available": true,
-        "reason": ""
+        "available": false,
+        "reason": "missing option SMAB-K720"
       },
       {
         "name": "fm_source",
@@ -379,7 +389,8 @@
               "NOIS"
             ],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -390,8 +401,8 @@
         "section": "SOUR:FM1:SOUR",
         "verification": "documented_pending_hardware",
         "option": "",
-        "available": true,
-        "reason": ""
+        "available": false,
+        "reason": "missing option SMAB-K720"
       },
       {
         "name": "fm_frequency",
@@ -403,7 +414,8 @@
             "maximum": 1000000.0,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -414,8 +426,8 @@
         "section": "SOUR:LFO1:FREQ",
         "verification": "documented_pending_hardware",
         "option": "",
-        "available": true,
-        "reason": ""
+        "available": false,
+        "reason": "missing option SMAB-K720"
       },
       {
         "name": "fm_shape",
@@ -426,26 +438,23 @@
             "minimum": null,
             "maximum": null,
             "choices": [
-              "SIN",
-              "SQU",
-              "TRI",
-              "TRAP",
-              "PULS"
+              "SIN"
             ],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
-        "writable": true,
+        "writable": false,
         "requires_confirmation": false,
         "channel_scoped": false,
         "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
         "section": "SOUR:LFO1:SHAP",
         "verification": "documented_pending_hardware",
         "option": "",
-        "available": true,
-        "reason": ""
+        "available": false,
+        "reason": "missing option SMAB-K720"
       },
       {
         "name": "pm_enabled",
@@ -457,7 +466,8 @@
             "maximum": null,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -468,8 +478,8 @@
         "section": "SOUR:PM1:STAT",
         "verification": "documented_pending_hardware",
         "option": "",
-        "available": true,
-        "reason": ""
+        "available": false,
+        "reason": "missing option SMAB-K720"
       },
       {
         "name": "pm_source",
@@ -487,7 +497,8 @@
               "NOIS"
             ],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -498,8 +509,8 @@
         "section": "SOUR:PM1:SOUR",
         "verification": "documented_pending_hardware",
         "option": "",
-        "available": true,
-        "reason": ""
+        "available": false,
+        "reason": "missing option SMAB-K720"
       },
       {
         "name": "pm_frequency",
@@ -511,7 +522,8 @@
             "maximum": 1000000.0,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -522,8 +534,8 @@
         "section": "SOUR:LFO1:FREQ",
         "verification": "documented_pending_hardware",
         "option": "",
-        "available": true,
-        "reason": ""
+        "available": false,
+        "reason": "missing option SMAB-K720"
       },
       {
         "name": "pm_shape",
@@ -534,26 +546,23 @@
             "minimum": null,
             "maximum": null,
             "choices": [
-              "SIN",
-              "SQU",
-              "TRI",
-              "TRAP",
-              "PULS"
+              "SIN"
             ],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
-        "writable": true,
+        "writable": false,
         "requires_confirmation": false,
         "channel_scoped": false,
         "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
         "section": "SOUR:LFO1:SHAP",
         "verification": "documented_pending_hardware",
         "option": "",
-        "available": true,
-        "reason": ""
+        "available": false,
+        "reason": "missing option SMAB-K720"
       },
       {
         "name": "am_depth",
@@ -565,7 +574,8 @@
             "maximum": 100,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -576,8 +586,8 @@
         "section": "SOUR:AM1:DEPT",
         "verification": "documented_pending_hardware",
         "option": "",
-        "available": true,
-        "reason": ""
+        "available": false,
+        "reason": "missing option SMAB-K720"
       },
       {
         "name": "fm_deviation",
@@ -589,7 +599,8 @@
             "maximum": 1000000.0,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -600,8 +611,8 @@
         "section": "SOUR:FM1:DEV",
         "verification": "documented_pending_hardware",
         "option": "",
-        "available": true,
-        "reason": ""
+        "available": false,
+        "reason": "missing option SMAB-K720"
       },
       {
         "name": "pm_deviation",
@@ -613,7 +624,8 @@
             "maximum": 20,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -624,8 +636,8 @@
         "section": "SOUR:PM1:DEV",
         "verification": "documented_pending_hardware",
         "option": "",
-        "available": true,
-        "reason": ""
+        "available": false,
+        "reason": "missing option SMAB-K720"
       },
       {
         "name": "pulse_enabled",
@@ -637,7 +649,8 @@
             "maximum": null,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -649,7 +662,7 @@
         "verification": "documented_pending_hardware",
         "option": "pulse_modulation",
         "available": false,
-        "reason": "missing option pulse_modulation"
+        "reason": "missing option SMAB-K22"
       },
       {
         "name": "list_mode",
@@ -664,7 +677,8 @@
               "STEP"
             ],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -692,7 +706,8 @@
               "EXT"
             ],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -716,7 +731,8 @@
             "maximum": 100,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -754,7 +770,8 @@
             "maximum": null,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           },
           "frequencies": {
             "kind": "array",
@@ -763,7 +780,8 @@
             "maximum": 3000000000.0,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           },
           "powers": {
             "kind": "array",
@@ -772,7 +790,8 @@
             "maximum": 18,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": false,
@@ -800,7 +819,8 @@
               "STEP"
             ],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -824,7 +844,8 @@
             "maximum": 3000000000.0,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -848,7 +869,8 @@
             "maximum": 100,
             "choices": [],
             "required": true,
-            "range_source": "model"
+            "range_source": "model",
+            "resolution": null
           }
         },
         "readable": true,
@@ -1152,5 +1174,6 @@
       "select": [],
       "compare": true
     }
-  }
+  },
+  "metadata_correction": "describe now uses the same model capability implementation as channel-specific inspection; no K720/K24 options are presumed"
 }
