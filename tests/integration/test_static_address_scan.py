@@ -115,9 +115,9 @@ def test_static_scan_normalizes_kplusk_socket_to_library_transport(tmp_path):
         )
         result = scanner.scan().result(timeout=5)
         assert result["items"][0]["reason"] == "identified"
-        record = inventory.by_resource(entry.resource)
+        record = inventory.by_resource(entry.address)
         assert record is not None
-        assert record["config"]["resource"] == entry.resource
+        assert record["config"]["resource"] == entry.address
         assert record["config"]["transport"] == "kplusk"
     finally:
         if scanner is not None:
