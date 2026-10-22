@@ -10,6 +10,7 @@ from __future__ import annotations
 import contextlib
 import importlib
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -35,6 +36,8 @@ from lab_control.instruments.base import ScpiAdapter
 from .profile import capability_schema, profile
 from .protocol import FrequencyReport, parse_frequency_report, parse_phase_report, validate_channels
 
+_SOCKET_RESOURCE = re.compile(r"TCPIP\d*::([^:]+)::(\d+)::SOCKET", re.IGNORECASE)
+
 
 class _NoopTransport:
     """Satisfy the shared adapter base without creating a byte transport."""
@@ -59,6 +62,13 @@ class _NoopTransport:
 
 def _connection(resource: str) -> str:
     value = resource.strip()
+    socket_match = _SOCKET_RESOURCE.fullmatch(value)
+    if socket_match:
+        host, port = socket_match.groups()
+        # K+K's default FXE service is 10001.  Keep the historic plain-host
+        # form for that port; non-default saved endpoints retain an explicit
+        # host:port for the vendor library.
+        return host if int(port) == 10001 else f"{host}:{port}"
     if value.startswith(("kplusk://", "tcp://")):
         parsed = urlparse(value)
         if not parsed.hostname or parsed.path not in ("", "/") or parsed.query or parsed.fragment:

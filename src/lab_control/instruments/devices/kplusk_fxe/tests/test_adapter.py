@@ -134,6 +134,16 @@ def test_factory_opens_official_direct_ip_without_writes() -> None:
     assert library.closed == [7]
 
 
+def test_factory_accepts_saved_visa_socket_resource_for_address_list() -> None:
+    library = FakeLibrary()
+    adapter = KpluskFxeAdapter(
+        ConnectionConfig("TCPIP0::192.0.2.10::10001::SOCKET", "kplusk.fxe", "kplusk"),
+        library,
+    )
+    assert library.opened == (7, "192.0.2.10", False)
+    adapter.close()
+
+
 def test_kplusk_url_and_no_setting_replay() -> None:
     library = FakeLibrary()
     adapter = KpluskFxeAdapter(ConnectionConfig("kplusk://192.0.2.10:1234", "kplusk.fxe", "kplusk"), library)

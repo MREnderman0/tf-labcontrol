@@ -5,6 +5,7 @@ from pathlib import Path
 from lab_control.instruments.devices.definition import DeviceDefinition, DeviceDocumentation
 
 from .adapter import KpluskFxeAdapter, create
+from .discovery import normalize_discovery_config
 from .profile import capability_schema, profile
 
 DEFINITION = DeviceDefinition(
@@ -21,6 +22,7 @@ DEFINITION = DeviceDefinition(
     factory=create,
     capability_schema=capability_schema,
     identity_requires_adapter=True,
+    discovery_config=normalize_discovery_config,
 )
 
 __all__ = ["DEFINITION", "KpluskFxeAdapter"]

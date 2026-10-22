@@ -792,6 +792,29 @@ class DiscoveryService:
         # Publish every resource before identity I/O. One slow probe cannot hide the other resources.
         candidates: list[DiscoveryCandidate] = []
         for group in observations.values():
+            # Normalize saved model endpoints before the pending inventory row
+            # is written.  This keeps the row's connection config identical to
+            # the config that will be probed (K+K address-list entries are
+            # stored as VISA Socket text but use the official-library
+            # transport).  The later normalization below remains necessary
+            # after source-address binding has changed a candidate.
+            normalized_group = []
+            for candidate in group:
+                if (
+                    self.normalize_discovery_config is not None
+                    and self.source_addresses is not None
+                    and candidate.source == "static_addresses"
+                    and candidate.config.adapter
+                ):
+                    try:
+                        candidate = replace(
+                            candidate,
+                            config=self.normalize_discovery_config(candidate.config, available_sources),
+                        )
+                    except DeviceError as exc:
+                        candidate = replace(candidate, error=str(exc), error_code=exc.code)
+                normalized_group.append(candidate)
+            group = tuple(normalized_group)
             for candidate in group:
                 self.inventory.merge(candidate, scan_id, reason="pending_probe")
             # Explicit connection settings win, independently of provider completion order.
