@@ -3,6 +3,7 @@
   "hardware_tested": false,
   "hardware_evidence_scope": "asset/interface/firmware/test-case records in runtime directory",
   "legacy_hardware_boolean_note": "Compatibility fields only; false is not an asset verdict.",
+  "ui_location_note": "control_page identifies the model page only. ui_location is a legacy empty field: operation-level GUI entries are not inferred from protocol capabilities. See the current user guide.",
   "models": [
     {
       "adapter_id": "pico.6404e",
@@ -96,7 +97,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "通道配置",
-          "ui_location": "实时监测 / 示波器 / 常用"
+          "ui_location": ""
         },
         {
           "name": "timebase",
@@ -127,7 +128,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "时基",
-          "ui_location": "实时监测 / 示波器 / 常用"
+          "ui_location": ""
         },
         {
           "name": "sample_interval",
@@ -158,7 +159,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "采样间隔",
-          "ui_location": "实时监测 / 示波器 / 高级"
+          "ui_location": ""
         },
         {
           "name": "trigger",
@@ -222,7 +223,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发",
-          "ui_location": "实时监测 / 示波器 / 常用"
+          "ui_location": ""
         },
         {
           "name": "block",
@@ -242,7 +243,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "Block 采集",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断"
+          "ui_location": ""
         },
         {
           "name": "streaming",
@@ -262,7 +263,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "Streaming 采集",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断"
+          "ui_location": ""
         }
       ]
     },
@@ -309,7 +310,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "波长",
-          "ui_location": "实时监测 / 光功率计 / 常用"
+          "ui_location": ""
         },
         {
           "name": "autorange",
@@ -340,7 +341,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "自动量程",
-          "ui_location": "实时监测 / 光功率计 / 常用"
+          "ui_location": ""
         },
         {
           "name": "range",
@@ -371,7 +372,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "量程",
-          "ui_location": "实时监测 / 光功率计 / 常用"
+          "ui_location": ""
         },
         {
           "name": "averaging_time",
@@ -402,7 +403,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "平均时间",
-          "ui_location": "实时监测 / 光功率计 / 高级"
+          "ui_location": ""
         },
         {
           "name": "unit",
@@ -436,7 +437,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "单位",
-          "ui_location": "实时监测 / 光功率计 / 高级"
+          "ui_location": ""
         },
         {
           "name": "zero",
@@ -456,7 +457,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "归零 / 暗电流校正",
-          "ui_location": "实时监测 / 光功率计 / 高级"
+          "ui_location": ""
         },
         {
           "name": "sensor",
@@ -476,7 +477,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "传感器信息",
-          "ui_location": "实时监测 / 光功率计 / 状态与诊断"
+          "ui_location": ""
         },
         {
           "name": "power",
@@ -496,7 +497,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "功率",
-          "ui_location": "实时监测 / 光功率计 / 状态与诊断"
+          "ui_location": ""
         }
       ]
     },
@@ -546,7 +547,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "通道显示 / 启用",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -585,7 +586,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "垂直量程",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -624,7 +625,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "偏移",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -668,7 +669,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "耦合方式",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -707,7 +708,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "探头倍率",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -746,7 +747,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发电平",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -785,7 +786,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "时基",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -824,7 +825,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "水平位置",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -869,7 +870,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发源",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -911,7 +912,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发模式",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -950,7 +951,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "记录长度",
-          "ui_location": "实时监测 / 示波器 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -989,7 +990,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "采集次数",
-          "ui_location": "实时监测 / 示波器 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1017,7 +1018,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "运行仪器",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1045,7 +1046,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "停止仪器",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1073,7 +1074,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "仪器单次采集",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1101,7 +1102,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "波形头信息",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -1142,7 +1143,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "采集模式",
-          "ui_location": "实时监测 / 示波器 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1181,7 +1182,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "平均次数",
-          "ui_location": "实时监测 / 示波器 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1224,7 +1225,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "抽取 / 高分辨率",
-          "ui_location": "实时监测 / 示波器 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1266,7 +1267,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "带宽限制",
-          "ui_location": "实时监测 / 示波器 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1305,7 +1306,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "分段采集模式",
-          "ui_location": "实时监测 / 示波器 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1363,7 +1364,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "通道显示 / 启用",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1402,7 +1403,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "垂直量程",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1441,7 +1442,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "偏移",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1484,7 +1485,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "耦合方式",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1523,7 +1524,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "探头倍率",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1562,7 +1563,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发电平",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1601,7 +1602,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "时基",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1640,7 +1641,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "水平位置",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1685,7 +1686,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发源",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1727,7 +1728,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发模式",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1766,7 +1767,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "记录长度",
-          "ui_location": "实时监测 / 示波器 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1805,7 +1806,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "采集次数",
-          "ui_location": "实时监测 / 示波器 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1833,7 +1834,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "运行仪器",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1861,7 +1862,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "停止仪器",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1889,7 +1890,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "仪器单次采集",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -1917,7 +1918,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "波形头信息",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -1971,7 +1972,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "通道显示 / 启用",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2010,7 +2011,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "垂直量程",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2049,7 +2050,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "偏移",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2092,7 +2093,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "耦合方式",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2138,7 +2139,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "探头倍率",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2180,7 +2181,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "带宽限制",
-          "ui_location": "实时监测 / 示波器 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2219,7 +2220,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "波形反相",
-          "ui_location": "实时监测 / 示波器 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2258,7 +2259,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "时基",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2297,7 +2298,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "水平位置",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2341,7 +2342,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发源",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2384,7 +2385,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发沿",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2423,7 +2424,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发电平",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2466,7 +2467,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发模式",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2510,7 +2511,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "采集模式",
-          "ui_location": "实时监测 / 示波器 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2560,7 +2561,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "平均次数",
-          "ui_location": "实时监测 / 示波器 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2606,7 +2607,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "记录长度",
-          "ui_location": "实时监测 / 示波器 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2634,7 +2635,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "运行仪器",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2662,7 +2663,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "停止仪器",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2690,7 +2691,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "仪器单次采集",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2718,7 +2719,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "强制触发",
-          "ui_location": "实时监测 / 示波器 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2746,7 +2747,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发状态",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -2805,7 +2806,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "通道显示 / 启用",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2844,7 +2845,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "垂直量程",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2883,7 +2884,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "偏移",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2927,7 +2928,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "耦合方式",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -2966,7 +2967,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "探头倍率",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3005,7 +3006,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发电平",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3047,7 +3048,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发沿",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3086,7 +3087,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "时基",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3125,7 +3126,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "水平位置",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3169,7 +3170,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发模式",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3208,7 +3209,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "记录长度",
-          "ui_location": "实时监测 / 示波器 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3236,7 +3237,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "仪器单次采集",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3264,7 +3265,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "运行仪器",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3292,7 +3293,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "停止仪器",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3348,7 +3349,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "起始频率",
-          "ui_location": "实时监测 / 网络分析仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3387,7 +3388,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "终止频率",
-          "ui_location": "实时监测 / 网络分析仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3426,7 +3427,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "扫描点数",
-          "ui_location": "实时监测 / 网络分析仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3465,7 +3466,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "中频带宽",
-          "ui_location": "实时监测 / 网络分析仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3504,7 +3505,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "平均开关",
-          "ui_location": "实时监测 / 网络分析仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3543,7 +3544,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "平均次数",
-          "ui_location": "实时监测 / 网络分析仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3582,7 +3583,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "仪器连续扫描",
-          "ui_location": "实时监测 / 网络分析仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3627,7 +3628,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描类型",
-          "ui_location": "实时监测 / 网络分析仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3666,7 +3667,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "端口功率",
-          "ui_location": "实时监测 / 网络分析仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3694,7 +3695,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "仪器单次采集",
-          "ui_location": "实时监测 / 网络分析仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3722,7 +3723,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "校准修正状态",
-          "ui_location": "实时监测 / 网络分析仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -3748,7 +3749,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "轨迹目录",
-          "ui_location": "实时监测 / 网络分析仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -3790,7 +3791,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "S 参数",
-          "ui_location": "实时监测 / 网络分析仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3819,7 +3820,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "当前轨迹",
-          "ui_location": "实时监测 / 网络分析仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -3883,7 +3884,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "测量功能",
-          "ui_location": "实时监测 / 万用表 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3922,7 +3923,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "量程",
-          "ui_location": "实时监测 / 万用表 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -3964,7 +3965,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "自动量程",
-          "ui_location": "实时监测 / 万用表 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4003,7 +4004,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "积分时间",
-          "ui_location": "实时监测 / 万用表 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4042,7 +4043,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "分辨率",
-          "ui_location": "实时监测 / 万用表 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4085,7 +4086,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "自动调零",
-          "ui_location": "实时监测 / 万用表 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4124,7 +4125,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "测量延迟",
-          "ui_location": "实时监测 / 万用表 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4168,7 +4169,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发源",
-          "ui_location": "实时监测 / 万用表 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4211,7 +4212,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发预备",
-          "ui_location": "实时监测 / 万用表 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4254,7 +4255,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "内部存储模式",
-          "ui_location": "实时监测 / 万用表 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4295,7 +4296,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "读数格式",
-          "ui_location": "实时监测 / 万用表 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4323,7 +4324,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "当前测量功能",
-          "ui_location": "实时监测 / 万用表 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -4349,7 +4350,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "当前积分时间",
-          "ui_location": "实时监测 / 万用表 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -4375,7 +4376,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "设备错误",
-          "ui_location": "实时监测 / 万用表 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -4401,7 +4402,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "温度",
-          "ui_location": "实时监测 / 万用表 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -4438,7 +4439,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "采样数量",
-          "ui_location": "实时监测 / 万用表 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4502,7 +4503,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "波形",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4541,7 +4542,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "频率",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4580,7 +4581,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "幅度",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4619,7 +4620,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "偏移",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4658,7 +4659,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "相位",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4697,7 +4698,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "占空比",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4736,7 +4737,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "斜坡对称性",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4775,7 +4776,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "通道输出",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4814,7 +4815,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫频状态",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4853,7 +4854,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫频起始频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4892,7 +4893,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫频终止频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4931,7 +4932,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描时间",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -4974,7 +4975,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描间隔方式",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5017,7 +5018,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫频触发源",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5056,7 +5057,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "突发输出",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5095,7 +5096,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "突发周期数",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5138,7 +5139,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "突发触发源",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5166,7 +5167,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "立即触发突发",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5194,7 +5195,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "立即触发扫频",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5236,7 +5237,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "参考时钟",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5275,7 +5276,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "调制开关",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5318,7 +5319,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "调制类型",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5360,7 +5361,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 调制源",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5399,7 +5400,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 调制频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5445,7 +5446,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 调制波形",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5484,7 +5485,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 深度",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5526,7 +5527,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 调制源",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5565,7 +5566,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 调制频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5611,7 +5612,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 调制波形",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5650,7 +5651,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 频偏",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5692,7 +5693,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 调制源",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5731,7 +5732,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 调制频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5777,7 +5778,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 调制波形",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5816,7 +5817,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 相偏",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -5865,7 +5866,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "上传任意波形",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -5902,7 +5903,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "加载任意波形",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -5916,7 +5917,7 @@
       "adapter_id": "keithley.2231a",
       "model": "Keithley 2231A-30-3",
       "category": "power_supply",
-      "control_page": "设备管理 / 电源",
+      "control_page": "实时监测 / 电源",
       "channels": [
         1,
         2,
@@ -5962,7 +5963,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "电压设定",
-          "ui_location": "设备管理 / 电源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [
               "INST:NSEL {ch}"
@@ -6003,7 +6004,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "电流设定",
-          "ui_location": "设备管理 / 电源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [
               "INST:NSEL {ch}"
@@ -6044,7 +6045,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "通道输出",
-          "ui_location": "设备管理 / 电源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [
               "INST:NSEL {ch}"
@@ -6085,7 +6086,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "电压上限",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [
               "INST:NSEL {ch}"
@@ -6126,7 +6127,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "电压上限开关",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [
               "INST:NSEL {ch}"
@@ -6167,7 +6168,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "定时输出",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [
               "INST:NSEL {ch}"
@@ -6208,7 +6209,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "定时时间",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [
               "INST:NSEL {ch}"
@@ -6249,7 +6250,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "电压步进",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [
               "INST:NSEL {ch}"
@@ -6290,7 +6291,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "电流步进",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [
               "INST:NSEL {ch}"
@@ -6331,7 +6332,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "整机输出",
-          "ui_location": "设备管理 / 电源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -6375,7 +6376,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "耦合方式",
-          "ui_location": "设备管理 / 电源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -6403,7 +6404,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "实测电压",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [
               "INST:NSEL {ch}"
@@ -6431,7 +6432,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "实测电流",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [
               "INST:NSEL {ch}"
@@ -6459,7 +6460,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "实测功率",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [
               "INST:NSEL {ch}"
@@ -6487,7 +6488,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "保护状态",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -6501,7 +6502,7 @@
       "adapter_id": "siglent.spd4306x",
       "model": "Siglent SPD4306X",
       "category": "power_supply",
-      "control_page": "设备管理 / 电源",
+      "control_page": "实时监测 / 电源",
       "channels": [
         1,
         2,
@@ -6556,7 +6557,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "电压设定",
-          "ui_location": "设备管理 / 电源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -6595,7 +6596,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "电流设定",
-          "ui_location": "设备管理 / 电源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -6634,7 +6635,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "过压保护阈值",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -6673,7 +6674,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "过流保护阈值",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -6712,7 +6713,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "过压保护开关",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -6751,7 +6752,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "过流保护开关",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -6790,7 +6791,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "过流保护延迟",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -6829,7 +6830,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "通道输出",
-          "ui_location": "设备管理 / 电源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -6868,7 +6869,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "输出开启延迟",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -6907,7 +6908,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "输出关闭延迟",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -6946,7 +6947,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "列表重复次数",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -6985,7 +6986,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "列表连续运行",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -7024,7 +7025,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "运行列表",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -7063,7 +7064,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "整机输出",
-          "ui_location": "设备管理 / 电源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -7102,7 +7103,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "跟踪 / 串并联",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -7144,7 +7145,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "远端采样模式",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -7172,7 +7173,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "实测电压",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -7198,7 +7199,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "实测电流",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -7224,7 +7225,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "实测功率",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -7250,7 +7251,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "过压跳闸状态",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -7276,7 +7277,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "过流跳闸状态",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -7333,7 +7334,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "上传电源列表",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -7347,7 +7348,7 @@
       "adapter_id": "itech.it6322",
       "model": "ITECH IT6322",
       "category": "power_supply",
-      "control_page": "设备管理 / 电源",
+      "control_page": "实时监测 / 电源",
       "channels": [
         1,
         2,
@@ -7393,7 +7394,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "电压设定",
-          "ui_location": "设备管理 / 电源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [
               "INST:NSEL {ch}"
@@ -7434,7 +7435,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "电流设定",
-          "ui_location": "设备管理 / 电源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [
               "INST:NSEL {ch}"
@@ -7475,7 +7476,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "电压上限",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [
               "INST:NSEL {ch}"
@@ -7516,7 +7517,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "通道输出",
-          "ui_location": "设备管理 / 电源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [
               "INST:NSEL {ch}"
@@ -7557,7 +7558,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "定时时间",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [
               "INST:NSEL {ch}"
@@ -7587,7 +7588,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "实测电压",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [
               "INST:NSEL {ch}"
@@ -7615,7 +7616,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "实测电流",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [
               "INST:NSEL {ch}"
@@ -7643,7 +7644,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "实测功率",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [
               "INST:NSEL {ch}"
@@ -7708,7 +7709,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "波形",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -7747,7 +7748,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "频率",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -7786,7 +7787,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "幅度",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -7825,7 +7826,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "偏移",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -7868,7 +7869,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "幅度单位",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -7907,7 +7908,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "相位",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -7946,7 +7947,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "脉冲占空比",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -7985,7 +7986,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "脉冲宽度",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8024,7 +8025,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "斜坡对称性",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8063,7 +8064,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "通道输出",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8102,7 +8103,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "输出负载",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8141,7 +8142,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "突发输出",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8183,7 +8184,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "突发模式",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8222,7 +8223,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "突发周期数",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8261,7 +8262,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描时间",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8303,7 +8304,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描间隔方式",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8342,7 +8343,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫频起始频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8381,7 +8382,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫频终止频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8409,7 +8410,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8451,7 +8452,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "参考时钟",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8490,7 +8491,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 调制",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8532,7 +8533,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 调制源",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8571,7 +8572,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 调制频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8610,7 +8611,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 调制",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8652,7 +8653,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 调制源",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8691,7 +8692,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 调制频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8730,7 +8731,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 调制",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8772,7 +8773,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 调制源",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8811,7 +8812,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 调制频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8850,7 +8851,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 深度",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8889,7 +8890,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 频偏",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8928,7 +8929,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 相偏",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -8967,7 +8968,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫频状态",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9010,7 +9011,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发源",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9049,7 +9050,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "任意波形输出模式",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9088,7 +9089,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "任意波形采样率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9127,7 +9128,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "加载任意波形",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -9174,7 +9175,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "上传任意波形",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -9218,7 +9219,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 调制波形",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9264,7 +9265,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 调制波形",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9310,7 +9311,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 调制波形",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9373,7 +9374,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "波形",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9412,7 +9413,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "频率",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9451,7 +9452,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "幅度",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9490,7 +9491,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "偏移",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9533,7 +9534,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "幅度单位",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9572,7 +9573,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "相位",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9611,7 +9612,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "脉冲占空比",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9650,7 +9651,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "脉冲宽度",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9689,7 +9690,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "斜坡对称性",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9728,7 +9729,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "通道输出",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9767,7 +9768,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "输出负载",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9806,7 +9807,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "突发输出",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9848,7 +9849,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "突发模式",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9887,7 +9888,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "突发周期数",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9926,7 +9927,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描时间",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -9968,7 +9969,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描间隔方式",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10007,7 +10008,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫频起始频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10046,7 +10047,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫频终止频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10074,7 +10075,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10116,7 +10117,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "参考时钟",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10155,7 +10156,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 调制",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10197,7 +10198,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 调制源",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10236,7 +10237,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 调制频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10275,7 +10276,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 调制",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10317,7 +10318,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 调制源",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10356,7 +10357,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 调制频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10395,7 +10396,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 调制",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10437,7 +10438,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 调制源",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10476,7 +10477,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 调制频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10515,7 +10516,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 深度",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10554,7 +10555,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 频偏",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10593,7 +10594,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 相偏",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10635,7 +10636,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "频率模式",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10677,7 +10678,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发源",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10705,7 +10706,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "相位同步",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10754,7 +10755,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "上传任意波形",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -10780,7 +10781,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "选择已上传波形",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10842,7 +10843,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "波形",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10881,7 +10882,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "频率",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10920,7 +10921,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "幅度",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10959,7 +10960,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "偏移",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -10998,7 +10999,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "通道输出",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11026,7 +11027,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "输出负载",
-          "ui_location": "设备管理 / 信号源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -11063,7 +11064,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫频状态",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11102,7 +11103,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "突发输出",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11141,7 +11142,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "调制开关",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11169,7 +11170,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "耦合方式",
-          "ui_location": "设备管理 / 信号源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -11209,7 +11210,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "参考时钟",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11248,7 +11249,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "相位",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11287,7 +11288,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "脉冲占空比",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11326,7 +11327,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "脉冲宽度",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11365,7 +11366,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "斜坡对称性",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11404,7 +11405,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫频起始频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11443,7 +11444,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫频终止频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11482,7 +11483,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描时间",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11524,7 +11525,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描间隔方式",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11566,7 +11567,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫频方向",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11609,7 +11610,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫频触发源",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11651,7 +11652,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "突发模式",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11690,7 +11691,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "突发周期数",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11733,7 +11734,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "突发触发源",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11772,7 +11773,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "突发重复周期",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11811,7 +11812,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "突发延时",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11850,7 +11851,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "突发起始相位",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11893,7 +11894,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "调制类型",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11935,7 +11936,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 调制源",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -11981,7 +11982,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 调制波形",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12020,7 +12021,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 调制频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12059,7 +12060,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 深度",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12101,7 +12102,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 调制源",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12147,7 +12148,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 调制波形",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12186,7 +12187,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 调制频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12225,7 +12226,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 频偏",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12267,7 +12268,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 调制源",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12313,7 +12314,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 调制波形",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12352,7 +12353,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 调制频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12391,7 +12392,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 相偏",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12440,7 +12441,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "上传任意波形",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -12477,7 +12478,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "加载任意波形",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -12530,7 +12531,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "频率",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12569,7 +12570,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "功率",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12612,7 +12613,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "频率模式",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12651,7 +12652,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫频起始频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12690,7 +12691,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫频终止频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12732,7 +12733,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描间隔方式",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12771,7 +12772,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描驻留时间",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12813,7 +12814,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "参考时钟",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12852,7 +12853,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "通道输出",
-          "ui_location": "设备管理 / 信号源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12891,7 +12892,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 调制",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12936,7 +12937,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 调制源",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -12975,7 +12976,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 调制频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13016,7 +13017,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 调制波形",
-          "ui_location": "设备管理 / 信号源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13055,7 +13056,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 调制",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13100,7 +13101,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 调制源",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13139,7 +13140,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 调制频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13180,7 +13181,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 调制波形",
-          "ui_location": "设备管理 / 信号源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13219,7 +13220,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 调制",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13264,7 +13265,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 调制源",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13303,7 +13304,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 调制频率",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13344,7 +13345,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 调制波形",
-          "ui_location": "设备管理 / 信号源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13383,7 +13384,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 深度",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13422,7 +13423,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "FM 频偏",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13461,7 +13462,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "PM 相偏",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13500,7 +13501,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "脉冲调制",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13542,7 +13543,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "列表模式",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13585,7 +13586,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "列表触发源",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13624,7 +13625,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "列表驻留时间",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13652,7 +13653,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发列表",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13711,7 +13712,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "上传频率 / 功率列表",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -13752,7 +13753,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描运行方式",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13791,7 +13792,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "线性扫频步进",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13830,7 +13831,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "对数扫频步进",
-          "ui_location": "设备管理 / 信号源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13846,7 +13847,7 @@
       "adapter_id": "gwinstek.gpd4303s",
       "model": "GW Instek GPD-4303S",
       "category": "power_supply",
-      "control_page": "设备管理 / 电源",
+      "control_page": "实时监测 / 电源",
       "channels": [
         1,
         2,
@@ -13897,7 +13898,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "电压设定",
-          "ui_location": "设备管理 / 电源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13936,7 +13937,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "电流设定",
-          "ui_location": "设备管理 / 电源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -13964,7 +13965,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "实测电压",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -13990,7 +13991,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "实测电流",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -14027,7 +14028,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "整机输出",
-          "ui_location": "设备管理 / 电源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14070,7 +14071,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "跟踪 / 串并联",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14098,7 +14099,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "状态寄存器",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -14124,7 +14125,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "进入远程控制",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14152,7 +14153,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "返回面板控制",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14180,7 +14181,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "设备错误",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -14233,7 +14234,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "起始频率",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14272,7 +14273,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "终止频率",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14311,7 +14312,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "中心频率",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14350,7 +14351,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "频率跨度",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14401,7 +14402,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "分辨率带宽 RBW",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14455,7 +14456,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "视频带宽 VBW",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14494,7 +14495,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "自动 RBW",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14533,7 +14534,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "自动 VBW",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14572,7 +14573,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "参考电平",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14611,7 +14612,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "输入衰减",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14650,7 +14651,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "自动衰减",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14689,7 +14690,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描时间",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14728,7 +14729,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "自动扫描时间",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14767,7 +14768,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "仪器连续扫描",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14812,7 +14813,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "幅度单位",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14858,7 +14859,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "检波器",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14905,7 +14906,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "轨迹模式",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14948,7 +14949,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发源",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -14987,7 +14988,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "标记开关",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -15026,7 +15027,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "标记频率",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -15065,7 +15066,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "标记位置",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -15106,7 +15107,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "标记模式",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -15148,7 +15149,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "标记坐标类型",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -15176,7 +15177,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "已安装选件",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -15202,7 +15203,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "轨迹传输格式",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -15228,7 +15229,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "传输字节序",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -15265,7 +15266,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描点数",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -15291,7 +15292,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "设备错误",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -15317,7 +15318,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "单次扫描次数",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -15343,7 +15344,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "已完成扫描次数",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -15369,7 +15370,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描运行状态",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -15395,7 +15396,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "测量模式",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -15421,7 +15422,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "频率显示偏移",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -15447,7 +15448,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "参考电平偏移",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -15473,7 +15474,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "前置放大",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -15499,7 +15500,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "混频器最大电平",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -15525,7 +15526,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "标记读数",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -15551,7 +15552,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "标记对应轨迹",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -15577,7 +15578,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "自动选择标记轨迹",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -15603,7 +15604,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "标记测量功能",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -15629,7 +15630,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "连续峰值跟踪",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -15655,7 +15656,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "峰值搜索模式",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -15681,7 +15682,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "仪器单次采集",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -15709,7 +15710,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "自动设置",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -15737,7 +15738,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "搜索峰值",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -15784,7 +15785,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "自动设置",
-          "ui_location": "实时监测 / 示波器 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -15826,7 +15827,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "通道显示 / 启用",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -15865,7 +15866,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "垂直量程",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -15904,7 +15905,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "偏移",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -15948,7 +15949,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "耦合方式",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -15987,7 +15988,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "探头倍率",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -16026,7 +16027,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发电平",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -16068,7 +16069,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发沿",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -16107,7 +16108,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "时基",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -16146,7 +16147,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "水平位置",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -16190,7 +16191,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发模式",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -16229,7 +16230,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "记录长度",
-          "ui_location": "实时监测 / 示波器 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -16257,7 +16258,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "仪器单次采集",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -16285,7 +16286,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "运行仪器",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -16313,7 +16314,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "停止仪器",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -16341,7 +16342,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "轨迹传输格式",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -16367,7 +16368,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "响应头格式",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -16393,7 +16394,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "传输字节序",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -16419,7 +16420,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "波形传输设置",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -16445,7 +16446,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发配置",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -16471,7 +16472,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "分段采集配置",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -16497,7 +16498,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "随机交织采样",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -16539,7 +16540,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发源",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -16586,7 +16587,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "自动设置",
-          "ui_location": "实时监测 / 示波器 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -16625,7 +16626,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "通道显示 / 启用",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -16664,7 +16665,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "垂直量程",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -16703,7 +16704,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "偏移",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -16746,7 +16747,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "耦合方式",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -16810,7 +16811,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "探头倍率",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -16849,7 +16850,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "时基",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -16888,7 +16889,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "水平位置",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -16934,7 +16935,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "记录长度",
-          "ui_location": "实时监测 / 示波器 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -16978,7 +16979,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发源",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -17017,7 +17018,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发电平",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -17060,7 +17061,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发沿",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -17104,7 +17105,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发模式",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -17132,7 +17133,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "实际采样率",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -17158,7 +17159,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "通道单位",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -17184,7 +17185,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "波形反相",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -17210,7 +17211,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "垂直细调",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -17236,7 +17237,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发类型",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -17262,7 +17263,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发运行方式",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -17288,7 +17289,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发状态",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -17314,7 +17315,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发保持时间",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -17340,7 +17341,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "采集方式",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -17366,7 +17367,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "平均次数",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -17392,7 +17393,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "时基模式",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -17418,7 +17419,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "自动滚动",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -17444,7 +17445,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "XY 模式",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -17470,7 +17471,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "延迟时基",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -17496,7 +17497,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "轨迹传输格式",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -17522,7 +17523,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "波形传输范围",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -17548,7 +17549,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "波形传输源",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -17574,7 +17575,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "传输起始点",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -17600,7 +17601,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "传输结束点",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -17626,7 +17627,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "传输窗口点数",
-          "ui_location": "实时监测 / 示波器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -17652,7 +17653,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "运行仪器",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -17680,7 +17681,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "停止仪器",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -17708,7 +17709,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "仪器单次采集",
-          "ui_location": "实时监测 / 示波器 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -17763,7 +17764,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "起始频率",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -17802,7 +17803,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "终止频率",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -17841,7 +17842,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "中心频率",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -17880,7 +17881,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "频率跨度",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -17929,7 +17930,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "分辨率带宽 RBW",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -17980,7 +17981,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "视频带宽 VBW",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -18019,7 +18020,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "自动 RBW",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -18058,7 +18059,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "自动 VBW",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -18097,7 +18098,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "参考电平",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -18136,7 +18137,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "输入衰减",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -18175,7 +18176,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "自动衰减",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -18214,7 +18215,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描时间",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -18253,7 +18254,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "自动扫描时间",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -18292,7 +18293,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "单次扫描次数",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -18331,7 +18332,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "仪器连续扫描",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -18376,7 +18377,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "幅度单位",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -18422,7 +18423,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "检波器",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -18461,7 +18462,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "自动检波器",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -18506,7 +18507,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "轨迹模式",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -18548,7 +18549,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发源",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -18587,7 +18588,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "标记开关",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -18626,7 +18627,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "标记频率",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -18654,7 +18655,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "已安装选件",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -18680,7 +18681,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "测量模式",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -18706,7 +18707,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "轨迹传输格式",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -18732,7 +18733,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "传输字节序",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -18769,7 +18770,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描点数",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -18795,7 +18796,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "频率显示偏移",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -18821,7 +18822,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "参考电平偏移",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -18847,7 +18848,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "前置放大",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -18873,7 +18874,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "标记读数",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -18899,7 +18900,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "标记坐标模式",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -18925,7 +18926,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "设备错误",
-          "ui_location": "实时监测 / 频谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -18951,7 +18952,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "仪器单次采集",
-          "ui_location": "实时监测 / 频谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -18979,7 +18980,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "搜索峰值",
-          "ui_location": "实时监测 / 频谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -19034,7 +19035,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "起始波长",
-          "ui_location": "实时监测 / 光谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -19073,7 +19074,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "终止波长",
-          "ui_location": "实时监测 / 光谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -19112,7 +19113,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "中心波长",
-          "ui_location": "实时监测 / 光谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -19151,7 +19152,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "波长跨度",
-          "ui_location": "实时监测 / 光谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -19198,7 +19199,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "分辨率带宽 RBW",
-          "ui_location": "实时监测 / 光谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -19243,7 +19244,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "灵敏度",
-          "ui_location": "实时监测 / 光谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -19282,7 +19283,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描点数",
-          "ui_location": "实时监测 / 光谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -19321,7 +19322,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "自动采样点数",
-          "ui_location": "实时监测 / 光谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -19364,7 +19365,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描运行方式",
-          "ui_location": "实时监测 / 光谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -19392,7 +19393,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "轨迹传输格式",
-          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -19418,7 +19419,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "横轴模式",
-          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -19444,7 +19445,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "幅度单位",
-          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -19470,7 +19471,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "轨迹模式",
-          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -19496,7 +19497,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "轨迹实际点数",
-          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -19522,7 +19523,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "当前轨迹",
-          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -19548,7 +19549,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描运行状态",
-          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -19574,7 +19575,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "波长介质",
-          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -19600,7 +19601,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "波长偏置",
-          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -19626,7 +19627,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "参考电平偏移",
-          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -19652,7 +19653,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "标记限制扫描范围",
-          "ui_location": "实时监测 / 光谱仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -19678,7 +19679,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "仪器单次采集",
-          "ui_location": "实时监测 / 光谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -19707,7 +19708,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "启动重复扫描",
-          "ui_location": "实时监测 / 光谱仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -19736,7 +19737,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "停止仪器",
-          "ui_location": "实时监测 / 光谱仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -19796,7 +19797,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "实际采样率",
-          "ui_location": "实时监测 / 相噪仪 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -19822,7 +19823,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "定时相位采集与稳定度",
-          "ui_location": "实时监测 / 相噪仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -19848,7 +19849,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "开始仪器测量",
-          "ui_location": "实时监测 / 相噪仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -19876,7 +19877,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "停止仪器",
-          "ui_location": "实时监测 / 相噪仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -19925,7 +19926,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "输入频率",
-          "ui_location": "实时监测 / 相噪仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -19972,7 +19973,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "参考频率",
-          "ui_location": "实时监测 / 相噪仪 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -19998,7 +19999,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "相位噪声",
-          "ui_location": "实时监测 / 相噪仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20024,7 +20025,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "AM 噪声",
-          "ui_location": "实时监测 / 相噪仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20050,7 +20051,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "稳定度",
-          "ui_location": "实时监测 / 相噪仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20076,7 +20077,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "相位 / 频率数据流",
-          "ui_location": "实时监测 / 相噪仪 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20133,7 +20134,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "功率",
-          "ui_location": "实时监测 / 光功率计 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20159,7 +20160,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "显示功率",
-          "ui_location": "实时监测 / 光功率计 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20196,7 +20197,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "波长",
-          "ui_location": "实时监测 / 光功率计 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20233,7 +20234,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "采样率",
-          "ui_location": "实时监测 / 光功率计 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20270,7 +20271,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "显示波长表",
-          "ui_location": "实时监测 / 光功率计 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20296,7 +20297,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "偏振相关损耗",
-          "ui_location": "实时监测 / 光功率计 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20340,7 +20341,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "控制状态",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20412,7 +20413,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "标准波形",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20438,7 +20439,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "停止标准波形",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20464,7 +20465,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "常规模式",
-          "ui_location": "设备管理 / 电源 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20501,7 +20502,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "电压设定",
-          "ui_location": "设备管理 / 电源 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20527,7 +20528,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "实测电压",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20553,7 +20554,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "控制器配置",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20579,7 +20580,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "原始通道数据",
-          "ui_location": "设备管理 / 电源 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20642,7 +20643,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "触发源",
-          "ui_location": "实时监测 / 万用表 / 常用",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -20681,7 +20682,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "触发间隔",
-          "ui_location": "实时监测 / 万用表 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -20720,7 +20721,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "监视状态",
-          "ui_location": "实时监测 / 万用表 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -20759,7 +20760,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "DMM 状态",
-          "ui_location": "实时监测 / 万用表 / 高级",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
@@ -20787,7 +20788,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描列表",
-          "ui_location": "实时监测 / 万用表 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20813,7 +20814,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "扫描通道数",
-          "ui_location": "实时监测 / 万用表 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20839,7 +20840,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "DMM 模块已安装",
-          "ui_location": "实时监测 / 万用表 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20865,7 +20866,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "通道配置",
-          "ui_location": "实时监测 / 万用表 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20891,7 +20892,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "设备错误",
-          "ui_location": "实时监测 / 万用表 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20917,7 +20918,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "系统版本",
-          "ui_location": "实时监测 / 万用表 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20943,7 +20944,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "测量读数",
-          "ui_location": "实时监测 / 万用表 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20969,7 +20970,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "插槽 100 模块",
-          "ui_location": "实时监测 / 万用表 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -20995,7 +20996,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "插槽 200 模块",
-          "ui_location": "实时监测 / 万用表 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -21021,7 +21022,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "插槽 300 模块",
-          "ui_location": "实时监测 / 万用表 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -21047,7 +21048,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "插槽 400 模块",
-          "ui_location": "实时监测 / 万用表 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -21073,7 +21074,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "插槽 500 模块",
-          "ui_location": "实时监测 / 万用表 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -21138,7 +21139,7 @@
           "protocol_fixture_tested": true,
           "hardware_passed": false,
           "ui_label": "原始协议报告",
-          "ui_location": "实时监测 / 频率计数器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -21164,7 +21165,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "固件版本",
-          "ui_location": "实时监测 / 频率计数器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
@@ -21190,7 +21191,7 @@
           "protocol_fixture_tested": false,
           "hardware_passed": false,
           "ui_label": "K+K 用户号",
-          "ui_location": "实时监测 / 频率计数器 / 状态与诊断",
+          "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],

@@ -4,6 +4,15 @@ from typing import Any
 
 from lab_control.application.catalog import instrument_category, mode_applicable
 
+# The approved overview keeps these connection entry points even with no devices.
+PRIMARY_CATEGORIES = (
+    "signal_generator",
+    "power_supply",
+    "oscilloscope",
+    "spectrum_analyzer",
+    "temperature_controller",
+)
+
 CATEGORIES = {
     "signal_generator": "信号源",
     "power_supply": "电源",

@@ -5,7 +5,7 @@ import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from copy import deepcopy
 from dataclasses import dataclass, field, replace
-from typing import Any, Callable
+from typing import Any, Callable, TypeVar
 from uuid import uuid4
 
 from lab_control.application.acquisition_pipeline import validate_cadence
@@ -32,6 +32,25 @@ from lab_control.storage.audit import AuditSink
 from lab_control.storage.recording import Recording
 from lab_control.storage.repository import Repository
 from lab_control.transport.diagnostics import AcquisitionStatistics
+
+_Result = TypeVar("_Result")
+
+
+def _accepted_result(worker: Future[_Result]) -> Future[_Result]:
+    """Keep accepted I/O and its cleanup observable even before the worker starts."""
+    result: Future[_Result] = Future()
+    result.set_running_or_notify_cancel()
+
+    def completed(future: Future[_Result]) -> None:
+        try:
+            value = future.result()
+        except BaseException as exc:
+            result.set_exception(exc)
+        else:
+            result.set_result(value)
+
+    worker.add_done_callback(completed)
+    return result
 
 
 @dataclass(frozen=True)
@@ -224,8 +243,10 @@ class SessionManager:
                 return None
             session.pending += 1
             session.background_read = quiet and operation == "read_settings"
-            return session.worker.submit(
-                self._execute, session, operation, argument, quiet=quiet, submitted_at=time.perf_counter()
+            return _accepted_result(
+                session.worker.submit(
+                    self._execute, session, operation, argument, quiet=quiet, submitted_at=time.perf_counter()
+                )
             )
 
     def _refresh_capabilities(
@@ -412,7 +433,7 @@ class SessionManager:
                 self.emit("error", device_id, error=str(exc))
                 raise
 
-        return session.worker.submit(opening)
+        return _accepted_result(session.worker.submit(opening))
 
     @staticmethod
     def _controls_instrument(operation: str, argument: Any) -> bool:
@@ -454,8 +475,10 @@ class SessionManager:
             session.pending += 1
             if self._controls_instrument(operation, argument):
                 session.control_pending += 1
-            return session.worker.submit(
-                self._execute, session, operation, argument, submitted_at=time.perf_counter()
+            return _accepted_result(
+                session.worker.submit(
+                    self._execute, session, operation, argument, submitted_at=time.perf_counter()
+                )
             )
 
     def set_monitoring(self, device_id: str, enabled: bool, recording: bool = False) -> None:

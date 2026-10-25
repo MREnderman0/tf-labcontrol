@@ -31,7 +31,13 @@ from lab_control.ui.widgets.category_cards import CategoryCard, CategoryCardGrid
 from lab_control.ui.widgets.device_pool import DeviceDetails, DevicePool, DeviceRowDelegate
 from lab_control.ui.widgets.popup_surface import WorkspaceMenu
 from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
-from lab_control.ui.workspace.categories import CATEGORIES, CATEGORY_DESCRIPTIONS, applicable, category_for
+from lab_control.ui.workspace.categories import (
+    CATEGORIES,
+    CATEGORY_DESCRIPTIONS,
+    PRIMARY_CATEGORIES,
+    applicable,
+    category_for,
+)
 
 if TYPE_CHECKING:
     from lab_control.ui.real_window import RealWindow
@@ -391,7 +397,7 @@ class WorkspaceOverview:
             if window.category_filter.itemData(index, Qt.ItemDataRole.ToolTipRole) != tooltip:
                 window.category_filter.setItemData(index, tooltip, Qt.ItemDataRole.ToolTipRole)
             window.cards[category].update_counts(len(records), live, abnormal, bound)
-            if records:
+            if category in PRIMARY_CATEGORIES or records:
                 visible_cards.append(window.cards[category])
         window.card_grid.set_cards(tuple(visible_cards))
         for device_id, record in window.records.items():

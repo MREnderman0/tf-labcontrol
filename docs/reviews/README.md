@@ -4,6 +4,7 @@
 
 现行操作以[使用指南](../guides/control-and-monitoring.md)为准，工程步骤以[软件验证](../development/software-validation.md)及[部署规范](../development/desktop-deployment.md)为准；本目录不滚动更新旧批次的通过数字。
 
+- [项目遗漏与开发产物复审（2026-10-24）](project-audit-2026-10-24.md)
 - [系统性优化提交前复审（2026-10-22）](precommit-review-2026-10-22.md)
 - [系统性工程优化与文档治理验证（2026-10-22）](engineering-2026-10-22.md)
 - [文档入口整理记录（2026-10-22）](documentation-maintenance-2026-10-22.md)
