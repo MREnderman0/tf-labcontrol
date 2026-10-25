@@ -98,7 +98,17 @@ class RecordedAcquisitionRunner:
         except Exception as exc:
             primary_error = exc
             session.last_error = str(exc)
-            if io_started and getattr(exc, "code", "") not in {"recording_failed", "recording_paused"}:
+            code = getattr(exc, "code", "")
+            if io_started and code == "configuration_changed":
+                # A complete reply with changing settings invalidates the old
+                # configuration, not the transport. This direct API still ends
+                # on the failed frame without retrying instrument work.
+                with manager.lock:
+                    session.configuration_version += 1
+                manager.audit.try_record(
+                    "acquisition_discarded", device_id=device_id, code=code, error=str(exc)
+                )
+            elif io_started and code not in {"recording_failed", "recording_paused"}:
                 session.state = "degraded"
             manager.audit.try_record("stream_failed", device_id=device_id, error=str(exc))
             manager.emit("error", device_id, error=str(exc))

@@ -6,6 +6,8 @@
 
 JSON 保留 hardware_tested/hardware_passed 兼容字段；固定 false 不代表现场设备失败或全部未测。资产证据见[离线台账说明](../testing/records.md)。
 
+JSON 的 control_page 表示型号所在页面，不保证每项底层能力都有 GUI 控件。ui_location 作为兼容字段保留空值；实际操作入口以[使用指南](../guides/control-and-monitoring.md)为准，不从协议能力推断常用、高级或诊断按钮。
+
 | 型号 | 注册 ID | 操作数 | 采集 | 详情 |
 | --- | --- | --- | --- | --- |
 | PicoScope 6404E | `pico.6404e` | 6 | block/streaming | [型号卡片](../devices/oscilloscopes/picoscope-6404e.md) |

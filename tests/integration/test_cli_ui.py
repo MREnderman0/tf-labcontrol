@@ -10,6 +10,14 @@ from lab_control.ui.pages.device_control.power_supply import PowerSupplyPage
 from lab_control.ui.pages.monitoring.power import PowerMonitoringPage
 from lab_control.ui.real_window import CATEGORIES, RealWindow
 
+PRIMARY_ENTRY_CATEGORIES = (
+    "signal_generator",
+    "power_supply",
+    "oscilloscope",
+    "spectrum_analyzer",
+    "temperature_controller",
+)
+
 
 def test_cli_mock_readonly_report_and_explicit_target(tmp_path, capsys):
     common = ["--mock", "--home", str(tmp_path)]
@@ -70,40 +78,46 @@ def test_real_overview_incremental_mode_and_scan(qtbot, tmp_path, monkeypatch):
     runtime.connect(device_id).result()
     window = RealWindow(runtime)
     qtbot.addWidget(window)
-    window.show()
-    window.refresh()
-    assert window.category_filter.count() == len(CATEGORIES) + 1
-    assert len(window.card_grid.cards) == 1
-    card = window.cards["signal_generator"]
-    assert card.online_count.text() == "01"
-    assert card.visible_count.text() == "可见 1 台"
-    assert window.device_pool.isHidden()
-    with monkeypatch.context() as context:
-        context.setattr(
-            runtime.sessions, "submit", lambda *_a, **_kw: pytest.fail("Opening cards must not send I/O")
-        )
-        qtbot.mouseClick(card, Qt.MouseButton.LeftButton)
-    assert not window.device_pool.isHidden()
-    assert window.selected_id == device_id
-    row = window.rows[device_id]
-    window.tree.setCurrentItem(row)
-    session_id = runtime.sessions.snapshots()[0]["sessionId"]
-    window.scan()
-    qtbot.waitUntil(lambda: runtime.discovery.future.done(), timeout=3000)
-    window.refresh()
-    window.controller.set_mode("optical")
-    assert window.controller.mode == "general"
-    assert not hasattr(window, "mode")
-    assert window.rows[device_id] is row
-    assert window.selected_id == device_id
-    assert runtime.sessions.snapshots()[0]["sessionId"] == session_id
-    assert window.cards["signal_generator"] is card
-    assert not any(c.category == "optical_power_meter" for c in window.card_grid.cards)
-    assert window.action_buttons["disconnect"].isEnabled()
-    window.timer.stop()
-    runtime.close()
-    window.closing = True
-    window.bridge.worker.shutdown()
+    try:
+        window.show()
+        window.refresh()
+        assert window.category_filter.count() == len(CATEGORIES) + 1
+        assert tuple(card.category for card in window.card_grid.cards) == PRIMARY_ENTRY_CATEGORIES
+        card = window.cards["signal_generator"]
+        assert card.online_count.text() == "01"
+        assert card.visible_count.text() == "可见 1 台"
+        for category in PRIMARY_ENTRY_CATEGORIES[1:]:
+            assert window.cards[category].visible_count.text() == "可见 0 台"
+            assert window.cards[category].online_count.text() == "00"
+        assert window.device_pool.isHidden()
+        with monkeypatch.context() as context:
+            context.setattr(
+                runtime.sessions, "submit", lambda *_a, **_kw: pytest.fail("Opening cards must not send I/O")
+            )
+            qtbot.mouseClick(card, Qt.MouseButton.LeftButton)
+        assert not window.device_pool.isHidden()
+        assert window.selected_id == device_id
+        row = window.rows[device_id]
+        window.tree.setCurrentItem(row)
+        session_id = runtime.sessions.snapshots()[0]["sessionId"]
+        window.scan()
+        qtbot.waitUntil(lambda: runtime.discovery.future.done(), timeout=3000)
+        window.refresh()
+        window.controller.set_mode("optical")
+        assert window.controller.mode == "general"
+        assert not hasattr(window, "mode")
+        assert window.rows[device_id] is row
+        assert window.selected_id == device_id
+        assert runtime.sessions.snapshots()[0]["sessionId"] == session_id
+        assert window.cards["signal_generator"] is card
+        assert not any(c.category == "optical_power_meter" for c in window.card_grid.cards)
+        assert window.action_buttons["disconnect"].isEnabled()
+    finally:
+        window.timer.stop()
+        window.controller.close()
+        window.closing = True
+        window.bridge.worker.shutdown()
+        runtime.close()
 
 
 def test_optical_card_groups_spectrometer_and_power_meter(qtbot, tmp_path):
@@ -163,18 +177,38 @@ def test_power_surfaces_route_coremorrow_to_management_and_other_supplies_to_mon
         runtime.close()
 
 
-def test_overview_cards_only_show_current_scan_records(qtbot, tmp_path):
+def test_overview_keeps_primary_entries_and_counts_only_current_records(qtbot, tmp_path):
     config = ConnectionConfig("mock://unscanned", "rigol.dg5504pro", "mock")
     runtime = ApplicationRuntime(root=tmp_path, hardware=False)
     device_id = runtime.add(config)
+    optical_id = runtime.add(ConnectionConfig("mock://unscanned-optical", "thorlabs.pm100d", "mock"))
     window = RealWindow(runtime)
     qtbot.addWidget(window)
     try:
         window.refresh()
-        assert not window.card_grid.cards
+        assert tuple(card.category for card in window.card_grid.cards) == PRIMARY_ENTRY_CATEGORIES
+        assert "发现 0 台" in window.summary.text()
+        for card in window.card_grid.cards:
+            assert card.visible_count.text() == "可见 0 台"
+            assert card.online_count.text() == "00"
+            assert all(value.text() == "0" for value in card.metrics.values())
+        assert window.cards["optical_power_meter"].isHidden()
         runtime.connect(device_id).result()
         window.refresh()
-        assert [card.category for card in window.card_grid.cards] == ["signal_generator"]
+        assert tuple(card.category for card in window.card_grid.cards) == PRIMARY_ENTRY_CATEGORIES
+        assert window.cards["signal_generator"].visible_count.text() == "可见 1 台"
+        assert window.cards["signal_generator"].online_count.text() == "01"
+        assert window.cards["optical_power_meter"].isHidden()
+        assert "发现 1 台" in window.summary.text()
+        runtime.connect(optical_id).result()
+        window.refresh()
+        assert tuple(card.category for card in window.card_grid.cards) == (
+            *PRIMARY_ENTRY_CATEGORIES,
+            "optical_power_meter",
+        )
+        assert window.cards["optical_power_meter"].visible_count.text() == "可见 1 台"
+        assert window.cards["optical_power_meter"].online_count.text() == "01"
+        assert "发现 2 台" in window.summary.text()
     finally:
         window.timer.stop()
         window.controller.close()

@@ -12,6 +12,7 @@ from tempfile import TemporaryDirectory
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from PySide6.QtCore import Qt  # noqa: E402
 from PySide6.QtGui import QFont  # noqa: E402
 from PySide6.QtTest import QTest  # noqa: E402
 from PySide6.QtWidgets import QApplication, QLineEdit  # noqa: E402
@@ -66,6 +67,7 @@ def main() -> None:
                     continue
                 fields.append(
                     {
+                        "kind": field.spec.kind,
                         "placeholder": field.input.placeholderText(),
                         "text": field.input.text(),
                         "font_px": field.input.font().pixelSize(),
@@ -86,11 +88,10 @@ def main() -> None:
                     "file": filename,
                     "model": model,
                     "state": state,
-                    "tab": page.tabs.tabText(page.tabs.currentIndex()),
-                    "advanced_numeric_fields": sum(
-                        f.spec.kind in {"number", "integer"}
-                        for f in page.tabs.currentWidget().findChildren(ParameterEditor)
-                    ),
+                    "page": type(page).__name__,
+                    "connected": window.controller.has_connected_session(page.device_id),
+                    "surface": "primary_controls",
+                    "numeric_fields": sum(f["kind"] in {"number", "integer"} for f in fields),
                     "platform": app.platformName(),
                     "device_pixel_ratio": ratio,
                     "window": window.size().toTuple(),
@@ -101,25 +102,12 @@ def main() -> None:
         try:
             for model in args.models:
                 key = runtime.add(ConnectionConfig(f"mock://typography/{model}", model, "mock"))
+                runtime.connect(key).result(5)
+                runtime.sessions.sessions[key].adapter.apply = writes.append
                 window.controller.poll()
                 window.navigate("设备管理", "signal_generator", key)
                 settle()
                 page = window.stack.currentWidget()
-                numeric_tabs = [
-                    i
-                    for i in range(page.tabs.count())
-                    if any(
-                        f.spec.kind in {"number", "integer"}
-                        for f in page.tabs.widget(i).findChildren(ParameterEditor)
-                    )
-                ]
-                advanced = next(
-                    (i for i in numeric_tabs if page.tabs.tabText(i) == "扫频"), next(iter(numeric_tabs), 0)
-                )
-                page.tabs.setCurrentIndex(advanced)
-                capture(model, "disconnected")
-                runtime.connect(key).result()
-                runtime.sessions.sessions[key].adapter.apply = writes.append
                 for _ in range(100):
                     window.controller.poll()
                     QTest.qWait(50)
@@ -131,6 +119,8 @@ def main() -> None:
                 capture(model, "readback")
                 field.input.setFocus()
                 field.input.selectAll()
+                QTest.keyClick(field.input, Qt.Key.Key_Backspace)
+                capture(model, "empty")
                 QTest.keyClicks(field.input, "2")
                 capture(model, "editing")
             assert not writes, writes

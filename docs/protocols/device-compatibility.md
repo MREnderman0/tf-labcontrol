@@ -55,7 +55,7 @@ success 表示本次传输/设备响应通过相应检查；无读回能力只�
 
 ## 采集与任务
 
-SessionManager.submit 返回 Future。start_acquisition 在同一 worker 上重复采集并导出批次，stop_acquisition 设置停止事件，当前 I/O 返回后停止。subscribe 接收连接、任务、结果、测量和错误事件。
+SessionManager.submit 返回 Future；已接纳操作的结果等待者不可取消，仍须让原 worker 完成操作和收尾，详见[采集与收尾契约](../architecture/live-acquisition.md#统一采集节奏与并行保存)。start_acquisition 在同一 worker 上重复采集并导出批次，stop_acquisition 设置停止事件，当前 I/O 返回后停止。subscribe 接收连接、任务、结果、测量和错误事件。
 
 有限任务由适配器声明 `recorded_run_kinds`，提供 `validate_recorded_run(request)` 和 `run_acquisition(request, stop)`；公共会话复用同一 worker、有界逐帧保存与收尾。`AcquisitionRequest.duration` 和 `sample_rate` 分别为秒与 samples/s，型号负责范围和结束条件，不能另传 count 或抽帧保存间隔。自然结束、主动停止和异常均释放任务；硬件停止失败报告未知状态，仍排空已提交数据，后台 CSV 不延长参数锁。未支持有限任务的适配器拒绝这些字段，旧请求保持原行为。
 

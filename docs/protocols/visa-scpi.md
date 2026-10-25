@@ -40,7 +40,7 @@ Transport 保留 open/close/write/read/query。字节传输额外提供 query_fi
 
 枚举 provider 与身份探测分离。COM/ASRL、同地址 VISA Socket/直接 TCP 可规范化；USB/LAN/GPIB 跨协议身份通过已核实别名或身份合并确认。打开探测资源前，在会话锁内原子获得资源租约；连接也检查探测门闩。
 
-活动设备只用身份缓存；显式刷新走原 worker。新资源可能指向活动设备时，登记并延后探测。候选先全部进入库存，避免慢设备阻止其他资源显示。provider 并行枚举，身份探测保守串行。详见[扫描与总览设计](../requirements/device-discovery-and-overview.md)。
+活动设备只用身份缓存；显式刷新走原 worker。新资源可能指向活动设备时，登记并延后探测。候选先全部进入库存，避免慢设备阻止其他资源显示。provider 并行枚举，真实资源的身份探测使用有界线程池（默认最多 4 个 worker），同时受资源、主机及未知别名租约约束，不能对同一资产重复打开；Mock 候选因共享模拟状态保持串行。详见[扫描与总览设计](../requirements/device-discovery-and-overview.md)。
 
 ## 超时和驱动边界
 

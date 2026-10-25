@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import runpy
 from dataclasses import replace
 from pathlib import Path
@@ -223,3 +224,16 @@ def test_duplicate_card_and_missing_maintenance_source(tmp_path):
         generator["render"]({first.adapter_id: first, other.adapter_id: other})
     with pytest.raises(ValueError, match="Missing model documentation source"):
         generator["render"]({first.adapter_id: replace(first, root=tmp_path)})
+
+
+def test_capability_inventory_does_not_invent_operation_ui_entries():
+    generator = runpy.run_path(str(ROOT / "scripts/generate_device_docs.py"))
+    rendered = generator["render"]()
+    matrix = json.loads(rendered[ROOT / "docs/generated/capability-matrix.json"])
+    models = {record["adapter_id"]: record for record in matrix["models"]}
+    assert models["gwinstek.gpd4303s"]["control_page"] == "实时监测 / 电源"
+    assert models["coremorrow.xmt"]["control_page"] == "设备管理 / 电源"
+    assert models["siglent.sdg2082x"]["control_page"] == "设备管理 / 信号源"
+    # A capability or label does not prove the GUI exposes a button for it.
+    assert all(not operation["ui_location"] for model in models.values() for operation in model["operations"])
+    assert "ui_location_note" in matrix

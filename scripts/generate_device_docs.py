@@ -1,6 +1,6 @@
 """Generate capability inventory and model implementation sections without opening hardware.
 
-Run with: uv run python scripts/generate_device_docs.py [--check]
+Run with the project Python: scripts/generate_device_docs.py [--check]
 All model notes and protocol metadata live in their packages.
 Commands and capabilities always come from the registry.
 """
@@ -15,9 +15,9 @@ import re
 from pathlib import Path
 
 from lab_control.application.config import ConnectionConfig
-from lab_control.application.controls import CATEGORY_LABELS, COMMON, MEASUREMENT_CATEGORIES, OPERATION_LABELS
+from lab_control.application.controls import CATEGORY_LABELS, MEASUREMENT_CATEGORIES, OPERATION_LABELS
 from lab_control.domain.instruments import jsonable
-from lab_control.instruments.registry import DEVICE_DEFINITIONS, PENDING, PROFILES, describe_definition
+from lab_control.instruments.registry import DEVICE_DEFINITIONS, PENDING, describe_definition
 
 ROOT = Path(__file__).resolve().parents[1]
 MODEL_CARD_MARKER = "<!-- Generated from an independent device package; edit its README.md. -->"
@@ -31,9 +31,6 @@ CATEGORY_FOLDERS = {
     "measurement-analyzers": "测量与分析仪",
     "temperature-load-drivers": "温控、负载与驱动",
 }
-
-# adapter, card, display name, connection, driver, model-specific acceptance boundary
-LEGACY_MODELS = []  # Compatibility name; model metadata is owned by catalog packages.
 
 
 def render(definitions=None) -> dict[Path, str]:
@@ -59,22 +56,16 @@ def render(definitions=None) -> dict[Path, str]:
                 raise ValueError(f"Missing model documentation source: {definition.root / relative}")
     rows = []
     files: dict[Path, str] = {}
-    fixtures = ROOT / "tests/fixtures/protocols"
     for adapter, card, title, connection, driver, note in models:
         config = ConnectionConfig("metadata://only", adapter)
-        definition = definitions.get(adapter)
-        profile = definition.profile if definition else PROFILES.get(adapter)
+        definition = definitions[adapter]
+        profile = definition.profile
         caps = describe_definition(definition, config)
-        page = (
-            ("实时监测" if caps.category in MEASUREMENT_CATEGORIES else "设备管理")
-            + " / "
-            + CATEGORY_LABELS[caps.category]
+        monitoring_page = caps.category in MEASUREMENT_CATEGORIES or (
+            caps.category == "power_supply" and not definition.management_surface
         )
-        fixture = (
-            definition.root / "tests/fixtures/control.json"
-            if definition
-            else fixtures / adapter / "control.json"
-        )
+        page = ("实时监测" if monitoring_page else "设备管理") + " / " + CATEGORY_LABELS[caps.category]
+        fixture = definition.root / "tests/fixtures/control.json"
         fixture_op = json.loads(fixture.read_text(encoding="utf-8"))["operation"] if fixture.exists() else ""
         record = {
             "adapter_id": adapter,
@@ -99,9 +90,9 @@ def render(definitions=None) -> dict[Path, str]:
                     "protocol_fixture_tested": cap.name == fixture_op,
                     "hardware_passed": False,
                     "ui_label": OPERATION_LABELS[cap.name],
-                    "ui_location": page
-                    + " / "
-                    + ("状态与诊断" if not cap.writable else "常用" if cap.name in COMMON else "高级"),
+                    # Protocol capabilities do not describe actual GUI controls.
+                    # Retain the legacy string field without inventing an entry.
+                    "ui_location": "",
                 }
             )
             if profile:
@@ -126,95 +117,41 @@ def render(definitions=None) -> dict[Path, str]:
                 f"| `{cap.name}` | {parameters} | {'通道' if cap.channel_scoped else '整机'} | {'读' if cap.readable else ''}{'/写' if cap.writable else ''} | {'需要' if cap.requires_confirmation else '无需'} | {state} |"
             )
         rows.append(record)
-        source = record["source"]
-        files[ROOT / f"docs/devices/{card}.md"] = f"""{LEGACY_CARD_MARKER}
+        card_path = ROOT / f"docs/devices/{card}.md"
+        readme = definition.root / "README.md"
+        body = readme.read_text(encoding="utf-8")
 
-# {title}
+        def rebase_link(match):
+            label, target = match.groups()
+            if "://" in target or target.startswith("#"):
+                return match.group(0)
+            resolved = readme.parent / target
+            relative = Path(os.path.relpath(resolved, card_path.parent)).as_posix()
+            return f"[{label}]({relative})"
 
-维护源：[旧型号文档元数据](../../../scripts/generate_device_docs.py)。本型号尚未迁入独立包，能力来自注册表；不要直接修改本页。
-
-## 1. 型号与可信度
-
-注册 ID：`{adapter}`。型号精确匹配；软件实现与具体资产的实测结果分别记录。附件简写和身份别名见本卡片说明。软件连接成功不等于验收通过。
-
-## 2. 电脑物理连接
-
-{connection}。接口和选件以设备背板、固件与现场盘点为准。
-
-## 3. Windows 前置条件
-
-{driver}。安装步骤见[实机测试指南](../../testing/hardware-testing.md)；DLL 放在厂商安装位置，通过绝对路径加载，不复制进源码。
-
-## 4. 资源与枚举
-
-连接模板见[config/examples](../../../config/examples/README.md)。VISA 使用扫描返回的完整资源；串口填写确认的 COM/波特率；Pico 使用 `PICO::序列号`；PM100D 使用 SDK 枚举的资源。扫描只枚举 SDK，不打开 SDK 仪器。
-
-## 5. 官方命令/API 依据
-
-[厂家资料]({source})；版本：{record["revision"]}。逐操作命令定位、参数和模板见[自动生成能力清单](../../generated/capability-matrix.json)。测试样本是按手册编写的夹具，尚非实机抓包。
-
-## 6. 当前统一能力
-
-逻辑类别 `{caps.category}`；通道 `{caps.channels}`。`None` 表示该侧未在通用参数层给出数值边界；适配器仍执行关联参数与通道校验。未列出的操作返回 `unsupported`。
-
-| 操作 | 参数 / 单位 / 范围 | 作用域 | 方向 | 额外确认 | 状态 |
-| --- | --- | --- | --- | --- | --- |
-{chr(10).join(operations)}
-
-## 7. 控制、读回与采集
-
-页面入口：**{page}**。参数由当前注册能力生成；常用、高级、状态与诊断分组。只读采集能力通过监测页的单次/开始操作使用；缺选件项显示原因且禁用。详细操作见[控制与监测指南](../../guides/control-and-monitoring.md)。
-
-采集路线：`{record["acquisition"] or "无测量输入；由外部测量仪器采集输出"}`。`apply` 返回成功、拒绝、部分执行或不确定；只有提供读回命令的操作才有硬件读回，不能将 SDK 已接收设置描述成测量值。`status` 显式读取，扫描和总览定时刷新不会额外采集。
-
-{note}
-
-## 8. 限制和故障处理
-
-单设备单 worker 串行执行。数值范围是软件保守边界，仍需核对负载、频率、探头和接线条件。输出/触发等动作要求明确确认；超时不重发、不自动回滚，先诊断再重连。断开软件连接不表示输出关闭。错误数据使用质量标记，不能以零值代替。
-
-## 9. Python 落点
-
-通过 `ApplicationRuntime` → `SessionManager.submit()` → 注册表 `{adapter}` 调用；SCPI 型号共用所属类别的实现和独立 `Profile`，不创建空壳同名类。源码见 [instruments](../../../src/lab_control/instruments/)；示例见 [examples](../../../examples/README.md)。
-
-## 10. Mock 与实机验收
-
-软件：身份精确匹配、参数越界、未知能力和控制夹具；SDK 使用函数替身验证参数/句柄/缓冲区。完整结果以 `pytest` 报告为准，不能从该表推断全部高级命令已逐项验证。
-
-现场按[统一验收步骤](../../testing/hardware-testing.md)记录完整身份、固件、驱动、资源、每个测试操作、请求、读回、原始错误、数据文件和恢复结果。按授权范围先只读，再控制/采集和恢复。`hardware_passed=false` 是保留的型号级兼容字段，不代表具体资产失败或尚未测试；逐项结论见运行目录摘要。
-"""
-        if definition:
-            card_path = ROOT / f"docs/devices/{card}.md"
-            readme = definition.root / "README.md"
-            body = readme.read_text(encoding="utf-8")
-
-            def rebase_link(match):
-                label, target = match.groups()
-                if "://" in target or target.startswith("#"):
-                    return match.group(0)
-                resolved = readme.parent / target
-                relative = Path(os.path.relpath(resolved, card_path.parent)).as_posix()
-                return f"[{label}]({relative})"
-
-            body = re.sub(r"\[([^\]]+)\]\(([^\s)]+)\)", rebase_link, body)
-            files[card_path] = (
-                MODEL_CARD_MARKER
-                + "\n\n维护源：[包内 README]("
-                + Path(os.path.relpath(readme, card_path.parent)).as_posix()
-                + ")。修改维护源后重新生成。\n\n"
-                + body.rstrip()
-                + "\n\n## 注册能力（自动生成）\n\n"
-                + "范围、单位及命令来自当前注册定义；资产级实测结果见运行目录。\n\n"
-                + "| 操作 | 参数 / 单位 / 范围 | 作用域 | 方向 | 额外确认 | 状态 |\n"
-                + "| --- | --- | --- | --- | --- | --- |\n"
-                + "\n".join(operations)
-                + "\n"
-            )
+        body = re.sub(r"\[([^\]]+)\]\(([^\s)]+)\)", rebase_link, body)
+        files[card_path] = (
+            MODEL_CARD_MARKER
+            + "\n\n维护源：[包内 README]("
+            + Path(os.path.relpath(readme, card_path.parent)).as_posix()
+            + ")。修改维护源后重新生成。\n\n"
+            + body.rstrip()
+            + "\n\n## 注册能力（自动生成）\n\n"
+            + "范围、单位及命令来自当前注册定义；资产级实测结果见运行目录。\n\n"
+            + "| 操作 | 参数 / 单位 / 范围 | 作用域 | 方向 | 额外确认 | 状态 |\n"
+            + "| --- | --- | --- | --- | --- | --- |\n"
+            + "\n".join(operations)
+            + "\n"
+        )
     matrix = {
         "schema_version": 1,
         "hardware_tested": False,
         "hardware_evidence_scope": "asset/interface/firmware/test-case records in runtime directory",
         "legacy_hardware_boolean_note": "Compatibility fields only; false is not an asset verdict.",
+        "ui_location_note": (
+            "control_page identifies the model page only. ui_location is a legacy empty field: "
+            "operation-level GUI entries are not inferred from protocol capabilities. See the current user guide."
+        ),
         "models": rows,
         "pending": PENDING,
     }
@@ -229,6 +166,8 @@ def render(definitions=None) -> dict[Path, str]:
         "软件测试分为通用参数约束、特定协议夹具、SDK 生命周期和应用集成；协议夹具通过不代表目标固件通过，也不代表所有高级组合已经验证。",
         "",
         "JSON 保留 hardware_tested/hardware_passed 兼容字段；固定 false 不代表现场设备失败或全部未测。资产证据见[离线台账说明](../testing/records.md)。",
+        "",
+        "JSON 的 control_page 表示型号所在页面，不保证每项底层能力都有 GUI 控件。ui_location 作为兼容字段保留空值；实际操作入口以[使用指南](../guides/control-and-monitoring.md)为准，不从协议能力推断常用、高级或诊断按钮。",
         "",
         "| 型号 | 注册 ID | 操作数 | 采集 | 详情 |",
         "| --- | --- | --- | --- | --- |",

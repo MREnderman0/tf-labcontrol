@@ -6,15 +6,15 @@
 
 ```powershell
 .venv-dev\Scripts\python.exe -m lab_control.instruments.devices.coremorrow_xmt.hardware.readonly `
-  --resource COM6 --asset-name COREMORROW-XMT-UNKNOWN-COM6
+  --resource '<选定 COM 端口>' --asset-name '<已有资产目录>'
 ```
 
 ```powershell
 .venv-dev\Scripts\python.exe -m lab_control.instruments.devices.coremorrow_xmt.hardware.validate_control `
-  --resource COM6 --asset-name COREMORROW-E00-C3-13-COM6
+  --resource '<选定 COM 端口>' --asset-name '<已有资产目录>'
 ```
 
-资产目录名建议使用不含空格的人工编号，例如 `COREMORROW-XMT-UNKNOWN-COM6`。真实地址、序列号和通信记录只写运行目录 `hardware-tests`。
+资产目录名使用现场核对后的人工编号，不从示例端口推定资产。真实地址、序列号和通信记录只写运行目录 `hardware-tests`。
 
 ## 标准波形测试
 

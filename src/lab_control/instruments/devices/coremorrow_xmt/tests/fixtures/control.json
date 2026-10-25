@@ -1,5 +1,5 @@
 {
-  "fixture_origin": "Observed CoreMorrow XMT read-only COM6 frame; the fixture exercises a readback-only apply path",
+  "fixture_origin": "Observed CoreMorrow XMT read-only frame from the selected on-site serial port; the fixture exercises a readback-only apply path",
   "adapter": "coremorrow.xmt",
   "identity_reply": "CoreMorrow,XMT-compatible controller (exact model pending),SER123,FW1",
   "identity_exchanges": [
@@ -17,5 +17,5 @@
   "operation": "power_config",
   "channel": 1,
   "parameters": {},
-  "evidence": "CoreMorrow Control Software 25.09.26; XMT_DLL_SER.h and COM6 read-only transcript"
+  "evidence": "CoreMorrow Control Software 25.09.26; XMT_DLL_SER.h and the selected on-site serial port read-only transcript"
 }

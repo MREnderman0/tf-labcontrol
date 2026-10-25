@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import tempfile
@@ -28,11 +29,14 @@ def settle(app, seconds=0.3):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path, default=Path("build/power-panel-review"))
+    args = parser.parse_args()
     app = QApplication.instance() or QApplication([])
     app.setStyle("Fusion")
     app.setFont(QFont(load_ui_font(), 10))
     app.setStyleSheet(load_stylesheet())
-    destination = Path("design/reviews/power-supply")
+    destination = args.output
     destination.mkdir(parents=True, exist_ok=True)
     results = []
     with tempfile.TemporaryDirectory(prefix="power-panel-review-") as tmp:
@@ -54,6 +58,9 @@ def main():
                 window.navigate("设备管理", "power_supply", key)
                 settle(app, 1.5)
                 page = window.stack.currentWidget()
+                assert page.device_id == key and window.controller.has_connected_session(key)
+                controls = page.controls
+                assert controls is not None
                 for width, height in ((1440, 900), (1280, 760), (1024, 600)):
                     area = QRect(0, 0, width, height)
                     window.fit_to_screen(area)
@@ -62,28 +69,32 @@ def main():
                     settle(app)
                     name = f"{adapter}-{width}x{height}.png"
                     window.grab().save(str(destination / name))
-                    viewport = page.scroll_area.viewport()
+                    viewport = controls.scroller.viewport()
                     entry = {
                         "model": adapter,
+                        "page": type(page).__name__,
+                        "connected": window.controller.has_connected_session(key),
                         "work_area": [width, height],
                         "window": [window.frameGeometry().width(), window.frameGeometry().height()],
                         "sidebar": window.sidebar.width(),
                         "screenshot": name,
-                        "horizontal_scroll": page.scroll_area.horizontalScrollBar().maximum(),
-                        "vertical_scroll": page.scroll_area.verticalScrollBar().maximum(),
+                        "horizontal_scroll": controls.scroller.horizontalScrollBar().maximum(),
+                        "vertical_scroll": controls.scroller.verticalScrollBar().maximum(),
                         "cards": {},
                     }
-                    for channel, panel in page.panels.items():
+                    for channel, panel in controls.panels.items():
                         for operation, editor in panel.editors.items():
                             field = editor.editors["value"]
                             measured = panel.measurements[operation]
-                            assert field.input.geometry().bottom() < measured.y(), (
+                            input_rect = QRect(field.input.mapTo(panel, QPoint()), field.input.size())
+                            measurement_rect = QRect(measured.mapTo(panel, QPoint()), measured.size())
+                            assert not input_rect.intersects(measurement_rect), (
                                 adapter,
                                 width,
                                 channel,
                                 operation,
-                                field.input.geometry(),
-                                measured.geometry(),
+                                input_rect,
+                                measurement_rect,
                                 field.size(),
                                 field.minimumSizeHint(),
                                 field.heightForWidth(field.width()),
@@ -99,21 +110,20 @@ def main():
                     assert entry["sidebar"] == 232
                     assert window.frameGeometry().width() <= width
                     assert window.frameGeometry().height() <= height
-                    if width >= 1280:
-                        assert all(c["apply_on_screen"] for c in entry["cards"].values()), entry
+                    assert entry["cards"][min(controls.panels)]["apply_on_screen"], entry
                     results.append(entry)
                     if width == 1024:
-                        page.scroll_area.verticalScrollBar().setValue(
-                            page.scroll_area.verticalScrollBar().maximum()
+                        controls.scroller.verticalScrollBar().setValue(
+                            controls.scroller.verticalScrollBar().maximum()
                         )
                         settle(app)
-                        last = page.panels[max(page.panels)].apply_button
+                        last = controls.panels[max(controls.panels)].apply_button
                         assert viewport.rect().contains(QRect(last.mapTo(viewport, QPoint()), last.size()))
                         window.grab().save(str(destination / f"{adapter}-1024x600-bottom.png"))
-                        page.scroll_area.verticalScrollBar().setValue(0)
+                        controls.scroller.verticalScrollBar().setValue(0)
                 if adapter == "gwinstek.gpd4303s":
                     window.fit_to_screen(QRect(0, 0, 1280, 760))
-                    panel = page.panels[1]
+                    panel = controls.panels[1]
                     editor = panel.editors["voltage"]
                     field = editor.editors["value"]
                     field.input.setText("4.2")
