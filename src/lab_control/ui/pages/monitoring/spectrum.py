@@ -210,7 +210,7 @@ class SpectrumMonitoringPage(QWidget):
                 self.controller.ensure_applicable(self.device_id)
                 # Passive reads: never INIT, change trigger mode, or start a physical sweep.
                 self.timing.commit()
-                service.start(
+                self.controller.start_monitoring(
                     self.device_id,
                     (self.source.request((1,)),),
                     **self.timing.options(),
@@ -224,7 +224,7 @@ class SpectrumMonitoringPage(QWidget):
         task = service.snapshots().get(self.device_id, {})
         try:
             self.timing.commit()
-            service.set_recording(self.device_id, not task.get("recording"), mode=self.mode)
+            self.controller.set_recording(self.device_id, not task.get("recording"), mode=self.mode)
             self.refresh()
         except Exception as exc:
             self.controller.message.emit(str(exc))

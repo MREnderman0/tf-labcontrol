@@ -209,10 +209,26 @@ class FileLease:
 class ProcessLease(FileLease):
     """Shared compatibility gate; exclusive by default for legacy/maintenance callers."""
 
-    def __init__(self, root: Path, *, shared: bool = False) -> None:
+    def __init__(self, root: Path, *, shared: bool = False, legacy_root: Path | None = None) -> None:
+        self._legacy: FileLease | None = None
         super().__init__(root / "hardware.lock", shared=shared, code="process_busy")
+        try:
+            if legacy_root is not None and legacy_root.resolve() != root.resolve():
+                legacy_path = legacy_root / "hardware.lock"
+                # AppData redirection can expose one physical file through two
+                # different resolved paths. Never lock that file twice ourselves.
+                if not legacy_path.exists() or not os.path.samefile(self.path, legacy_path):
+                    self._legacy = FileLease(legacy_path, shared=shared, code="process_busy")
+        except Exception:
+            super().close()
+            raise
         if not shared:
             self._clear_redirected_owner_metadata()
+
+    def close(self) -> None:
+        if self._legacy is not None:
+            self._legacy.close()
+        super().close()
 
     def _clear_redirected_owner_metadata(self) -> None:
         """Remove an advisory file left in another AppData view after a clean claim.

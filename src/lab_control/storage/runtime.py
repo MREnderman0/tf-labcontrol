@@ -63,3 +63,16 @@ def runtime_home() -> Path:
         if resolved.name == marker.name and resolved.parent.name == logical.name:
             return resolved.parent
     return logical
+
+
+def hardware_lock_home() -> Path:
+    """Per-user coordination root, independent of the configurable data root.
+
+    Maintenance PowerShell uses this same LocalAppData path. Resolve the
+    directory itself when present; inventory redirection must not select a
+    different lock every time the user changes LAB_CONTROL_HOME.
+    """
+    logical = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "TF-LabControl"
+    if logical.is_dir():
+        return physical_path(logical)
+    return logical.absolute()

@@ -35,9 +35,9 @@ def test_invalid_frame_is_neither_published_nor_recorded(tmp_path, raw):
         key = runtime.add(config)
         runtime.connect(key).result(timeout=2)
         service = runtime.monitoring
-        with service.lock:
-            service.start(key, (AcquisitionRequest("spectrum", quantity="phase_noise"),), once=True)
-            service.set_recording(key, True)
+        service.start(
+            key, (AcquisitionRequest("spectrum", quantity="phase_noise"),), once=True, recording=True
+        )
         deadline = time.monotonic() + 3
         while service.snapshots()[key]["running"] and time.monotonic() < deadline:
             time.sleep(0.01)

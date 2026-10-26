@@ -45,6 +45,7 @@ class WorkspaceController(QObject):
         self._frame_lock = threading.Lock()
         self._frame_devices: set[str] = set()
         self.recorded_frames: dict[str, dict[str, Any]] = {}
+        self._recording_result_cursor = 0
         self._frame_wakeup.connect(self._deliver_frames, Qt.ConnectionType.QueuedConnection)
         self._job_wakeup.connect(self._deliver_jobs, Qt.ConnectionType.QueuedConnection)
         self._unsubscribe_frames = runtime.monitoring.subscribe_frames(self._queue_frame)
@@ -120,6 +121,8 @@ class WorkspaceController(QObject):
                 if callback:
                     callback(value)
             except Exception as exc:
+                if isinstance(exc, DeviceError) and exc.code == "recording_cancelled":
+                    continue
                 if on_error:
                     on_error(exc)
                 self.message.emit(str(exc))
@@ -139,6 +142,12 @@ class WorkspaceController(QObject):
         completed = self._take_completed_jobs()
         self.refresh_snapshot()
         self._invoke_jobs(completed)
+        results = self.runtime.monitoring.recording_results_since(self._recording_result_cursor)
+        if results:
+            self._recording_result_cursor = results[-1]["id"]
+            failures = [f"记录未完整完成：{r['error']}\n目录：{r['folder']}" for r in results if r["error"]]
+            if failures:
+                self.message.emit("\n".join(failures))
         self.refreshed.emit()
         state = self.states.get(self.sync_device, {})
         signature = (
@@ -150,6 +159,16 @@ class WorkspaceController(QObject):
         if signature != self._sync_signature:
             self._sync_signature = signature
             self.settings_changed.emit(self.sync_device)
+
+    def start_monitoring(self, *args, **kwargs) -> None:
+        future = self.runtime.monitoring.start(*args, **kwargs, background=True)
+        if future is not None:
+            self.watch(future)
+
+    def set_recording(self, *args, **kwargs) -> None:
+        future = self.runtime.monitoring.set_recording(*args, **kwargs, background=True)
+        if future is not None:
+            self.watch(future)
 
     def focus_settings(self, device_id: str, advanced: tuple[tuple[int, str], ...] = ()) -> None:
         self.sync_device = device_id

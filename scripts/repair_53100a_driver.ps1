@@ -2,13 +2,16 @@
 param(
     [string]$InstanceId = '',
     [string]$DriverRoot = '',
-    [string]$OutputRoot = 'D:\TF-LabControl-runtime\TF-LabControl\hardware-tests\53100A-selected-usb',
+    [string]$OutputRoot = '',
     [string]$Batch = '',
     [switch]$CycleDevice,
     [switch]$Elevated
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'maintenance-common.ps1')
+if (-not $OutputRoot) { $OutputRoot = Join-Path (Get-LabRuntimeRoot) 'hardware-tests\53100A-selected-usb' }
+$maintenanceLease = $null
 $expected = @{
     'MD53100A.inf' = '2b3b4df27b8e76e7ca83d09b0902c2e927f22a352bf5e3492754c17a0daf125c'
     'MD53100A.cat' = 'bc242e13d77416260dc02530103882e5f0942ddc4dfa555dc3e87496092891d8'
@@ -71,7 +74,8 @@ try {
         $result.stages['elevation'] = @{ status = 'waiting'; reason = 'external Windows PowerShell UAC prompt' }
         Write-Result
         try {
-            $child = Start-Process -FilePath 'powershell.exe' -Verb RunAs -ArgumentList $args -WorkingDirectory (Split-Path -Parent $PSCommandPath) -Wait -PassThru -ErrorAction Stop
+            $windowsPowerShell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+            $child = Start-Process -FilePath $windowsPowerShell -Verb RunAs -ArgumentList (ConvertTo-LabProcessArguments $args) -WorkingDirectory (Split-Path -Parent $PSCommandPath) -Wait -PassThru -ErrorAction Stop
             exit $child.ExitCode
         } catch {
             $result.error = 'UAC 提权被取消或启动失败：' + $_.Exception.Message
@@ -81,6 +85,7 @@ try {
         }
     }
 
+    $maintenanceLease = Enter-LabMaintenanceLease
     $busy = @(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
         Where-Object { $_.Name -in @('TF-LabControl.exe', 'tserve64.exe', 'tserve.exe', 'TimeLab64.exe', 'TimeLab.exe') })
     if ($busy) { throw '检测到 TF-LabControl/TimeLab/TSERVE 正在运行，拒绝在占用中重绑驱动' }
@@ -133,6 +138,8 @@ try {
     try { (Snapshot | ConvertTo-Json -Depth 8) | Set-Content -LiteralPath (Join-Path $batch 'after-error.json') -Encoding UTF8 } catch {}
     Write-Result
     exit 1
+} finally {
+    Exit-LabMaintenanceLease $maintenanceLease
 }
 Write-Result
 exit 0

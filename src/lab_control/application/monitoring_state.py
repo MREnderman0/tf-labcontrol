@@ -47,6 +47,8 @@ class MonitorTask:
     record_interval: float | None = 0.05
     running: bool = True
     recording: bool = False
+    recording_preparation: Future[Any] | None = None
+    recording_cancelled: bool = False
     pending: Future[Any] | None = None
     pending_request: AcquisitionRequest | None = None
     request_revision: int = 0

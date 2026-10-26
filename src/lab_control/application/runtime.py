@@ -54,7 +54,9 @@ class ApplicationRuntime:
         # UI choices live for this launch. Scope/spectrum never restore a prior
         # launch's fastest cadence; all pages share the same per-device choices.
         self.monitoring_preferences: dict[str, dict[str, Any]] = {}
-        fixed_runtime_home = application_home()
+        from lab_control.storage.runtime import hardware_lock_home
+
+        fixed_runtime_home = hardware_lock_home() if hardware else None
         self.repository = Repository(
             root if hardware else (root or application_home()) / "simulation", simulation=not hardware
         )
@@ -73,7 +75,8 @@ class ApplicationRuntime:
                 # identity-probe error.  Keep the process gate exclusive so
                 # the second launch fails at the boundary with the holder
                 # details, before either process touches an instrument.
-                self.process_lease = ProcessLease(lock_root, shared=False)
+                assert lock_root is not None
+                self.process_lease = ProcessLease(lock_root, shared=False, legacy_root=application_home())
             self.visa = visa or VisaRuntime()
             self.leases = ResourceLeases(lock_root)
             from lab_control.application.catalog import instrument_category

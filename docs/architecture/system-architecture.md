@@ -33,7 +33,7 @@
 
 run.bat、Python 模块入口、lab-control 与安装版 EXE 统一调用 launcher.main；先分发 CSV worker、部署自检及 CLI，GUI 分支才进入 app.main 创建真实 ApplicationRuntime 和 RealWindow。内部测试和预览注入隔离 Mock ApplicationRuntime 并显示同一窗口；lab-control-cli 调用同一会话服务。配置文件只描述资源/适配器/驱动，不允许混入厂家命令。
 
-真实进程使用每用户固定位置的独占进程锁（即使更换 LAB_CONTROL_HOME 仍互斥），并在 Windows AppData 视图重定向时解析到库存文件的最终物理运行根目录，阻止本软件 GUI/CLI/Python 实测进程同时占用仪器。锁被占用时启动边界报告持有进程的 PID 和启动时间；这些信息写入临时的 `hardware.lock.owner.json`，正常退出时清理，操作系统锁本身仍是唯一的占用依据。不关闭其他厂商软件，其他程序占用会产生可解释错误。模拟 CLI 和单元测试不获取硬件进程锁，存储隔离在 simulation。
+真实进程使用每用户固定位置的独占进程锁（即使更换 LAB_CONTROL_HOME 仍互斥），固定为 `%LOCALAPPDATA%/TF-LabControl/hardware.lock`，并解析该锁目录的物理路径；库存路径重定向不改变锁根目录，阻止本软件 GUI/CLI/Python 实测进程同时占用仪器。兼容旧运行根目录时，Python 与 PowerShell 维护入口均按物理文件身份去重；同一锁的路径别名只加锁一次，不同文件继续分别加锁，失败时释放本次已取得的锁。锁被占用时启动边界报告持有进程的 PID 和启动时间；这些信息写入临时的 `hardware.lock.owner.json`，正常退出时清理，操作系统锁本身仍是唯一的占用依据。不关闭其他厂商软件，其他程序占用会产生可解释错误。模拟 CLI 和单元测试不获取硬件进程锁，存储隔离在 simulation。
 
 ## 数据流
 
@@ -57,7 +57,7 @@ run.bat、Python 模块入口、lab-control 与安装版 EXE 统一调用 launch
 
 每台仪器一个 ThreadPoolExecutor(max_workers=1)，完整操作串行。SessionOperations 和 RecordedAcquisitionRunner 在原 worker 内工作，不新建仪器线程。后台不操作 Qt 控件；ServiceBridge/WorkspaceController 传递 Future 结果。控制器每轮约 100 ms 统一读取快照，窗口 300 ms 更新只渲染缓存；显式刷新仍可请求新快照。MonitorScheduler 复用原监测线程和锁，只提交请求，不接触传输句柄；当前批读取完成后才执行排队参数，成功增加配置版本并继续。
 
-连续记录使用公共有界缓冲和独立二进制消费线程，满时明确暂停并排空。CsvConversionSupervisor 管理独立 CSV 子进程，全局最多两个；CSV 转换不占仪器 worker。应用保留在途记录与最后一批结果，避免退出时重新遍历全部已完成历史；RecordingOutcome 区分已接收、已提交、已转换和错误，记录失败不能返回假成功。边界和格式见[监测规则](live-acquisition.md)。
+连续记录使用公共有界缓冲和独立二进制消费线程，满时明确暂停并排空。CsvConversionSupervisor 管理独立 CSV 子进程，全局最多两个；CSV 转换不占仪器 worker。记录目录在有界后台准备队列创建，不持有公共监测锁。应用保留在途记录和最近 32 批结果摘要，并审计每批完成状态；上一批 CSV 延迟失败仍单独通知，避免退出时重新遍历全部已完成历史；RecordingOutcome 区分已接收、已提交、已转换和错误，记录失败不能返回假成功。边界和格式见[监测规则](live-acquisition.md)。
 
 退出先停止监测调度并等在途读取/记录完成，再关闭发现服务、等待设备 worker 完成并释放、关闭应用 VISA 管理器、SQLite 和进程锁。单台清理失败也继续其他清理。Pico 保留 buffer 到 SDK 停止并解除注册，Stop 失败仍尝试 CloseUnit。退出不发送输出关闭或恢复预设。
 

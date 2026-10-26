@@ -199,7 +199,7 @@ class OscilloscopeMonitoringPage(QWidget):
         try:
             self.controller.ensure_applicable(self.device_id)
             self.timing.commit()
-            self.controller.runtime.monitoring.start(
+            self.controller.start_monitoring(
                 self.device_id,
                 (self.source.request(self.controls.channels()),),
                 **self.timing.options(),
@@ -224,7 +224,7 @@ class OscilloscopeMonitoringPage(QWidget):
     def record(self) -> None:
         service = self.controller.runtime.monitoring
         try:
-            service.set_recording(
+            self.controller.set_recording(
                 self.device_id,
                 not service.snapshots().get(self.device_id, {}).get("recording"),
                 mode=self.mode,

@@ -105,14 +105,14 @@ class Repository:
     @property
     def data_root_base(self) -> Path:
         value = self.load_workspace("data_storage/root")
-        return Path(value).resolve() if value else (self.root / "data").resolve()
+        return Path(value).absolute() if value else (self.root / "data").absolute()
 
     @property
     def data_root(self) -> Path:
         value = self.load_workspace("data_storage/root")
         if value:
-            return (Path(value) / "simulation" if self.simulation else Path(value)).resolve()
-        return (self.root / "data").resolve()
+            return (Path(value) / "simulation" if self.simulation else Path(value)).absolute()
+        return (self.root / "data").absolute()
 
     def set_data_root(self, root: Path) -> Path:
         from lab_control.domain.instruments import ValidationError

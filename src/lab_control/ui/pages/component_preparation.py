@@ -72,6 +72,7 @@ class ComponentPreparationPanel(QWidget):
         self.disposed = False
         self.installing = False
         self.results: dict = {}
+        self.inspections: dict = {}
         self.signals = PreparationSignals(self)
         self.signals.progress.connect(self.update_item)
         self.signals.finished.connect(self.completed)
@@ -168,6 +169,7 @@ class ComponentPreparationPanel(QWidget):
         self.install_button.setEnabled(
             bool(c.get("installer_entry"))
             and self.results.get(key, {}).get("state") == "prepared"
+            and self.inspections.get(key, {}).get("state") != "ok"
             and not self.installing
             and not self.busy()
         )
@@ -199,6 +201,11 @@ class ComponentPreparationPanel(QWidget):
                 )
                 okay = {i["id"] for i in report.get("items", []) if i["state"] == "ok"}
                 closure = [c["id"] for c in component_closure(ids)]
+                for item in report.get("items", []):
+                    if item["id"] in closure:
+                        self.signals.progress.emit(
+                            {"id": item["id"], "inspection": item["state"], "reason": item.get("reason", "")}
+                        )
                 for key in okay.intersection(closure):
                     self.signals.progress.emit({"id": key, "state": "detected"})
                 needed = [key for key in closure if key not in okay]
@@ -218,7 +225,24 @@ class ComponentPreparationPanel(QWidget):
         if self.disposed:
             return
         key = result["id"]
-        self.results[key] = result
+        if "inspection" in result:
+            self.inspections[key] = {"state": result["inspection"], "reason": result.get("reason", "")}
+            text = {
+                "ok": "已检测到兼容组件，设备未验收",
+                "unknown": "安装状态待核实",
+                "missing": "未检测到组件",
+                "incompatible": "组件不兼容",
+                "error": "组件检查失败",
+                "not_required": "当前未需要",
+            }.get(result["inspection"], "安装状态待核实")
+            if self.results.get(key, {}).get("state") == "prepared":
+                text = "材料已准备 · " + text
+            if key in self.rows:
+                self.rows[key].setText(2, text)
+                self.rows[key].setToolTip(2, result.get("reason", text))
+            return
+        if result["state"] != "detected" or self.results.get(key, {}).get("state") != "prepared":
+            self.results[key] = result
         text = {
             "prepared": "材料已准备，未安装",
             "detected": "已检测到兼容组件，设备未验收",
@@ -239,9 +263,12 @@ class ComponentPreparationPanel(QWidget):
         self.prepare_button.setEnabled(not self.installing)
         self.cancel_button.setEnabled(False)
         self.status.setText(
-            "所选组件已处理；材料下载不表示已安装或设备已验收。"
-            if report.get("passed")
-            else "准备未完成，可查看各项结果并重试。" + report.get("error", "")
+            report.get("message")
+            or (
+                "所选组件已处理；材料下载不表示已安装或设备已验收。"
+                if report.get("passed")
+                else "准备未完成，可查看各项结果并重试。" + report.get("error", "")
+            )
         )
         self.show_details()
 
@@ -251,6 +278,9 @@ class ComponentPreparationPanel(QWidget):
             return
         c = self.catalog[key]
         if not c.get("installer_entry") or self.results.get(key, {}).get("state") != "prepared":
+            return
+        if self.inspections.get(key, {}).get("state") == "ok":
+            self.status.setText("已检测到兼容版本，跳过安装并避免降级。")
             return
         try:
             self.runtime.begin_maintenance()
@@ -320,15 +350,15 @@ class ComponentPreparationPanel(QWidget):
                         self.signals.progress.emit(
                             {
                                 "id": item["id"],
-                                "state": "detected" if item["state"] == "ok" else "blocked",
-                                "error": item["reason"],
+                                "inspection": item["state"],
+                                "reason": item["reason"],
                             }
                         )
                 self.signals.finished.emit(
-                    {"passed": all(i["state"] == "ok" for i in report.get("items", []) if i["id"] in ids)}
+                    {"message": "组件检查完成；材料状态已保留，待核实项不表示安装失败。请查看各项检查结果。"}
                 )
             except Exception as exc:
-                self.signals.finished.emit({"error": str(exc)})
+                self.signals.finished.emit({"message": "组件检查失败，已准备的材料保留：" + str(exc)})
 
         self.future = self.worker.submit(work)
 

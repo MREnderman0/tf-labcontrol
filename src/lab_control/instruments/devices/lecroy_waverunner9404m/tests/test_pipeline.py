@@ -80,9 +80,9 @@ def test_corrupt_cached_frame_not_displayed_or_saved_and_recording_unlocks(tmp_p
     with app:
         install_metadata_sinks(app, report)
         # Record from startup, ensuring both frames share the same stream context.
-        with app.monitoring.lock:
-            app.monitoring.start(key, (AcquisitionRequest("waveform"),), interval=0.05, record_interval=0.05)
-            app.monitoring.set_recording(key, True)
+        app.monitoring.start(
+            key, (AcquisitionRequest("waveform"),), interval=0.05, record_interval=0.05, recording=True
+        )
         deadline = time.monotonic() + 3
         task = app.monitoring.tasks[key]
         while task.running and time.monotonic() < deadline:

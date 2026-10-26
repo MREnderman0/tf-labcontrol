@@ -45,7 +45,7 @@ class BatchSaveContext:
     batch_id: str = field(default_factory=lambda: uuid4().hex[:12])
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "root", self.root.resolve())
+        object.__setattr__(self, "root", self.root.absolute())
         _validate_time(self.started_at)
 
     @property
@@ -72,7 +72,7 @@ class SaveContext:
     layout_version: int = 2
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "root", self.root.resolve())
+        object.__setattr__(self, "root", self.root.absolute())
         if self.mode not in WORKSPACE_MODES or self.kind not in {"single_frame", "continuous"}:
             raise ValidationError("Invalid save mode or type")
         if self.batch:

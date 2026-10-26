@@ -258,7 +258,7 @@ class MonitoringPage(QWidget):
                 self.channels(), self.points.value(), self.initiate.isChecked(), confirmed
             )
             self.timing.commit()
-            self.controller.runtime.monitoring.start(
+            self.controller.start_monitoring(
                 device_id,
                 (request,),
                 **self.timing.options(),
@@ -277,7 +277,7 @@ class MonitoringPage(QWidget):
             self.controller.ensure_applicable(device_id)
             current = self.controller.runtime.monitoring.snapshots().get(device_id, {})
             self.timing.commit()
-            self.controller.runtime.monitoring.set_recording(
+            self.controller.set_recording(
                 device_id, not current.get("recording", False), mode=self.controller.mode
             )
         except Exception as exc:

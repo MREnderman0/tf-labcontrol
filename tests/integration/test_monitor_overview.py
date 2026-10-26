@@ -2,6 +2,7 @@
 
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.runtime import ApplicationRuntime
+from lab_control.ui.pages.monitoring.timing import save_monitoring_interval
 from lab_control.ui.real_window import RealWindow
 
 
@@ -42,9 +43,12 @@ def test_monitor_overview_uses_connected_devices_and_slot_preferences(qtbot, tmp
         first_key = window.dashboard._slot_key(window.controller.records[first])
         assert runtime.repository.load_workspace("monitor_overview/all")[first_key]["enabled"] is False
 
+        # This verifies slot/UI state, not fastest-throughput backpressure. A
+        # zero-I/O Mock can otherwise fill its bounded buffer before Qt polls.
+        save_monitoring_interval(window.controller, second, "general", 0.5, cadence="interval")
         window.dashboard.toggle_sampling()
         assert not runtime.monitoring.snapshots().get(first, {}).get("running")
-        assert runtime.monitoring.snapshots()[second]["recording"]
+        qtbot.waitUntil(lambda: runtime.monitoring.snapshots()[second]["recording"])
         second_card.refresh()
         first_card.refresh()
         assert second_card.property("recordingPhase") == "recording"

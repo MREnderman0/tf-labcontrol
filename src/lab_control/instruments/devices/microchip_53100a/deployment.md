@@ -47,7 +47,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\repair_53100a_
     -InstanceId $id -CycleDevice
 ```
 
-`scripts/repair_53100a_driver.ps1` 逐项核对 INF/CAT/SYS 哈希和签名，检查 TimeLab/TSERVE 占用，执行 `pnputil /add-driver ... /install`，可只对该 InstanceId 做一次禁用/启用，然后重新读取 `ConfigManagerErrorCode`。结果、PnP 输出和 Code Integrity 事件保存在运行目录 `hardware-tests/53100A-selected-usb/<批次>-driver-repair`。Problem 39、45 或 `0xC0E90002` 必须保持失败并留证，不能用 PnPUtil 退出码 0 代替实际加载结果。
+`scripts/repair_53100a_driver.ps1` 在维护全程取得与源码 GUI、CLI 和 EXE 共用的硬件进程锁，逐项核对 INF/CAT/SYS 哈希和签名，并检查 TimeLab/TSERVE 占用；执行 `pnputil /add-driver ... /install`，可只对该 InstanceId 做一次禁用/启用，然后重新读取 `ConfigManagerErrorCode`。固定用户锁不随 `LAB_CONTROL_HOME` 变化；已有占用时退出并留档，不终止占用进程。结果、PnP 输出和 Code Integrity 事件默认保存在运行目录 `hardware-tests/53100A-selected-usb/<批次>-driver-repair`，可用 `-OutputRoot` 指定；运行目录遵循 `LAB_CONTROL_HOME`，否则使用 `%LOCALAPPDATA%\TF-LabControl`。提权支持中文及空格路径。Problem 39、45 或 `0xC0E90002` 必须保持失败并留证，不能用 PnPUtil 退出码 0 代替实际加载结果。
 
 脚本不会删除驱动、降级共享驱动、重启电脑、关闭 Secure Boot、修改 Code Integrity/WDAC 或自动信任证书。若精确设备仍为 Problem 39，应向厂家索取适用于当前 Windows 驱动策略的 WHCP/Attestation 版本；设备未枚举时记录待连接，不绑定其他 USB 设备。序列号和完整 InstanceId 只写运行批次，不写入源码或组件清单。
 

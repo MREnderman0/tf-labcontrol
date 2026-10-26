@@ -77,6 +77,7 @@ def test_recording_locks_parameters_and_auto_but_monitoring_keeps_them_editable(
     assert "参数已锁定" in page.controls.health.text()
     page.controls.auto_button.click()
     assert writes == [] and field.input.text() == "-17"
+    qtbot.waitUntil(lambda: runtime.monitoring.snapshots()[key]["recording"])
     page.record()
     qtbot.waitUntil(lambda: not runtime.sessions.snapshots()[0]["controlsLocked"])
     window.controller.poll()

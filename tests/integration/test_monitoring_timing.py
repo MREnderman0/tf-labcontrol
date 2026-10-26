@@ -79,7 +79,8 @@ def test_auto_transition_discards_frame_without_disconnect_or_save(tmp_path):
         before = runtime.monitoring.snapshots()[key]["sequence"]
         with runtime.monitoring.lock:
             runtime.sessions.set_control_group(key, False)
-            runtime.monitoring.set_recording(key, True)
+            preparation = runtime.monitoring.set_recording(key, True, background=True)
+        preparation.result(3)
         wait_for(lambda: runtime.monitoring.snapshots()[key]["sequence"] > before)
         runtime.monitoring.stop(key).result(3)
         assert session.state == "connected" and not session.last_error
