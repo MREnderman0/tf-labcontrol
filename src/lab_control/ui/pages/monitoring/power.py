@@ -241,7 +241,7 @@ class PowerMonitoringPage(QWidget):
             try:
                 self.controller.ensure_applicable(device)
                 self.timing.commit()
-                self.controller.runtime.monitoring.start(
+                self.controller.start_monitoring(
                     device,
                     (AcquisitionRequest("scalar", self.channels(), points=1),),
                     **self.timing.options(),
@@ -262,7 +262,7 @@ class PowerMonitoringPage(QWidget):
         task = service.snapshots().get(self.device_id, {})
         try:
             self.timing.commit()
-            service.set_recording(self.device_id, not task.get("recording"), mode=self.mode)
+            self.controller.set_recording(self.device_id, not task.get("recording"), mode=self.mode)
         except Exception as exc:
             self.controller.message.emit(str(exc))
         self.refresh()

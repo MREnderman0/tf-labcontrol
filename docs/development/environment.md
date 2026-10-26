@@ -79,4 +79,4 @@ PicoScope 6404E 使用 PicoSDK，53100A 使用 TSERVE；不能把厂商私有协
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\ensure_vc_runtime.ps1
 ```
 
-脚本记录在 `D:\TF-LabControl-runtime\TF-LabControl\maintenance\vc-runtime\results.json`，旧记录自动保存在同目录 `history`；UAC 取消、安装退出码和需重启状态均保留。脚本不删除运行库、不回退版本、不自动重启。此门禁用于避免重复运行旧厂商安装程序造成 VC++ 运行库降级。版本选择依据 [Microsoft 最新支持的 Visual C++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist)。
+脚本记录在运行目录的 `maintenance/vc-runtime/results.json`，运行目录遵循 `LAB_CONTROL_HOME`，未指定时为 `%LOCALAPPDATA%\TF-LabControl`；可用 `-OutputRoot` 指定记录位置。旧记录自动保存在同目录 `history`；UAC 取消、安装退出码和需重启状态均保留。已有兼容版本时无需本地安装包，也不请求提权；确需安装时在整个维护期间持有公共硬件进程锁。脚本不删除运行库、不回退版本、不自动重启。此门禁用于避免重复运行旧厂商安装程序造成 VC++ 运行库降级。版本选择依据 [Microsoft 最新支持的 Visual C++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist)。

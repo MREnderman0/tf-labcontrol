@@ -58,14 +58,41 @@ def test_selection_download_and_explicit_installer_click(qtbot, tmp_path, monkey
         panel.recheck_button.click()
         qtbot.waitUntil(panel.prepare_button.isEnabled)
         assert not rt.active
-        assert "失败" in panel.rows["msvc-runtime"].text(2)
-        assert "未完成" in panel.status.text()
+        assert "未检测到组件" in panel.rows["msvc-runtime"].text(2)
+        assert "检查完成" in panel.status.text()
         state["value"] = "ok"
         panel.prepare_button.click()
         qtbot.waitUntil(panel.prepare_button.isEnabled)
         assert "设备未验收" in panel.rows["msvc-runtime"].text(2)
         assert calls == [["msvc-runtime"]]  # Already detected compatible runtime is reused.
         assert not panel.install_button.isEnabled()
+        assert panel.results["msvc-runtime"]["state"] == "prepared"
+        state["value"] = "missing"
+        panel.prepare_button.click()
+        qtbot.waitUntil(panel.prepare_button.isEnabled)
+        assert panel.inspections["msvc-runtime"]["state"] == "missing"
+        assert panel.install_button.isEnabled()
+    finally:
+        panel.shutdown()
+
+
+def test_recheck_unknown_preserves_prepared_materials_without_claiming_failure(qtbot, tmp_path):
+    panel = ui.ComponentPreparationPanel(
+        runtime(tmp_path),
+        inspector=lambda *a, **k: {
+            "items": [{"id": "rs-visa", "state": "unknown", "reason": "candidate found; version unverified"}]
+        },
+    )
+    qtbot.addWidget(panel)
+    try:
+        panel.rows["rs-visa"].setCheckState(0, Qt.CheckState.Checked)
+        panel.update_item({"id": "rs-visa", "state": "prepared", "path": "fixture"})
+        panel.recheck()
+        qtbot.waitUntil(panel.prepare_button.isEnabled)
+        assert panel.results["rs-visa"]["state"] == "prepared"
+        assert panel.results["rs-visa"]["path"] == "fixture"
+        assert "待核实" in panel.rows["rs-visa"].text(2)
+        assert "准备失败" not in panel.rows["rs-visa"].text(2)
     finally:
         panel.shutdown()
 

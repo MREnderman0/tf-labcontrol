@@ -61,11 +61,14 @@ def test_startup_and_mixed_device_monitoring_record_in_general_workspace(qtbot, 
             request = source.request(
                 (1,), points=32, initiate=category == "optical_spectrometer", confirmed=True
             )
-            with runtime.monitoring.lock:
-                runtime.monitoring.start(
-                    record["id"], (request,), interval=0.5, cadence="interval", record_interval=None
-                )
-                runtime.monitoring.set_recording(record["id"], True)
+            runtime.monitoring.start(
+                record["id"],
+                (request,),
+                interval=0.5,
+                cadence="interval",
+                record_interval=None,
+                recording=True,
+            )
         qtbot.waitUntil(
             lambda: all(runtime.monitoring.tasks[r["id"]].sequence >= 2 for r in selected.values()),
             timeout=12000,

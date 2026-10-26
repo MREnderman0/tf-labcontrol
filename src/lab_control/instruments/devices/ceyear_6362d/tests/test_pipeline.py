@@ -40,11 +40,9 @@ def test_invalid_6362d_frame_never_displays_or_records(tmp_path, bad):
         key = connect(runtime, wire)
         report = {}
         install_metadata_sinks(runtime, report)
-        with runtime.monitoring.lock:
-            runtime.monitoring.start(
-                key, (AcquisitionRequest("spectrum"),), mode="optical", record_interval=None
-            )
-            runtime.monitoring.set_recording(key, True)
+        runtime.monitoring.start(
+            key, (AcquisitionRequest("spectrum"),), mode="optical", record_interval=None, recording=True
+        )
         wait_for(lambda: not runtime.monitoring.tasks[key].running)
         runtime.monitoring.stop(key).result(3)
         assert runtime.monitoring.latest(key, "spectrum") is None
@@ -68,15 +66,14 @@ def test_configuration_change_discard_and_slow_frames_record_without_backlog(tmp
         wire.values[":TRACE:DATA:Y? TRA"] = payload
         report = {}
         install_metadata_sinks(runtime, report)
-        with runtime.monitoring.lock:
-            runtime.monitoring.start(
-                key,
-                (AcquisitionRequest("spectrum"),),
-                mode="optical",
-                cadence="fastest",
-                record_interval=None,
-            )
-            runtime.monitoring.set_recording(key, True)
+        runtime.monitoring.start(
+            key,
+            (AcquisitionRequest("spectrum"),),
+            mode="optical",
+            cadence="fastest",
+            record_interval=None,
+            recording=True,
+        )
         wait_for(lambda: runtime.monitoring.tasks[key].sequence >= 4)
         runtime.monitoring.stop(key).result(3)
         task = runtime.monitoring.tasks[key]

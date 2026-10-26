@@ -8,6 +8,8 @@ from PySide6.QtWidgets import QToolButton, QWidget
 
 
 def recording_phase(task: dict[str, Any]) -> str:
+    if task.get("recording_preparing"):
+        return "preparing"
     if task.get("recording"):
         return "recording"
     recorder = task.get("recording_state", {})
@@ -15,7 +17,14 @@ def recording_phase(task: dict[str, Any]) -> str:
 
 
 def recording_save_notice(task: dict[str, Any]) -> str:
+    if task.get("recording_preparing"):
+        return "正在准备记录目录；准备完成后开始逐帧保存"
     state = task.get("recording_state", {})
+    failures = task.get("recording_failures", ())
+    previous = [f for f in failures if str(f.get("folder")) != str(state.get("folder"))]
+    if previous:
+        failure = previous[-1]
+        return f"此前批次保存未完整完成：{failure['error']}\n目录：{failure['folder']}"
     if not state:
         return ""
     if state.get("error"):
@@ -49,6 +58,7 @@ def update_recording_frame(frame: QWidget, task: dict[str, Any]) -> None:
     _property(frame, "recordingFrame", True)
     _property(frame, "recordingPhase", phase)
     hint = {
+        "preparing": "本设备正在准备记录目录；尚未开始保存采集帧。",
         "recording": "本设备正在记录；保存范围以当前记录任务为准。",
         "draining": "本设备正在收尾：等待已接收数据写入二进制记录。",
         "idle": "",
@@ -90,16 +100,20 @@ class RecordingButton(QToolButton):
     def refresh(self, task: dict[str, Any], *, connected: bool, busy: bool, locked: bool) -> None:
         phase = recording_phase(task)
         _property(self, "recordingPhase", phase)
-        text = {"idle": "开始记录", "recording": "停止记录", "draining": "收尾中…"}[phase]
+        text = {"idle": "开始记录", "preparing": "准备中…", "recording": "停止记录", "draining": "收尾中…"}[
+            phase
+        ]
         self.setText(text)
         self.setAccessibleName(text)
         self.setIcon(self.icons[phase != "idle"])
         self.setEnabled(
-            bool(connected and task.get("running") and not busy and phase != "draining")
+            bool(connected and task.get("running") and not busy and phase not in {"draining", "preparing"})
             and (phase == "recording" or not locked)
         )
         self.setToolTip(
-            "等待二进制记录收尾；完成后可再次记录，CSV 转换在后台继续。"
+            "正在准备保存目录；停止监测可取消本次记录准备。"
+            if phase == "preparing"
+            else "等待二进制记录收尾；完成后可再次记录，CSV 转换在后台继续。"
             if phase == "draining"
             else "停止记录并继续监测"
             if phase == "recording"

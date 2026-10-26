@@ -1,11 +1,14 @@
 ﻿[CmdletBinding()]
 param(
     [string]$InstallerPath = '',
-    [string]$OutputRoot = 'D:\TF-LabControl-runtime\TF-LabControl\maintenance\vc-runtime',
+    [string]$OutputRoot = '',
     [switch]$Elevated
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'maintenance-common.ps1')
+if (-not $OutputRoot) { $OutputRoot = Join-Path (Get-LabRuntimeRoot) 'maintenance\vc-runtime' }
+$maintenanceLease = $null
 
 function Get-VersionValue {
     param([AllowNull()][object]$Value)
@@ -75,6 +78,16 @@ try {
     if ($null -eq $required) { throw "Invalid required VC++ version: $($component.version)" }
     $record.required_version = $component.version
 
+    $record.before = Get-InstalledVcRuntime
+    if ($record.before.Installed -eq 1 -and $record.before.ParsedVersion -and $record.before.ParsedVersion -ge $required) {
+        $record.action = 'skipped'
+        $record.downgrade_prevented = $true
+        $record.reason = "Installed VC++ $($record.before.Version) is at least $($component.version); installer was not run"
+        $record.after = $record.before
+        Save-Record $record
+        exit 0
+    }
+
     if (-not $InstallerPath) {
         $InstallerPath = @(
             (Join-Path $env:LOCALAPPDATA ('TF-LabControl\maintenance\packages\' + $component.filename)),
@@ -86,16 +99,6 @@ try {
     }
     $InstallerPath = (Resolve-Path -LiteralPath $InstallerPath -ErrorAction Stop).Path
     $record.installer = $InstallerPath
-    $record.before = Get-InstalledVcRuntime
-
-    if ($record.before.Installed -eq 1 -and $record.before.ParsedVersion -and $record.before.ParsedVersion -ge $required) {
-        $record.action = 'skipped'
-        $record.downgrade_prevented = $true
-        $record.reason = "Installed VC++ $($record.before.Version) is at least $($component.version); installer was not run"
-        $record.after = $record.before
-        Save-Record $record
-        exit 0
-    }
 
     if (-not $Elevated -and -not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
         $record.action = 'elevation_waiting'
@@ -103,7 +106,7 @@ try {
         $args = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $PSCommandPath, '-InstallerPath', $InstallerPath, '-OutputRoot', $OutputRoot, '-Elevated')
         try {
             $windowsPowerShell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
-            $child = Start-Process -FilePath $windowsPowerShell -Verb RunAs -ArgumentList $args -WorkingDirectory $root -Wait -PassThru -ErrorAction Stop
+            $child = Start-Process -FilePath $windowsPowerShell -Verb RunAs -ArgumentList (ConvertTo-LabProcessArguments $args) -WorkingDirectory $root -Wait -PassThru -ErrorAction Stop
             exit $child.ExitCode
         } catch {
             $record.action = 'blocked'
@@ -113,6 +116,7 @@ try {
         }
     }
 
+    $maintenanceLease = Enter-LabMaintenanceLease
     $hash = (Get-FileHash -LiteralPath $InstallerPath -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($hash -ne ([string]$component.sha256).ToLowerInvariant()) { throw 'VC++ installer SHA256 does not match deployment/components.json' }
     $signature = Get-AuthenticodeSignature -LiteralPath $InstallerPath
@@ -139,4 +143,6 @@ try {
     try { $record.after = Get-InstalledVcRuntime } catch {}
     Save-Record $record
     exit 1
+} finally {
+    Exit-LabMaintenanceLease $maintenanceLease
 }

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import threading
 import time
+from collections import deque
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import replace
 from typing import Any, Callable
@@ -64,6 +65,9 @@ class MonitoringService:
         self.save_seconds: dict[str, float] = {}
         self.save_report_at: dict[str, float] = {}
         self.recordings: list[Recording] = []
+        self.recording_results: deque[dict[str, Any]] = deque(maxlen=32)
+        self._recording_result_id = 0
+        self.preparer = ThreadPoolExecutor(max_workers=2, thread_name_prefix="record-prepare")
         self.frame_listeners: list[Callable[[str], None]] = []
         self.wake = threading.Event()
         self.closing = False
@@ -127,7 +131,9 @@ class MonitoringService:
         cadence: str | None = None,
         csv_interval: float = 5,
         recording: bool = False,
-    ) -> None:
+        background: bool = False,
+    ) -> Future[Any] | None:
+        preparation = None
         if not requests or not 0.05 <= interval <= 60 or mode not in WORKSPACE_MODES:
             raise ValidationError("Choose data sources, a 0.05..60 s interval and a valid mode")
         self.validate_intervals(interval, record_interval)
@@ -143,7 +149,12 @@ class MonitoringService:
             if (
                 task
                 and not task.running
-                and (task.pending or task.write_pending or (task.recorder and not task.recorder.binary_done))
+                and (
+                    task.pending
+                    or task.write_pending
+                    or task.recording_preparation
+                    or (task.recorder and not task.recorder.binary_done)
+                )
             ):
                 raise DeviceError("Wait until the current monitoring batch has stopped", "task_busy")
             if task and task.running and task.mode != mode:
@@ -166,11 +177,30 @@ class MonitoringService:
                 task.record_interval = record_interval
                 task.cadence = cadence or "interval"
                 task.csv_interval = csv_interval
+                revision = task.request_revision
+
+                def restore_task() -> None:
+                    # A later user edit owns its new request revision.
+                    if task.request_revision == revision:
+                        (
+                            task.requests,
+                            task.request_revision,
+                            task.interval,
+                            task.record_interval,
+                            task.cadence,
+                            task.csv_interval,
+                            task.recording,
+                        ) = previous
+
                 try:
                     if recording and not task.recording:
-                        self._begin_recording_locked(device_id, task, mode=mode)
+                        preparation = self._begin_recording_locked(
+                            device_id, task, mode=mode, on_failure=restore_task
+                        )
                     else:
-                        self.sessions.set_monitoring(device_id, True, bool(task.recording))
+                        self.sessions.set_monitoring(
+                            device_id, True, bool(task.recording or task.recording_preparation)
+                        )
                 except Exception:
                     (
                         task.requests,
@@ -196,7 +226,9 @@ class MonitoringService:
                 self.tasks[device_id] = candidate
                 try:
                     if recording:
-                        self._begin_recording_locked(device_id, candidate, mode=mode)
+                        preparation = self._begin_recording_locked(
+                            device_id, candidate, mode=mode, new_task=True
+                        )
                     else:
                         self.sessions.set_monitoring(device_id, True, False)
                 except Exception:
@@ -205,6 +237,9 @@ class MonitoringService:
                     raise
             self.audit.try_record("monitor_started", device_id=device_id, requests=merged, mode=mode)
         self.wake.set()
+        if preparation is not None and not background:
+            preparation.result()
+        return preparation
 
     def replace_requests(self, device_id: str, requests: tuple[AcquisitionRequest, ...]) -> None:
         """Replace a running task's acquisition set without stopping monitoring.
@@ -236,10 +271,22 @@ class MonitoringService:
             )
         self.wake.set()
 
-    def _begin_recording_locked(self, device_id: str, task: MonitorTask, *, mode: str | None = None) -> None:
-        """Create a recorder while holding ``self.lock`` before any frame is scheduled."""
+    def _begin_recording_locked(
+        self,
+        device_id: str,
+        task: MonitorTask,
+        *,
+        mode: str | None = None,
+        new_task: bool = False,
+        on_failure: Callable[[], None] | None = None,
+    ) -> Future[Any] | None:
+        """Reserve a bounded preparation job; filesystem work never holds the monitor lock."""
         if task.recording:
-            return
+            return None
+        if task.recording_preparation is not None:
+            return task.recording_preparation
+        # At most one job per active device, including queued jobs; repeated
+        # clicks reuse its Future. The executor limits concurrent filesystem I/O.
         if task.recorder and not task.recorder.binary_done:
             raise DeviceError("Wait for the previous recording to drain", "task_busy")
         next_mode = mode or task.mode
@@ -253,31 +300,111 @@ class MonitoringService:
         self.sessions.set_monitoring(device_id, True, True)
         try:
             context = self.repository.new_save_context(next_mode, "continuous", device_id=device_id)
-            recorder = self.repository.create_recording(
-                next_mode,
-                context=context,
-                csv_interval=task.csv_interval,
-                wake=self.wake.set,
-            )
         except Exception:
-            try:
-                self.sessions.set_monitoring(device_id, True, previous_lock)
-            except DeviceError:
-                # A preparation failure may also invalidate the session. Restore the
-                # reservation directly so the original filesystem error is preserved.
-                with self.sessions.lock:
-                    session = self.sessions.sessions.get(device_id)
-                    if session is not None:
-                        session.recording = previous_lock
+            self._restore_recording_lock(device_id, previous_lock)
             raise
-        task.mode = next_mode
-        task.acquisition_context_id = uuid4().hex
-        task.recorder = recorder
+        result: Future[Any] = Future()
+        result.set_running_or_notify_cancel()
+        task.recording_preparation = result
+        task.recording_cancelled = False
+        task.recording_notice = "正在准备记录目录…"
+        csv_interval = task.csv_interval
+
+        def require_active() -> None:
+            session = self.sessions.sessions.get(device_id)
+            if (
+                self.closing
+                or not task.running
+                or task.recording_cancelled
+                or self.tasks.get(device_id) is not task
+                or session is None
+                or session.closing
+                or session.state not in {"connected", "busy"}
+            ):
+                raise DeviceError("记录准备已取消；未开始采集记录", "recording_cancelled")
+
+        def prepare() -> None:
+            recorder = None
+            error = None
+            try:
+                with self.lock:
+                    require_active()
+                recorder = self.repository.create_recording(
+                    next_mode, context=context, csv_interval=csv_interval, wake=self.wake.set
+                )
+                with self.lock:
+                    require_active()
+                    task.mode = next_mode
+                    task.acquisition_context_id = uuid4().hex
+                    task.recorder = recorder
+                    self._track_recording(device_id, recorder)
+                    task.recording_notice = ""
+                    task.record_session = context.started_utc
+                    task.last_record_at = task.next_record_at = 0
+                    task.recording = True
+            except Exception as exc:
+                error = exc
+                if recorder is not None:
+                    # Cancellation may arrive during filesystem work. Drain the
+                    # empty recorder outside the monitor lock before releasing guards.
+                    self._track_recording(device_id, recorder)
+                    try:
+                        recorder.finish().result()
+                    except Exception as cleanup_error:
+                        exc.add_note(f"Recording cleanup failed: {cleanup_error}")
+                with self.lock:
+                    if new_task:
+                        task.running = False
+                    if on_failure is not None:
+                        on_failure()
+                    task.recording_notice = str(exc)
+                    self._restore_recording_lock(device_id, previous_lock)
+            finally:
+                with self.lock:
+                    task.recording_preparation = None
+                if error is None:
+                    result.set_result(None)
+                else:
+                    result.set_exception(error)
+                self.wake.set()
+
+        try:
+            self.preparer.submit(prepare)
+        except Exception:
+            task.recording_preparation = None
+            self._restore_recording_lock(device_id, previous_lock)
+            raise
+        return result
+
+    def _restore_recording_lock(self, device_id: str, previous: bool) -> None:
+        with self.sessions.lock:
+            session = self.sessions.sessions.get(device_id)
+            if session is not None:
+                session.recording = previous
+
+    def _track_recording(self, device_id: str, recorder: Recording) -> None:
         retain_recording(self.recordings, recorder, self.lock)
-        task.recording_notice = ""
-        task.record_session = context.started_utc
-        task.last_record_at = task.next_record_at = 0
-        task.recording = True
+        recorder.finished.add_done_callback(lambda _future: self._recording_completed(device_id, recorder))
+
+    def _recording_completed(self, device_id: str, recorder: Recording) -> None:
+        state = recorder.snapshot()
+        error = state.get("error") or state.get("csv_error") or ""
+        with self.lock:
+            self._recording_result_id += 1
+            result = {
+                "id": self._recording_result_id,
+                "device_id": device_id,
+                "folder": str(recorder.folder),
+                "error": error,
+                "committed": state.get("committed", 0),
+            }
+            self.recording_results.append(result)
+        self.audit.try_record("recording_completed", **result)
+        self.wake.set()
+
+    def recording_results_since(self, cursor: int) -> tuple[dict[str, Any], ...]:
+        with self.lock:
+            return tuple(dict(r) for r in self.recording_results if r["id"] > cursor)
 
     @staticmethod
     def validate_intervals(interval: float, record_interval: float | None) -> None:
@@ -371,6 +498,7 @@ class MonitoringService:
                 return task.stop_future
             task.running = False
             task.recording = False
+            task.recording_cancelled = True
             if not task.configuration_wait_expired:
                 task.configuration_wait_deadline, task.notice = 0, ""
             task.stop_future = result
@@ -387,8 +515,13 @@ class MonitoringService:
         self.wake.set()
         return result
 
-    def set_recording(self, device_id: str, enabled: bool, *, mode: str | None = None) -> None:
+    def set_recording(
+        self, device_id: str, enabled: bool, *, mode: str | None = None, background: bool = False
+    ) -> Future[Any] | None:
+        preparation = None
         with self.lock:
+            if self.closing:
+                raise DeviceError("Monitoring is closing")
             if enabled and device_id in self.capture_saves and self.capture_saves[device_id].display_request:
                 raise DeviceError("请等待完整波形读取完成", "task_busy")
             task = self.tasks.get(device_id)
@@ -403,14 +536,16 @@ class MonitoringService:
                     raise DeviceError("Wait for the previous recording to finish", "task_busy")
             if enabled:
                 if not task.recording:
-                    self._begin_recording_locked(device_id, task, mode=mode)
+                    preparation = self._begin_recording_locked(device_id, task, mode=mode)
             else:
                 task.recording = False
+                task.recording_cancelled = True
                 self.sessions.set_monitoring(
                     device_id,
                     True,
                     bool(
-                        task.pending_record_session
+                        task.recording_preparation
+                        or task.pending_record_session
                         or task.write_pending
                         or (task.recorder and not task.recorder.binary_done)
                     ),
@@ -423,6 +558,9 @@ class MonitoringService:
                 record_session=task.record_session,
             )
         self.wake.set()
+        if preparation is not None and not background:
+            preparation.result()
+        return preparation
 
     def latest(self, device_id: str, kind: str, quantity: str = "", channel: int = 1) -> MonitorFrame | None:
         with self.lock:
@@ -465,7 +603,8 @@ class MonitoringService:
                 device_id: {
                     "running": task.running,
                     "recording": task.recording,
-                    "pending": bool(task.pending or task.write_pending),
+                    "recording_preparing": task.recording_preparation is not None,
+                    "pending": bool(task.pending or task.write_pending or task.recording_preparation),
                     "error": task.error,
                     "sequence": task.sequence,
                     "monitoring_context_id": task.monitoring_context_id,
@@ -483,6 +622,9 @@ class MonitoringService:
                     "save_seconds": self.save_seconds.get(device_id),
                     "recording_state": task.recorder.snapshot() if task.recorder else {},
                     "recording_notice": task.recording_notice,
+                    "recording_failures": tuple(
+                        dict(r) for r in self.recording_results if r["device_id"] == device_id and r["error"]
+                    ),
                     "display_seconds": task.display_seconds,
                     "scheduler_seconds": task.scheduler_seconds,
                 }
@@ -541,7 +683,12 @@ class MonitoringService:
                 task.running = False
                 task.recording = False
         self.wake.set()
-        for cleanup in (self.thread.join, self.unsubscribe, lambda: self.writer.shutdown(wait=True)):
+        for cleanup in (
+            lambda: self.preparer.shutdown(wait=True),
+            self.thread.join,
+            self.unsubscribe,
+            lambda: self.writer.shutdown(wait=True),
+        ):
             try:
                 cleanup()
             except Exception as exc:

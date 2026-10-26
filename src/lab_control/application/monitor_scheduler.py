@@ -192,6 +192,7 @@ class MonitorScheduler:
                         True,
                         bool(
                             task.recording
+                            or task.recording_preparation
                             or task.pending_record_session
                             or task.write_pending
                             or (task.recorder and not task.recorder.binary_done)
@@ -201,6 +202,7 @@ class MonitorScheduler:
                     continue
                 if (
                     not state
+                    or task.recording_preparation is not None
                     or task.pending
                     or state["pending"]
                     or time.monotonic() < task.next_at
@@ -260,6 +262,7 @@ class MonitorScheduler:
                     not task.running
                     and not task.pending
                     and not task.write_pending
+                    and task.recording_preparation is None
                     and (not task.recorder or task.recorder.binary_done)
                     and device_id not in owner.capture_saves
                 ):
@@ -287,7 +290,10 @@ class MonitorScheduler:
                 if (
                     owner.closing
                     and not owner.capture_saves
-                    and all(not t.pending and not t.write_pending for t in owner.tasks.values())
+                    and all(
+                        not t.pending and not t.write_pending and t.recording_preparation is None
+                        for t in owner.tasks.values()
+                    )
                 ):
                     break
                 deadlines = [

@@ -265,6 +265,7 @@ def test_monitor_edit_and_record_drain_lock(scope, qtbot, monkeypatch):
     window.controller.poll()
     assert not page.controls.sliders[1, "scale"].isEnabled()
     assert not page.controls.checks[1].isEnabled() and not page.controls.gear.isEnabled()
+    qtbot.waitUntil(lambda: runtime.monitoring.snapshots()[key]["recording"])
     page.record()
     qtbot.waitUntil(lambda: not runtime.sessions.snapshots()[0]["controlsLocked"])
     window.controller.poll()

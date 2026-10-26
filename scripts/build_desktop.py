@@ -180,7 +180,12 @@ def main() -> int:
     maintenance = target / "maintenance"
     maintenance.mkdir(parents=True, exist_ok=True)
     shutil.copy2(ROOT / "deployment/components.json", maintenance / "components.json")
-    for name in ("repair_53100a_driver.ps1", "ensure_vc_runtime.ps1", "launch-kplusk-config.ps1"):
+    for name in (
+        "maintenance-common.ps1",
+        "repair_53100a_driver.ps1",
+        "ensure_vc_runtime.ps1",
+        "launch-kplusk-config.ps1",
+    ):
         shutil.copy2(ROOT / "scripts" / name, maintenance / name)
     print(
         json.dumps(

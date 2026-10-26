@@ -601,7 +601,7 @@ class OpticalPowerMonitoringPage(QWidget):
                 raise DeviceError("此设备不支持光学监测", "unsupported")
             self.timing.commit()
             options = self.timing.options()
-            self.controller.runtime.monitoring.start(
+            self.controller.start_monitoring(
                 self.device_id,
                 (AcquisitionRequest(kind="scalar", channels=self.channels(), points=1, quantity="power"),),
                 **options,
@@ -624,7 +624,7 @@ class OpticalPowerMonitoringPage(QWidget):
         service = self.controller.runtime.monitoring
         try:
             task = service.snapshots().get(self.device_id, {})
-            service.set_recording(self.device_id, not task.get("recording"), mode=self.mode)
+            self.controller.set_recording(self.device_id, not task.get("recording"), mode=self.mode)
             self.refresh()
         except Exception as exc:
             self.controller.message.emit(str(exc))

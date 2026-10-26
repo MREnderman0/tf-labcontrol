@@ -186,11 +186,9 @@ def test_stream_saves_next_fresh_frame_when_writer_finishes_during_read(tmp_path
 
         adapter.acquire = acquire
         intercept_recording(runtime, export)
-        with runtime.monitoring.lock:
-            runtime.monitoring.start(
-                key, (AcquisitionRequest("spectrum"),), interval=0.05, record_interval=0.05
-            )
-            runtime.monitoring.set_recording(key, True)
+        runtime.monitoring.start(
+            key, (AcquisitionRequest("spectrum"),), interval=0.05, record_interval=0.05, recording=True
+        )
         try:
             wait_for(lambda: len(saved) >= 2)
             assert saved[1].timestamp > saved[0].timestamp

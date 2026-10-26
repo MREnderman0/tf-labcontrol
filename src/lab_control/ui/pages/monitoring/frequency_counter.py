@@ -188,7 +188,7 @@ class FrequencyCounterMonitoringPage(QWidget):
             if not record or not mode_applicable(record, "general"):
                 raise DeviceError("此设备不支持频率监测", "unsupported")
             self.timing.commit()
-            self.controller.runtime.monitoring.start(
+            self.controller.start_monitoring(
                 self.device_id,
                 (
                     AcquisitionRequest(
@@ -214,9 +214,7 @@ class FrequencyCounterMonitoringPage(QWidget):
     def record(self) -> None:
         try:
             task = self.controller.runtime.monitoring.snapshots().get(self.device_id, {})
-            self.controller.runtime.monitoring.set_recording(
-                self.device_id, not task.get("recording"), mode="general"
-            )
+            self.controller.set_recording(self.device_id, not task.get("recording"), mode="general")
         except Exception as exc:
             self.controller.message.emit(str(exc))
         self.refresh()

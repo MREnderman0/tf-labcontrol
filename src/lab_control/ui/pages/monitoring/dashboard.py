@@ -226,6 +226,9 @@ class RecordingDeviceCard(QFrame):
         if task.get("error"):
             detail = task["error"]
             status = "异常"
+        elif phase == "preparing":
+            detail = recording_save_notice(task)
+            status = "准备中"
         elif recording_phase(task) == "draining":
             detail = "记录收尾中 · 正在排空已接收数据"
             status = "收尾中"
@@ -719,7 +722,7 @@ class MonitoringDashboard(QWidget):
                 options = monitoring_options(self.controller, device_id, recording_mode)
                 options["interval"] = interval
                 options["record_interval"] = None
-                self.controller.runtime.monitoring.start(
+                self.controller.start_monitoring(
                     device_id,
                     requests,
                     **options,

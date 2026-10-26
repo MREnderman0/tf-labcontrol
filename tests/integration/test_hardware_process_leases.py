@@ -4,11 +4,89 @@ import json
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
 from lab_control.application.leases import ProcessLease, ResourceLeases
 from lab_control.domain.instruments import DeviceError
+
+
+def test_legacy_alias_of_same_lock_does_not_self_conflict(tmp_path):
+    primary = tmp_path / "primary"
+    legacy = tmp_path / "legacy"
+    primary.mkdir()
+    legacy.mkdir()
+    (primary / "hardware.lock").touch()
+    (legacy / "hardware.lock").hardlink_to(primary / "hardware.lock")
+    lease = ProcessLease(primary, legacy_root=legacy)
+    try:
+        with pytest.raises(DeviceError) as error:
+            ProcessLease(legacy)
+        assert error.value.code == "process_busy"
+    finally:
+        lease.close()
+    ProcessLease(legacy, legacy_root=primary).close()
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows PowerShell maintenance locks")
+@pytest.mark.parametrize("same_file", [True, False])
+def test_maintenance_deduplicates_file_aliases_and_keeps_external_exclusion(tmp_path, same_file):
+    fixed = tmp_path / "appdata" / "TF-LabControl"
+    legacy = tmp_path / "legacy"
+    fixed.mkdir(parents=True)
+    legacy.mkdir()
+    (fixed / "hardware.lock").touch()
+    if same_file:
+        (legacy / "hardware.lock").hardlink_to(fixed / "hardware.lock")
+    script = Path(__file__).resolve().parents[2] / "scripts" / "maintenance-common.ps1"
+    environment = dict(
+        os.environ,
+        LOCALAPPDATA=str(fixed.parent),
+        LAB_CONTROL_HOME=str(legacy),
+        LAB_TEST_MAINTENANCE_SCRIPT=str(script),
+    )
+    command = """
+$ErrorActionPreference = 'Stop'
+. $env:LAB_TEST_MAINTENANCE_SCRIPT
+try {
+    $lease = Enter-LabMaintenanceLease
+    try { Write-Output ('acquired:' + $lease.Count) }
+    finally { Exit-LabMaintenanceLease -Lease $lease }
+} catch { Write-Output ('blocked:' + $_.Exception.Message) }
+"""
+
+    def run():
+        return subprocess.run(
+            [
+                "powershell.exe",
+                "-NoProfile",
+                "-NonInteractive",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                command,
+            ],
+            env=environment,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=True,
+            timeout=20,
+        ).stdout.strip()
+
+    assert run() == f"acquired:{1 if same_file else 2}"
+    for occupied in (fixed, legacy):
+        lease = ProcessLease(occupied)
+        try:
+            assert run().startswith("blocked:TF-LabControl hardware is busy")
+            if occupied == legacy and not same_file:
+                # Failure on the second gate must release the first gate.
+                ProcessLease(fixed).close()
+        finally:
+            lease.close()
+    assert run() == f"acquired:{1 if same_file else 2}"
 
 
 def child(root, resources=(), *, identified=True, shared=True):

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import replace
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt
@@ -22,7 +23,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from lab_control.application.config import ConnectionConfig, config_from_record
+from lab_control.application.config import config_from_record
 from lab_control.domain.instruments import DeviceError
 from lab_control.instruments.registry import DEVICE_DEFINITIONS, PROFILES, SDK_ADAPTERS
 from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
@@ -149,12 +150,15 @@ class ConnectionDialogs:
                 source_suffix = f" · 源 {entry.source_address}" if entry.source_address else ""
                 item = QListWidgetItem(f"{kind} {entry.address} · {model_name}{suffix}{source_suffix}")
                 item.setData(Qt.ItemDataRole.UserRole, entry.id)
-                item.setSelected(entry.id in selected)
                 address_list.addItem(item)
+                item.setSelected(entry.id in selected)
             address_list.blockSignals(False)
             address_count.setText(f"已保存 {len(entries)} 个设备地址")
+            update_address_actions()
+
+        def update_address_actions() -> None:
             has_selection = bool(address_list.selectedItems())
-            has_items = bool(entries)
+            has_items = address_list.count() > 0
             busy = window.runtime.discovery.is_scanning
             remove.setEnabled(has_selection)
             scan_selected.setEnabled(has_selection and not busy)
@@ -213,7 +217,7 @@ class ConnectionDialogs:
         scan_all.clicked.connect(
             lambda: scan_addresses(tuple(entry.id for entry in window.runtime.static_addresses.entries()))
         )
-        address_list.itemSelectionChanged.connect(refresh_addresses)
+        address_list.itemSelectionChanged.connect(update_address_actions)
         refresh_addresses()
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
@@ -271,14 +275,18 @@ class ConnectionDialogs:
         form.addRow(buttons)
         if dialog.exec():
             try:
-                config = ConnectionConfig(
-                    resource.text().strip(),
-                    adapter.currentText(),
-                    transport.currentText(),
+                # The form edits only these fields. Preserve safety limits and
+                # model/transport settings that are not exposed by this dialog.
+                config = replace(
+                    current,
+                    resource=resource.text().strip(),
+                    adapter=adapter.currentText(),
+                    transport=transport.currentText(),
                     expected_serial=serial.text().strip(),
                     baud_rate=baud.value(),
                     timeout=timeout.value(),
                     identity_confirmed=False,
+                    source_address=current.source_address if transport.currentText() == "tcp" else "",
                 )
                 window.runtime.configure_device(device_id, config)
                 window.refresh()

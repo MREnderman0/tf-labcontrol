@@ -170,7 +170,7 @@ class OpticalSpectrumMonitoringPage(MonitoringPage):
         try:
             self.controller.ensure_applicable(self.device_id, workspace_mode=self.mode)
             self.timing.commit()
-            service.start(
+            self.controller.start_monitoring(
                 self.device_id,
                 (self.data_source.request((1,), points=2000, initiate=True, confirmed=True),),
                 **self.timing.options(),
@@ -183,9 +183,7 @@ class OpticalSpectrumMonitoringPage(MonitoringPage):
         try:
             self.timing.commit()
             task = self.controller.runtime.monitoring.snapshots().get(self.device_id, {})
-            self.controller.runtime.monitoring.set_recording(
-                self.device_id, not task.get("recording"), mode=self.mode
-            )
+            self.controller.set_recording(self.device_id, not task.get("recording"), mode=self.mode)
             self.refresh()
         except Exception as exc:
             self.controller.message.emit(str(exc))
