@@ -405,8 +405,8 @@
       "sha256": "7ea8a03769a05c7bb78718c360b5079be354ed6437623408d51b9c1e8f5a122a",
       "source": "https://catalog.s.download.windowsupdate.com/c/msdownload/update/driver/drvs/2026/02/3bc68c22-eb83-4383-b451-4c581d06d3fb_6092f1062939e09f524b5d8e9108530f7f516f13.cab",
       "source_page": "https://www.catalog.update.microsoft.com/ScopedViewInline.aspx?updateid=34213758-173c-47ec-951d-16b2c9463881",
-      "publisher": "Microsoft Windows Hardware Compatibility Publisher (internal catalog)",
-      "signature_status": "CAB not signed; official SHA256 matched; extracted silabser.cat Valid",
+      "publisher": "Microsoft Windows Hardware Compatibility Publisher",
+      "signature_status": "Valid (CAB Authenticode and extracted silabser.cat); official SHA256 matched",
       "license": "Silicon Labs proprietary VCP driver; sourced from Microsoft Update Catalog. Public redistribution approval/license review remains pending.",
       "validation": "Official CAB hash and internal WHQL catalog checked; INF DriverVer 12/10/2025,11.5.0.417, including x64 and USB VID_10C4 PID_EA60. No hardware acceptance. Remote DriverStore result is retained in the private maintenance report."
     },

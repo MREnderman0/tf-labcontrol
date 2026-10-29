@@ -220,9 +220,7 @@ CP210x USB 转串口预安装。采用微软官方更新目录分发的 11.5.0.4
 
 大小：210360 字节；SHA256：`7ea8a03769a05c7bb78718c360b5079be354ed6437623408d51b9c1e8f5a122a`。
 
-验证策略：`official-sha256`；分发依据：`pending`；安装验证：`pending`；目标环境验证：`pending`。
-
-该官方归档未签名，仅按固定哈希及指定解压成员验证，不标记为签名通过。
+验证策略：`authenticode`；分发依据：`pending`；安装验证：`pending`；目标环境验证：`pending`。
 
 ## NI-488.2 GPIB
 
