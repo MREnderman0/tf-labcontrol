@@ -9,7 +9,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
 $index = if ($Mirror -eq 'Aliyun') { 'https://mirrors.aliyun.com/pypi/simple/' } else { 'https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/' }
-$inventory = Get-Content -LiteralPath (Join-Path $projectRoot 'deployment/packages/manifest.json') -Raw | ConvertFrom-Json
+$inventory = Get-Content -LiteralPath (Join-Path $projectRoot 'deployment/packages/manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $userCache = if ($Cache) { [IO.Path]::GetFullPath($Cache) } else { Join-Path $env:LOCALAPPDATA 'TF-LabControl\maintenance\packages' }
 $cacheRoots = @($userCache, (Join-Path $projectRoot 'deployment/packages'))
 function Test-Material($Path, $Entry) {
