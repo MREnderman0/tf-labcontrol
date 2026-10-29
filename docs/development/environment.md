@@ -45,6 +45,51 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-dev.ps1 -Offli
 .venv-dev\Scripts\uv.exe build --python .venv-dev\Scripts\python.exe --no-python-downloads --default-index https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/
 ```
 
+## 首次部署的依赖检查
+
+新电脑从源码和清单重新准备 `.venv-dev`，不要复制另一台电脑的虚拟环境，也不要把目录式 EXE 的 `_internal` 当作开发环境。联网准备沿用上面的国内镜像脚本；无网电脑先取得由 `scripts/prepare_dev_cache.py` 导出的完整开发缓存，再执行 `setup-dev.ps1 -Offline -Cache <缓存根目录>`。需要构建 EXE 时加 `-Build`，仅运行源码程序不要求安装构建工具。
+
+安装完成后，在连接设备前执行下面的离线检查；均不创建 VISA ResourceManager、不扫描或修改仪器：
+
+```powershell
+.venv-dev\Scripts\uv.exe pip check --python .venv-dev\Scripts\python.exe
+.venv-dev\Scripts\python.exe -c "import lab_control, PySide6.QtWidgets, pyqtgraph, pyvisa, serial; import numpy as np; import numpy.exceptions; np.testing.assert_allclose(np.fft.fft([1,0,0,0]), [1,1,1,1]); np.testing.assert_allclose(np.linalg.solve([[2.,0.],[0.,4.]], [4.,8.]), [2.,2.]); print('Runtime imports and NumPy operations passed')"
+.venv-dev\Scripts\python.exe -m pytest --version
+# 仅安装了 -Build 的构建电脑执行
+.venv-dev\Scripts\python.exe -m PyInstaller --version
+```
+
+逐条检查退出码；PowerShell 中前一条失败后继续执行下一条，不能用最后一条的成功掩盖前面的错误。运行模块与数值操作通过后再用 `run.bat` 打开分类卡片界面，检查主题及窗口；设备驱动、网络地址和实机身份另行验收。
+
+`uv pip check` 检查已安装包的依赖关系和版本约束，不逐文件验证安装内容。保留 `.dist-info`、但包内文件缺失时，版本查询或依赖检查仍可能通过。当前 `setup-dev.ps1` 末尾执行依赖检查，`run.bat` 做基础模块导入；上面的数值操作和开发/构建工具检查是部署人员需要执行的额外检查，尚未集成为自动修复门禁。
+
+| 缺项或现象 | 影响范围 | 部署时的检查与处理 |
+| --- | --- | --- |
+| `No module named 'numpy.exceptions'`、NumPy C-extension 导入错误 | 数组、波形处理及依赖 NumPy 的界面模块 | 先核对原始异常；检查包内文件是否缺失，执行 NumPy 导入、FFT 和线性求解。不能只凭错误标题认定需要更换 Python 或 DLL |
+| `colorama` 缺失 | PyQtGraph 导入；Windows 上的 pytest 也依赖它 | 安装完整锁定依赖闭包；不能只装直接列出的 Qt/NumPy/PyVISA |
+| `iniconfig` 缺失 | pytest 开发验证 | 源码准备保留默认开发组；执行 `python -m pytest --version` |
+| `altgraph` 缺失 | PyInstaller 构建 | 构建电脑使用 `setup-dev.ps1 -Build`；运行目录式 EXE 的用户无需安装 PyInstaller |
+| setuptools 的 `distutils-precedence.pth` 缺失 | 构建后端的环境初始化 | 对照已安装版本的 `RECORD` 与锁定 wheel 核对；不要把包管理的 `.pth` 文件作为缓存清理 |
+
+这些现象已在本机缺失文件排查中出现；删除或损坏的具体来源未确认，不据此归咎于清理工具、杀毒软件或下载镜像。运行目录保留实际文件清单、原始错误和修复证据，源码不保存现场地址或资产身份。
+
+### 同版本修复与复核
+
+1. 保存报错、Python 路径和版本、依赖检查输出及缺失文件清单。正常退出本项目 GUI、采集及其他使用该环境的进程；不要强杀进程或绕过硬件锁。保留运行目录、用户配置、库存及实机历史。
+2. 核对 `uv.lock`、[开发材料清单](../../deployment/packages/manifest.json)和缓存 wheel 的版本、大小、SHA256。完整缓存可离线复用；缺失材料按既定镜像策略补齐，不从其他版本的环境复制零散 Python 文件或 DLL。
+3. 整包未安装时，重新执行 `setup-dev.ps1`，保留原先是否使用 `-Build` 的选择。同版本包内文件损坏时，仅重跑普通同步不保证重新安装；关闭环境使用者后，对明确受损包执行同版本重装，再重复首次部署检查。
+4. 记录修复前后文件与校验结果、使用的 wheel 来源/哈希、命令退出码和仍未完成项。修复已有锁定版本不改锁文件中的版本或哈希；新增或更换版本必须同步维护清单、锁文件及生成下载页。设备连接与物理输出结果不从环境修复成功推断。
+
+下面以 NumPy 包内文件缺失为例，使用准备脚本刚生成的带哈希依赖列表及完整离线缓存。先完成对应 `setup-dev.ps1 -Offline -Cache D:\LabDevCache`（构建电脑加 `-Build`），确保 `.tools/setup` 来自当前仓库和锁文件；该命令只显式重装 NumPy，其余依赖仍受导出列表约束：
+
+```powershell
+.tools\setup\uv-0.12.18.exe pip install --offline --no-index --find-links D:\LabDevCache\python --require-hashes --no-deps --reinstall-package numpy --python .venv-dev\Scripts\python.exe -r .tools\setup\requirements.txt
+```
+
+多个包损坏且范围不清楚时，退出所有环境使用者，保留旧 `.venv-dev` 作为诊断备份，再由准备脚本创建新环境；不要清空用户运行目录。准备脚本内部使用独立 bootstrap uv，避免运行中的 uv 替换自身。
+
+目录式 EXE 的使用者按[桌面包首次部署检查](desktop-deployment.md#首次部署的环境完整性门禁)检查并恢复完整发行目录，不在 EXE 目录内运行上述开发环境修复命令。
+
 ## 开发产物清理
 
 清理前保存未提交修改并生成按路径、大小、哈希及理由列出的清单。缓存、旧构建包和与 Git 历史／当前源码内容相同的隔离副本可以清理；递归目标必须位于项目内，不跟随目录联接或符号链接。不要整目录删除 `.tools`：其中包含离线驱动、厂家资料、唯一实机证据和被文档引用的验收材料。安装环境、当前有效构建、正式库存及采集数据保留。
