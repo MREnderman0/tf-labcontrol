@@ -50,29 +50,29 @@ PM100D optical meter SDK and driver
 
 ## FTDI VCP
 
-组件 ID：`ftdi-vcp`；版本：待核实。
+组件 ID：`ftdi-vcp`；版本：2.12.36.20。
 
-GPD-4303S USB virtual serial driver
+FTDI USB 虚拟串口（含 GPD-4303S）。当前固定材料是已验证 Windows DriverStore 中的 x64 驱动导出，不是厂家原始 ZIP；仅供现有维护缓存和内网复用，官方下载归档仍待补。接入后须核对真实芯片及 VID/PID。
 
 下载材料：待登记。
 
-[来源说明](https://ftdichip.com/drivers/vcp-drivers/)
+[来源说明](https://mail.ftdichip.cn/Drivers/VCP.htm)
 
-大小：待核实 字节；SHA256：`待核实`。
+大小：894432 字节；SHA256：`bdbb21a501bffe0a600b8aee6414eb573485d1f0522fef38e5be1a02ad075a44`。
 
 验证策略：`authenticode`；分发依据：`pending`；安装验证：`pending`；目标环境验证：`pending`。
 
-## Keithley 2231A USB adapter
+## Keithley 2231A / Prolific PL2303 USB serial
 
-组件 ID：`keithley-usb`；版本：待核实。
+组件 ID：`keithley-usb`；版本：4.10.0.0。
 
-2231A-001 adapter driver
+Keithley 2231A-001 的 Tek 官方支持页指向 Prolific PL2303。安装器 4.10.0.0 在 Windows 11 注册 PL2303G 5.2.12.0 和 HXD/EA/RA/SA 3.9.7.0；旧 HXA/XA、非原厂芯片及实际适配器兼容性仍须核对。
 
-下载材料：待登记。
+1. [官方直连 — PL23XX-M_LogoDriver_Setup_41000_20260716.zip](https://www.prolific.com.tw/wp-content/uploads/2026/10/PL23XX-M_LogoDriver_Setup_41000_20260716.zip)
 
-[来源说明](https://www.tek.com/en/support)
+[来源说明](https://www.tek.com/en/support/software/driver/2231a-30-3-software)
 
-大小：待核实 字节；SHA256：`待核实`。
+大小：13532085 字节；SHA256：`15bcbc7837600bc037d9c08e1fb180252553eee673ff92c4d3a391c264a3bced`。
 
 验证策略：`authenticode`；分发依据：`pending`；安装验证：`pending`；目标环境验证：`pending`。
 
@@ -80,7 +80,7 @@ GPD-4303S USB virtual serial driver
 
 组件 ID：`serial-interface`；版本：待核实。
 
-Identify USB-to-serial hardware by VID/PID before selecting its official driver
+按实际 USB VID/PID 选择串口驱动；已登记 FTDI、Prolific、WCH CH340/CH341 和 CP210x。预装只入库，设备接入后的绑定、COM 号及收发另验。
 
 下载材料：待登记。
 
@@ -94,7 +94,7 @@ Identify USB-to-serial hardware by VID/PID before selecting its official driver
 
 组件 ID：`gpib-interface`；版本：待核实。
 
-GPIB controller-specific driver and VISA interoperability
+按 GPIB 控制器厂家选择 NI-488.2 或 Keysight IO Libraries；两者材料和共存验收仍待补，安装 R&S VISA 本身不能证明任意 USB-GPIB 适配器已可用。
 
 下载材料：待登记。
 
@@ -193,6 +193,64 @@ Native Qt/SDK runtime dependencies
 大小：18731856 字节；SHA256：`843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c`。
 
 验证策略：`authenticode`；分发依据：`pending`；安装验证：`verified`；目标环境验证：`pending`。
+
+## WCH CH340/CH341 serial driver
+
+组件 ID：`wch-ch34x`；版本：4.0.2026.02。
+
+CH340/CH341 USB 转串口预安装；使用官方国内站 4.0 包中的 Windows 10/11 INF，驱动版本 4.0.2026.02。不能覆盖 CH343/CH9102 等其他芯片系列。
+
+1. [官方国内站 — CH341SER.ZIP](https://file.wch.cn/download/file?id=5)
+
+[来源说明](https://www.wch.cn/downloads/CH341SER_ZIP.html)
+
+大小：713322 字节；SHA256：`59967d9ce371d0bf3df02dec0b66c8dfbf9ca576da0572ff4404148a7c381807`。
+
+验证策略：`authenticode`；分发依据：`pending`；安装验证：`pending`；目标环境验证：`pending`。
+
+## Silicon Labs CP210x VCP
+
+组件 ID：`silabs-cp210x`；版本：11.5.0.417。
+
+CP210x USB 转串口预安装。采用微软官方更新目录分发的 11.5.0.417 包，含 CP210x/CP2105/CP2108 默认 VID/PID；与厂商网站 11.6.0 ZIP 区分，后者当前直连返回 403。CAB 仅准备材料，须由维护人员验证解包后的 WHQL 目录并预装 INF；接入验收另行进行。
+
+1. [官方直连 — CP210x-11.5.0.417-amd64.cab](https://catalog.s.download.windowsupdate.com/c/msdownload/update/driver/drvs/2026/02/3bc68c22-eb83-4383-b451-4c581d06d3fb_6092f1062939e09f524b5d8e9108530f7f516f13.cab)
+
+[来源说明](https://www.catalog.update.microsoft.com/ScopedViewInline.aspx?updateid=34213758-173c-47ec-951d-16b2c9463881)
+
+大小：210360 字节；SHA256：`7ea8a03769a05c7bb78718c360b5079be354ed6437623408d51b9c1e8f5a122a`。
+
+验证策略：`official-sha256`；分发依据：`pending`；安装验证：`pending`；目标环境验证：`pending`。
+
+该官方归档未签名，仅按固定哈希及指定解压成员验证，不标记为签名通过。
+
+## NI-488.2 GPIB
+
+组件 ID：`ni-4882`；版本：26.8.0。
+
+NI GPIB 控制器备选驱动。2026 Q4 官方发行支持 Windows 11；官网显示需要登录 NI 账号后下载，直连返回 HTTP 403，尚未取得、校验或安装离线 ISO。不要把它作为普通 Windows 10 的默认驱动；VISA 共存和具体控制器支持待验证。
+
+1. [官方直连 — ni-488.2_26.8.0_offline.iso](https://download.ni.com/support/nipkg/products/ni-4/ni-488.2/26.8/offline/ni-488.2_26.8.0_offline.iso)
+
+[来源说明](https://www.ni.com/en/support/downloads/drivers/download.ni-488-2.html)
+
+大小：待核实 字节；SHA256：`1942db5bccd80964601ce04eef8c0e8c83c77e18128dcdfb19c780f5911584dc`。
+
+验证策略：`authenticode`；分发依据：`pending`；安装验证：`pending`；目标环境验证：`pending`。
+
+## Keysight IO Libraries Suite
+
+组件 ID：`keysight-iolibs`；版本：21.4.204。
+
+Keysight USB/GPIB 控制器备选套件（2026 Update 1）。官方页面已核对版本及 SHA256，但当前下载入口未取得安装包，未安装；须验证与已有 R&S VISA 的共存，不能替换现有 VISA 或启用未要求的远程服务。
+
+下载材料：待登记。
+
+[来源说明](https://www.keysight.com.cn/cn/zh/lib/software-detail/computer-software/io-libraries-suite-downloads-2175637.html)
+
+大小：待核实 字节；SHA256：`c21980699190b9cb817ac9924aacb7634665f688524dacde2f72a85de4799019`。
+
+验证策略：`authenticode`；分发依据：`pending`；安装验证：`pending`；目标环境验证：`pending`。
 
 ## 开发环境材料
 
