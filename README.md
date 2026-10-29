@@ -16,7 +16,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-dev.ps1
 ./run.bat
 ```
 
-后续直接双击 `run.bat`。选择设备、配置资源和开始监测见[使用指南](docs/guides/control-and-monitoring.md#启动与设备选择)；设备协议和范围以[型号维护源](docs/devices/README.md)为准。
+新电脑首次准备后，先完成[依赖导入与完整性检查](docs/development/environment.md#首次部署的依赖检查)，再连接设备。后续直接双击 `run.bat`。选择设备、配置资源和开始监测见[使用指南](docs/guides/control-and-monitoring.md#启动与设备选择)；设备协议和范围以[型号维护源](docs/devices/README.md)为准。
 
 ## 文档导航
 

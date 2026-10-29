@@ -28,7 +28,7 @@
 
 ## 开发维护
 
-- [开发环境](development/environment.md)、[依赖与资料](development/references.md)
+- [开发环境](development/environment.md)、[首次部署依赖检查与修复](development/environment.md#首次部署的依赖检查)、[依赖与资料](development/references.md)
 - [桌面部署与环境修复](development/desktop-deployment.md)：组件台账、联网/离线构建和设置内准备
 - [依赖下载资源](generated/download-resources.md)：按清单生成的国内镜像/官方直连地址与验证状态
 - [文档维护约定及兼容入口](development/documentation.md)

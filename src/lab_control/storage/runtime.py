@@ -3,7 +3,24 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
+
+
+def _packaged_redirect(logical: Path, physical: Path) -> bool:
+    """Recognize MSIX's private LocalAppData copy, not ordinary junctions."""
+    source = PureWindowsPath(str(logical))
+    target = PureWindowsPath(str(physical))
+    try:
+        relative = target.relative_to(source.parent)
+    except ValueError:
+        return False
+    parts = tuple(part.casefold() for part in relative.parts)
+    return (
+        len(parts) == 5
+        and parts[0] == "packages"
+        and parts[2:4] == ("localcache", "local")
+        and parts[4] == source.name.casefold()
+    )
 
 
 def physical_path(path: Path) -> Path:
@@ -36,7 +53,12 @@ def physical_path(path: Path) -> Path:
         size = get_path(handle, buffer, len(buffer), 0)
         if not size or size >= len(buffer):
             raise ctypes.WinError(ctypes.get_last_error())
-        return Path(buffer.value.removeprefix("\\\\?\\"))
+        final = buffer.value
+        if final.startswith("\\\\?\\UNC\\"):
+            final = "\\\\" + final[len("\\\\?\\UNC\\") :]
+        else:
+            final = final.removeprefix("\\\\?\\")
+        return Path(final)
     finally:
         close = kernel.CloseHandle
         close.argtypes = [wintypes.HANDLE]
@@ -46,9 +68,9 @@ def physical_path(path: Path) -> Path:
 def runtime_home() -> Path:
     """Return the canonical physical root for the current user runtime.
 
-    Windows packaged/desktop views can expose the same AppData file through two
-    textual paths. Once the inventory exists, use its final physical parent so
-    storage, locks and hardware evidence address one root consistently.
+    Windows packaged/desktop views can expose different databases through the
+    same textual path. Refuse implicit selection of a private packaged copy;
+    maintenance must explicitly select the verified desktop runtime first.
     """
     logical = Path(
         os.environ.get("LAB_CONTROL_HOME")
@@ -61,6 +83,15 @@ def runtime_home() -> Path:
         except OSError:
             return logical
         if resolved.name == marker.name and resolved.parent.name == logical.name:
+            if _packaged_redirect(logical, resolved.parent):
+                from lab_control.domain.instruments import DeviceError
+
+                raise DeviceError(
+                    "Windows 将运行目录重定向到了应用私有副本，可能与 run.bat 启动的程序使用不同配置。"
+                    "请从 run.bat 打开正式程序；维护脚本须核对正式库存和设备锁后显式设置 "
+                    f"LAB_CONTROL_HOME。逻辑目录：{logical}；实际目录：{resolved.parent}",
+                    "path_redirected",
+                )
             return resolved.parent
     return logical
 
