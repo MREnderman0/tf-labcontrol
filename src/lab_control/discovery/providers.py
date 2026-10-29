@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import replace
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from lab_control.discovery.inventory import Inventory
 
 from lab_control.discovery.types import DiscoveryCandidate
 from lab_control.domain.connections import ConnectionConfig, canonical_resource
@@ -124,10 +128,24 @@ class VendorSdkDiscoveryProvider:
 class ConfiguredDiscoveryProvider:
     name = "configured"
 
-    def __init__(self, configurations: tuple[ConnectionConfig, ...]) -> None:
+    def __init__(
+        self, configurations: tuple[ConnectionConfig, ...], inventory: Inventory | None = None
+    ) -> None:
         self.configurations = configurations
+        self.inventory = inventory
 
     def enumerate(self) -> tuple[DiscoveryCandidate, ...]:
+        following = set()
+        if self.inventory is not None:
+            for record in self.inventory.all():
+                if (
+                    record.get("identityKey")
+                    and record.get("dhcpBinding", {}).get("identityKey") == record["identityKey"]
+                    and not record.get("primaryResourceExplicit")
+                ):
+                    following.add((record.get("adapterId"), record.get("identity", {}).get("serial")))
         return tuple(
-            DiscoveryCandidate(config, self.name, {"configured": True}) for config in self.configurations
+            DiscoveryCandidate(config, self.name, {"configured": True})
+            for config in self.configurations
+            if (config.adapter, config.expected_serial) not in following
         )

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import threading
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any
 
@@ -33,6 +33,8 @@ def device_label(record: dict[str, Any]) -> str:
 
 
 class BulkConnectionService:
+    max_inflight = 4
+
     def __init__(self, runtime: ApplicationRuntime) -> None:
         self.runtime = runtime
         self.worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix="bulk-connection")
@@ -62,6 +64,9 @@ class BulkConnectionService:
                 "total": len(records),
                 "completed": 0,
                 "current": "",
+                "active": [],
+                "queued": len(records),
+                "parallel_limit": self.max_inflight,
                 "items": [],
             }
             runtime.discovery.connection_batch_active = True
@@ -104,58 +109,128 @@ class BulkConnectionService:
             return None, "skipped", str(exc)
         return runtime._connect(device_id), "connected", "连接成功"
 
-    def _run(self, records: tuple[dict[str, Any], ...]) -> dict[str, Any]:
+    def _connect_one(self, record: dict[str, Any], item: dict[str, Any]) -> dict[str, Any]:
         runtime = self.runtime
         try:
-            for record in records:
-                item = {"device_id": record["id"], "label": device_label(record)}
-                try:
-                    with runtime.discovery.lock:
-                        self._progress["current"] = item["label"]
-                        if runtime.discovery.closing:
-                            self.cancelled.set()
-                        if self.cancelled.is_set():
-                            future, status, reason = None, "skipped", "已停止，未尝试连接"
-                        else:
-                            future, status, reason = self._start_one(record)
-                    # Never hold the admission lock while instrument I/O is in progress.
-                    if future is not None:
-                        future.result()
-                        current = next(r for r in runtime.inventory.all() if r["id"] == record["id"])
-                        item["label"] = device_label(current)
-                        if current.get("identityConflict"):
-                            raise DeviceError("连接后发现身份冲突，请在设备池中核对", "identity_conflict")
-                        state = next(
-                            s for s in runtime.sessions.snapshots() if s["stableDeviceId"] == record["id"]
+            future, status, reason = self._start_one(record)
+            if future is not None:
+                future.result()
+                current = next(r for r in runtime.inventory.all() if r["id"] == record["id"])
+                item["label"] = device_label(current)
+                if current.get("identityConflict"):
+                    raise DeviceError("连接后发现身份冲突，请在设备池中核对", "identity_conflict")
+                state = next(s for s in runtime.sessions.snapshots() if s["stableDeviceId"] == record["id"])
+                if state["connectionState"] == "degraded":
+                    raise DeviceError(state["lastError"] or "连接异常，请核对设备状态", "connection_degraded")
+                if state.get("lastError"):
+                    reason = "连接已建立；" + state["lastError"]
+            item.update(status=status, reason=reason)
+        except Exception as exc:
+            item.update(status="failed", reason=str(exc), error_code=getattr(exc, "code", ""))
+        return item
+
+    def _run(self, records: tuple[dict[str, Any], ...]) -> dict[str, Any]:
+        runtime = self.runtime
+        pending: dict[Future[dict[str, Any]], tuple[int, dict[str, Any]]] = {}
+        completed: dict[int, dict[str, Any]] = {}
+        next_index = 0
+        failed = False
+        workers = ThreadPoolExecutor(max_workers=self.max_inflight, thread_name_prefix="connection-admission")
+
+        def progress() -> None:
+            active = [dict(entry[1]) for entry in pending.values()]
+            with runtime.discovery.lock:
+                self._progress.update(
+                    active=active,
+                    current="、".join(item["label"] for item in active),
+                    queued=len(records) - next_index,
+                    completed=len(completed),
+                    items=[completed[index] for index in sorted(completed)],
+                )
+
+        def finish(index: int, item: dict[str, Any]) -> None:
+            item["finishedAt"] = utc_now()
+            completed[index] = item
+            progress()
+            runtime.repository.audit("bulk_connection_item", **item)
+
+        try:
+            while next_index < len(records) or pending:
+                # Reserve bounded background admissions under the gate, without
+                # running qualification or waiting for a VISA driver under the
+                # discovery lock used by GUI refresh and cancellation. Each
+                # admission still opens through the normal per-device worker.
+                while next_index < len(records) and len(pending) < self.max_inflight:
+                    index = next_index
+                    record = records[index]
+                    next_index += 1
+                    item = {"device_id": record["id"], "label": device_label(record)}
+                    try:
+                        with runtime.discovery.lock:
+                            if runtime.discovery.closing:
+                                self.cancelled.set()
+                            if self.cancelled.is_set():
+                                future = None
+                            else:
+                                item["startedAt"] = utc_now()
+                                future = workers.submit(self._connect_one, record, dict(item))
+                        if future is not None:
+                            pending[future] = (index, item)
+                            progress()
+                            continue
+                        item.update(status="skipped", reason="已停止，未尝试连接")
+                    except Exception as exc:
+                        item.update(status="failed", reason=str(exc), error_code=getattr(exc, "code", ""))
+                    finish(index, item)
+
+                if not pending:
+                    continue
+                # Completion order is independent of submission order. A slow
+                # device keeps just one slot; each free slot admits the next.
+                done, _ = wait(pending, timeout=0.1, return_when=FIRST_COMPLETED)
+                for future in sorted(done, key=lambda task: pending[task][0]):
+                    index, _ = pending.pop(future)
+                    finish(index, future.result())
+
+                # Cancellation skips queued devices immediately, but admitted
+                # session opens still drain under the batch exclusion gate.
+                if self.cancelled.is_set():
+                    while next_index < len(records):
+                        index, record = next_index, records[next_index]
+                        next_index += 1
+                        finish(
+                            index,
+                            {
+                                "device_id": record["id"],
+                                "label": device_label(record),
+                                "status": "skipped",
+                                "reason": "已停止，未尝试连接",
+                            },
                         )
-                        if state["connectionState"] == "degraded":
-                            raise DeviceError(
-                                state["lastError"] or "连接异常，请核对设备状态", "connection_degraded"
-                            )
-                        if state.get("lastError"):
-                            reason = "连接已建立；" + state["lastError"]
-                    item.update(status=status, reason=reason)
-                except Exception as exc:
-                    item.update(status="failed", reason=str(exc), error_code=getattr(exc, "code", ""))
-                runtime.repository.audit("bulk_connection_item", **item)
-                with runtime.discovery.lock:
-                    self._progress["items"].append(item)
-                    self._progress["completed"] += 1
             with runtime.discovery.lock:
                 self._progress.update(
                     state="cancelled" if self.cancelled.is_set() else "completed",
                     current="",
+                    active=[],
+                    queued=0,
                     finishedAt=utc_now(),
                 )
                 result = deepcopy(self._progress)
             runtime.repository.audit("bulk_connection_finished", result=result)
             return result
         except Exception:
+            failed = True
             with runtime.discovery.lock:
-                self._progress.update(state="error", current="", finishedAt=utc_now())
+                self._progress.update(state="stopping")
             raise
         finally:
+            # An unexpected coordinator/audit failure must not release admission
+            # while an accepted open is still touching a device or saving identity.
+            workers.shutdown(wait=True)
             with runtime.discovery.lock:
+                self._progress.update(current="", active=[])
+                if failed:
+                    self._progress.update(state="error", finishedAt=utc_now())
                 runtime.discovery.connection_batch_active = False
 
     def close(self) -> None:

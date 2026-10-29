@@ -1,4 +1,5 @@
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 
@@ -24,18 +25,19 @@ def discovered(runtime, name, adapter="rs.sma100b"):
     return record["id"], config, identity
 
 
-def slow_open(runtime, monkeypatch):
+def slow_open(runtime, monkeypatch, *, count=1):
     entered, release = threading.Event(), threading.Event()
     opened = []
 
     class Slow(SimulatedInstrument):
         def identify(self):
-            entered.set()
             assert release.wait(5)
             return super().identify()
 
     def factory(config):
         opened.append(config.resource)
+        if len(opened) >= count:
+            entered.set()
         return Slow(config)
 
     monkeypatch.setattr(runtime.sessions, "factory", factory)
@@ -77,7 +79,7 @@ def test_batch_uses_current_unique_assets_preserves_sessions_and_continues_failu
     assert items[broken]["status"] == "failed" and items[broken]["error_code"] == "driver_missing"
     assert all(items[key]["status"] == "skipped" for key in (unknown, removed, conflict))
     assert historical not in items
-    assert opened == ["mock://first", "mock://broken", "mock://last"]
+    assert sorted(opened) == ["mock://broken", "mock://first", "mock://last"]
     assert runtime.sessions.sessions[live] is session
     assert all(not s.monitoring and not s.recording for s in runtime.sessions.sessions.values())
     result["items"].clear()
@@ -87,7 +89,9 @@ def test_batch_uses_current_unique_assets_preserves_sessions_and_continues_failu
 def test_cancel_waits_for_inflight_and_admission_blocks_scan_and_manual_connections(runtime, monkeypatch):
     first, config, _ = discovered(runtime, "first")
     second, _, _ = discovered(runtime, "second")
-    entered, release, opened = slow_open(runtime, monkeypatch)
+    for index in range(4):
+        discovered(runtime, f"queued-{index}")
+    entered, release, opened = slow_open(runtime, monkeypatch, count=4)
     future = runtime.connect_all_discovered()
     try:
         assert entered.wait(2)
@@ -107,11 +111,11 @@ def test_cancel_waits_for_inflight_and_admission_blocks_scan_and_manual_connecti
     finally:
         release.set()
     result = future.result(3)
-    assert result["state"] == "cancelled" and result["total"] == 2
-    assert [item["status"] for item in result["items"]] == ["connected", "skipped"]
-    assert opened == ["mock://first"]
+    assert result["state"] == "cancelled" and result["total"] == 6
+    assert [item["status"] for item in result["items"]] == ["connected"] * 4 + ["skipped"] * 2
+    assert len(opened) == 4
     assert runtime.sessions.snapshots()[0]["connectionState"] == "connected"
-    assert runtime.connect_all_discovered().result(3)["total"] == 3
+    assert runtime.connect_all_discovered().result(3)["total"] == 7
 
 
 def test_batch_rejected_during_scan(runtime):
@@ -139,9 +143,9 @@ def test_batch_rejected_during_scan(runtime):
 
 
 def test_shutdown_cancels_remaining_and_drains_before_closing_repository(runtime, monkeypatch):
-    discovered(runtime, "first")
-    discovered(runtime, "second")
-    entered, release, opened = slow_open(runtime, monkeypatch)
+    for index in range(6):
+        discovered(runtime, f"device-{index}")
+    entered, release, opened = slow_open(runtime, monkeypatch, count=4)
     future = runtime.connect_all_discovered()
     assert entered.wait(2)
     cancelled = threading.Event()
@@ -165,7 +169,136 @@ def test_shutdown_cancels_remaining_and_drains_before_closing_repository(runtime
             release.set()
         shutdown.result(3)
     assert future.result()["state"] == "cancelled"
-    assert opened == ["mock://first"] and runtime.closed
+    assert len(opened) == 4 and runtime.closed
+
+
+def wait_for(predicate):
+    deadline = time.monotonic() + 3
+    while not predicate():
+        assert time.monotonic() < deadline
+        time.sleep(0.005)
+
+
+def test_parallel_batch_bypasses_slow_first_device_and_replenishes_free_slots(runtime, monkeypatch):
+    keys = [discovered(runtime, name)[0] for name in ("slow", "quick-1", "quick-2", "quick-3", "quick-4")]
+    entered, release = threading.Event(), threading.Event()
+    calls = []
+
+    class Adapter(SimulatedInstrument):
+        def identify(self):
+            calls.append(self.config.expected_serial)
+            if self.config.expected_serial == "slow":
+                entered.set()
+                assert release.wait(5)
+                raise DeviceError("frequency report timeout", "timeout")
+            return super().identify()
+
+    monkeypatch.setattr(runtime.sessions, "factory", Adapter)
+    future = runtime.connect_all_discovered()
+    try:
+        assert entered.wait(2)
+        wait_for(lambda: runtime.connection_progress()["completed"] == 4)
+        progress = runtime.connection_progress()
+        assert not future.done()
+        assert [item["device_id"] for item in progress["active"]] == [keys[0]]
+        assert progress["queued"] == 0
+        assert all(item["status"] == "connected" for item in progress["items"])
+        assert len(calls) == len(set(calls)) == 5
+    finally:
+        release.set()
+    result = future.result(3)
+    assert [item["device_id"] for item in result["items"]] == keys
+    assert [item["status"] for item in result["items"]] == ["failed"] + ["connected"] * 4
+    assert result["active"] == [] and result["current"] == ""
+
+
+def test_batch_never_admits_more_than_four_devices_and_cancel_skips_queue(runtime, monkeypatch):
+    for index in range(9):
+        discovered(runtime, f"bounded-{index}")
+    entered, release, opened = slow_open(runtime, monkeypatch, count=4)
+    future = runtime.connect_all_discovered()
+    try:
+        assert entered.wait(2)
+        wait_for(lambda: len(runtime.connection_progress()["active"]) == 4)
+        assert len(opened) == 4
+        assert runtime.connection_progress()["queued"] == 5
+        runtime.cancel_connect_all()
+        wait_for(lambda: runtime.connection_progress()["completed"] == 5)
+        assert len(opened) == 4
+        assert not future.done()
+        assert runtime.discovery.connection_batch_active
+    finally:
+        release.set()
+    result = future.result(3)
+    assert result["completed"] == 9 and result["state"] == "cancelled"
+    assert [item["status"] for item in result["items"]] == ["connected"] * 4 + ["skipped"] * 5
+
+
+def test_slow_connection_preparation_does_not_hold_progress_or_admission_lock(runtime, monkeypatch):
+    slow, _, _ = discovered(runtime, "slow-preparation")
+    discovered(runtime, "quick")
+    entered, release = threading.Event(), threading.Event()
+    connect = runtime._connect
+
+    def prepare(key, **kwargs):
+        if key == slow:
+            entered.set()
+            assert release.wait(5)
+        return connect(key, **kwargs)
+
+    monkeypatch.setattr(runtime, "_connect", prepare)
+    future = runtime.connect_all_discovered()
+    try:
+        assert entered.wait(2)
+        # The UI uses this lock for progress/scan status and the Stop button.
+        acquired = runtime.discovery.lock.acquire(timeout=0.5)
+        if acquired:
+            runtime.discovery.lock.release()
+        assert acquired
+        wait_for(lambda: runtime.connection_progress()["completed"] == 1)
+        assert runtime.connection_progress()["active"][0]["device_id"] == slow
+        runtime.cancel_connect_all()
+        assert runtime.connection_progress()["state"] == "stopping"
+        assert not future.done()
+    finally:
+        release.set()
+    assert [item["status"] for item in future.result(3)["items"]] == ["connected"] * 2
+
+
+def test_unexpected_audit_failure_still_drains_admitted_connections(runtime, monkeypatch):
+    for name in ("quick", "slow"):
+        discovered(runtime, name)
+    entered, release = threading.Event(), threading.Event()
+    audit_failed = threading.Event()
+    audit = runtime.repository.audit
+
+    class Adapter(SimulatedInstrument):
+        def identify(self):
+            if self.config.expected_serial == "slow":
+                entered.set()
+                assert release.wait(5)
+            return super().identify()
+
+    def fail_audit(event, **details):
+        if event == "bulk_connection_item":
+            audit_failed.set()
+            raise OSError("audit disk unavailable")
+        audit(event, **details)
+
+    monkeypatch.setattr(runtime.sessions, "factory", Adapter)
+    monkeypatch.setattr(runtime.repository, "audit", fail_audit)
+    future = runtime.connect_all_discovered()
+    try:
+        assert entered.wait(2) and audit_failed.wait(2)
+        assert runtime.discovery.connection_batch_active and not future.done()
+        wait_for(lambda: runtime.connection_progress()["state"] == "stopping")
+    finally:
+        release.set()
+    with pytest.raises(OSError, match="audit disk"):
+        future.result(3)
+    assert not runtime.discovery.connection_batch_active
+    assert runtime.connection_progress()["state"] == "error"
+    assert all(session.identity for session in runtime.sessions.sessions.values())
 
 
 def test_batch_respects_existing_resource_lease_and_does_not_retry_error_session(runtime):

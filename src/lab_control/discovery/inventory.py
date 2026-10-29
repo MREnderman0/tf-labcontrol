@@ -319,6 +319,15 @@ class Inventory:
                     remember_identity(record, resource, identity, scan_id)
                 if reason == "identified":
                     follow_verified_address(record, resource, identity, candidate.config)
+                    if (
+                        candidate.source == "dhcp_leases"
+                        and candidate.descriptor.get("expectedIdentityKey") == identity.key
+                        and candidate.descriptor.get("dhcpMac")
+                    ):
+                        record["dhcpBinding"] = {
+                            "mac": candidate.descriptor["dhcpMac"],
+                            "identityKey": identity.key,
+                        }
                 if reason != "cached_active_session":
                     record["lastProbeAt"] = now
             if adapter:

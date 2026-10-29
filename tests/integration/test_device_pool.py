@@ -108,6 +108,8 @@ def test_overview_batch_shows_progress_results_and_ignores_filters(workspace, qt
         assert entered.wait(2)
         window.refresh()
         assert "3" in window.connection_summary.text() and window.stop_connect_button.isVisible()
+        assert "正在并行连接" in window.connection_summary.text()
+        assert "进行中" in window.connection_summary.text() and "排队" in window.connection_summary.text()
         assert not window.scan_button.isEnabled() and not window.connect_all_button.isEnabled()
         for width, height in ((1440, 900), (1000, 650)):
             from PySide6.QtCore import QRect

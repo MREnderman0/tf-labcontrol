@@ -166,6 +166,10 @@ class RememberedLanDiscoveryProvider:
             identity_key = record.get("identityKey")
             if (
                 not identity_key
+                or (
+                    not record.get("primaryResourceExplicit")
+                    and record.get("dhcpBinding", {}).get("identityKey") == identity_key
+                )
                 or record.get("identityConflict")
                 or record.get("discoveryState") == "conflict"
                 or entry.get("retired")

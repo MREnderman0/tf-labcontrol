@@ -833,7 +833,7 @@
       },
       "detection": {
         "kind": "pending",
-        "detail": "Tftpd64 service executable plus UDP/67 listener bound to lab Ethernet"
+        "detail": "Verify the service executable/version, effective INI source, DHCP-only service, scoped UDP/67 firewall, persistent lab address and pool exclusions. On multi-address Ethernet, validate DHCP LocalIP receive-interface filtering separately from the offered subnet and server identifier; require an actual OFFER and target-device lease before reporting network readiness."
       },
       "installation": {
         "state": "pending",
@@ -852,7 +852,7 @@
       "recovery": "Preserve compatible shared drivers and user data; restore only changes owned by this application.",
       "validation": {
         "state": "pending",
-        "evidence": "2026-10-02 development-host batch verified the running service, automatic start configuration, UDP 67 listener, firewall/configuration/route readback and local DISCOVER/OFFER. Real instrument REQUEST/ACK, VISA LAN discovery, restart persistence and clean Windows 10/11 acceptance remain pending. Evidence stays in runtime hardware-tests/dhcp batches; installation requirements are in docs/guides/lab-network-deployment.md."
+        "evidence": "Development-host checks verified service/configuration/firewall readback and DISCOVER/OFFER. Multi-address Ethernet required a distinct DHCP receive-interface filter; after correction, a target instrument acquired a lease with a nonzero lease-start timestamp and was reachable at its matching MAC. This is lease evidence, not a saved full REQUEST/ACK packet trace. VISA broadcast discovery returned no resource. Computer-restart persistence and clean Windows 10/11 deployment acceptance remain pending. Raw evidence stays in runtime hardware-tests; reusable initialization requirements are maintained in docs/guides/lab-network-deployment.md."
       },
       "dependencies": [],
       "download_sources": [
