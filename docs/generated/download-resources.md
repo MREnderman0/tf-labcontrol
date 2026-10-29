@@ -226,15 +226,17 @@ CP210x USB 转串口预安装。采用微软官方更新目录分发的 11.5.0.4
 
 组件 ID：`ni-4882`；版本：26.8.0。
 
-NI GPIB 控制器备选驱动。2026 Q4 官方发行支持 Windows 11；官网显示需要登录 NI 账号后下载，直连返回 HTTP 403，尚未取得、校验或安装离线 ISO。不要把它作为普通 Windows 10 的默认驱动；VISA 共存和具体控制器支持待验证。
+NI GPIB 控制器备选驱动。2026 Q4 官方清单支持 Windows 11；不要登记为普通 Windows 10 的默认依赖。已在一台 Windows 11 安装，重启后运行及具体适配器支持仍待验证。
 
 1. [官方直连 — ni-488.2_26.8.0_offline.iso](https://download.ni.com/support/nipkg/products/ni-4/ni-488.2/26.8/offline/ni-488.2_26.8.0_offline.iso)
 
 [来源说明](https://www.ni.com/en/support/downloads/drivers/download.ni-488-2.html)
 
-大小：待核实 字节；SHA256：`1942db5bccd80964601ce04eef8c0e8c83c77e18128dcdfb19c780f5911584dc`。
+大小：2375872512 字节；SHA256：`1942db5bccd80964601ce04eef8c0e8c83c77e18128dcdfb19c780f5911584dc`。
 
-验证策略：`authenticode`；分发依据：`pending`；安装验证：`pending`；目标环境验证：`pending`。
+验证策略：`official-sha256`；分发依据：`pending`；安装验证：`pending`；目标环境验证：`pending`。
+
+该官方归档未签名，仅按固定哈希及指定解压成员验证，不标记为签名通过。
 
 ## Keysight IO Libraries Suite
 

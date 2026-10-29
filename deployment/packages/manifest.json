@@ -411,6 +411,37 @@
       "validation": "Official CAB hash and internal WHQL catalog checked; INF DriverVer 12/10/2025,11.5.0.417, including x64 and USB VID_10C4 PID_EA60. No hardware acceptance. Remote DriverStore result is retained in the private maintenance report."
     },
     {
+      "path": "deployment/packages/installers/ni-488.2_26.8_online.exe",
+      "kind": "vendor-installer",
+      "name": "NI-488.2 online bootstrapper",
+      "version": "26.8.0f128",
+      "purpose": "NI-488.2 2026 Q4 联网安装引导器；不包含完整驱动和离线依赖，不能替代组件清单中的离线 ISO。",
+      "size": 9002792,
+      "sha256": "591b2ef498e25d87e7d1c44f58260a6e482ac2b7d6b077a7c1d574579a36f36d",
+      "source": "https://download.ni.com/support/nipkg/products/ni-4/ni-488.2/26.8/online/ni-488.2_26.8_online.exe",
+      "source_page": "https://www.ni.com/zh-cn/support/downloads/drivers/download/packaged.ni-488-2.616444.html",
+      "publisher": "National Instruments Corporation",
+      "signature_status": "Valid (Authenticode; National Instruments Corporation)",
+      "license": "NI software license; redistribution permission pending review",
+      "validation": "官网 Chrome 下载；2026-10-30 核验 Authenticode、版本、大小和本地计算 SHA256。仅验证引导器，未据此确认完整驱动已安装；安装参数及离线依赖待核实。"
+    },
+    {
+      "path": "deployment/packages/installers/ni-488.2_26.8.0_offline.iso",
+      "kind": "vendor-installer",
+      "name": "NI-488.2 offline installer",
+      "version": "26.8.0",
+      "purpose": "NI GPIB 驱动离线套件，含厂商管理工具、NI-PAL、LabVIEW/CVI 运行库及 .NET 等可选/必需材料；完整包目录与版本/哈希见 deployment/packages/ni-4882-26.8.0.contents.json。实际安装包集合以维护报告为准，不能把包内载荷等同于已安装。",
+      "size": 2375872512,
+      "sha256": "1942db5bccd80964601ce04eef8c0e8c83c77e18128dcdfb19c780f5911584dc",
+      "source": "https://download.ni.com/support/nipkg/products/ni-4/ni-488.2/26.8/offline/ni-488.2_26.8.0_offline.iso",
+      "source_page": "https://www.ni.com/zh-cn/support/downloads/drivers/download.ni-488-2.html#616444",
+      "publisher": "National Instruments Corporation",
+      "signature_status": "ISO: official SHA256 verified; mounted Install.exe: Valid Authenticode (National Instruments Corporation)",
+      "license": "NI software license; redistribution permission pending review",
+      "validation": "2026-10-30 官网 ISO SHA256、Install.exe 有效 NI Authenticode 和 192 项离线包哈希均已核验。单台 Windows 11 实际安装 133 包，NI-488.2 26.8.0.49271-0+f119；原有 VISA 等 7 文件哈希未变，未安装 NI-VISA。安装事务要求重启，NI DLL 当前错误 1114，待重启后复测；包装脚本退出码缺失，不把该状态伪报为 exit 0。无设备接入或实机验收。",
+      "contents_manifest": "deployment/packages/ni-4882-26.8.0.contents.json"
+    },
+    {
       "path": "deployment/packages/python/altgraph-0.17.5-py2.py3-none-any.whl",
       "kind": "python-wheel",
       "name": "altgraph",

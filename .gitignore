@@ -35,6 +35,7 @@ deployment/packages/**
 !deployment/packages/**/
 !deployment/packages/**/README.md
 !deployment/packages/manifest.json
+!deployment/packages/ni-4882-26.8.0.contents.json
 !deployment/packages/python/requirements.txt
 !deployment/packages/**/Terms_of_use.pdf
 !deployment/packages/**/EUPL-EN.pdf

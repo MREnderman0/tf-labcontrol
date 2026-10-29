@@ -1358,7 +1358,7 @@
     {
       "id": "ni-4882",
       "name": "NI-488.2 GPIB",
-      "purpose": "NI GPIB 控制器备选驱动。2026 Q4 官方发行支持 Windows 11；官网显示需要登录 NI 账号后下载，直连返回 HTTP 403，尚未取得、校验或安装离线 ISO。不要把它作为普通 Windows 10 的默认驱动；VISA 共存和具体控制器支持待验证。",
+      "purpose": "NI GPIB 控制器备选驱动。2026 Q4 官方清单支持 Windows 11；不要登记为普通 Windows 10 的默认依赖。已在一台 Windows 11 安装，重启后运行及具体适配器支持仍待验证。",
       "transports": [],
       "adapters": [],
       "sdk": "",
@@ -1373,10 +1373,10 @@
       "filename": "ni-488.2_26.8.0_offline.iso",
       "sha256": "1942db5bccd80964601ce04eef8c0e8c83c77e18128dcdfb19c780f5911584dc",
       "signature": {
-        "policy": "authenticode",
+        "policy": "official-sha256",
         "publisher": null,
         "member": null,
-        "evidence": "SHA256 published on official release page; payload and Authenticode not verified."
+        "evidence": "ISO is not an Authenticode object. Official SHA256 matched on 2026-10-30. Mounted Install.exe Authenticode Valid, National Instruments Corporation, SHA256 33947e6ee9c2305ce9dda4efbfdb57df4dbed4956fba6d936d17a4a3f03ef005. ISO mounting is a separate maintenance operation; the ZIP-member extractor does not handle this image."
       },
       "redistribution": {
         "state": "pending",
@@ -1384,7 +1384,7 @@
       },
       "detection": {
         "kind": "pending",
-        "detail": "Requires verified component-specific detection"
+        "detail": "维护核验可读取 NIPM list-installed 中 ni-488.2、ni-488.2-runtime、ni-488.2-utilities，并核对 System32/ni4882.dll；公共自动检测尚未实现，文件存在不等于驱动可用。"
       },
       "installation": {
         "state": "pending",
@@ -1394,12 +1394,12 @@
         "reboot_codes": null,
         "requires_admin": true,
         "reboot": "possible",
-        "evidence": null
+        "evidence": "2026-10-30 在 Windows 11 x64 使用已校验 ISO 的 NI 安装器安装；--quiet --accept-eulas --prevent-reboot 参考 NI Package Manager Automating an Installer 文档。外层安装器按 suite.dat 安装推荐组件，不能用附加 runtime/utilities 名称限制范围。实际 NIPM 读回 133 包，事务均为 Install 且要求重启。包装脚本未捕获退出码，因此不登记已验证成功码或自动安装参数；保留原始日志，以安装包清单和事务读回确认写入。未自动重启。"
       },
       "recovery": "Preserve compatible shared drivers and user data; restore only changes owned by this application.",
       "validation": {
         "state": "pending",
-        "evidence": "NI GPIB 控制器备选驱动。2026 Q4 官方发行支持 Windows 11；官网显示需要登录 NI 账号后下载，直连返回 HTTP 403，尚未取得、校验或安装离线 ISO。不要把它作为普通 Windows 10 的默认驱动；VISA 共存和具体控制器支持待验证。"
+        "evidence": "2026-10-30 完整 ISO 官网 SHA256、挂载 Install.exe 的 NI 签名及 ISO 内 192 项包载荷哈希校验通过；逐包版本/哈希见 deployment/packages/ni-4882-26.8.0.contents.json。单台 Windows 11 安装读回 NI-488.2 26.8.0.49271-0+f119、runtime/utilities 26.8.0.49270-0+f118，共 133 包、12 项 NI INF；未安装 NI-VISA，原有 7 个厂商文件哈希未变，VISA/Pico/Thorlabs/K+K DLL 可加载。NI DLL 重启前加载失败（WinError 1114），安装事务要求重启；须人工重启后复测。当前不代表驱动运行、适配器、干净系统或跨系统验收通过。"
       },
       "dependencies": [],
       "download_sources": [
@@ -1409,7 +1409,9 @@
         }
       ],
       "archive_members": [],
-      "installer_entry": null
+      "installer_entry": null,
+      "size": 2375872512,
+      "cache_subdirectory": "NI"
     },
     {
       "id": "keysight-iolibs",
