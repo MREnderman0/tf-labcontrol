@@ -42,7 +42,9 @@
           "/o:SSHOption=ExternalOpenSSH"
         ],
         "documentation": "https://github.com/git-for-windows/git-for-windows.github.io/blob/main/content/silent-or-unattended-installation.md",
-        "success_codes": [0],
+        "success_codes": [
+          0
+        ],
         "reboot_codes": [],
         "detection": "git --version; git lfs version",
         "rollback": "use vendor uninstaller; preserve all repositories and credentials"
@@ -347,6 +349,66 @@
       "source_page": "https://kplusk-messtechnik.de/downloads/index.html",
       "publisher": "K+K Messtechnik GmbH",
       "signature_status": "Extracted from official archive; see Terms_of_use.pdf"
+    },
+    {
+      "path": "deployment/packages/installers/FTDI-DriverStore-x64-2.12.36.20.zip",
+      "kind": "vendor-driver-archive",
+      "name": "FTDI VCP",
+      "version": "2.12.36.20",
+      "purpose": "FTDI USB 虚拟串口（含 GPD-4303S）。当前固定材料是已验证 Windows DriverStore 中的 x64 驱动导出，不是厂家原始 ZIP；仅供现有维护缓存和内网复用，官方下载归档仍待补。接入后须核对真实芯片及 VID/PID。",
+      "size": 894432,
+      "sha256": "bdbb21a501bffe0a600b8aee6414eb573485d1f0522fef38e5be1a02ad075a44",
+      "source": "verified-local-driverstore-export",
+      "source_page": "https://mail.ftdichip.cn/Drivers/VCP.htm",
+      "publisher": "Microsoft Windows Hardware Compatibility Publisher",
+      "signature_status": "Valid (Authenticode of ftdibus/ftdibus.cat, ftdiport/ftdiport.cat)",
+      "license": "FTDI proprietary driver license; genuine FTDI devices only. Local signed-package reuse; public redistribution of this derived export has not been approved.",
+      "validation": "2026-10-29 Windows 11 x64: both original Microsoft WHQL catalogs Valid; pnputil /add-driver returned 0 for ftdibus.inf and ftdiport.inf; DriverStore readback 2.12.36.20. No /install, no connected adapter, no reboot. Original signed files retained; PNF cache excluded."
+    },
+    {
+      "path": "deployment/packages/installers/CH341SER.ZIP",
+      "kind": "vendor-driver-archive",
+      "name": "WCH CH340/CH341 serial driver",
+      "version": "4.0.2026.02",
+      "purpose": "CH340/CH341 USB 转串口预安装；使用官方国内站 4.0 包中的 Windows 10/11 INF，驱动版本 4.0.2026.02。不能覆盖 CH343/CH9102 等其他芯片系列。",
+      "size": 713322,
+      "sha256": "59967d9ce371d0bf3df02dec0b66c8dfbf9ca576da0572ff4404148a7c381807",
+      "source": "https://file.wch.cn/download/file?id=5",
+      "source_page": "https://www.wch.cn/downloads/CH341SER_ZIP.html",
+      "publisher": "Microsoft Windows Hardware Compatibility Publisher",
+      "signature_status": "Valid (Authenticode of CH341SER/WIN 1X/CH341SER.CAT)",
+      "license": "WCH proprietary driver; official download page describes application bundling. Final redistribution/license review remains pending.",
+      "validation": "2026-10-29 official domestic archive hash/size and Microsoft WHQL catalog verified; pnputil /add-driver returned 0; Windows 11 DriverStore readback 4.0.2026.2. No /install, no attached adapter and no reboot."
+    },
+    {
+      "path": "deployment/packages/installers/PL23XX-M_LogoDriver_Setup_41000_20260716.zip",
+      "kind": "vendor-driver-archive",
+      "name": "Keithley 2231A / Prolific PL2303 USB serial",
+      "version": "4.10.0.0",
+      "purpose": "Keithley 2231A-001 的 Tek 官方支持页指向 Prolific PL2303。安装器 4.10.0.0 在 Windows 11 注册 PL2303G 5.2.12.0 和 HXD/EA/RA/SA 3.9.7.0；旧 HXA/XA、非原厂芯片及实际适配器兼容性仍须核对。",
+      "size": 13532085,
+      "sha256": "15bcbc7837600bc037d9c08e1fb180252553eee673ff92c4d3a391c264a3bced",
+      "source": "https://www.prolific.com.tw/wp-content/uploads/2026/10/PL23XX-M_LogoDriver_Setup_41000_20260716.zip",
+      "source_page": "https://www.tek.com/en/support/software/driver/2231a-30-3-software",
+      "publisher": "Prolific Technology Inc.",
+      "signature_status": "Valid (Authenticode of PL23XX-M_LogoDriver_Setup_41000_20260716/PL23XX-M_LogoDriver_Setup_41000_20260716.exe)",
+      "license": "Prolific proprietary driver for genuine supported chipsets; final redistribution/license review remains pending.",
+      "validation": "2026-10-29 official archive hash/size and Prolific installer Authenticode Valid; documented /s returned 0; Windows 11 DriverStore readback PL2303G 5.2.12.0 and PL2303HXD 3.9.7.0. No adapter connected and no reboot requested."
+    },
+    {
+      "path": "deployment/packages/installers/CP210x-11.5.0.417-amd64.cab",
+      "kind": "vendor-driver-cab",
+      "name": "Silicon Labs CP210x VCP",
+      "version": "11.5.0.417",
+      "purpose": "CP210x USB 转串口预安装。采用微软官方更新目录分发的 11.5.0.417 包，含 CP210x/CP2105/CP2108 默认 VID/PID；与厂商网站 11.6.0 ZIP 区分，后者当前直连返回 403。CAB 仅准备材料，须由维护人员验证解包后的 WHQL 目录并预装 INF；接入验收另行进行。",
+      "size": 210360,
+      "sha256": "7ea8a03769a05c7bb78718c360b5079be354ed6437623408d51b9c1e8f5a122a",
+      "source": "https://catalog.s.download.windowsupdate.com/c/msdownload/update/driver/drvs/2026/02/3bc68c22-eb83-4383-b451-4c581d06d3fb_6092f1062939e09f524b5d8e9108530f7f516f13.cab",
+      "source_page": "https://www.catalog.update.microsoft.com/ScopedViewInline.aspx?updateid=34213758-173c-47ec-951d-16b2c9463881",
+      "publisher": "Microsoft Windows Hardware Compatibility Publisher (internal catalog)",
+      "signature_status": "CAB not signed; official SHA256 matched; extracted silabser.cat Valid",
+      "license": "Silicon Labs proprietary VCP driver; sourced from Microsoft Update Catalog. Public redistribution approval/license review remains pending.",
+      "validation": "Official CAB hash and internal WHQL catalog checked; INF DriverVer 12/10/2025,11.5.0.417, including x64 and USB VID_10C4 PID_EA60. No hardware acceptance. Remote DriverStore result is retained in the private maintenance report."
     },
     {
       "path": "deployment/packages/python/altgraph-0.17.5-py2.py3-none-any.whl",

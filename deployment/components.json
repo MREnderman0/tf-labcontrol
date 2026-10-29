@@ -212,115 +212,233 @@
     {
       "id": "ftdi-vcp",
       "name": "FTDI VCP",
-      "purpose": "GPD-4303S USB virtual serial driver",
+      "purpose": "FTDI USB 虚拟串口（含 GPD-4303S）。当前固定材料是已验证 Windows DriverStore 中的 x64 驱动导出，不是厂家原始 ZIP；仅供现有维护缓存和内网复用，官方下载归档仍待补。接入后须核对真实芯片及 VID/PID。",
       "transports": [],
       "adapters": [
         "gwinstek.gpd4303s"
       ],
       "sdk": "",
-      "vendor": "",
-      "version": null,
+      "vendor": "FTDI",
+      "version": "2.12.36.20",
       "architecture": "x64",
       "systems": [
         "Windows 10 x64",
         "Windows 11 x64"
       ],
-      "source_page": "https://ftdichip.com/drivers/vcp-drivers/",
+      "source_page": "https://mail.ftdichip.cn/Drivers/VCP.htm",
       "url": null,
-      "filename": null,
-      "sha256": null,
+      "filename": "FTDI-DriverStore-x64-2.12.36.20.zip",
+      "sha256": "bdbb21a501bffe0a600b8aee6414eb573485d1f0522fef38e5be1a02ad075a44",
       "signature": {
         "policy": "authenticode",
-        "publisher": null,
-        "member": null,
-        "evidence": null
+        "publisher": "Microsoft Windows Hardware Compatibility Publisher",
+        "member": "ftdibus/ftdibus.cat",
+        "evidence": "2026-10-29 Windows 11 x64: both original Microsoft WHQL catalogs Valid; pnputil /add-driver returned 0 for ftdibus.inf and ftdiport.inf; DriverStore readback 2.12.36.20. No /install, no connected adapter, no reboot. Original signed files retained; PNF cache excluded."
       },
       "redistribution": {
         "state": "pending",
-        "evidence": null
+        "evidence": "FTDI proprietary driver license; genuine FTDI devices only. Local signed-package reuse; public redistribution of this derived export has not been approved."
       },
       "detection": {
         "kind": "pending",
-        "detail": "Requires verified component-specific detection"
+        "detail": "Inspect Get-WindowsDriver / pnputil DriverStore version and signed INF/catalog; installed-component detection is not implemented in the application. Matching PnP binding and COM identity require the actual adapter."
       },
       "installation": {
         "state": "pending",
         "arguments": null,
         "order": 30,
-        "success_codes": null,
-        "reboot_codes": null,
+        "success_codes": [
+          0
+        ],
+        "reboot_codes": [
+          3010
+        ],
         "requires_admin": true,
-        "reboot": "possible",
-        "evidence": null
+        "reboot": "possible; never automatically restart",
+        "evidence": "2026-10-29 Windows 11 x64: both original Microsoft WHQL catalogs Valid; pnputil /add-driver returned 0 for ftdibus.inf and ftdiport.inf; DriverStore readback 2.12.36.20. No /install, no connected adapter, no reboot. Original signed files retained; PNF cache excluded. Repeatable clean Windows 10/11 acceptance remains pending."
       },
-      "recovery": "Preserve compatible shared drivers and user data; restore only changes owned by this application.",
+      "recovery": "Preserve pre-existing shared packages. Record published INF before/after; remove only a newly added package after proving no device uses it. Never force-remove active drivers or reboot automatically.",
       "validation": {
         "state": "pending",
-        "evidence": null
+        "evidence": "2026-10-29 Windows 11 x64: both original Microsoft WHQL catalogs Valid; pnputil /add-driver returned 0 for ftdibus.inf and ftdiport.inf; DriverStore readback 2.12.36.20. No /install, no connected adapter, no reboot. Original signed files retained; PNF cache excluded. Software staging only; no hardware acceptance, reconnect test or clean Windows 10 certification."
       },
       "dependencies": [],
       "download_sources": [],
-      "archive_members": [],
-      "installer_entry": null
+      "archive_members": [
+        {
+          "path": "interfaces/ftdi-vcp/ftdibus/amd64/ftbusui.dll",
+          "size": 170056,
+          "sha256": "793608c0def83f2d4070274d12e68444ec464e7129ce813ba3ec98bff4f14ffa",
+          "member": "ftdibus/amd64/ftbusui.dll"
+        },
+        {
+          "path": "interfaces/ftdi-vcp/ftdibus/amd64/ftd2xx64.dll",
+          "size": 808568,
+          "sha256": "52260f7751fbc545573ca29e4c27bfe005a97a98e9a7e5c28b77735568d6c5d5",
+          "member": "ftdibus/amd64/ftd2xx64.dll"
+        },
+        {
+          "path": "interfaces/ftdi-vcp/ftdibus/amd64/ftdibus.sys",
+          "size": 152608,
+          "sha256": "fc2cdded48974852be35d7c8bde565514cfec5f224ab3b85642b36d68a03bb5c",
+          "member": "ftdibus/amd64/ftdibus.sys"
+        },
+        {
+          "path": "interfaces/ftdi-vcp/ftdibus/amd64/FTLang.dll",
+          "size": 276552,
+          "sha256": "4fb0e49c8b4fabeeaf6b84021504d5ff8fd207683272db74d178be72228e7232",
+          "member": "ftdibus/amd64/FTLang.dll"
+        },
+        {
+          "path": "interfaces/ftdi-vcp/ftdibus/ftdibus.cat",
+          "size": 26691,
+          "sha256": "b5376ae984033e0a503b793e31121f3208453a505bf9ac150f466690504782ef",
+          "member": "ftdibus/ftdibus.cat"
+        },
+        {
+          "path": "interfaces/ftdi-vcp/ftdibus/ftdibus.inf",
+          "size": 33850,
+          "sha256": "9c8c5f39953965e7ac205826346898f974bd0916d487528c5d7925ba122b98a2",
+          "member": "ftdibus/ftdibus.inf"
+        },
+        {
+          "path": "interfaces/ftdi-vcp/ftdibus/i386/ftd2xx.dll",
+          "size": 454264,
+          "sha256": "1bd207779a612b6a37d0efef7b623f6f72966becf059de4008e801841c12abec",
+          "member": "ftdibus/i386/ftd2xx.dll"
+        },
+        {
+          "path": "interfaces/ftdi-vcp/ftdiport/amd64/ftcserco.dll",
+          "size": 76872,
+          "sha256": "97ade3f76a3a89121360b6c6a68d110b4c6f4bfd749695a552f87d117c0c851a",
+          "member": "ftdiport/amd64/ftcserco.dll"
+        },
+        {
+          "path": "interfaces/ftdi-vcp/ftdiport/amd64/ftser2k.sys",
+          "size": 101520,
+          "sha256": "404dcb68b1fbf686388bbad3bcbcffcda2662d436f45716690b452e9ff909f8e",
+          "member": "ftdiport/amd64/ftser2k.sys"
+        },
+        {
+          "path": "interfaces/ftdi-vcp/ftdiport/amd64/ftserui2.dll",
+          "size": 67144,
+          "sha256": "407b7f5e2eedd1e1be754df66eb249dfe674f8fe0a67d1a0d5942f3ccc6b3beb",
+          "member": "ftdiport/amd64/ftserui2.dll"
+        },
+        {
+          "path": "interfaces/ftdi-vcp/ftdiport/ftdiport.cat",
+          "size": 25846,
+          "sha256": "134b692a4af2148d60c6e1874fa6e6af12507b3c5dc64a2a568e44ec1d64fe9f",
+          "member": "ftdiport/ftdiport.cat"
+        },
+        {
+          "path": "interfaces/ftdi-vcp/ftdiport/ftdiport.inf",
+          "size": 19728,
+          "sha256": "ef52d16fc306bbaab384c767e5b8c4c7babcf622099fda9cb8d9d72651760209",
+          "member": "ftdiport/ftdiport.inf"
+        }
+      ],
+      "installer_entry": null,
+      "size": 894432,
+      "provenance": {
+        "kind": "verified-local-driverstore-export",
+        "official_reference": "https://mail.ftdichip.cn/Drivers/CDM/CDM-v2.12.36.20-WHQL-Certified.zip",
+        "export": "Original ftdibus.inf/ftdiport.inf 2.12.36.20 packages, all dependencies and WHQL catalogs copied unchanged from Windows DriverStore. This ZIP has its own size/hash and must not be confused with the official archive.",
+        "catalogs": [
+          "ftdibus/ftdibus.cat",
+          "ftdiport/ftdiport.cat"
+        ]
+      }
     },
     {
       "id": "keithley-usb",
-      "name": "Keithley 2231A USB adapter",
-      "purpose": "2231A-001 adapter driver",
+      "name": "Keithley 2231A / Prolific PL2303 USB serial",
+      "purpose": "Keithley 2231A-001 的 Tek 官方支持页指向 Prolific PL2303。安装器 4.10.0.0 在 Windows 11 注册 PL2303G 5.2.12.0 和 HXD/EA/RA/SA 3.9.7.0；旧 HXA/XA、非原厂芯片及实际适配器兼容性仍须核对。",
       "transports": [],
       "adapters": [
         "keithley.2231a"
       ],
       "sdk": "",
-      "vendor": "",
-      "version": null,
+      "vendor": "Prolific Technology Inc.",
+      "version": "4.10.0.0",
       "architecture": "x64",
       "systems": [
         "Windows 10 x64",
         "Windows 11 x64"
       ],
-      "source_page": "https://www.tek.com/en/support",
-      "url": null,
-      "filename": null,
-      "sha256": null,
+      "source_page": "https://www.tek.com/en/support/software/driver/2231a-30-3-software",
+      "url": "https://www.prolific.com.tw/wp-content/uploads/2026/10/PL23XX-M_LogoDriver_Setup_41000_20260716.zip",
+      "filename": "PL23XX-M_LogoDriver_Setup_41000_20260716.zip",
+      "sha256": "15bcbc7837600bc037d9c08e1fb180252553eee673ff92c4d3a391c264a3bced",
       "signature": {
         "policy": "authenticode",
-        "publisher": null,
-        "member": null,
-        "evidence": null
+        "publisher": "Prolific Technology Inc.",
+        "member": "PL23XX-M_LogoDriver_Setup_41000_20260716/PL23XX-M_LogoDriver_Setup_41000_20260716.exe",
+        "evidence": "2026-10-29 official archive hash/size and Prolific installer Authenticode Valid; documented /s returned 0; Windows 11 DriverStore readback PL2303G 5.2.12.0 and PL2303HXD 3.9.7.0. No adapter connected and no reboot requested."
       },
       "redistribution": {
         "state": "pending",
-        "evidence": null
+        "evidence": "Prolific proprietary driver for genuine supported chipsets; final redistribution/license review remains pending."
       },
       "detection": {
         "kind": "pending",
-        "detail": "Requires verified component-specific detection"
+        "detail": "Inspect Get-WindowsDriver / pnputil DriverStore version and signed INF/catalog; installed-component detection is not implemented in the application. Matching PnP binding and COM identity require the actual adapter."
       },
       "installation": {
         "state": "pending",
-        "arguments": null,
+        "arguments": [
+          "/s"
+        ],
         "order": 40,
-        "success_codes": null,
-        "reboot_codes": null,
+        "success_codes": [
+          0
+        ],
+        "reboot_codes": [
+          3010
+        ],
         "requires_admin": true,
-        "reboot": "possible",
-        "evidence": null
+        "reboot": "possible; never automatically restart",
+        "evidence": "2026-10-29 official archive hash/size and Prolific installer Authenticode Valid; documented /s returned 0; Windows 11 DriverStore readback PL2303G 5.2.12.0 and PL2303HXD 3.9.7.0. No adapter connected and no reboot requested. Repeatable clean Windows 10/11 acceptance remains pending."
       },
-      "recovery": "Preserve compatible shared drivers and user data; restore only changes owned by this application.",
+      "recovery": "Preserve pre-existing shared packages. Record published INF before/after; remove only a newly added package after proving no device uses it. Never force-remove active drivers or reboot automatically.",
       "validation": {
         "state": "pending",
-        "evidence": null
+        "evidence": "2026-10-29 official archive hash/size and Prolific installer Authenticode Valid; documented /s returned 0; Windows 11 DriverStore readback PL2303G 5.2.12.0 and PL2303HXD 3.9.7.0. No adapter connected and no reboot requested. Software staging only; no hardware acceptance, reconnect test or clean Windows 10 certification."
       },
       "dependencies": [],
-      "download_sources": [],
-      "archive_members": [],
-      "installer_entry": null
+      "download_sources": [
+        {
+          "url": "https://www.prolific.com.tw/wp-content/uploads/2026/10/PL23XX-M_LogoDriver_Setup_41000_20260716.zip",
+          "kind": "official-direct"
+        }
+      ],
+      "archive_members": [
+        {
+          "path": "interfaces/keithley-usb/PL23XX-M_LogoDriver_Setup_41000_20260716/PL2303 Windows Driver Manual v1.30.0.pdf",
+          "size": 1561376,
+          "sha256": "902663aa31b7199e487f49e006e9f6b8a2438f93e8260b067ba52bd9fadb5775",
+          "member": "PL23XX-M_LogoDriver_Setup_41000_20260716/PL2303 Windows Driver Manual v1.30.0.pdf"
+        },
+        {
+          "path": "interfaces/keithley-usb/PL23XX-M_LogoDriver_Setup_41000_20260716/PL23XX-M_LogoDriver_Setup_41000_20260716.exe",
+          "size": 14528656,
+          "sha256": "1e603f1fbb11a61a3e37f3dd31892f57b83af689fb7ed9a244e7819d5d8160bd",
+          "member": "PL23XX-M_LogoDriver_Setup_41000_20260716/PL23XX-M_LogoDriver_Setup_41000_20260716.exe"
+        },
+        {
+          "path": "interfaces/keithley-usb/PL23XX-M_LogoDriver_Setup_41000_20260716/PL23XX_DriverInstallerv_4.10.0.0_ReleaseNote.txt",
+          "size": 13517,
+          "sha256": "51144d6b149301489ee6df74b562fa287ff2802d2a606b11d5b764e69ff1ad25",
+          "member": "PL23XX-M_LogoDriver_Setup_41000_20260716/PL23XX_DriverInstallerv_4.10.0.0_ReleaseNote.txt"
+        }
+      ],
+      "installer_entry": "interfaces/keithley-usb/PL23XX-M_LogoDriver_Setup_41000_20260716/PL23XX-M_LogoDriver_Setup_41000_20260716.exe",
+      "size": 13532085
     },
     {
       "id": "serial-interface",
       "name": "Serial interface driver",
-      "purpose": "Identify USB-to-serial hardware by VID/PID before selecting its official driver",
+      "purpose": "按实际 USB VID/PID 选择串口驱动；已登记 FTDI、Prolific、WCH CH340/CH341 和 CP210x。预装只入库，设备接入后的绑定、COM 号及收发另验。",
       "transports": [],
       "adapters": [],
       "sdk": "",
@@ -372,7 +490,7 @@
     {
       "id": "gpib-interface",
       "name": "GPIB interface driver",
-      "purpose": "GPIB controller-specific driver and VISA interoperability",
+      "purpose": "按 GPIB 控制器厂家选择 NI-488.2 或 Keysight IO Libraries；两者材料和共存验收仍待补，安装 R&S VISA 本身不能证明任意 USB-GPIB 适配器已可用。",
       "transports": [],
       "adapters": [],
       "sdk": "",
@@ -849,7 +967,7 @@
         "reboot_codes": [],
         "requires_admin": true,
         "reboot": "possible",
-        "evidence": "Official NSIS installer supports /S and returned 0 for local file installation. Development-host maintenance verified service registration, automatic start configuration, DHCP-only configuration and scoped firewall readback; clean target-machine installation and restart persistence remain pending."
+        "evidence": "Official NSIS installer supports /S and returned 0 for local file installation. Development-host maintenance verified service registration, automatic start configuration, DHCP-only configuration and scoped firewall readback; clean target-machine installation and restart persistence remain pending. An additional Windows 11 host verified file installation, disabled service registration and Services=0/PoolSize=0 preparation with no UDP/67 listener; activation remains pending an explicitly selected connected lab interface/subnet."
       },
       "recovery": "Preserve compatible shared drivers and user data; restore only changes owned by this application.",
       "validation": {
@@ -937,6 +1055,413 @@
       "archive_members": [],
       "installer_entry": "vc_redist.x64.exe",
       "size": 18731856
+    },
+    {
+      "id": "wch-ch34x",
+      "name": "WCH CH340/CH341 serial driver",
+      "purpose": "CH340/CH341 USB 转串口预安装；使用官方国内站 4.0 包中的 Windows 10/11 INF，驱动版本 4.0.2026.02。不能覆盖 CH343/CH9102 等其他芯片系列。",
+      "transports": [],
+      "adapters": [],
+      "sdk": "",
+      "vendor": "Nanjing Qinheng Microelectronics (WCH)",
+      "version": "4.0.2026.02",
+      "architecture": "x64",
+      "systems": [
+        "Windows 10 x64",
+        "Windows 11 x64"
+      ],
+      "source_page": "https://www.wch.cn/downloads/CH341SER_ZIP.html",
+      "url": "https://file.wch.cn/download/file?id=5",
+      "filename": "CH341SER.ZIP",
+      "sha256": "59967d9ce371d0bf3df02dec0b66c8dfbf9ca576da0572ff4404148a7c381807",
+      "signature": {
+        "policy": "authenticode",
+        "publisher": "Microsoft Windows Hardware Compatibility Publisher",
+        "member": "CH341SER/WIN 1X/CH341SER.CAT",
+        "evidence": "2026-10-29 official domestic archive hash/size and Microsoft WHQL catalog verified; pnputil /add-driver returned 0; Windows 11 DriverStore readback 4.0.2026.2. No /install, no attached adapter and no reboot."
+      },
+      "redistribution": {
+        "state": "pending",
+        "evidence": "WCH proprietary driver; official download page describes application bundling. Final redistribution/license review remains pending."
+      },
+      "detection": {
+        "kind": "pending",
+        "detail": "Inspect Get-WindowsDriver / pnputil DriverStore version and signed INF/catalog; installed-component detection is not implemented in the application. Matching PnP binding and COM identity require the actual adapter."
+      },
+      "installation": {
+        "state": "pending",
+        "arguments": null,
+        "order": 50,
+        "success_codes": [
+          0
+        ],
+        "reboot_codes": [
+          3010
+        ],
+        "requires_admin": true,
+        "reboot": "possible; never automatically restart",
+        "evidence": "2026-10-29 official domestic archive hash/size and Microsoft WHQL catalog verified; pnputil /add-driver returned 0; Windows 11 DriverStore readback 4.0.2026.2. No /install, no attached adapter and no reboot. Repeatable clean Windows 10/11 acceptance remains pending."
+      },
+      "recovery": "Preserve pre-existing shared packages. Record published INF before/after; remove only a newly added package after proving no device uses it. Never force-remove active drivers or reboot automatically.",
+      "validation": {
+        "state": "pending",
+        "evidence": "2026-10-29 official domestic archive hash/size and Microsoft WHQL catalog verified; pnputil /add-driver returned 0; Windows 11 DriverStore readback 4.0.2026.2. No /install, no attached adapter and no reboot. Software staging only; no hardware acceptance, reconnect test or clean Windows 10 certification."
+      },
+      "dependencies": [],
+      "download_sources": [
+        {
+          "url": "https://file.wch.cn/download/file?id=5",
+          "kind": "official-domestic"
+        }
+      ],
+      "archive_members": [
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/CH341M64.sys",
+          "size": 63792,
+          "sha256": "d1f001401a28e43e20a3ed9ccfd5267a11fef4a9846183bab6a2cdb10acb4237",
+          "member": "CH341SER/CH341M64.sys"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/CH341PORTS.DLL",
+          "size": 61096,
+          "sha256": "9e79736e949897b8ff8e959e2b6b67ead2ad061a4c63f72bfa70995023ef7e05",
+          "member": "CH341SER/CH341PORTS.DLL"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/CH341PORTSA64.DLL",
+          "size": 72872,
+          "sha256": "98707b112d079e05241298d1ab19bac83e0a18d8334a5bc096c359a169838a0b",
+          "member": "CH341SER/CH341PORTSA64.DLL"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/CH341PT.DLL",
+          "size": 49280,
+          "sha256": "222f91aaeeda5d8348552f0edbb9125948dbfa38daccefab7ca001efc70ffc74",
+          "member": "CH341SER/CH341PT.DLL"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/CH341PTA64.DLL",
+          "size": 67704,
+          "sha256": "cb0fb42b6b3ba62aff1999132df9a41f3993f7f79ede4b020048240934bf4f91",
+          "member": "CH341SER/CH341PTA64.DLL"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/CH341S64.sys",
+          "size": 74384,
+          "sha256": "83078d87254ee4f52f08498c0458f27308c7ab857278eda59f8ec5bfd5e1d5ce",
+          "member": "CH341SER/CH341S64.sys"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/CH341S98.SYS",
+          "size": 48336,
+          "sha256": "ef2afbb2679added712555ed8d99eb79c365526503d646f972be81899a65154c",
+          "member": "CH341SER/CH341S98.SYS"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/CH341SER.CAT",
+          "size": 14510,
+          "sha256": "b5f2ef9fcdfaac86243d47b26e77bc3378cabdef18eba3e04975c6403756bd28",
+          "member": "CH341SER/CH341SER.CAT"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/CH341SER.INF",
+          "size": 9390,
+          "sha256": "1bbb1dfe5e311f53c2ae3928493dd884cabc12f992c7414a9509b28bf1f729df",
+          "member": "CH341SER/CH341SER.INF"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/CH341SER.sys",
+          "size": 53904,
+          "sha256": "bd849760a396ce7e9b0bf04ce49d528db63cae2056a0b3187363c602c15110cf",
+          "member": "CH341SER/CH341SER.sys"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/CH341SER.VXD",
+          "size": 20089,
+          "sha256": "2a946f316edd7e1185deeafdc2de52b2d2843198be098a724233c12f9ccd0dae",
+          "member": "CH341SER/CH341SER.VXD"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/DRVSETUP64/DRVSETUP64.exe",
+          "size": 54224,
+          "sha256": "b5d55fa31753fcd86145c460d644bac78f171f51d708a050326234b4a2876c4c",
+          "member": "CH341SER/DRVSETUP64/DRVSETUP64.exe"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/SETUP.EXE",
+          "size": 92624,
+          "sha256": "b89fd6c6a1eb20df0fb347e9af5e935be2e6f2e2915b984543c0532e6d0ffaa2",
+          "member": "CH341SER/SETUP.EXE"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/WIN 1X/CH341M64.sys",
+          "size": 63792,
+          "sha256": "d1f001401a28e43e20a3ed9ccfd5267a11fef4a9846183bab6a2cdb10acb4237",
+          "member": "CH341SER/WIN 1X/CH341M64.sys"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/WIN 1X/CH341PORTS.DLL",
+          "size": 61096,
+          "sha256": "9e79736e949897b8ff8e959e2b6b67ead2ad061a4c63f72bfa70995023ef7e05",
+          "member": "CH341SER/WIN 1X/CH341PORTS.DLL"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/WIN 1X/CH341PORTSA64.DLL",
+          "size": 72872,
+          "sha256": "98707b112d079e05241298d1ab19bac83e0a18d8334a5bc096c359a169838a0b",
+          "member": "CH341SER/WIN 1X/CH341PORTSA64.DLL"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/WIN 1X/CH341PT.DLL",
+          "size": 49280,
+          "sha256": "222f91aaeeda5d8348552f0edbb9125948dbfa38daccefab7ca001efc70ffc74",
+          "member": "CH341SER/WIN 1X/CH341PT.DLL"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/WIN 1X/CH341PTA64.DLL",
+          "size": 67704,
+          "sha256": "cb0fb42b6b3ba62aff1999132df9a41f3993f7f79ede4b020048240934bf4f91",
+          "member": "CH341SER/WIN 1X/CH341PTA64.DLL"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/WIN 1X/CH341S64.sys",
+          "size": 74384,
+          "sha256": "83078d87254ee4f52f08498c0458f27308c7ab857278eda59f8ec5bfd5e1d5ce",
+          "member": "CH341SER/WIN 1X/CH341S64.sys"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/WIN 1X/CH341SER.CAT",
+          "size": 14510,
+          "sha256": "b5f2ef9fcdfaac86243d47b26e77bc3378cabdef18eba3e04975c6403756bd28",
+          "member": "CH341SER/WIN 1X/CH341SER.CAT"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/WIN 1X/CH341SER.INF",
+          "size": 9390,
+          "sha256": "1bbb1dfe5e311f53c2ae3928493dd884cabc12f992c7414a9509b28bf1f729df",
+          "member": "CH341SER/WIN 1X/CH341SER.INF"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/WIN 1X/CH341SER.sys",
+          "size": 53904,
+          "sha256": "bd849760a396ce7e9b0bf04ce49d528db63cae2056a0b3187363c602c15110cf",
+          "member": "CH341SER/WIN 1X/CH341SER.sys"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/WIN 9X/CH341PORTS.DLL",
+          "size": 61096,
+          "sha256": "9e79736e949897b8ff8e959e2b6b67ead2ad061a4c63f72bfa70995023ef7e05",
+          "member": "CH341SER/WIN 9X/CH341PORTS.DLL"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/WIN 9X/CH341PORTSA64.DLL",
+          "size": 72872,
+          "sha256": "98707b112d079e05241298d1ab19bac83e0a18d8334a5bc096c359a169838a0b",
+          "member": "CH341SER/WIN 9X/CH341PORTSA64.DLL"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/WIN 9X/CH341PT.DLL",
+          "size": 49280,
+          "sha256": "222f91aaeeda5d8348552f0edbb9125948dbfa38daccefab7ca001efc70ffc74",
+          "member": "CH341SER/WIN 9X/CH341PT.DLL"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/WIN 9X/CH341PTA64.DLL",
+          "size": 67704,
+          "sha256": "cb0fb42b6b3ba62aff1999132df9a41f3993f7f79ede4b020048240934bf4f91",
+          "member": "CH341SER/WIN 9X/CH341PTA64.DLL"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/WIN 9X/CH341S98.SYS",
+          "size": 48336,
+          "sha256": "ef2afbb2679added712555ed8d99eb79c365526503d646f972be81899a65154c",
+          "member": "CH341SER/WIN 9X/CH341S98.SYS"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/WIN 9X/CH341SER.INF",
+          "size": 9390,
+          "sha256": "1bbb1dfe5e311f53c2ae3928493dd884cabc12f992c7414a9509b28bf1f729df",
+          "member": "CH341SER/WIN 9X/CH341SER.INF"
+        },
+        {
+          "path": "interfaces/wch-ch34x/CH341SER/WIN 9X/CH341SER.VXD",
+          "size": 20089,
+          "sha256": "2a946f316edd7e1185deeafdc2de52b2d2843198be098a724233c12f9ccd0dae",
+          "member": "CH341SER/WIN 9X/CH341SER.VXD"
+        }
+      ],
+      "installer_entry": null,
+      "size": 713322
+    },
+    {
+      "id": "silabs-cp210x",
+      "name": "Silicon Labs CP210x VCP",
+      "purpose": "CP210x USB 转串口预安装。采用微软官方更新目录分发的 11.5.0.417 包，含 CP210x/CP2105/CP2108 默认 VID/PID；与厂商网站 11.6.0 ZIP 区分，后者当前直连返回 403。CAB 仅准备材料，须由维护人员验证解包后的 WHQL 目录并预装 INF；接入验收另行进行。",
+      "transports": [],
+      "adapters": [],
+      "sdk": "",
+      "vendor": "Silicon Laboratories",
+      "version": "11.5.0.417",
+      "architecture": "x64",
+      "systems": [
+        "Windows 10 x64",
+        "Windows 11 x64"
+      ],
+      "source_page": "https://www.catalog.update.microsoft.com/ScopedViewInline.aspx?updateid=34213758-173c-47ec-951d-16b2c9463881",
+      "url": "https://catalog.s.download.windowsupdate.com/c/msdownload/update/driver/drvs/2026/02/3bc68c22-eb83-4383-b451-4c581d06d3fb_6092f1062939e09f524b5d8e9108530f7f516f13.cab",
+      "filename": "CP210x-11.5.0.417-amd64.cab",
+      "sha256": "7ea8a03769a05c7bb78718c360b5079be354ed6437623408d51b9c1e8f5a122a",
+      "signature": {
+        "policy": "official-sha256",
+        "publisher": "Microsoft Update Catalog / Silicon Laboratories Inc.",
+        "member": null,
+        "evidence": "CAB SHA256 decoded from Microsoft Update Catalog DownloadDialog matches 7ea8a03769a05c7bb78718c360b5079be354ed6437623408d51b9c1e8f5a122a. Extracted silabser.cat Authenticode Valid: Microsoft Windows Hardware Compatibility Publisher. CAB is not itself Authenticode signed."
+      },
+      "redistribution": {
+        "state": "pending",
+        "evidence": "Silicon Labs proprietary VCP driver; sourced from Microsoft Update Catalog. Public redistribution approval/license review remains pending."
+      },
+      "detection": {
+        "kind": "pending",
+        "detail": "Get-WindowsDriver / pnputil DriverStore: Silicon Laboratories Inc., silabser.inf 11.5.0.417; actual adapter VID/PID and PnP binding remain pending."
+      },
+      "installation": {
+        "state": "pending",
+        "arguments": null,
+        "order": 50,
+        "success_codes": [
+          0
+        ],
+        "reboot_codes": [
+          3010
+        ],
+        "requires_admin": true,
+        "reboot": "possible",
+        "evidence": "Verify official CAB hash, expand with Windows expand.exe, validate silabser.cat then pnputil /add-driver silabser.inf without /install. Hardware binding and clean-machine cross-version acceptance remain pending. Windows 11 x64 staging returned 0 on 2026-10-29; DriverStore readback confirmed 11.5.0.417; no attached adapter and no reboot."
+      },
+      "recovery": "Preserve existing packages; only remove a newly added published INF after confirming it is unused. Do not force remove or automatically reboot.",
+      "validation": {
+        "state": "pending",
+        "evidence": "Official CAB hash and internal WHQL catalog checked; INF DriverVer 12/10/2025,11.5.0.417, including x64 and USB VID_10C4 PID_EA60. No hardware acceptance. Remote DriverStore result is retained in the private maintenance report."
+      },
+      "dependencies": [],
+      "download_sources": [
+        {
+          "url": "https://catalog.s.download.windowsupdate.com/c/msdownload/update/driver/drvs/2026/02/3bc68c22-eb83-4383-b451-4c581d06d3fb_6092f1062939e09f524b5d8e9108530f7f516f13.cab",
+          "kind": "official-direct"
+        }
+      ],
+      "archive_members": [],
+      "installer_entry": null,
+      "size": 210360
+    },
+    {
+      "id": "ni-4882",
+      "name": "NI-488.2 GPIB",
+      "purpose": "NI GPIB 控制器备选驱动。2026 Q4 官方发行支持 Windows 11；官网显示需要登录 NI 账号后下载，直连返回 HTTP 403，尚未取得、校验或安装离线 ISO。不要把它作为普通 Windows 10 的默认驱动；VISA 共存和具体控制器支持待验证。",
+      "transports": [],
+      "adapters": [],
+      "sdk": "",
+      "vendor": "NI",
+      "version": "26.8.0",
+      "architecture": "x64",
+      "systems": [
+        "Windows 11 x64"
+      ],
+      "source_page": "https://www.ni.com/en/support/downloads/drivers/download.ni-488-2.html",
+      "url": "https://download.ni.com/support/nipkg/products/ni-4/ni-488.2/26.8/offline/ni-488.2_26.8.0_offline.iso",
+      "filename": "ni-488.2_26.8.0_offline.iso",
+      "sha256": "1942db5bccd80964601ce04eef8c0e8c83c77e18128dcdfb19c780f5911584dc",
+      "signature": {
+        "policy": "authenticode",
+        "publisher": null,
+        "member": null,
+        "evidence": "SHA256 published on official release page; payload and Authenticode not verified."
+      },
+      "redistribution": {
+        "state": "pending",
+        "evidence": null
+      },
+      "detection": {
+        "kind": "pending",
+        "detail": "Requires verified component-specific detection"
+      },
+      "installation": {
+        "state": "pending",
+        "arguments": null,
+        "order": 50,
+        "success_codes": null,
+        "reboot_codes": null,
+        "requires_admin": true,
+        "reboot": "possible",
+        "evidence": null
+      },
+      "recovery": "Preserve compatible shared drivers and user data; restore only changes owned by this application.",
+      "validation": {
+        "state": "pending",
+        "evidence": "NI GPIB 控制器备选驱动。2026 Q4 官方发行支持 Windows 11；官网显示需要登录 NI 账号后下载，直连返回 HTTP 403，尚未取得、校验或安装离线 ISO。不要把它作为普通 Windows 10 的默认驱动；VISA 共存和具体控制器支持待验证。"
+      },
+      "dependencies": [],
+      "download_sources": [
+        {
+          "url": "https://download.ni.com/support/nipkg/products/ni-4/ni-488.2/26.8/offline/ni-488.2_26.8.0_offline.iso",
+          "kind": "official-direct"
+        }
+      ],
+      "archive_members": [],
+      "installer_entry": null
+    },
+    {
+      "id": "keysight-iolibs",
+      "name": "Keysight IO Libraries Suite",
+      "purpose": "Keysight USB/GPIB 控制器备选套件（2026 Update 1）。官方页面已核对版本及 SHA256，但当前下载入口未取得安装包，未安装；须验证与已有 R&S VISA 的共存，不能替换现有 VISA 或启用未要求的远程服务。",
+      "transports": [],
+      "adapters": [],
+      "sdk": "",
+      "vendor": "Keysight Technologies",
+      "version": "21.4.204",
+      "architecture": "x64",
+      "systems": [
+        "Windows 10 x64",
+        "Windows 11 x64"
+      ],
+      "source_page": "https://www.keysight.com.cn/cn/zh/lib/software-detail/computer-software/io-libraries-suite-downloads-2175637.html",
+      "url": null,
+      "filename": "IOLibrariesSuite-21.4.204-windows-x64.exe",
+      "sha256": "c21980699190b9cb817ac9924aacb7634665f688524dacde2f72a85de4799019",
+      "signature": {
+        "policy": "authenticode",
+        "publisher": null,
+        "member": null,
+        "evidence": "SHA256 published on official release page; payload and Authenticode not verified."
+      },
+      "redistribution": {
+        "state": "pending",
+        "evidence": null
+      },
+      "detection": {
+        "kind": "pending",
+        "detail": "Requires verified component-specific detection"
+      },
+      "installation": {
+        "state": "pending",
+        "arguments": null,
+        "order": 50,
+        "success_codes": null,
+        "reboot_codes": null,
+        "requires_admin": true,
+        "reboot": "possible",
+        "evidence": null
+      },
+      "recovery": "Preserve compatible shared drivers and user data; restore only changes owned by this application.",
+      "validation": {
+        "state": "pending",
+        "evidence": "Keysight USB/GPIB 控制器备选套件（2026 Update 1）。官方页面已核对版本及 SHA256，但当前下载入口未取得安装包，未安装；须验证与已有 R&S VISA 的共存，不能替换现有 VISA 或启用未要求的远程服务。"
+      },
+      "dependencies": [],
+      "download_sources": [],
+      "archive_members": [],
+      "installer_entry": null
     }
   ],
   "python_transitive_roots": {
