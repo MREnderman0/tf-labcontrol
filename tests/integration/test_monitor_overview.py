@@ -85,6 +85,9 @@ def test_monitor_overview_includes_optical_power_meter_in_electronic_layout(qtbo
         assert spec["recording_mode"] == "general"
         assert spec["sources"] == ["reading"]
 
+        # Verify routing and selected channels without racing the bounded
+        # recorder against a zero-I/O Mock at its fastest possible cadence.
+        save_monitoring_interval(window.controller, device, "general", 0.5, cadence="interval")
         window.dashboard.toggle_sampling()
         qtbot.waitUntil(lambda: runtime.monitoring.snapshots().get(device, {}).get("recording"), timeout=5000)
         task = runtime.monitoring.tasks[device]

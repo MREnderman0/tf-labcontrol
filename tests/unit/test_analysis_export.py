@@ -60,6 +60,28 @@ def table(path):
         return list(csv.DictReader(stream))
 
 
+def test_bound_curve_slot_is_in_data_index_description_and_offline_export(tmp_path):
+    context = SaveContext(
+        tmp_path,
+        "general",
+        "continuous",
+        identity=IDENTITY,
+        slot="oscilloscope:2",
+        slot_label="示波器 B",
+    )
+    folder = context.prepare()
+    writer = SegmentWriter(context.raw_folder)
+    writer.append(1, frame(curve()))
+    writer.close()
+    convert_csv(folder)
+    assert {row["设备槽位"] for row in table(folder / "数据_00001.csv")} == {"示波器 B"}
+    assert table(folder / analysis.INDEX)[0]["设备槽位"] == "示波器 B"
+    assert analysis.verify_analysis(folder)["equal"]
+    exported = analysis.export_analysis(folder, tmp_path / "offline")
+    assert table(exported / analysis.INDEX)[0]["设备槽位"] == "示波器 B"
+    assert "设备槽位：示波器 B" in (exported / "记录说明.txt").read_text(encoding="utf-8-sig")
+
+
 def test_scalar_wide_columns_local_time_monotonic_time_and_no_index(tmp_path):
     first = frame(
         Measurement("voltage", "V", [1.123456789012345]),

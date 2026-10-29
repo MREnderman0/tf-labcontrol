@@ -30,6 +30,7 @@ from lab_control.ui.controller import (
 from lab_control.ui.pages.monitoring.dashboard import MonitoringDashboard
 from lab_control.ui.widgets.category_cards import CategoryCard, CategoryCardGrid
 from lab_control.ui.widgets.device_pool import DeviceDetails, DevicePool
+from lab_control.ui.widgets.input_wheel_guard import install_input_wheel_guard
 from lab_control.ui.widgets.popup_surface import WorkspaceMenu
 from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
 from lab_control.ui.workspace.actions import WorkspaceActions
@@ -84,9 +85,11 @@ class RealWindow(QMainWindow):
     stop_connect_button: QPushButton
     connection_results_button: QPushButton
     address_list_button: QPushButton
+    device_list_button: QPushButton
     pool_close: QPushButton
     pool_more: QPushButton
     summary: QLabel
+    overview_empty: QLabel
     connection_summary: QLabel
     pool_title: QLabel
     pool_count: QLabel
@@ -106,6 +109,7 @@ class RealWindow(QMainWindow):
 
     def __init__(self, runtime: ApplicationRuntime) -> None:
         super().__init__()
+        self._input_wheel_guard = install_input_wheel_guard()
         self.runtime = runtime
         self.controller = WorkspaceController(runtime, self)
         self.bridge = ServiceBridge(self)

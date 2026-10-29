@@ -14,7 +14,7 @@ from uuid import uuid4
 import numpy as np
 
 from lab_control.domain.instruments import DeviceIdentity, MeasurementBatch, jsonable, utc_now
-from lab_control.domain.workspace import GENERAL
+from lab_control.domain.workspace import GENERAL, slot_label
 from lab_control.storage.audit import AuditSink
 from lab_control.storage.frame_timing import TIMING_COLUMNS, timing_columns
 from lab_control.storage.paths import BatchSaveContext, SaveContext, SaveKind
@@ -147,13 +147,24 @@ class Repository:
         adapter_id: str = "",
         batch: BatchSaveContext | None = None,
     ) -> SaveContext:
+        slot = ""
         if device_id:
             record = next((r for r in self.records() if r["id"] == device_id), {})
+            slots = record.get("slots", {})
+            slot = slots.get(GENERAL, slots.get(mode, ""))
             adapter_id = adapter_id or record.get("adapterId", "")
             if identity is None and record.get("identity"):
                 identity = DeviceIdentity(**record["identity"])
         return SaveContext(
-            batch.root if batch else self.data_root, mode, kind, device_id, identity, adapter_id, batch=batch
+            batch.root if batch else self.data_root,
+            mode,
+            kind,
+            device_id,
+            identity,
+            adapter_id,
+            batch=batch,
+            slot=slot,
+            slot_label=slot_label(slot) if slot else "",
         )
 
     def create_recording(self, mode: str | None = None, *, context: SaveContext | None = None, **options):

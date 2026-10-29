@@ -1,0 +1,462 @@
+{
+  "capabilities": {
+    "category": "frequency_counter",
+    "channels": [
+      1,
+      2
+    ],
+    "operations": [
+      {
+        "name": "gate_time",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "s",
+            "minimum": 0.0001,
+            "maximum": 1000,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+        "section": "SENS:FREQ:GATE:TIME",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "coupling",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "AC",
+              "DC"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+        "section": "INP{ch}:COUP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "input_impedance",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "Ω",
+            "minimum": 50,
+            "maximum": 1000000,
+            "choices": [
+              "50",
+              "1000000"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+        "section": "INP{ch}:IMP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "input_range",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": 5,
+            "maximum": 500,
+            "choices": [
+              "5",
+              "50",
+              "500"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+        "section": "INP{ch}:RANG",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "auto_level",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+        "section": "INP{ch}:LEV:AUTO",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "trigger_level",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": -512.5,
+            "maximum": 512.5,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+        "section": "INP{ch}:LEV",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "input_slope",
+        "parameters": {
+          "value": {
+            "kind": "enum",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [
+              "POS",
+              "NEG"
+            ],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+        "section": "INP{ch}:SLOP",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "input_filter",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+        "section": "INP{ch}:FILT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "configuration",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+        "section": "SENS:FUNC?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "options",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+        "section": "*OPT?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "probe_factor",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+        "section": "INP{ch}:PROB?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "input_protection",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+        "section": "INP{ch}:PROT?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "reference_clock",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+        "section": "SENS:ROSC:SOUR?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "transfer_format",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+        "section": "FORM:DATA?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "byte_order",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": false,
+        "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+        "section": "FORM:BORD?",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      }
+    ]
+  },
+  "profile": {
+    "adapter_id": "keysight.53220a",
+    "manufacturer": [
+      "Keysight",
+      "Agilent"
+    ],
+    "models": [
+      "53220A"
+    ],
+    "category": "frequency_counter",
+    "channels": [
+      1,
+      2
+    ],
+    "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+    "revision": "53220-90001 edition 4, April 2023; CH1/CH2 single frequency",
+    "status": [
+      "configuration",
+      "gate_time",
+      "coupling",
+      "input_impedance",
+      "input_range",
+      "auto_level",
+      "trigger_level",
+      "input_slope",
+      "input_filter",
+      "probe_factor",
+      "input_protection",
+      "reference_clock"
+    ],
+    "acquisition": "scalar:frequency"
+  },
+  "commands": {
+    "gate_time": {
+      "writes": [
+        "SENS:FREQ:GATE:TIME {value}"
+      ],
+      "query": "SENS:FREQ:GATE:TIME?",
+      "select": [],
+      "compare": true
+    },
+    "coupling": {
+      "writes": [
+        "INP{ch}:COUP {value}"
+      ],
+      "query": "INP{ch}:COUP?",
+      "select": [],
+      "compare": true
+    },
+    "input_impedance": {
+      "writes": [
+        "INP{ch}:IMP {value}"
+      ],
+      "query": "INP{ch}:IMP?",
+      "select": [],
+      "compare": true
+    },
+    "input_range": {
+      "writes": [
+        "INP{ch}:RANG {value}"
+      ],
+      "query": "INP{ch}:RANG?",
+      "select": [],
+      "compare": true
+    },
+    "auto_level": {
+      "writes": [
+        "INP{ch}:LEV:AUTO {value}"
+      ],
+      "query": "INP{ch}:LEV:AUTO?",
+      "select": [],
+      "compare": true
+    },
+    "trigger_level": {
+      "writes": [
+        "INP{ch}:LEV {value}"
+      ],
+      "query": "INP{ch}:LEV?",
+      "select": [],
+      "compare": true
+    },
+    "input_slope": {
+      "writes": [
+        "INP{ch}:SLOP {value}"
+      ],
+      "query": "INP{ch}:SLOP?",
+      "select": [],
+      "compare": true
+    },
+    "input_filter": {
+      "writes": [
+        "INP{ch}:FILT {value}"
+      ],
+      "query": "INP{ch}:FILT?",
+      "select": [],
+      "compare": true
+    },
+    "configuration": {
+      "writes": [],
+      "query": "SENS:FUNC?",
+      "select": [],
+      "compare": false
+    },
+    "options": {
+      "writes": [],
+      "query": "*OPT?",
+      "select": [],
+      "compare": false
+    },
+    "probe_factor": {
+      "writes": [],
+      "query": "INP{ch}:PROB?",
+      "select": [],
+      "compare": false
+    },
+    "input_protection": {
+      "writes": [],
+      "query": "INP{ch}:PROT?",
+      "select": [],
+      "compare": false
+    },
+    "reference_clock": {
+      "writes": [],
+      "query": "SENS:ROSC:SOUR?",
+      "select": [],
+      "compare": false
+    },
+    "transfer_format": {
+      "writes": [],
+      "query": "FORM:DATA?",
+      "select": [],
+      "compare": false
+    },
+    "byte_order": {
+      "writes": [],
+      "query": "FORM:BORD?",
+      "select": [],
+      "compare": false
+    }
+  }
+}

@@ -105,7 +105,13 @@ def _quality(frame: dict[str, Any]) -> str:
     )
 
 
-def _table(frame: dict[str, Any], zone: timezone) -> tuple[list[str], str, bool, Iterator[list[Any]]]:
+def _recording_slot(metadata: dict[str, Any]) -> str:
+    return str(metadata.get("slot_label") or metadata["slot"]) if metadata.get("slot") else ""
+
+
+def _table(
+    frame: dict[str, Any], zone: timezone, slot: str = ""
+) -> tuple[list[str], str, bool, Iterator[list[Any]]]:
     samples = frame["measurements"]
     values = [np.asarray(s["values"]).reshape(-1) for s in samples]
     axes = [None if s.get("axis") is None else np.asarray(s["axis"]).reshape(-1) for s in samples]
@@ -166,6 +172,9 @@ def _table(frame: dict[str, Any], zone: timezone) -> tuple[list[str], str, bool,
             header.append(label + "_来源")
     if not array:
         header.append("状态")
+    if slot:
+        header.append("设备槽位")
+        signature.append(["slot", slot])
 
     def rows() -> Iterator[list[Any]]:
         count = max((data.size for data in values), default=0) if array else 1
@@ -203,6 +212,8 @@ def _table(frame: dict[str, Any], zone: timezone) -> tuple[list[str], str, bool,
                     row.append(metadata["source"] if present or not array else "")
             if not array:
                 row.append(_quality(frame))
+            if slot:
+                row.append(slot)
             yield row
 
     return header, json.dumps(signature, ensure_ascii=False), array, rows()
@@ -306,7 +317,7 @@ class AnalysisWriter:
         return name
 
     def _index_header(self) -> list[str]:
-        return [
+        header = [
             "帧号",
             "数据文件",
             "起始行",
@@ -322,6 +333,9 @@ class AnalysisWriter:
             "仪器触发时间(原样)",
             "时间来源",
         ]
+        if self.metadata.get("slot"):
+            header.append("设备槽位")
+        return header
 
     def _index(self, frame: dict[str, Any], name: str, start: int, end: int, point: int, count: int) -> None:
         timing = frame.get("timing", {})
@@ -359,6 +373,8 @@ class AnalysisWriter:
                 )
             ),
         ]
+        if self.metadata.get("slot"):
+            row.append(_recording_slot(self.metadata))
         encoded = _line(row)
         if len(encoded) + len(codecs.BOM_UTF8) + len(_line(self._index_header())) > MAX_BYTES:
             raise ValueError("One frame index row exceeds the file size limit")
@@ -378,7 +394,7 @@ class AnalysisWriter:
             self.state["files"][index_name]["rows"] += 1
 
     def append(self, frame: dict[str, Any]) -> None:
-        header, schema, array, rows = _table(frame, self.zone)
+        header, schema, array, rows = _table(frame, self.zone, _recording_slot(self.metadata))
         indexed = array and self.metadata.get("kind") != "single_frame"
         # Spill the serialized frame to disk: exact byte limits without a giant
         # StringIO or repeatedly formatting millions of values on rollover.
@@ -457,6 +473,7 @@ def write_description(folder: Path, status: str, *, error: str = "") -> None:
         f"保存状态：{status}",
         f"设备：{identity.get('manufacturer', '')} {identity.get('model', '未知')}",
         f"序列号：{identity.get('serial', '') or '未提供'}",
+        f"设备槽位：{metadata.get('slot_label') or metadata.get('slot') or '未绑定／历史未记录'}",
         f"记录类型：{metadata.get('kind', '未知')}；模式：{metadata.get('mode', '未知')}",
         f"开始／保存时间：{metadata.get('started_local', '未知')}",
         f"开始 UTC：{metadata.get('started_utc', '未知')}",
@@ -466,6 +483,8 @@ def write_description(folder: Path, status: str, *, error: str = "") -> None:
         f"原始末帧时间：{state.get('last_timestamp', '未知')}",
     ]
     summary = _read_json(raw_folder(folder) / "summary.json", {})
+    if metadata.get("batch_id"):
+        lines.append(f"采集批次：{metadata['batch_id']}（同次启动的设备共享批次目录）")
     if summary:
         lines.append(
             f"原始记录：已接收 {summary.get('received', 0)} 帧；已提交 {summary.get('committed', 0)} 帧"
@@ -644,7 +663,8 @@ def verify_analysis(folder: Path) -> dict[str, Any]:
     frames = samples = cached = 0
     contexts: set[str] = set()
     timestamps: set[str] = set()
-    zone = _zone(manifest(folder))
+    metadata = manifest(folder)
+    zone, slot = _zone(metadata), _recording_slot(metadata)
     try:
         for path in sorted(raw_folder(folder).glob("segment-*.sqlite3")):
             for frame in read_frames(path):
@@ -653,7 +673,7 @@ def verify_analysis(folder: Path) -> dict[str, Any]:
                 cached += frame.get("validation") == "cached"
                 contexts.add(frame.get("performance", {}).get("acquisition_context_id", ""))
                 timestamps.add(json.dumps(frame.get("settings_timestamps", {}), sort_keys=True))
-                header, _, array, expected = _table(frame, zone)
+                header, _, array, expected = _table(frame, zone, slot)
                 parts: list[dict[str, Any]] = []
                 for point, row in enumerate(expected, 1):
                     name, line, actual_header, actual = next(data)
@@ -675,6 +695,8 @@ def verify_analysis(folder: Path) -> dict[str, Any]:
                         index = next(indexes)
                         if any(index[key] != str(value) for key, value in part.items()):
                             raise ValueError("Binary/analysis frame index mismatch")
+                        if slot and index.get("设备槽位") != slot:
+                            raise ValueError("Recording slot/frame index mismatch")
         if next(data, None) is not None or next(indexes, None) is not None or not frames or not samples:
             raise ValueError("Missing or extra analysis data")
     except (ValueError, KeyError, StopIteration) as exc:

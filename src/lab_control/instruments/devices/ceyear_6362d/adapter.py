@@ -53,6 +53,9 @@ def agrees(name: str, expected: Any, actual: Any) -> bool:
 
 class Ceyear6362DAdapter(ScpiAdapter):
     acquisition_revision = "ceyear-6362d-b11-v1"
+    # A scan can outlast many successful status exchanges. This is a software
+    # completion budget, independent of the per-exchange transport timeout.
+    single_sweep_timeout = 120.0
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -115,6 +118,11 @@ class Ceyear6362DAdapter(ScpiAdapter):
             raise DeviceError("6362D format readback differs; write not repeated", "readback_mismatch")
 
     def preflight(self, command: DeviceCommand, parameters: dict[str, Any]) -> None:
+        self._preflight_context(command, parameters)
+
+    def _preflight_context(
+        self, command: DeviceCommand, parameters: dict[str, Any], *, allow_fixed_trace: bool = False
+    ) -> str | None:
         self._version()
         op = command.operation
         value: Any = parameters.get("value")
@@ -139,20 +147,45 @@ class Ceyear6362DAdapter(ScpiAdapter):
         if op == "sweep_points" and self.read("points_auto"):
             raise ValidationError("Disable automatic sample points before changing manual points")
         if op in {"single", "repeat"}:
-            if self.read("trace_mode") != "WRITE":
-                raise Unsupported("6362D v1 initiated acquisition requires TRA WRITE mode")
             if self.read("axis_mode") != "WAVELENGTH":
                 raise Unsupported("6362D v1 initiated acquisition requires wavelength mode")
+            trace_mode = self.read("trace_mode")
+            if trace_mode != "WRITE" and not (op == "single" and allow_fixed_trace and trace_mode == "FIX"):
+                raise Unsupported("6362D initiated acquisition requires TRA WRITE or restorable FIX mode")
+            return trace_mode
+        return None
+
+    def _prepare_live_trace(self, command: DeviceCommand) -> dict[str, Any]:
+        # Only an explicitly initiated acquisition may unfreeze TRA. Passive
+        # reads and discovery preserve it; MAX/MIN/averaging traces are refused.
+        _, parameters = self.validate_command(command)
+        previous = self._preflight_context(command, parameters, allow_fixed_trace=True)
+        preparation = {"before": previous, "after": previous, "restored_from_fix": False}
+        if previous == "FIX":
+            self.transport.write(":TRACE:ATTRIBUTE:TRA WRITE")
+            actual = self.read("trace_mode")
+            if actual != "WRITE":
+                raise DeviceError(
+                    "6362D TRA 从 FIX 恢复 WRITE 后读回不一致；未启动扫描，未重发恢复命令",
+                    "readback_mismatch",
+                )
+            preparation.update(after=actual, restored_from_fix=True)
+            self.configuration["1.trace_mode"] = {"value": actual, "previous": previous}
+        return preparation
 
     def wait_sweep(self) -> None:
-        deadline = time.monotonic() + self.config.timeout
+        deadline = time.monotonic() + self.single_sweep_timeout
         while True:
             remaining = deadline - time.monotonic()
-            if remaining < 0.1:
-                raise DeviceError("6362D single sweep exceeded completion deadline", "timeout")
+            if remaining <= 0:
+                raise DeviceError(
+                    f"6362D 单次扫描在 {self.single_sweep_timeout:g} 秒内未完成；"
+                    "已停止等待且未重复启动扫描。请检查扫描范围、灵敏度和触发状态后重新连接。",
+                    "timeout",
+                )
             query = getattr(self.transport, "query_timeout", None)
             raw = (
-                query(":STATUS:OPERATION:CONDITION?", min(remaining, 2.0))
+                query(":STATUS:OPERATION:CONDITION?", min(remaining, self.config.timeout, 2.0))
                 if query
                 else self.transport.query(":STATUS:OPERATION:CONDITION?")
             )
@@ -210,8 +243,11 @@ class Ceyear6362DAdapter(ScpiAdapter):
         if request.kind != "spectrum" or request.channels != (1,):
             raise ValidationError("6362D v1 supports spectrum from TRA (channel 1) only")
         assert self.identity is not None
+        trace_preparation = None
         if request.initiate:
-            result = self.apply(DeviceCommand("single", confirmed=request.confirmed))
+            command = DeviceCommand("single", confirmed=request.confirmed)
+            trace_preparation = self._prepare_live_trace(command)
+            result = self.apply(command)
             if result.outcome != "success":
                 raise DeviceError(result.error, "acquisition_failed")
         before = self._snapshot()
@@ -268,6 +304,7 @@ class Ceyear6362DAdapter(ScpiAdapter):
                 "trace": "TRA",
                 "trace_mode": before["trace_mode"],
                 "new_scan_verified": bool(request.initiate),
+                "trace_preparation": trace_preparation,
                 "configuration_scope": "current instrument settings; historical sweep settings are not embedded in trace replies",
                 "points": count,
                 "transfer_format": fmt,

@@ -113,7 +113,7 @@ def test_draft_is_not_overwritten_and_cancel_sends_nothing(qtbot, tmp_path, monk
         controller.close()
 
 
-def test_responsive_grid_reuses_cards_without_column_limit(qtbot):
+def test_overview_scroll_reuses_stacked_category_rows(qtbot):
     grid = ResponsiveGrid()
     qtbot.addWidget(grid)
     cards = [QWidget() for _ in range(9)]
@@ -123,14 +123,12 @@ def test_responsive_grid_reuses_cards_without_column_limit(qtbot):
     grid.show()
     for width in (320, 790, 1700, 1100, 450):
         grid.resize(width, 650)
-        qtbot.waitUntil(lambda: grid.columns == max(1, (grid.viewport().width() + 16) // 376))
+        qtbot.waitUntil(lambda: grid.columns == 1)
         assert grid.items == cards
         for index, card in enumerate(cards):
             assert grid.grid.itemAtPosition(index // grid.columns, index % grid.columns).widget() is card
             assert card.geometry().right() <= grid.viewport().width()
         assert grid.horizontalScrollBar().maximum() == 0
-        if width == 1700:
-            assert grid.columns >= 4
 
 
 def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
@@ -221,8 +219,8 @@ def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
                 if category == "optical_power_meter":
                     assert set(monitor.channel_checks) == set(caps.channels)
                     assert all(check.isChecked() for check in monitor.channel_checks.values())
-                    assert monitor.parameter_card.editor is not None
-                    assert set(monitor.parameter_card.editor.editors) == {"value"}
+                    assert not hasattr(monitor, "parameter_card")
+                    assert runtime.monitoring.settings_sync.advanced == ()
                     assert not hasattr(monitor, "form")
                 elif category == "frequency_counter":
                     assert isinstance(monitor, FrequencyCounterMonitoringPage)

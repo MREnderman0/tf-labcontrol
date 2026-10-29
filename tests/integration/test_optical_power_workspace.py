@@ -37,6 +37,14 @@ def test_jw8105_all_channel_monitoring_records_and_filters(qapp, qtbot, tmp_path
     runtime.connect(device).result(5)
     adapter = runtime.sessions.sessions[device].adapter
     acquire = adapter.acquire
+    settings_reads = []
+    read_settings = adapter.read_settings
+
+    def track_settings(operations, channel=1):
+        settings_reads.append((operations, channel))
+        return read_settings(operations, channel)
+
+    monkeypatch.setattr(adapter, "read_settings", track_settings)
 
     def dBm_acquire(request):
         batch = acquire(request)
@@ -63,6 +71,7 @@ def test_jw8105_all_channel_monitoring_records_and_filters(qapp, qtbot, tmp_path
         assert window.current_module == "实时监测"
         assert runtime.monitoring.settings_sync.focus == device
         assert runtime.monitoring.settings_sync.advanced == ()
+        assert not hasattr(page, "parameter_card")
         assert set(page.channel_checks) == set(range(1, 17))
         assert all(check.isChecked() for check in page.channel_checks.values())
         assert page.start_button.isEnabled()
@@ -195,6 +204,7 @@ def test_jw8105_all_channel_monitoring_records_and_filters(qapp, qtbot, tmp_path
         assert paths
         saved = list(read_frames(paths[0]))
         assert saved and saved[0]["measurements"][0]["unit"] == "dBm"
+        assert settings_reads == []
     finally:
         window.timer.stop()
         window.controller.close()

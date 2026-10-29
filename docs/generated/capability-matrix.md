@@ -37,6 +37,7 @@ JSON 的 control_page 表示型号所在页面，不保证每项底层能力都�
 | 芯明天 XMT（完整型号待核） | `coremorrow.xmt` | 8 | 外部仪器测量输出 | [型号卡片](../devices/power-supplies/coremorrow-xmt.md) |
 | RIGOL M300 | `rigol.m300` | 16 | scalar | [型号卡片](../devices/measurement-analyzers/rigol-m300.md) |
 | K+K FXE | `kplusk.fxe` | 3 | scalar:frequency | [型号卡片](../devices/measurement-analyzers/kplusk-fxe.md) |
+| Keysight / Agilent 53220A | `keysight.53220a` | 15 | scalar:frequency | [型号卡片](../devices/measurement-analyzers/keysight-53220a.md) |
 
 ## 未实现 / 待补项
 

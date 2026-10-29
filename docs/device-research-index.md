@@ -65,6 +65,7 @@
 | 芯明天 XMT（完整型号待核） | `coremorrow.xmt` | USB 串口 / VISA ASRL；COM 参数由现场配置指定 | [卡片](devices/power-supplies/coremorrow-xmt.md) |
 | RIGOL M300 | `rigol.m300` | LAN / USB VISA；优先 PyVISA | [卡片](devices/measurement-analyzers/rigol-m300.md) |
 | K+K FXE | `kplusk.fxe` | Ethernet（经交换机直连设备 IP）；USB 仅用于官方配置工具 | [卡片](devices/measurement-analyzers/kplusk-fxe.md) |
+| Keysight / Agilent 53220A | `keysight.53220a` | LAN VXI-11 / VISA SOCKET；优先 PyVISA | [卡片](devices/measurement-analyzers/keysight-53220a.md) |
 <!-- device-modules:end -->
 
 ## 现场盘点与状态提升

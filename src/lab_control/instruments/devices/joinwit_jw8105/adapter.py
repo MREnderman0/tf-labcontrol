@@ -243,8 +243,10 @@ class Jw8105Adapter(ScpiAdapter):
         if any(channel not in self.channels for channel in request.channels):
             raise ValidationError(f"JW8105 channels must be one of {self.channels}")
         addresses = {self._module_channel(channel)[0] for channel in request.channels}
+        # Follow the instrument's displayed power without reading or changing
+        # wavelength settings (V23.02.02, section II.4, command 0x0162).
         # Read each required module once; publish only after every reply validates.
-        values = {address: self._powers(display=False, module_id=address) for address in sorted(addresses)}
+        values = {address: self._powers(display=True, module_id=address) for address in sorted(addresses)}
         measurements = tuple(
             Measurement(
                 "power",

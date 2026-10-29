@@ -6,23 +6,10 @@ from dataclasses import dataclass, replace
 
 from lab_control.application.config import ConnectionConfig
 from lab_control.domain.instruments import AcquisitionRequest, CapabilitySet
+from lab_control.domain.workspace import CATEGORY_LABELS as CATEGORY_LABELS
+from lab_control.domain.workspace import slot_label as slot_label
 from lab_control.instruments.registry import DEVICE_DEFINITIONS, PROFILES, describe
 
-CATEGORY_LABELS = {
-    "signal_generator": "信号源",
-    "power_supply": "电源",
-    "oscilloscope": "示波器",
-    "spectrum_analyzer": "频谱仪",
-    "optical_power_meter": "光功率计",
-    "multimeter": "万用表",
-    "frequency_counter": "频率计数器",
-    "network_analyzer": "网络分析仪",
-    "phase_noise_analyzer": "相噪仪",
-    "temperature_controller": "温控仪",
-    "electronic_load": "电子负载",
-    "pump_driver": "泵浦驱动",
-    "optical_spectrometer": "光谱仪",
-}
 MEASUREMENT_CATEGORIES = {
     "oscilloscope",
     "spectrum_analyzer",
@@ -42,6 +29,14 @@ standard_waveform=标准波形
 waveform_stop=停止标准波形
 normal_mode=常规模式
 frequency=频率
+gate_time=闸门时间
+input_impedance=输入阻抗
+input_range=输入量程
+auto_level=自动触发电平
+input_slope=输入触发斜率
+input_filter=100 kHz 低通滤波
+probe_factor=探头倍率
+input_protection=输入保护状态
 amplitude=幅度
 offset=偏移
 amplitude_unit=幅度单位
@@ -374,11 +369,6 @@ COMMON = {
 }
 
 
-def slot_label(slot: str) -> str:
-    category, _, index = slot.partition(":")
-    return f"{CATEGORY_LABELS.get(category, category)} {'A' if index == '1' else 'B'}" if index else "未绑定"
-
-
 def control_capabilities(
     config: ConnectionConfig, channel: int = 1, schema: CapabilitySet | None = None
 ) -> CapabilitySet:
@@ -421,13 +411,7 @@ class DataSource:
         return AcquisitionRequest(
             self.kind,
             channels,
-            points
-            if points is not None
-            else (
-                2000
-                if self.kind not in {"scalar", "status"} or (self.quantity and self.kind != "status")
-                else 1
-            ),
+            points if points is not None else (2000 if self.kind not in {"scalar", "status"} else 1),
             self.quantity,
             initiate,
             confirmed,

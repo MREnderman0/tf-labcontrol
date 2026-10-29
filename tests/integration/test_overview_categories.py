@@ -1,4 +1,4 @@
-"""Approved category entry points remain reachable without current device evidence."""
+"""Only categories with current device evidence appear in the overview."""
 
 import pytest
 from PySide6.QtCore import Qt
@@ -10,14 +10,6 @@ from lab_control.domain.connections import ConnectionConfig
 from lab_control.domain.instruments import DeviceIdentity
 from lab_control.storage.repository import Repository
 from lab_control.ui.real_window import RealWindow
-
-PRIMARY_CATEGORIES = (
-    "signal_generator",
-    "power_supply",
-    "oscilloscope",
-    "spectrum_analyzer",
-    "temperature_controller",
-)
 
 
 @pytest.fixture
@@ -54,44 +46,56 @@ def workspace(qtbot, tmp_path, request):
 
 
 @pytest.mark.parametrize("workspace", ["empty", "history"], indirect=True)
-def test_primary_category_entries_remain_visible_without_current_devices(workspace, qtbot):
+def test_empty_categories_are_hidden_and_history_remains_accessible(workspace, qtbot):
     window, runtime = workspace
-    assert tuple(card.category for card in window.card_grid.cards) == PRIMARY_CATEGORIES
+    assert window.card_grid.cards == ()
     assert not runtime.sessions.snapshots()
     assert "发现 0 台" in window.summary.text()
-    for category in PRIMARY_CATEGORIES:
-        card = window.cards[category]
-        assert card.isVisible()
+    assert window.overview_empty.isVisible()
+    for card in window.cards.values():
+        assert card.isHidden()
         assert card.visible_count.text() == "可见 0 台"
         assert card.online_count.text() == "00"
         assert all(value.text() == "0" for value in card.metrics.values())
-        qtbot.mouseClick(card, Qt.MouseButton.LeftButton)
-        assert window.device_pool.isVisible()
-        assert window.category_filter.currentData() == category
-        assert window.pool_empty.isVisible()
-        window.device_pool.hide()
+    qtbot.mouseClick(window.device_list_button, Qt.MouseButton.LeftButton)
+    assert window.device_pool.isVisible()
+    assert window.pool_empty.isVisible()
+    window.presence_filter.setCurrentIndex(window.presence_filter.findData("history"))
+    assert sum(not row.isHidden() for row in window.rows.values()) == len(runtime.inventory.all())
+    assert window.card_grid.cards == ()
 
 
 @pytest.mark.parametrize("workspace", ["empty"], indirect=True)
-def test_extra_categories_still_follow_current_presence_without_inflating_counts(workspace):
+@pytest.mark.parametrize(
+    "adapter,category",
+    [
+        ("rs.sma100b", "signal_generator"),
+        ("siglent.spd4306x", "power_supply"),
+        ("rigol.dho924", "oscilloscope"),
+        ("rigol.dsa815", "spectrum_analyzer"),
+        ("sim.temperature_controller", "temperature_controller"),
+        ("thorlabs.pm100d", "optical_power_meter"),
+    ],
+)
+def test_all_categories_follow_current_presence_without_inflating_counts(workspace, adapter, category):
     window, runtime = workspace
-    config = ConnectionConfig("mock://optical-entry", "thorlabs.pm100d", "mock")
+    config = ConnectionConfig("mock://category-entry", adapter, "mock")
     candidate = DiscoveryCandidate(config, "configured")
     runtime.inventory.merge(
-        candidate, "current", DeviceIdentity("Thorlabs", "PM100D", "OPTICAL-FIXTURE"), config.adapter
+        candidate, "current", DeviceIdentity("fixture", "MODEL", "CATEGORY-FIXTURE"), config.adapter
     )
     window.refresh()
-    assert tuple(card.category for card in window.card_grid.cards) == (
-        *PRIMARY_CATEGORIES,
-        "optical_power_meter",
-    )
-    card = window.cards["optical_power_meter"]
+    assert tuple(card.category for card in window.card_grid.cards) == (category,)
+    assert not window.overview_empty.isVisible()
+    card = window.cards[category]
+    assert card.isVisible()
     assert card.visible_count.text() == "可见 1 台"
     assert card.online_count.text() == "00"
     assert card.metrics["disconnected"].text() == "1"
     runtime.inventory.merge(candidate, "later", error="fixture unplugged", reason="probe_failed")
     window.refresh()
-    assert tuple(card.category for card in window.card_grid.cards) == PRIMARY_CATEGORIES
+    assert window.card_grid.cards == ()
+    assert window.overview_empty.isVisible()
     assert card.isHidden()
     assert card.visible_count.text() == "可见 0 台"
     assert len(runtime.inventory.all()) == 1

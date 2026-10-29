@@ -82,13 +82,12 @@ def test_real_overview_incremental_mode_and_scan(qtbot, tmp_path, monkeypatch):
         window.show()
         window.refresh()
         assert window.category_filter.count() == len(CATEGORIES) + 1
-        assert tuple(card.category for card in window.card_grid.cards) == PRIMARY_ENTRY_CATEGORIES
+        assert tuple(card.category for card in window.card_grid.cards) == ("signal_generator",)
         card = window.cards["signal_generator"]
         assert card.online_count.text() == "01"
         assert card.visible_count.text() == "可见 1 台"
         for category in PRIMARY_ENTRY_CATEGORIES[1:]:
-            assert window.cards[category].visible_count.text() == "可见 0 台"
-            assert window.cards[category].online_count.text() == "00"
+            assert window.cards[category].isHidden()
         assert window.device_pool.isHidden()
         with monkeypatch.context() as context:
             context.setattr(
@@ -177,7 +176,7 @@ def test_power_surfaces_route_coremorrow_to_management_and_other_supplies_to_mon
         runtime.close()
 
 
-def test_overview_keeps_primary_entries_and_counts_only_current_records(qtbot, tmp_path):
+def test_overview_hides_empty_categories_and_counts_only_current_records(qtbot, tmp_path):
     config = ConnectionConfig("mock://unscanned", "rigol.dg5504pro", "mock")
     runtime = ApplicationRuntime(root=tmp_path, hardware=False)
     device_id = runtime.add(config)
@@ -186,7 +185,7 @@ def test_overview_keeps_primary_entries_and_counts_only_current_records(qtbot, t
     qtbot.addWidget(window)
     try:
         window.refresh()
-        assert tuple(card.category for card in window.card_grid.cards) == PRIMARY_ENTRY_CATEGORIES
+        assert not window.card_grid.cards
         assert "发现 0 台" in window.summary.text()
         for card in window.card_grid.cards:
             assert card.visible_count.text() == "可见 0 台"
@@ -195,7 +194,7 @@ def test_overview_keeps_primary_entries_and_counts_only_current_records(qtbot, t
         assert window.cards["optical_power_meter"].isHidden()
         runtime.connect(device_id).result()
         window.refresh()
-        assert tuple(card.category for card in window.card_grid.cards) == PRIMARY_ENTRY_CATEGORIES
+        assert tuple(card.category for card in window.card_grid.cards) == ("signal_generator",)
         assert window.cards["signal_generator"].visible_count.text() == "可见 1 台"
         assert window.cards["signal_generator"].online_count.text() == "01"
         assert window.cards["optical_power_meter"].isHidden()
@@ -203,7 +202,7 @@ def test_overview_keeps_primary_entries_and_counts_only_current_records(qtbot, t
         runtime.connect(optical_id).result()
         window.refresh()
         assert tuple(card.category for card in window.card_grid.cards) == (
-            *PRIMARY_ENTRY_CATEGORIES,
+            "signal_generator",
             "optical_power_meter",
         )
         assert window.cards["optical_power_meter"].visible_count.text() == "可见 1 台"

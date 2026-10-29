@@ -89,23 +89,31 @@ def test_configuration_change_discard_and_slow_frames_record_without_backlog(tmp
         assert not list(runtime.repository.data_root.rglob("*.csv"))
 
 
-def test_initiated_monitoring_runs_one_single_scan_per_frame_without_overlap(tmp_path):
+@pytest.mark.parametrize("frozen", [False, True])
+def test_initiated_monitoring_runs_one_single_scan_per_frame_without_overlap(tmp_path, frozen):
     with ApplicationRuntime(root=tmp_path, hardware=False) as runtime:
         wire = Instrument()
+        if frozen:
+            wire.values[":TRACE:ATTRIBUTE:TRA?"] = b"1"
         key = connect(runtime, wire)
-        with runtime.monitoring.lock:
-            runtime.monitoring.start(
-                key,
-                (AcquisitionRequest("spectrum", initiate=True, confirmed=True),),
-                mode="optical",
-                interval=0.5,
-                cadence="interval",
-                record_interval=None,
-            )
+        report = {}
+        install_metadata_sinks(runtime, report)
+        runtime.monitoring.start(
+            key,
+            (AcquisitionRequest("spectrum", initiate=True, confirmed=True),),
+            mode="optical",
+            interval=0.5,
+            cadence="interval",
+            record_interval=None,
+            recording=True,
+        )
         wait_for(lambda: runtime.monitoring.tasks[key].sequence >= 3)
         runtime.monitoring.stop(key).result(3)
         task = runtime.monitoring.tasks[key]
         assert task.sequence >= 3
         assert wire.history.count(":INITIATE") == task.sequence
+        assert wire.history.count(":TRACE:ATTRIBUTE:TRA WRITE") == int(frozen)
+        assert len(report["recorded_metadata"]) == task.sequence
+        assert report["recorded_metadata"][0]["metadata"]["trace_preparation"]["restored_from_fix"] is frozen
         assert not task.pending
         assert not task.error

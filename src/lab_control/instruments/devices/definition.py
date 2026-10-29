@@ -72,8 +72,12 @@ class DeviceDefinition:
     acquisition_initiate_editable: bool = True
     acquisition_requires_confirmation: bool = False
     serial_driver_managed: bool = False
+    # Shared workspaces must respect instruments which measure one input at a time.
+    acquisition_channel_selection: str = "multiple"
 
     def __post_init__(self) -> None:
+        if self.acquisition_channel_selection not in {"single", "multiple"}:
+            raise ValueError("Invalid acquisition channel selection")
         if self.profile is None:
             if self.model is None or self.factory is None or self.capability_schema is None:
                 raise ValueError("SDK definitions require model metadata, factory and capability_schema")

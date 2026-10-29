@@ -60,6 +60,8 @@ class Instrument:
         self.history.append(command)
         if command.startswith(":FORMAT:DATA "):
             self.values[":FORMAT:DATA?"] = command.split(" ", 1)[1].encode()
+        if command == ":TRACE:ATTRIBUTE:TRA WRITE":
+            self.values[":TRACE:ATTRIBUTE:TRA?"] = b"0"
 
     def close(self):
         pass
@@ -168,6 +170,7 @@ def test_nm_write_si_readback_and_mismatch_not_replayed():
 
 def test_scan_completion_uses_vendor_status_with_bounded_timeout():
     item = adapter()
+    item.single_sweep_timeout = 0.2
     item.transport.values[":STATUS:OPERATION:CONDITION?"] = b"0"
     result = item.apply(DeviceCommand("single", confirmed=True))
     assert result.outcome == "partial" and "timeout" in result.error
@@ -181,6 +184,73 @@ def test_initiated_acquisition_sends_one_single_command_per_request():
     assert batch.measurements[0].axis_unit == "nm"
     assert item.transport.history.count(":INITIATE:SMODE SINGLE") == 1
     assert item.transport.history.count(":INITIATE") == 1
+    assert ":TRACE:ATTRIBUTE:TRA WRITE" not in item.transport.history
+
+
+def test_monitoring_restores_fixed_trace_once_before_single_scan():
+    item = adapter()
+    item.transport.values[":TRACE:ATTRIBUTE:TRA?"] = b"1"
+    request = AcquisitionRequest("spectrum", initiate=True, confirmed=True)
+    first = item.acquire(request)
+    second = item.acquire(request)
+    writes = [command for command in item.transport.history if "?" not in command]
+    assert writes == [
+        ":TRACE:ATTRIBUTE:TRA WRITE",
+        ":INITIATE:SMODE SINGLE",
+        ":INITIATE",
+        ":INITIATE:SMODE SINGLE",
+        ":INITIATE",
+    ]
+    assert first.measurements[0].metadata["trace_preparation"] == {
+        "before": "FIX",
+        "after": "WRITE",
+        "restored_from_fix": True,
+    }
+    assert not second.measurements[0].metadata["trace_preparation"]["restored_from_fix"]
+    assert first.configuration["trace_mode"] == "WRITE"
+
+
+def test_passive_frame_preserves_fixed_trace():
+    item = adapter()
+    item.transport.values[":TRACE:ATTRIBUTE:TRA?"] = b"1"
+    batch = item.acquire(AcquisitionRequest("spectrum"))
+    assert batch.configuration["trace_mode"] == "FIX"
+    assert all("?" in command for command in item.transport.history)
+
+
+@pytest.mark.parametrize(
+    "setting,value",
+    [
+        (":TRACE:ATTRIBUTE:TRA?", b"2"),
+        (":INITIATE:SMODE?", b"3"),
+        (":UNIT:X?", b"1"),
+    ],
+)
+def test_unsupported_scan_preconditions_never_restore_or_initiate(setting, value):
+    item = adapter()
+    item.transport.values[":TRACE:ATTRIBUTE:TRA?"] = b"1"
+    item.transport.values[setting] = value
+    with pytest.raises(DeviceError):
+        item.acquire(AcquisitionRequest("spectrum", initiate=True, confirmed=True))
+    assert all("?" in command for command in item.transport.history)
+
+
+@pytest.mark.parametrize("communication_failure", [False, True])
+def test_fixed_trace_restore_failure_is_not_replayed_or_followed_by_scan(communication_failure):
+    item = adapter()
+    item.transport.values[":TRACE:ATTRIBUTE:TRA?"] = b"1"
+
+    def write(command):
+        item.transport.history.append(command)
+        if communication_failure:
+            raise DeviceError("restore communication failed", "timeout")
+        # Otherwise the write returns, but the instrument remains frozen.
+
+    item.transport.write = write
+    with pytest.raises(DeviceError):
+        item.acquire(AcquisitionRequest("spectrum", initiate=True, confirmed=True))
+    assert item.transport.history.count(":TRACE:ATTRIBUTE:TRA WRITE") == 1
+    assert ":INITIATE" not in item.transport.history
 
 
 def test_initiated_acquisition_requires_confirmation_before_any_io():
@@ -192,11 +262,59 @@ def test_initiated_acquisition_requires_confirmation_before_any_io():
 
 def test_initiated_acquisition_timeout_is_not_retried():
     item = adapter()
+    item.single_sweep_timeout = 0.2
     item.transport.values[":STATUS:OPERATION:CONDITION?"] = b"0"
     with pytest.raises(DeviceError) as error:
         item.acquire(AcquisitionRequest("spectrum", initiate=True, confirmed=True))
     assert error.value.code == "acquisition_failed"
     assert item.transport.history.count(":INITIATE") == 1
+
+
+def test_slow_scan_outlasts_transport_timeout_without_restarting(monkeypatch):
+    from lab_control.instruments.devices.ceyear_6362d import adapter as module
+
+    elapsed = [0.0]
+    monkeypatch.setattr(module.time, "monotonic", lambda: elapsed[0])
+    monkeypatch.setattr(module.time, "sleep", lambda seconds: elapsed.__setitem__(0, elapsed[0] + seconds))
+    item = adapter()
+    limits = []
+
+    def query_timeout(command, seconds):
+        limits.append(seconds)
+        return item.transport.query(command)
+
+    item.transport.query_timeout = query_timeout
+    item.transport.values[":STATUS:OPERATION:CONDITION?"] = lambda: b"1" if elapsed[0] >= 5 else b"0"
+    batch = item.acquire(AcquisitionRequest("spectrum", initiate=True, confirmed=True))
+    assert elapsed[0] >= 5 > item.config.timeout
+    assert batch.measurements[0].axis_unit == "nm"
+    assert item.transport.history.count(":INITIATE") == 1
+    assert limits and all(0 < limit <= item.config.timeout for limit in limits)
+
+
+def test_scan_completion_budget_is_bounded_and_never_reads_incomplete_trace(monkeypatch):
+    from lab_control.instruments.devices.ceyear_6362d import adapter as module
+
+    elapsed = [0.0]
+    monkeypatch.setattr(module.time, "monotonic", lambda: elapsed[0])
+    monkeypatch.setattr(module.time, "sleep", lambda seconds: elapsed.__setitem__(0, elapsed[0] + seconds))
+    item = adapter()
+    item.transport.values[":STATUS:OPERATION:CONDITION?"] = b"0"
+    with pytest.raises(DeviceError, match="120 秒"):
+        item.acquire(AcquisitionRequest("spectrum", initiate=True, confirmed=True))
+    assert elapsed[0] == pytest.approx(120)
+    assert item.transport.history.count(":INITIATE") == 1
+    assert not any(command.startswith(":TRACE:DATA:") for command in item.transport.history)
+
+
+def test_scan_status_communication_failure_stops_without_retry():
+    item = adapter()
+    item.transport.values[":STATUS:OPERATION:CONDITION?"] = DeviceError("wire timeout", "timeout")
+    with pytest.raises(DeviceError, match="wire timeout"):
+        item.acquire(AcquisitionRequest("spectrum", initiate=True, confirmed=True))
+    assert item.transport.history.count(":INITIATE") == 1
+    assert item.transport.history.count(":STATUS:OPERATION:CONDITION?") == 1
+    assert not any(command.startswith(":TRACE:DATA:") for command in item.transport.history)
 
 
 def test_repeat_status_is_not_mislabeled_as_idle():

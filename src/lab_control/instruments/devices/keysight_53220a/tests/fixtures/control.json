@@ -1,0 +1,10 @@
+{
+  "fixture_origin": "53220-90001 edition 4; synthetic SCPI example, not hardware evidence",
+  "adapter": "keysight.53220a",
+  "identity_reply": "Agilent Technologies,53220A,TEST-COUNTER,03.00",
+  "identity_exchanges": [["*IDN?", "Agilent Technologies,53220A,TEST-COUNTER,03.00"], ["*OPT?", "0"]],
+  "operation": "gate_time",
+  "channel": 1,
+  "parameters": {"value": 0.1},
+  "exchanges": [["SENS:FREQ:GATE:TIME 0.1", ""], ["*OPC?", "1"], ["SENS:FREQ:GATE:TIME?", "0.1"], ["SYST:ERR?", "0,No error"]]
+}

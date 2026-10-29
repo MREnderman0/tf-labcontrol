@@ -12,6 +12,30 @@ from lab_control.storage.repository import Repository
 START = datetime(2026, 9, 27, 23, 59, 59, 123456, tzinfo=timezone(timedelta(hours=8)))
 
 
+@pytest.mark.parametrize("mode", ["general", "optical"])
+def test_save_context_freezes_current_slot_and_does_not_revive_cleared_legacy_binding(tmp_path, mode):
+    repo = Repository(tmp_path)
+    record = {
+        "id": "fixture",
+        "candidates": {},
+        "slots": {"general": "optical_power_meter:1", "optical": "optical_power_meter:2"},
+    }
+    try:
+        repo.save(record)
+        context = repo.new_save_context(mode, "single_frame", device_id="fixture")
+        record["slots"]["general"] = ""
+        repo.save(record)
+        unbound = repo.new_save_context(mode, "single_frame", device_id="fixture")
+        assert not unbound.slot and not unbound.slot_label
+        assert "功率计" not in unbound.folder.name
+        assert context.slot == "optical_power_meter:1" and "功率计1" in context.folder.name
+        folder = context.prepare()
+        saved = json.loads((folder / "_raw" / "recording.json").read_text(encoding="utf-8"))
+        assert saved["slot"] == context.slot and saved["slot_label"] == "功率计1"
+    finally:
+        repo.close()
+
+
 @pytest.mark.parametrize("kind", ["continuous", "single_frame"])
 def test_local_start_date_names_and_original_metadata_are_fixed(tmp_path, kind):
     identity = DeviceIdentity("Fixture", "Model/Pro", "SN:1/?", "1.0")

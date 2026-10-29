@@ -1,5 +1,8 @@
 """Shared cadence controls: recording saves every acquired frame."""
 
+import math
+
+from PySide6.QtGui import QValidator
 from PySide6.QtWidgets import QDoubleSpinBox, QHBoxLayout, QLabel, QWidget
 
 from lab_control.application.acquisition_pipeline import validate_cadence
@@ -8,6 +11,32 @@ from lab_control.domain.instruments import ValidationError
 from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
 
 POWER_INTERVALS = (1, 5, 10, 60)
+
+
+class MonitoringIntervalSpinBox(QDoubleSpinBox):
+    """Keep keyboard drafts intact; apply bounds only when editing finishes."""
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.setRange(0.5, 60)
+        self.setDecimals(2)
+        self.setKeyboardTracking(False)
+
+    def validate(self, text: str, position: int):
+        state, normalized, position = super().validate(text, position)
+        if state == QValidator.State.Invalid:
+            return QValidator.State.Intermediate, text, position
+        return state, normalized, position
+
+    def fixup(self, text: str) -> str:
+        value_text = text.removeprefix(self.prefix()).removesuffix(self.suffix()).strip()
+        value, valid = self.locale().toDouble(value_text)
+        value = (
+            min(self.maximum(), max(self.minimum(), value))
+            if valid and math.isfinite(value)
+            else self.value()
+        )
+        return self.prefix() + self.textFromValue(value) + self.suffix()
 
 
 def monitoring_intervals(controller, device_id: str, mode: str) -> tuple[float, None]:
@@ -110,19 +139,15 @@ class MonitoringTiming(QWidget):
         layout.addWidget(label)
         layout.addWidget(self.cadence)
         self.cadence.currentIndexChanged.connect(self.change_cadence)
-        self.interval = QDoubleSpinBox(self)
-        self.interval.setRange(0.5, 60)
-        self.interval.setDecimals(2)
+        self.interval = MonitoringIntervalSpinBox(self)
         self.interval.setSingleStep(0.05)
         self.interval.setValue(0.5)
         self.interval.setSuffix(" s")
-        self.interval.setKeyboardTracking(False)
         self.interval.setMinimumWidth(100)
         self.interval.setMaximumWidth(132)
         self.interval.setToolTip("相邻采集请求的目标开始间隔，范围 0.5～60 秒；不改变仪器扫描时间。")
-        # Spinbox edits are the device-page equivalent of changing an
-        # overview card.  Commit on every accepted value so the other view
-        # follows without requiring a separate save action.
+        # Keyboard tracking is disabled: typing keeps a draft until focus
+        # leaves the field or Enter is pressed. Arrows still apply immediately.
         self.interval.valueChanged.connect(self._interval_value_changed)
         label = QLabel("采集间隔", self)
         self.interval_label = label
@@ -149,9 +174,10 @@ class MonitoringTiming(QWidget):
     def _external_interval_changed(self, device_id: str, interval: float) -> None:
         if device_id != self.device_id:
             return
-        self.interval.blockSignals(True)
-        self.interval.setValue(float(interval))
-        self.interval.blockSignals(False)
+        if not self.interval.hasFocus():
+            self.interval.blockSignals(True)
+            self.interval.setValue(float(interval))
+            self.interval.blockSignals(False)
         self.presets.blockSignals(True)
         self.presets.setCurrentIndex(max(0, self.presets.findData(float(interval))))
         self.presets.blockSignals(False)

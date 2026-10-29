@@ -283,8 +283,12 @@ class ScpiAdapter:
             expected = parameters.get("value")
             if spec.compare and expected is not None and readback is not None:
                 if isinstance(expected, bool):
-                    matches = str(readback).upper() in (
-                        {"1", "1.0", "ON"} if expected else {"0", "0.0", "OFF"}
+                    matches = (
+                        (readback is expected)
+                        if isinstance(readback, bool)
+                        else (
+                            str(readback).upper() in ({"1", "1.0", "ON"} if expected else {"0", "0.0", "OFF"})
+                        )
                     )
                 elif isinstance(expected, (int, float)) and isinstance(readback, (int, float)):
                     matches = math.isclose(expected, readback, rel_tol=1e-5, abs_tol=1e-9)

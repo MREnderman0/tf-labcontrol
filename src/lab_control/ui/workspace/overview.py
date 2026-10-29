@@ -34,7 +34,6 @@ from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
 from lab_control.ui.workspace.categories import (
     CATEGORIES,
     CATEGORY_DESCRIPTIONS,
-    PRIMARY_CATEGORIES,
     applicable,
     category_for,
 )
@@ -83,6 +82,9 @@ class WorkspaceOverview:
         window.address_list_button = QPushButton("地址列表")
         window.address_list_button.clicked.connect(window.show_static_addresses)
         toolbar.addWidget(window.address_list_button)
+        window.device_list_button = QPushButton("设备列表")
+        window.device_list_button.clicked.connect(lambda: window.open_category(""))
+        toolbar.addWidget(window.device_list_button)
         for text, action in (("环境诊断", window.diagnose),):
             button = QPushButton(text)
             button.clicked.connect(action)
@@ -99,6 +101,11 @@ class WorkspaceOverview:
         window.connection_summary.setWordWrap(True)
         window.connection_summary.setObjectName("overviewNote")
         layout.addWidget(window.connection_summary)
+        window.overview_empty = QLabel("尚未发现设备\n连接并开启设备后，点击右上角“扫描设备”。")
+        window.overview_empty.setObjectName("poolEmpty")
+        window.overview_empty.setWordWrap(True)
+        window.overview_empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(window.overview_empty, 1)
         window.card_grid = CategoryCardGrid()
         window.cards = {
             category: CategoryCard(
@@ -403,9 +410,11 @@ class WorkspaceOverview:
             if window.category_filter.itemData(index, Qt.ItemDataRole.ToolTipRole) != tooltip:
                 window.category_filter.setItemData(index, tooltip, Qt.ItemDataRole.ToolTipRole)
             window.cards[category].update_counts(len(records), live, abnormal, bound)
-            if category in PRIMARY_CATEGORIES or records:
+            if records:
                 visible_cards.append(window.cards[category])
         window.card_grid.set_cards(tuple(visible_cards))
+        window.card_grid.setVisible(bool(visible_cards))
+        window.overview_empty.setVisible(not visible_cards)
         for device_id, record in window.records.items():
             if device_id not in window.rows:
                 row = QTreeWidgetItem(window.tree)
