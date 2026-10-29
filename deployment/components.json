@@ -1312,10 +1312,10 @@
       "filename": "CP210x-11.5.0.417-amd64.cab",
       "sha256": "7ea8a03769a05c7bb78718c360b5079be354ed6437623408d51b9c1e8f5a122a",
       "signature": {
-        "policy": "official-sha256",
-        "publisher": "Microsoft Update Catalog / Silicon Laboratories Inc.",
+        "policy": "authenticode",
+        "publisher": "Microsoft Windows Hardware Compatibility Publisher",
         "member": null,
-        "evidence": "CAB SHA256 decoded from Microsoft Update Catalog DownloadDialog matches 7ea8a03769a05c7bb78718c360b5079be354ed6437623408d51b9c1e8f5a122a. Extracted silabser.cat Authenticode Valid: Microsoft Windows Hardware Compatibility Publisher. CAB is not itself Authenticode signed."
+        "evidence": "CAB SHA256 decoded from Microsoft Update Catalog DownloadDialog matches 7ea8a03769a05c7bb78718c360b5079be354ed6437623408d51b9c1e8f5a122a. Both the CAB Authenticode signature and extracted silabser.cat are Valid: Microsoft Windows Hardware Compatibility Publisher."
       },
       "redistribution": {
         "state": "pending",
