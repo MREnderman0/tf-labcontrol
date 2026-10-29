@@ -10,10 +10,9 @@ from collections.abc import Sequence
 from typing import Any
 
 from PySide6.QtCore import QEvent, QModelIndex, QPoint, QSize, Qt, QTimer, Signal
-from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QWheelEvent
+from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import (
     QAbstractItemView,
-    QAbstractScrollArea,
     QApplication,
     QComboBox,
     QDialog,
@@ -28,6 +27,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from lab_control.ui.widgets.input_wheel_guard import scroll_input_parent
 from lab_control.ui.widgets.popup_surface import POPUP_MARGIN, ROW_HEIGHT, paint_popup_surface
 
 
@@ -338,27 +338,7 @@ class WorkspaceComboBox(QComboBox):
         return super().eventFilter(watched, event)
 
     def wheelEvent(self, event) -> None:  # noqa: N802
-        # Forward once to the closest scroll viewport. Qt's propagation through
-        # intermediate form widgets varies by platform; don't let it pick a value.
-        parent = self.parentWidget()
-        while parent is not None:
-            if isinstance(parent, QAbstractScrollArea):
-                viewport = parent.viewport()
-                forwarded = QWheelEvent(
-                    viewport.mapFromGlobal(event.globalPosition().toPoint()),
-                    event.globalPosition(),
-                    event.pixelDelta(),
-                    event.angleDelta(),
-                    event.buttons(),
-                    event.modifiers(),
-                    event.phase(),
-                    event.inverted(),
-                )
-                QApplication.sendEvent(viewport, forwarded)
-                event.accept()
-                return
-            parent = parent.parentWidget()
-        event.ignore()
+        scroll_input_parent(self, event)
 
     def keyPressEvent(self, event) -> None:  # noqa: N802
         if event.key() in (

@@ -7,7 +7,6 @@ from PySide6.QtCore import QEvent, Qt, QTimer, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
-    QDoubleSpinBox,
     QFrame,
     QGridLayout,
     QHBoxLayout,
@@ -28,6 +27,7 @@ from lab_control.domain.instruments import AcquisitionRequest, DeviceError
 from lab_control.domain.readback import boolean_value
 from lab_control.instruments.registry import DEVICE_DEFINITIONS
 from lab_control.ui.controller import WorkspaceController
+from lab_control.ui.pages.monitoring.channel_selection import selected_input, single_input
 from lab_control.ui.pages.monitoring.recording_state import (
     recording_phase,
     recording_save_notice,
@@ -35,6 +35,7 @@ from lab_control.ui.pages.monitoring.recording_state import (
 )
 from lab_control.ui.pages.monitoring.timing import (
     POWER_INTERVALS,
+    MonitoringIntervalSpinBox,
     monitoring_options,
     save_monitoring_interval,
 )
@@ -78,12 +79,15 @@ class ResponsiveGrid(QScrollArea):
         return super().eventFilter(obj, event)
 
     def set_items(self, items: Sequence[QWidget]) -> None:
+        if self.items == list(items):
+            return
         self.items = list(items)
         self.reflow(force=True)
         QTimer.singleShot(0, self.reflow)
 
     def reflow(self, force: bool = False) -> None:
-        columns = max(1, (self.viewport().width() + 16) // 376)
+        # Each category owns a full-width row; only its devices flow horizontally.
+        columns = 1
         if columns == self.columns and not force:
             return
         old_columns = self.columns
@@ -130,10 +134,8 @@ class RecordingDeviceCard(QFrame):
         controls.addWidget(self.enabled)
         controls.addStretch()
         controls.addWidget(QLabel("采样间隔"))
-        self.interval = QDoubleSpinBox()
-        self.interval.setRange(0.5, 60.0)
+        self.interval = MonitoringIntervalSpinBox()
         self.interval.setSingleStep(0.5)
-        self.interval.setDecimals(2)
         self.interval.setSuffix(" 秒")
         self.interval.valueChanged.connect(self._changed)
         controls.addWidget(self.interval)
@@ -199,9 +201,10 @@ class RecordingDeviceCard(QFrame):
         self.enabled.blockSignals(True)
         self.enabled.setChecked(bool(spec.get("enabled", True)))
         self.enabled.blockSignals(False)
-        self.interval.blockSignals(True)
-        self.interval.setValue(float(spec.get("interval", 0.5)))
-        self.interval.blockSignals(False)
+        if not self.interval.hasFocus():
+            self.interval.blockSignals(True)
+            self.interval.setValue(float(spec.get("interval", 0.5)))
+            self.interval.blockSignals(False)
         self.refresh()
 
     def show_details(self) -> None:
@@ -217,7 +220,8 @@ class RecordingDeviceCard(QFrame):
         if not record or not self.controller.has_connected_session(device_id):
             self.hide()
             return
-        self.show()
+        if self.isHidden():
+            self.show()
         task = self.controller.runtime.monitoring.snapshots().get(device_id, {})
         phase = recording_phase(task)
         self.setProperty("recordingPhase", phase)
@@ -286,16 +290,18 @@ class CategoryGrid(QWidget):
 
     def eventFilter(self, obj, event):  # noqa: N802
         if obj is self and event.type() == QEvent.Type.Resize:
-            QTimer.singleShot(0, self.reflow)
+            QTimer.singleShot(0, self, self.reflow)
         return super().eventFilter(obj, event)
 
     def set_items(self, items: Sequence[QWidget]) -> None:
+        if self.items == list(items):
+            return
         self.items = list(items)
         self.reflow(force=True)
-        QTimer.singleShot(0, self.reflow)
+        QTimer.singleShot(0, self, self.reflow)
 
     def reflow(self, force: bool = False) -> None:
-        columns = max(1, (self.width() + 16) // 376)
+        columns = min(3, max(1, (self.width() + 16) // 376))
         if columns == self.columns and not force:
             return
         old_columns = self.columns
@@ -368,6 +374,8 @@ class MonitoringDashboard(QWidget):
             channels = tuple(self.controller.capabilities(device_id).channels)
         except Exception:
             channels = (1,)
+        if single_input(self.controller, device_id):
+            return selected_input(self.controller, device_id, channels)
         return (
             scope_channels(self.controller, device_id, channels) if category == "oscilloscope" else channels
         )
@@ -486,9 +494,10 @@ class MonitoringDashboard(QWidget):
         interval = float(interval)
         if instrument_category(record) == "power_supply":
             interval = min(POWER_INTERVALS, key=lambda option: abs(option - interval))
-        card.interval.blockSignals(True)
-        card.interval.setValue(interval)
-        card.interval.blockSignals(False)
+        if not card.interval.hasFocus():
+            card.interval.blockSignals(True)
+            card.interval.setValue(interval)
+            card.interval.blockSignals(False)
         key = self._slot_key(record)
         preference = self.preferences.setdefault(key, {})
         preference["interval"] = interval
@@ -516,7 +525,7 @@ class MonitoringDashboard(QWidget):
         for spec in specs:
             existing_card = self.cards.get(spec["device_id"])
             if existing_card is None:
-                card = RecordingDeviceCard(self.controller, spec)
+                card = RecordingDeviceCard(self.controller, spec, self.grid.body)
                 card.changed.connect(self._persist_card)
                 card.open_requested.connect(self._open_device)
                 self.cards[spec["device_id"]] = card
@@ -536,24 +545,26 @@ class MonitoringDashboard(QWidget):
                 continue
             existing_group = self.groups.get(category)
             if existing_group is None:
-                group = DeviceCategoryGroup(CATEGORY_LABELS[category])
+                group = DeviceCategoryGroup(CATEGORY_LABELS[category], self.grid.body)
                 self.groups[category] = group
             else:
                 group = existing_group
             group.set_cards(grouped[category])
-            group.show()
+            if group.isHidden():
+                group.show()
             ordered_groups.append(group)
         for category, cards in grouped.items():
             if category in self.groups and self.groups[category] in ordered_groups:
                 continue
             existing_group = self.groups.get(category)
             if existing_group is None:
-                group = DeviceCategoryGroup(CATEGORY_LABELS.get(category, category))
+                group = DeviceCategoryGroup(CATEGORY_LABELS.get(category, category), self.grid.body)
                 self.groups[category] = group
             else:
                 group = existing_group
             group.set_cards(cards)
-            group.show()
+            if group.isHidden():
+                group.show()
             ordered_groups.append(group)
         self.grid.set_items(ordered_groups)
         self._update_button()
@@ -667,6 +678,8 @@ class MonitoringDashboard(QWidget):
                 continue
             seen_devices.add(spec["device_id"])
             channels = tuple(spec["channels"])
+            if single_input(self.controller, spec["device_id"]):
+                channels = self._channels(spec["device_id"], record)
             if not channels:
                 continue
             available_sources = self._recording_sources(record)
@@ -714,6 +727,13 @@ class MonitoringDashboard(QWidget):
             != QMessageBox.StandardButton.Yes
         ):
             return
+        try:
+            # Freeze one root, timestamp and batch ID for this start action.
+            # Directory creation remains in each recorder's background worker.
+            batch = self.controller.runtime.repository.new_batch_context() if len(grouped) > 1 else None
+        except Exception as exc:
+            self.controller.message.emit(f"创建采集批次失败：{exc}")
+            return
         for device_id, requests, interval, recording_mode in grouped:
             try:
                 record = self.controller.records[device_id]
@@ -728,6 +748,7 @@ class MonitoringDashboard(QWidget):
                     **options,
                     mode=recording_mode,
                     recording=True,
+                    batch=batch,
                 )
             except Exception as exc:
                 self.controller.message.emit(f"{self.controller.records[device_id]['adapterId']}：{exc}")

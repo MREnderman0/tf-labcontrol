@@ -145,7 +145,13 @@ class OpticalSpectrumMonitoringPage(MonitoringPage):
             self.right_layout.addWidget(self.controls)
             self.controls.busy_changed.connect(lambda busy: self.selector.setEnabled(not busy))
             self.controller.focus_settings(device_id)
-            QTimer.singleShot(0, self.controls.refresh_parameters)
+            controls = self.controls
+            # A rapid switch can retire this editor before the queued read starts.
+            QTimer.singleShot(
+                0,
+                self,
+                lambda: controls.refresh_parameters() if self.controls is controls else None,
+            )
         self.refresh()
         self.refresh_frame(device_id)
 

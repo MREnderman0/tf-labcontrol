@@ -21,7 +21,7 @@ from lab_control.discovery.service import (
     VisaDiscoveryProvider,
 )
 from lab_control.domain.instruments import DeviceIdentity, ValidationError
-from lab_control.domain.workspace import WORKSPACE_MODES
+from lab_control.domain.workspace import WORKSPACE_MODES, category_slots
 from lab_control.instruments.base import identity_from_scpi
 from lab_control.instruments.registry import (
     create_adapter,
@@ -369,7 +369,7 @@ class ApplicationRuntime:
             if slot and (record.get("identityConflict") or record["discoveryState"] == "conflict"):
                 raise DeviceError("设备身份冲突，请先核对", "identity_conflict")
             category = instrument_category(record)
-            if slot and (not mode_applicable(record, mode) or slot not in {f"{category}:1", f"{category}:2"}):
+            if slot and (not mode_applicable(record, mode) or slot not in category_slots(category)):
                 raise ValidationError("Slot category or mode is incompatible with this instrument")
             self.inventory.bind_slot(device_id, slot, mode, replace_device_id=replace_device_id)
             self.repository.audit(

@@ -70,6 +70,8 @@ class SaveContext:
     run_id: str = field(default_factory=lambda: uuid4().hex[:12])
     batch: BatchSaveContext | None = None
     layout_version: int = 2
+    slot: str = ""
+    slot_label: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "root", self.root.absolute())
@@ -101,6 +103,8 @@ class SaveContext:
         if serial.strip().upper() in {"", "0", "N/A", "UNKNOWN"}:
             serial = self.device_id or "unknown-id"
         device = f"{model}_{filename_part(serial)}_{self.kind}_{filename_part(self.run_id)}"
+        if self.slot:
+            device = f"{filename_part(self.slot_label or self.slot)}_{device}"
         if self.batch:
             return self.batch.folder / device
         return (
@@ -131,6 +135,8 @@ class SaveContext:
             "started_utc": self.started_utc,
             "device_id": self.device_id,
             "adapter_id": self.adapter_id,
+            "slot": self.slot,
+            "slot_label": self.slot_label,
             "identity": jsonable(self.identity),
         }
         with (self.raw_folder / "recording.json").open("x", encoding="utf-8") as stream:

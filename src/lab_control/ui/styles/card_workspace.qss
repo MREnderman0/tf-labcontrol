@@ -242,10 +242,6 @@ QLabel#spectrumChartTitle { color: #e2b77e; font-size: 14px; font-weight: 600; }
   QFrame#powerMeterWorkspace[recordingFrame="true"] { border-width: 2px; }
   QFrame#powerMeterWorkspace[recordingPhase="recording"], QFrame#powerMeterWorkspace[recordingPhase="draining"] { border-color: #b96360; }
   QWidget#powerMeterReadoutPanel { background: transparent; }
-  QFrame#powerMeterParameterCard { background: #151b1d; border: 1px solid #353f40; border-top: 2px solid #986b38; border-radius: 8px; }
-  QFrame#powerMeterParameterCard QLabel { background: transparent; }
-  QFrame#powerMeterParameterCard QFrame#compactOperation { border: 0; background: transparent; }
-  QFrame#powerMeterParameterCard QLineEdit#sourceValue { min-height: 26px; }
   QFrame#powerMeterReadoutCard { background: #151b1d; border: 1px solid #3b4243; border-top: 2px solid #986b38; border-radius: 8px; min-height: 92px; max-height: 106px; }
   QFrame#powerMeterReadoutCard QLabel { background: transparent; }
   QLabel#powerMeterTitle { color: #e2b77e; font-size: 14px; font-weight: 600; }

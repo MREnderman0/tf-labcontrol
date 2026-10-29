@@ -38,6 +38,7 @@ DEVICE_MODULES = (
     "lab_control.instruments.devices.coremorrow_xmt",
     "lab_control.instruments.devices.rigol_m300",
     "lab_control.instruments.devices.kplusk_fxe",
+    "lab_control.instruments.devices.keysight_53220a",
 )
 
 

@@ -211,6 +211,21 @@ class VisaTransport:
                 self.handle.timeout = old
 
     @synchronized
+    def query_binary_timeout(self, payload: bytes | str, max_bytes: int, seconds: float) -> bytes:
+        """One bounded block transaction, including long instrument integration times."""
+        if not 0.1 <= seconds <= 3010:
+            raise DeviceError("Invalid binary query timeout", "invalid_parameter")
+        if self.handle is None:
+            raise DeviceError("Connection requires explicit reconnect", "disconnected")
+        old = self.handle.timeout
+        self.handle.timeout = int(seconds * 1000)
+        try:
+            return self.query_binary(payload, max_bytes)
+        finally:
+            if self.handle is not None:
+                self.handle.timeout = old
+
+    @synchronized
     @measured("query")
     def query_binary(self, payload: bytes | str, max_bytes: int) -> bytes:
         """Bounded definite block with native VISA END or a SOCKET LF/CRLF trailer.

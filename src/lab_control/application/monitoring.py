@@ -30,7 +30,7 @@ from lab_control.domain.instruments import (
     ValidationError,
 )
 from lab_control.domain.workspace import GENERAL, WORKSPACE_MODES
-from lab_control.storage.paths import SaveContext
+from lab_control.storage.paths import BatchSaveContext, SaveContext
 from lab_control.storage.recording import Recording
 from lab_control.storage.repository import Repository
 
@@ -132,8 +132,11 @@ class MonitoringService:
         csv_interval: float = 5,
         recording: bool = False,
         background: bool = False,
+        batch: BatchSaveContext | None = None,
     ) -> Future[Any] | None:
         preparation = None
+        if batch is not None and not recording:
+            raise ValidationError("A batch save context requires recording")
         if not requests or not 0.05 <= interval <= 60 or mode not in WORKSPACE_MODES:
             raise ValidationError("Choose data sources, a 0.05..60 s interval and a valid mode")
         self.validate_intervals(interval, record_interval)
@@ -195,7 +198,7 @@ class MonitoringService:
                 try:
                     if recording and not task.recording:
                         preparation = self._begin_recording_locked(
-                            device_id, task, mode=mode, on_failure=restore_task
+                            device_id, task, mode=mode, on_failure=restore_task, batch=batch
                         )
                     else:
                         self.sessions.set_monitoring(
@@ -227,7 +230,7 @@ class MonitoringService:
                 try:
                     if recording:
                         preparation = self._begin_recording_locked(
-                            device_id, candidate, mode=mode, new_task=True
+                            device_id, candidate, mode=mode, new_task=True, batch=batch
                         )
                     else:
                         self.sessions.set_monitoring(device_id, True, False)
@@ -279,6 +282,7 @@ class MonitoringService:
         mode: str | None = None,
         new_task: bool = False,
         on_failure: Callable[[], None] | None = None,
+        batch: BatchSaveContext | None = None,
     ) -> Future[Any] | None:
         """Reserve a bounded preparation job; filesystem work never holds the monitor lock."""
         if task.recording:
@@ -299,7 +303,9 @@ class MonitoringService:
         )
         self.sessions.set_monitoring(device_id, True, True)
         try:
-            context = self.repository.new_save_context(next_mode, "continuous", device_id=device_id)
+            context = self.repository.new_save_context(
+                next_mode, "continuous", device_id=device_id, batch=batch
+            )
         except Exception:
             self._restore_recording_lock(device_id, previous_lock)
             raise

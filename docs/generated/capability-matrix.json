@@ -21200,6 +21200,530 @@
           }
         }
       ]
+    },
+    {
+      "adapter_id": "keysight.53220a",
+      "model": "Keysight / Agilent 53220A",
+      "category": "frequency_counter",
+      "control_page": "实时监测 / 频率计数器",
+      "channels": [
+        1,
+        2
+      ],
+      "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+      "revision": "53220-90001 edition 4, April 2023; CH1/CH2 single frequency",
+      "acquisition": "scalar:frequency",
+      "channel_limits": {},
+      "hardware_passed": false,
+      "operations": [
+        {
+          "name": "gate_time",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "s",
+              "minimum": 0.0001,
+              "maximum": 1000,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+          "section": "SENS:FREQ:GATE:TIME",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": true,
+          "hardware_passed": false,
+          "ui_label": "闸门时间",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "SENS:FREQ:GATE:TIME {value}"
+            ],
+            "query": "SENS:FREQ:GATE:TIME?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "coupling",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "AC",
+                "DC"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+          "section": "INP{ch}:COUP",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "耦合方式",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "INP{ch}:COUP {value}"
+            ],
+            "query": "INP{ch}:COUP?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "input_impedance",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Ω",
+              "minimum": 50,
+              "maximum": 1000000,
+              "choices": [
+                "50",
+                "1000000"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+          "section": "INP{ch}:IMP",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "输入阻抗",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "INP{ch}:IMP {value}"
+            ],
+            "query": "INP{ch}:IMP?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "input_range",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "V",
+              "minimum": 5,
+              "maximum": 500,
+              "choices": [
+                "5",
+                "50",
+                "500"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+          "section": "INP{ch}:RANG",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "输入量程",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "INP{ch}:RANG {value}"
+            ],
+            "query": "INP{ch}:RANG?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "auto_level",
+          "parameters": {
+            "value": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+          "section": "INP{ch}:LEV:AUTO",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "自动触发电平",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "INP{ch}:LEV:AUTO {value}"
+            ],
+            "query": "INP{ch}:LEV:AUTO?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "trigger_level",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "V",
+              "minimum": -512.5,
+              "maximum": 512.5,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+          "section": "INP{ch}:LEV",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "触发电平",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "INP{ch}:LEV {value}"
+            ],
+            "query": "INP{ch}:LEV?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "input_slope",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "POS",
+                "NEG"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+          "section": "INP{ch}:SLOP",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "输入触发斜率",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "INP{ch}:SLOP {value}"
+            ],
+            "query": "INP{ch}:SLOP?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "input_filter",
+          "parameters": {
+            "value": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+          "section": "INP{ch}:FILT",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "100 kHz 低通滤波",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "INP{ch}:FILT {value}"
+            ],
+            "query": "INP{ch}:FILT?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "configuration",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+          "section": "SENS:FUNC?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "通道配置",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "SENS:FUNC?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "options",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+          "section": "*OPT?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "已安装选件",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "*OPT?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "probe_factor",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+          "section": "INP{ch}:PROB?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "探头倍率",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "INP{ch}:PROB?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "input_protection",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+          "section": "INP{ch}:PROT?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "输入保护状态",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "INP{ch}:PROT?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "reference_clock",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+          "section": "SENS:ROSC:SOUR?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "参考时钟",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "SENS:ROSC:SOUR?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "transfer_format",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+          "section": "FORM:DATA?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "轨迹传输格式",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "FORM:DATA?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "byte_order",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
+          "section": "FORM:BORD?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "传输字节序",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "FORM:BORD?",
+            "custom_encoder": false
+          }
+        }
+      ]
     }
   ],
   "pending": {

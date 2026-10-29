@@ -113,3 +113,15 @@ def test_socket_broken_boundary_closes_and_never_replays(raw, message):
         wire.query_binary("DATA?", 4)
     assert history == ["DATA?", "closed"] and wire.handle is None
     assert max(counts) <= 9
+
+
+def test_long_binary_deadline_restores_timeout_without_replay():
+    wire, history, _ = transport(b"#18abcdefgh\n")
+    wire.handle.timeout = 5000
+    assert wire.query_binary_timeout("DATA:REM? 1,WAIT", 8, 1006) == b"#18abcdefgh\n"
+    assert wire.handle.timeout == 5000 and history == ["DATA:REM? 1,WAIT"]
+    wire, history, _ = transport(b"#18abc")
+    wire.handle.timeout = 5000
+    with pytest.raises(DeviceError):
+        wire.query_binary_timeout("DATA:REM? 1,WAIT", 8, 1006)
+    assert wire.handle is None and history == ["DATA:REM? 1,WAIT", "closed"]

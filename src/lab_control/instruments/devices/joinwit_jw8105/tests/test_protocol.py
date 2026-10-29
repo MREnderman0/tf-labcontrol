@@ -77,34 +77,69 @@ def test_power_read_decodes_eight_signed_values() -> None:
 
 
 def test_sixteen_channel_acquisition_reads_both_fixed_eight_channel_modules() -> None:
-    module_one = b"".join(int(index).to_bytes(2, "little", signed=True) for index in range(8))
-    module_two = b"".join(int(index + 100).to_bytes(2, "little", signed=True) for index in range(8))
+    module_one = b"".join(int(index - 73281).to_bytes(4, "little", signed=True) for index in range(8))
+    module_two = b"".join(int(index + 1885).to_bytes(4, "little", signed=True) for index in range(8))
     transport = MockFrameTransport(
         [
             build_frame(1, 0x0141, b"\x11\x22\x33\x44"),
-            build_frame(1, 0x0143, module_one),
-            build_frame(2, 0x0143, module_two),
+            build_frame(1, 0x0163, module_one),
+            build_frame(2, 0x0163, module_two),
         ]
     )
     adapter = Jw8105Adapter(transport, DEFINITION.profile, config())
     adapter.identify()
     batch = adapter.acquire(AcquisitionRequest(channels=tuple(range(1, 17))))
     assert [measurement.channel for measurement in batch.measurements] == list(range(1, 17))
-    assert batch.measurements[0].values == pytest.approx(0)
-    assert batch.measurements[8].values == pytest.approx(1.0)
-    assert transport.history[1] == build_frame(1, 0x0142)
-    assert transport.history[2] == build_frame(2, 0x0142)
+    assert [measurement.values for measurement in batch.measurements] == pytest.approx(
+        [(index - 73281) / 1000 for index in range(8)] + [(index + 1885) / 1000 for index in range(8)]
+    )
+    assert all(measurement.unit == "dBm" for measurement in batch.measurements)
+    assert transport.history == [build_frame(1, 0x0140), build_frame(1, 0x0162), build_frame(2, 0x0162)]
 
 
 def test_read_settings_and_acquisition_are_read_only() -> None:
-    power = bytes.fromhex("60 E3 D3 E2 B4 E2 FE E2 B4 E2 B4 E2 F5 E2 F1 E2")
-    replies = [build_frame(1, 0x0141, b"\x11\x22\x33\x44"), build_frame(1, 0x0143, power)]
+    # Complete display-power example from V23.02.02, page 5; signed 32-bit / 1000.
+    power = bytes.fromhex(
+        "5D 07 00 00 B1 1F FF FF D1 3C FF FF E2 3B FF FF 55 3E FF FF A7 3B FF FF 60 3D FF FF 5E 3C FF FF"
+    )
+    replies = [build_frame(1, 0x0141, b"\x11\x22\x33\x44"), build_frame(1, 0x0163, power)]
     transport = MockFrameTransport(replies)
     adapter = Jw8105Adapter(transport, DEFINITION.profile, config())
     adapter.identify()
     batch = adapter.acquire(AcquisitionRequest(channels=(1, 2)))
-    assert [item.values for item in batch.measurements] == pytest.approx([-73.28, -74.69])
-    assert len(transport.history) == 2
+    assert [item.values for item in batch.measurements] == pytest.approx([1.885, -57.423])
+    assert transport.history == [build_frame(1, 0x0140), build_frame(1, 0x0162)]
+
+
+@pytest.mark.parametrize("options, channels", [((), (9, 16)), (("module=2",), (1, 8))])
+def test_display_acquisition_only_queries_selected_module(options, channels) -> None:
+    power = b"".join(int(index - 1000).to_bytes(4, "little", signed=True) for index in range(8))
+    identity_module = 2 if options else 1
+    transport = MockFrameTransport(
+        [build_frame(identity_module, 0x0141, b"\0" * 4), build_frame(2, 0x0163, power)]
+    )
+    adapter = Jw8105Adapter(transport, DEFINITION.profile, config(options=options))
+    adapter.identify()
+    batch = adapter.acquire(AcquisitionRequest(channels=channels))
+    assert [item.channel for item in batch.measurements] == list(channels)
+    assert [item.values for item in batch.measurements] == pytest.approx([-1, -0.993])
+    assert transport.history == [build_frame(identity_module, 0x0140), build_frame(2, 0x0162)]
+
+
+@pytest.mark.parametrize(
+    "reply",
+    [build_frame(2, 0x0163, b"\0" * 16), build_frame(2, 0x0143, b"\0" * 32)],
+)
+def test_invalid_second_module_display_reply_rejects_whole_acquisition(reply) -> None:
+    transport = MockFrameTransport(
+        [build_frame(1, 0x0141, b"\0" * 4), build_frame(1, 0x0163, b"\0" * 32), reply]
+    )
+    adapter = Jw8105Adapter(transport, DEFINITION.profile, config())
+    adapter.identify()
+    with pytest.raises(DeviceError) as error:
+        adapter.acquire(AcquisitionRequest(channels=(1, 9)))
+    assert error.value.code == "parse_error"
+    assert transport.history == [build_frame(1, 0x0140), build_frame(1, 0x0162), build_frame(2, 0x0162)]
 
 
 def test_writes_require_confirmation_and_read_back() -> None:

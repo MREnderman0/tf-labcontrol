@@ -6,7 +6,7 @@ import copy
 import json
 from collections import defaultdict
 
-from lab_control.domain.workspace import GENERAL, LEGACY_MODES
+from lab_control.domain.workspace import GENERAL, LEGACY_MODES, category_slots
 
 MIGRATION_KEY = "workspace_migration/general-v1"
 DEVICE_PREFIXES = ("draft", "monitor-timing", "spectrum-markers", "scope-fine")
@@ -61,7 +61,7 @@ def migrate_general_workspace(repository, category_for) -> dict:
                 continue
             choices = {slots[mode] for mode in LEGACY_MODES if mode in slots}
             category = category_for(record)
-            valid_slots = {f"{category}:1", f"{category}:2"}
+            valid_slots = set(category_slots(category))
             # Even an internally conflicting device still claims its old
             # slots: do not silently assign either to another device.
             for slot in choices & valid_slots:

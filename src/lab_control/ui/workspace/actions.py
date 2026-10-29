@@ -17,6 +17,7 @@ from lab_control.application.catalog import instrument_category
 from lab_control.application.config import config_from_record
 from lab_control.application.controls import CATEGORY_LABELS, slot_label
 from lab_control.domain.instruments import jsonable
+from lab_control.domain.workspace import category_slots
 from lab_control.instruments.registry import describe
 from lab_control.ui.widgets.workspace_combo import choose_item
 
@@ -115,7 +116,7 @@ class WorkspaceActions:
         records = window.runtime.inventory.all()
         record = next(r for r in records if r["id"] == device_id)
         category = instrument_category(record)
-        slots = ["", f"{category}:1", f"{category}:2"]
+        slots = ["", *category_slots(category)]
         owners = {r.get("slots", {}).get(mode): r for r in records if r.get("slots", {}).get(mode)}
         labels = ["解除绑定"]
         for slot in slots[1:]:

@@ -29,7 +29,6 @@ from lab_control.application.catalog import mode_applicable
 from lab_control.application.monitoring import MonitorFrame
 from lab_control.domain.instruments import AcquisitionRequest, DeviceError, Measurement
 from lab_control.ui.controller import WorkspaceController, state_label
-from lab_control.ui.pages.device_control.form import OperationEditor
 from lab_control.ui.pages.monitoring.power_plot import CHANNEL_COLORS
 from lab_control.ui.pages.monitoring.recording_state import (
     RecordingButton,
@@ -275,71 +274,6 @@ class PowerMeterReadoutCard(QFrame):
         self.meta.setText(f"{measurement.unit} · {shown_time}" if shown_time else measurement.unit)
 
 
-class WavelengthParameterCard(QFrame):
-    """Compact always-visible device parameter card for the whole instrument."""
-
-    def __init__(self, controller: WorkspaceController, parent=None) -> None:
-        super().__init__(parent)
-        self.controller = controller
-        self.device_id = ""
-        self.editor: OperationEditor | None = None
-        self._read_signature: tuple[Any, ...] | None = None
-        self.setObjectName("powerMeterParameterCard")
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 8, 10, 8)
-        title = QLabel("设备参数")
-        title.setObjectName("powerMeterTitle")
-        layout.addWidget(title)
-        self.body = QVBoxLayout()
-        self.body.setContentsMargins(0, 0, 0, 0)
-        self.body.setSpacing(2)
-        layout.addLayout(self.body)
-
-    def _clear(self) -> None:
-        while self.body.count():
-            item = self.body.takeAt(0)
-            widget = item.widget() if item else None
-            if widget:
-                widget.deleteLater()
-        self.editor = None
-
-    def set_device(self, device_id: str) -> None:
-        self.device_id = device_id
-        self._read_signature = None
-        self._clear()
-        if not device_id:
-            return
-        schema = self.controller.capabilities(device_id, 1)
-        capability = next((cap for cap in schema.operations if cap.name == "wavelength"), None)
-        if capability is None:
-            label = QLabel("波长 · 当前型号未提供")
-            label.setObjectName("mutedText")
-            self.body.addWidget(label)
-            return
-        self.editor = OperationEditor(
-            self.controller,
-            device_id,
-            capability,
-            1,
-            self,
-            compact=True,
-            actions=True,
-        )
-        self.body.addWidget(self.editor)
-
-    def refresh(self, state: dict[str, Any], task: dict[str, Any]) -> None:
-        if not self.editor or not self.device_id:
-            return
-        connected = state.get("connectionState") in {"connected", "busy"}
-        if not connected or state.get("controlsLocked") or task.get("running"):
-            return
-        signature = (state.get("sessionId"), state.get("configurationVersion"))
-        if signature == self._read_signature or self.editor.busy:
-            return
-        self._read_signature = signature
-        self.editor.read()
-
-
 class OpticalPowerMonitoringPage(QWidget):
     def __init__(self, controller: WorkspaceController, add_card, parent=None) -> None:
         super().__init__(parent)
@@ -409,8 +343,6 @@ class OpticalPowerMonitoringPage(QWidget):
         right.setObjectName("powerMeterReadoutPanel")
         right_layout = QVBoxLayout(right)
         right_layout.setContentsMargins(8, 0, 0, 0)
-        self.parameter_card = WavelengthParameterCard(controller, right)
-        right_layout.addWidget(self.parameter_card)
         readout_title = QLabel("实时读数")
         readout_title.setObjectName("powerMeterTitle")
         right_layout.addWidget(readout_title)
@@ -447,21 +379,6 @@ class OpticalPowerMonitoringPage(QWidget):
         record = self.controller.records.get(device_id, {})
         slot = record.get("slots", {}).get("general", "")
         return f"slot:general:{slot}" if slot else f"device:{device_id}"
-
-    def _background_sync_keys(self, device_id: str) -> tuple[tuple[int, str], ...]:
-        """Return settings that are safe to poll while this page is visible.
-
-        JW8105 uses a USB serial bridge and its binary protocol has no
-        asynchronous status channel.  A long-lived wavelength poll can leave
-        some bridge/firmware combinations unresponsive after enough requests.
-        The parameter card still performs one explicit read when the device is
-        selected, so continuous polling is unnecessary for this model.
-        """
-
-        record = self.controller.records.get(device_id, {})
-        if record.get("adapterId") == "joinwit.jw8105":
-            return ()
-        return ((1, "wavelength"),) if device_id else ()
 
     def _selected_channels(self, device_id: str, channels: tuple[int, ...]) -> tuple[int, ...]:
         key = self._channel_key(device_id)
@@ -526,13 +443,14 @@ class OpticalPowerMonitoringPage(QWidget):
             item = layout.takeAt(0)
             widget = item.widget() if item else None
             if widget:
+                widget.hide()
                 widget.deleteLater()
 
     def select_device(self, device_id: str) -> None:
         if self.transition:
             return
         self.device_id, self.mode = device_id, "general"
-        self.controller.focus_settings(device_id, self._background_sync_keys(device_id))
+        self.controller.focus_settings(device_id)
         self.generation += 1
         self.latest_frame = None
         self.monitoring_context_id = ""
@@ -543,7 +461,12 @@ class OpticalPowerMonitoringPage(QWidget):
         self._clear_layout(self.channel_row)
         self.channel_row.addWidget(QLabel("显示与采集通道"))
         self.channel_checks = {}
-        self._clear_layout(self.readout_grid)
+        while self.readout_grid.count():
+            self.readout_grid.takeAt(0)
+        # Hidden channels also belong to this page and must retire on a switch.
+        for card in self.cards.values():
+            card.hide()
+            card.deleteLater()
         self.cards = {}
         if device_id:
             channels = tuple(self.controller.capabilities(device_id).channels)
@@ -554,11 +477,10 @@ class OpticalPowerMonitoringPage(QWidget):
                 check.toggled.connect(self.channels_changed)
                 self.channel_checks[channel] = check
                 self.channel_row.addWidget(check)
-                card = PowerMeterReadoutCard(channel)
+                # Reflow changes visibility before inserting selected channels.
+                # Parent from construction so this can never become a window.
+                card = PowerMeterReadoutCard(channel, self.readout_body)
                 self.cards[channel] = card
-            self.parameter_card.set_device(device_id)
-        else:
-            self.parameter_card.set_device("")
         self.channel_row.addStretch()
         self.plot.set_channels(self.channels())
         self._reflow_readout_cards()
@@ -723,7 +645,6 @@ class OpticalPowerMonitoringPage(QWidget):
             )
         )
         update_recording_frame(self.chart, task)
-        self.parameter_card.refresh(state, task)
         if self.isVisible():
             self.refresh_frame(device_id)
 
@@ -745,7 +666,7 @@ class OpticalPowerMonitoringPage(QWidget):
 
     def showEvent(self, event) -> None:  # noqa: N802
         super().showEvent(event)
-        self.controller.focus_settings(self.device_id, self._background_sync_keys(self.device_id))
+        self.controller.focus_settings(self.device_id)
         QTimer.singleShot(0, lambda: self.refresh_frame(self.device_id))
 
     def hideEvent(self, event) -> None:  # noqa: N802

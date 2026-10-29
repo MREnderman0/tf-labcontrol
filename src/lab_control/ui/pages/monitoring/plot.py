@@ -87,6 +87,15 @@ class LivePlot(QWidget):
         )
         if token == self.last_token:
             return
+        if (
+            source.kind == "scalar"
+            and self.last_token is not None
+            and (token[0], token[-2:]) == (self.last_token[0], self.last_token[-2:])
+            and (frame.received_at, frame.sequence) <= (self.last_token[2], self.last_token[1])
+        ):
+            # Pages may replay their bounded recent-frame window on every UI tick.
+            # Keep trend time ordered, with each frame represented exactly once.
+            return
         wanted = [
             m
             for m in frame.batch.measurements
@@ -170,7 +179,8 @@ class LivePlot(QWidget):
                 self.plot.setLabel("left", source.label, units=unit or None)
                 self.plot.setLogMode(x=log_x, y=source.quantity == "stability")
                 self.axis_signature = axis_signature
-            values_text.append(f"CH {measurement.channel}  {values[-1]:.6g} {unit}")
+            digits = 12 if measurement.quantity == "frequency" else 6
+            values_text.append(f"CH {measurement.channel}  {values[-1]:.{digits}g} {unit}")
         for key, curve in self.curves.items():
             if key not in used:
                 curve.hide()
