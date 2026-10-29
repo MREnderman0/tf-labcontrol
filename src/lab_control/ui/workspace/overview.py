@@ -339,14 +339,20 @@ class WorkspaceOverview:
         window.connection_summary.setVisible(connection_progress["state"] != "idle")
         if connecting:
             prefix = (
-                "正在停止，等待当前连接完成" if connection_progress["state"] == "stopping" else "正在连接"
+                "正在停止，等待在途连接完成" if connection_progress["state"] == "stopping" else "正在并行连接"
             )
+            active = connection_progress.get("active", [])
+            labels = [item["label"] for item in active]
+            detail = "、".join(labels[:2]) + (f" 等 {len(labels)} 台" if len(labels) > 2 else "")
             window.connection_summary.setText(
-                f"{prefix} · {connection_progress['completed']}/{connection_progress['total']}"
-                f" · {connection_progress.get('current', '')}"
+                f"{prefix} · 已完成 {connection_progress['completed']}/{connection_progress['total']}"
+                f" · 进行中 {len(active)} · 排队 {connection_progress.get('queued', 0)}"
+                + (f" · {detail}" if detail else "")
             )
+            window.connection_summary.setToolTip("\n".join(labels))
         else:
             window.connection_summary.setText(window.connection_result_text(connection_progress))
+            window.connection_summary.setToolTip("")
         connected = sum(
             s["connectionState"] in {"connected", "busy", "degraded"} for s in window.states.values()
         )

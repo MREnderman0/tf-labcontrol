@@ -166,6 +166,15 @@ class DiscoveryService:
                 self.inventory.merge(candidate, scan_id, reason="pending_probe")
             # Explicit connection settings win, independently of provider completion order.
             chosen = max(group, key=lambda c: (bool(c.config.adapter), c.source == "configured"))
+            dhcp = [c for c in group if c.source == "dhcp_leases"]
+            if dhcp:
+                # Retain the expected identity even when a configured/remembered
+                # source advertises the same resource. Probe with no old settings.
+                chosen = dhcp[0]
+                if len({c.descriptor["expectedIdentityKey"] for c in dhcp}) != 1:
+                    chosen = replace(
+                        chosen, error="DHCP endpoint maps to multiple assets", error_code="identity_conflict"
+                    )
             # The saved address may pin an interface while an older startup
             # config still supplies serial/limits. Keep those identity guards,
             # but use the explicitly selected source for this exact socket.
@@ -276,6 +285,12 @@ class DiscoveryService:
                         leased = True
                 if leased:
                     identity, adapter = self.probe(candidate)
+                    expected = candidate.descriptor.get("expectedIdentityKey")
+                    if expected and identity.key != expected:
+                        identity, adapter = None, ""
+                        raise DeviceError(
+                            "DHCP address returned a different instrument identity", "identity_conflict"
+                        )
                     reason = "identified"
             except Exception as exc:
                 error, reason = str(exc), "probe_failed"

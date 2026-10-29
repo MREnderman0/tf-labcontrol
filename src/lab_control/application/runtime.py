@@ -102,7 +102,7 @@ class ApplicationRuntime:
             )
             self.static_addresses = StaticAddressStore(self.repository)
             self.static_address_provider = StaticAddressDiscoveryProvider(self.static_addresses)
-            providers: tuple[Any, ...] = (ConfiguredDiscoveryProvider(configurations),)
+            providers: tuple[Any, ...] = (ConfiguredDiscoveryProvider(configurations, self.inventory),)
             if hardware:
                 providers += (
                     VisaDiscoveryProvider(self.visa),
@@ -116,9 +116,12 @@ class ApplicationRuntime:
                     if definition.discovery_factory is not None
                 )
                 if self.lan_settings.enabled:
+                    from lab_control.discovery.dhcp import DhcpLeaseDiscoveryProvider
+
                     providers += (
                         LanDiscoveryProvider(self.visa, self.lan_settings),
                         RememberedLanDiscoveryProvider(self.inventory, self.lan_settings),
+                        DhcpLeaseDiscoveryProvider(self.inventory, self.lan_settings),
                     )
                 # Explicitly saved endpoints are safe to query even when
                 # service advertisement discovery is disabled. The provider

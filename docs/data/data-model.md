@@ -86,7 +86,7 @@ candidates 以原始资源字符串为键，保留 candidateId、scanRunId、sou
 
 `bind_slot(device_id, slot, mode, replace_device_id=...)` 的可选参数表示用户已确认替换的当前占用者；省略时占用仍报错，占用者变化时报 `slot_changed`，须重新确认。两台设备的任务状态和库存占用在同一锁定区间核对，仓储 `save_many()` 用一个 SQLite 事务提交双方记录，成功后才替换内存记录。事务失败不发布半完成状态；`slot_changed` 审计包含被替换设备 ID。
 
-批量连接进度仅在内存保存，包含状态、总数、已处理数、当前设备和逐项结果；结果状态为 `connected`、`already_connected`、`failed` 或 `skipped`，附设备 ID、显示身份和原因。返回的进度与最终结果是独立快照；逐项结果及汇总写入运行目录审计日志。它们不改变库存格式、槽位或实机验收结论。
+批量连接进度仅在内存保存，包含状态、总数、已处理数、`active` 在途设备列表、`queued` 排队数、`parallel_limit` 并发上限（当前为 4）和逐项结果；`current` 保留为在途名称的拼接摘要。逐项结果按原设备顺序排列，完成顺序可以不同；结果状态为 `connected`、`already_connected`、`failed` 或 `skipped`，附设备 ID、显示身份、原因、结束时间，已提交项还带开始时间。返回的进度与最终结果是独立快照；逐项结果及汇总写入运行目录审计日志。它们不改变库存格式、槽位或实机验收结论。
 
 ## 会话快照
 
