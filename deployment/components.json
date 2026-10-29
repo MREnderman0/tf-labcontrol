@@ -6,7 +6,9 @@
     "PyVISA": "pyvisa",
     "pyserial": "serial",
     "numpy": "numpy",
-    "pyqtgraph": "pyqtgraph"
+    "pyqtgraph": "pyqtgraph",
+    "mcp": "mcp",
+    "cryptography": "cryptography"
   },
   "components": [
     {
@@ -938,6 +940,18 @@
     }
   ],
   "python_transitive_roots": {
-    "shiboken6": "shiboken6"
+    "shiboken6": "shiboken6",
+    "pydantic": "pydantic",
+    "httpx2": "httpx2",
+    "uvicorn": "uvicorn",
+    "starlette": "starlette"
+  },
+  "agent_network": {
+    "enabled_by_default": false,
+    "local": "127.0.0.1:8765 /mcp, authenticated",
+    "lan": "operator-selected IPv4:8766 HTTPS, exported certificate trust only",
+    "firewall": "explicit elevated helper; one program/interface/port; Private and Domain; LocalSubnet; readback and rollback",
+    "credentials": "per-client bearer token; server stores SHA256 only",
+    "acceptance": "development tests required; second computer and physical instruments pending"
   }
 }

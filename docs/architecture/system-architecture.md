@@ -1,6 +1,6 @@
 # 系统架构与工程边界（0.3.0）
 
-当前交付为 Python 模块化单体：真实通信、设备总览、分类控制和实时监测已接通；正式入口与内部 Mock 预览共用页面并注入隔离服务。自动实验、阈值告警和数据处理工作台仍在后续范围。
+当前交付为 Python 模块化单体：真实通信、设备总览、分类控制和实时监测已接通；正式入口与内部 Mock 预览共用页面并注入隔离服务。外部 Agent 可按本机实验授权通过 MCP 协作；内置完整实验编排、阈值告警和数据处理工作台仍在后续范围。
 
 ## 目录职责
 
@@ -14,6 +14,7 @@
 | discovery/ | provider 枚举、有限探测、库存合并、取消与扫描记录 |
 | discovery/types.py、providers.py、inventory.py | 发现类型、枚举与库存职责；service.py 保留扫描协调和旧导入兼容 |
 | application/ | Runtime 生命周期、每设备 worker、租约、安全校验和事件 |
+| application/agents/、agent/、storage/agent_ledger.py | Qt 无关的实验授权/任务门面、官方 MCP 传输与 stdio 连接器、持久去重和产物索引 |
 | storage/ | SQLite 库存/扫描、JSONL 日志、CSV/NPZ/Touchstone/报告 |
 | cli/ | 环境诊断、扫描、只读测试、设置和采集 |
 | ui/real_window.py、ui/controller.py | 共用应用窗口、总览、Qt 快照/Future 桥接 |
@@ -31,11 +32,13 @@
 
 ## 运行入口
 
-run.bat、Python 模块入口、lab-control 与安装版 EXE 统一调用 launcher.main；先分发 CSV worker、部署自检及 CLI，GUI 分支才进入 app.main 创建真实 ApplicationRuntime 和 RealWindow。内部测试和预览注入隔离 Mock ApplicationRuntime 并显示同一窗口；lab-control-cli 调用同一会话服务。配置文件只描述资源/适配器/驱动，不允许混入厂家命令。
+run.bat、Python 模块入口、lab-control 与安装版 EXE 统一调用 launcher.main；先分发 Agent 连接器、CSV worker、部署自检及 CLI，GUI 分支才进入 app.main 创建真实 ApplicationRuntime 和 RealWindow。内部测试和预览注入隔离 Mock ApplicationRuntime 并显示同一窗口；lab-control-cli 调用同一会话服务。配置文件只描述资源/适配器/驱动，不允许混入厂家命令。
 
 真实进程使用每用户固定位置的独占进程锁（即使更换 LAB_CONTROL_HOME 仍互斥），固定为 `%LOCALAPPDATA%/TF-LabControl/hardware.lock`，并解析该锁目录的物理路径；库存路径重定向不改变锁根目录，阻止本软件 GUI/CLI/Python 实测进程同时占用仪器。兼容旧运行根目录时，Python 与 PowerShell 维护入口均按物理文件身份去重；同一锁的路径别名只加锁一次，不同文件继续分别加锁，失败时释放本次已取得的锁。锁被占用时启动边界报告持有进程的 PID 和启动时间；这些信息写入临时的 `hardware.lock.owner.json`，正常退出时清理，操作系统锁本身仍是唯一的占用依据。不关闭其他厂商软件，其他程序占用会产生可解释错误。模拟 CLI 和单元测试不获取硬件进程锁，存储隔离在 simulation。
 
 ## 数据流
+
+[Agent 协作实验](../guides/agent-collaboration.md)从系统设置启用，使用独立 asyncio 网络循环调用同一 Runtime 的 Qt 无关门面。按实验范围授权、设备 worker 内重新校验配置版本，GUI 与多个 Agent 共用原会话。授权管理仅在本机界面；连接器不创建硬件 Runtime。任务/请求键持久保存，重启标记未知结果且不恢复执行权限。
 
     UI / CLI / Python
       -> ApplicationRuntime
@@ -69,7 +72,7 @@ run.bat、Python 模块入口、lab-control 与安装版 EXE 统一调用 launch
 
 Repository.audit 保留严格错误语义；恢复和清理路径使用 AuditSink.try_record 保存有界失败证据，避免审计磁盘错误遮盖原故障或阻断资源释放。不把审计失败解释为设备操作成功。
 
-pyproject.toml/uv.lock 管理 PySide6、PyQtGraph、PyVISA、PySerial、NumPy；Ruff、mypy、pytest 为开发依赖。SDK/运行库独立安装、延迟加载，缺少某个 SDK 不影响其他设备或无驱动 UI 启动。
+pyproject.toml/uv.lock 管理 PySide6、PyQtGraph、PyVISA、PySerial、NumPy、MCP 与 cryptography；Ruff、mypy、pytest 为开发依赖。厂商 SDK/运行库独立安装、延迟加载，缺少某个厂商 SDK 不影响其他设备或无驱动 UI 启动。
 
 ## 可测试边界
 

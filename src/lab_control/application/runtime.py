@@ -5,7 +5,7 @@ import sys
 import threading
 from concurrent.futures import Future
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from lab_control.application.config import ConnectionConfig, canonical_resource
 from lab_control.application.leases import ProcessLease, ResourceLeases
@@ -63,6 +63,8 @@ class ApplicationRuntime:
         self.process_lease: ProcessLease | None = None
         self.closed = False
         self._close_lock = threading.Lock()
+        self._agent_lock = threading.Lock()
+        self._agent: Any = None
         lock_root = None
         try:
             if hardware:
@@ -243,7 +245,13 @@ class ApplicationRuntime:
                 transport=config.transport,
             )
 
-    def connect(self, device_id: str, *, configure_acquisition: bool = True):
+    def connect(
+        self,
+        device_id: str,
+        *,
+        configure_acquisition: bool = True,
+        admission: Callable[[DeviceIdentity | None], None] | None = None,
+    ):
         from lab_control.domain.instruments import DeviceError
 
         # Reserve the session under the scan lock, including enumeration and probe gaps.
@@ -251,7 +259,7 @@ class ApplicationRuntime:
             self._check_connection_admission()
             if self.discovery.future and not self.discovery.future.done():
                 raise DeviceError("正在扫描并核验设备，请等待扫描完成后连接", "scan_busy")
-            return self._connect(device_id, configure_acquisition=configure_acquisition)
+            return self._connect(device_id, configure_acquisition=configure_acquisition, admission=admission)
 
     def _check_connection_admission(self) -> None:
         from lab_control.domain.instruments import DeviceError
@@ -273,7 +281,8 @@ class ApplicationRuntime:
         )
         with self.discovery.lock, self.sessions.lock:
             self._check_connection_admission()
-            if self.discovery.is_scanning or self.sessions.sessions:
+            # Discovery.lock is not reentrant; is_scanning acquires it again.
+            if (self.discovery.future and not self.discovery.future.done()) or self.sessions.sessions:
                 raise DeviceError(
                     "请等待扫描完成，停止采集并断开所有设备后再打开安装向导", "maintenance_busy"
                 )
@@ -306,7 +315,13 @@ class ApplicationRuntime:
     def connection_progress(self) -> dict[str, Any]:
         return self.bulk_connection.snapshot()
 
-    def _connect(self, device_id: str, *, configure_acquisition: bool = True):
+    def _connect(
+        self,
+        device_id: str,
+        *,
+        configure_acquisition: bool = True,
+        admission: Callable[[DeviceIdentity | None], None] | None = None,
+    ):
         record = next(item for item in self.inventory.all() if item["id"] == device_id)
         if record["discoveryState"] == "conflict":
             from lab_control.domain.instruments import DeviceError
@@ -319,7 +334,11 @@ class ApplicationRuntime:
 
         config, firmware = qualified_connection(record, config, self.repository, self.visa)
         future = self.sessions.connect(
-            device_id, config, expected_firmware=firmware, configure_acquisition=configure_acquisition
+            device_id,
+            config,
+            expected_firmware=firmware,
+            configure_acquisition=configure_acquisition,
+            admission=admission,
         )
 
         saved: Future[DeviceIdentity] = Future()
@@ -427,12 +446,29 @@ class ApplicationRuntime:
         with self._close_lock:
             self._close_once()
 
+    @property
+    def agent(self):
+        with self._agent_lock:
+            if self.closed:
+                raise RuntimeError("Runtime is closed")
+            if self._agent is None:
+                from lab_control.application.agents.service import AgentService
+
+                self._agent = AgentService(self)
+            return self._agent
+
     def _close_once(self) -> None:
         if self.closed:
             return
         with self.discovery.lock:
             self.discovery.closing = True
         errors = []
+        agent = getattr(self, "_agent", None)
+        if agent is not None:
+            try:
+                agent.close()
+            except Exception as exc:
+                errors.append(exc)
         for resource in (
             self.bulk_connection,
             self.monitoring,
@@ -443,6 +479,11 @@ class ApplicationRuntime:
             self.process_lease,
         ):
             if resource is not None:
+                if resource is self.repository and agent is not None:
+                    try:
+                        agent.finalize_close()
+                    except Exception as exc:
+                        errors.append(exc)
                 try:
                     resource.close()
                 except Exception as exc:

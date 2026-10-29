@@ -200,6 +200,23 @@ def test_historical_and_redirect_documents_do_not_validate_old_commands(tmp_path
     assert not any("command" in error or "launch entry" in error for error in errors)
 
 
+@pytest.mark.parametrize("entry", ["python -m lab_control", "TF-LabControl-Agent.exe", "lab-control"])
+def test_agent_connector_options_use_early_dispatch_parser(tmp_path, entry):
+    source = tmp_path / "src/lab_control/agent/connector.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "import argparse\np = argparse.ArgumentParser()\np.add_argument('--connection')\np.add_argument('--check', action='store_true')\n"
+    )
+    assert (
+        CHECKER["command_errors"](
+            tmp_path, f"```powershell\n{entry} --agent-connector --connection test.json --check\n```"
+        )
+        == []
+    )
+    errors = CHECKER["command_errors"](tmp_path, f"```powershell\n{entry} --agent-connector --typo\n```")
+    assert any("--typo" in error for _, error in errors)
+
+
 def test_all_categories_and_new_non_signal_module():
     generator = runpy.run_path(str(ROOT / "scripts/generate_device_docs.py"))
     existing = next(item for item in registry.DEVICE_DEFINITIONS.values() if item.profile is not None)

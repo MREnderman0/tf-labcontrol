@@ -177,7 +177,8 @@ remote=进入远程控制
 local=返回面板控制
 errors=设备错误
 trigger_interval=触发间隔
-scan_list=扫描列表
+scan_list=扫描通道列表
+trigger_count=触发次数
 scan_size=扫描通道数
 dmm_installed=DMM 模块已安装
 dmm_state=DMM 状态
@@ -267,6 +268,9 @@ unit=单位
 zero=归零 / 暗电流校正
 sensor=传感器信息
 function=测量功能
+temperature_sensor=温度传感器类型
+thermistor_type=热敏电阻标称阻值（25℃）
+temperature_unit=温度单位
 integration=积分时间
 resolution=分辨率
 autozero=自动调零
@@ -356,6 +360,10 @@ COMMON = {
     "attenuation",
     "wavelength",
     "function",
+    "temperature_sensor",
+    "thermistor_type",
+    "temperature_unit",
+    "scan_list",
     "range",
     "autorange",
     "integration",

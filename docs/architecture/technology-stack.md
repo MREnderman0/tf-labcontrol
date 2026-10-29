@@ -2,7 +2,7 @@
 
 ## 0.3.0 实际采用状态
 
-当前采用 Python 3.12 x64、PySide6、PyQtGraph、PyVISA、PySerial、NumPy；使用内置 sqlite3、JSONL/CSV/NPZ、ThreadPoolExecutor 与 Qt Signal。setuptools 生成 wheel/sdist，PyInstaller 生成 Windows 目录式 EXE。依赖和版本以根目录 pyproject.toml/uv.lock 为准。图形默认软件渲染，显示抽稀不影响原始数据导出。
+当前采用 Python 3.12 x64、PySide6、PyQtGraph、PyVISA、PySerial、NumPy；使用内置 sqlite3、JSONL/CSV/NPZ、ThreadPoolExecutor 与 Qt Signal。Agent 接入使用官方 MCP Python SDK 2.3.0、asyncio 和 cryptography，传输依赖随 SDK 锁定。setuptools 生成 wheel/sdist，PyInstaller 生成 Windows 目录式 EXE。依赖和版本以根目录 pyproject.toml/uv.lock 为准。图形默认软件渲染，显示抽稀不影响原始数据导出。
 
 SciPy、h5py、structlog 以及独立 32 位 SDK worker 仍为后续规划，不属于当前运行依赖。目录式构建已实现，正式应用安装器与跨电脑验收仍未完成。完整运行架构见 [system-architecture.md](system-architecture.md)。
 
@@ -10,7 +10,7 @@ SciPy、h5py、structlog 以及独立 32 位 SDK worker 仍为后续规划，不
 
 本项目采用 Python 3.12 x64 和 PySide6，支持范围由 `requires-python = ">=3.12,<3.13"` 约束。应用是 Windows 桌面端的模块化单体：Qt 负责窗口、导航、表单和绘图容器，应用层负责设备会话、功能槽位、采集编排、监测规则和日志，传输层负责 VISA、串口、TCP 以及厂商 SDK。
 
-当前不创建自动实验流程，也不拆微服务。单进程管理 6–20 台真实设备；模拟版提供 24 台示例。每设备一个串行 worker，SDK 位数不匹配明确报错；独立 SDK 进程隔离为后续工作。
+外部 Agent 可通过 [MCP 协作接口](../guides/agent-collaboration.md)编排获授权的操作；内置实验流程编辑器仍未实现。单进程管理 6–20 台真实设备；模拟版提供 24 台示例。每设备一个串行 worker，SDK 位数不匹配明确报错；独立 SDK 进程隔离为后续工作。
 
 ## 2. 组件与后续规划
 

@@ -10,6 +10,8 @@ dependencies = [
     "pyserial>=3.5,<4",
     "numpy>=2,<3",
     "pyqtgraph>=0.14,<0.15",
+    "mcp==2.3.0",
+    "cryptography>=46,<48",
 ]
 
 [project.scripts]
@@ -24,7 +26,7 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.setuptools.package-data]
-lab_control = ["ui/styles/*.qss", "py.typed"]
+lab_control = ["ui/styles/*.qss", "agent/*.ps1", "py.typed"]
 "lab_control.instruments.devices" = ["*/*.md", "*/hardware/*.md", "*/tests/fixtures/*.json"]
 
 [tool.setuptools.data-files]

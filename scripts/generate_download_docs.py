@@ -72,6 +72,42 @@ def render() -> str:
         "安装和离线构建见[部署指南](../development/desktop-deployment.md)。",
         "",
     ]
+    for entry in inventory["files"]:
+        if entry["kind"] == "developer-tool-installer":
+            lines += [
+                f"### {entry['name']} {entry['version']}",
+                "",
+                entry["purpose"],
+                "",
+                f"[国内镜像]({entry['source']})、[官方直连]({entry['official_source']})、"
+                f"[版本说明]({entry['source_page']})。",
+                "",
+                f"大小：{entry['size']} 字节；SHA256：`{entry['sha256']}`。",
+                "",
+                f"签名：{entry['signature_status']}；发布者：{entry['publisher']}；"
+                f"许可：{entry['license']}。",
+                "",
+                f"验证状态：{entry['validation']}。",
+                "",
+            ]
+    lines += [
+        "## 锁定的 Python 材料",
+        "",
+        "由 `scripts/generate_python_materials.py` 核对锁文件、Windows x64 wheel 与已安装版本后登记。"
+        "哈希用于下载验证；目标电脑、局域网与实机验收仍分别留档。wheel 不适用 Authenticode 签名。",
+        "",
+        "| 包 / 版本 | 用途 | 国内来源 | 大小（字节） | SHA256 | 许可 |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+    for entry in inventory["files"]:
+        if entry["kind"] == "python-wheel":
+            license_name = entry.get("license", "待核实").replace("|", "/")
+            lines.append(
+                f"| {entry.get('name', Path(entry['path']).name)} {entry.get('version', '')} | "
+                f"{entry.get('purpose', '待核实')} | [下载]({entry['source']}) | {entry['size']} | "
+                f"`{entry['sha256']}` | {license_name} |"
+            )
+    lines.append("")
     return "\n".join(lines)
 
 

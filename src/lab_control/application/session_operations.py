@@ -53,8 +53,10 @@ class SessionOperations:
                 try:
                     batch = session.adapter.acquire(request)
                 except DeviceError as exc:
-                    if exc.code != "acquisition_setup_required" or not manager._prepare_acquisition_state(
-                        session
+                    if (
+                        exc.code != "acquisition_setup_required"
+                        or not request.allow_setup
+                        or not manager._prepare_acquisition_state(session)
                     ):
                         raise
                     # Only this explicit, pre-waveform setup condition permits a

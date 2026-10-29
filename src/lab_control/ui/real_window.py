@@ -245,6 +245,10 @@ class RealWindow(QMainWindow):
 
         self.storage_panel = StorageSettingsPanel(self.runtime.repository, settings_body)
         settings.addWidget(self.storage_panel)
+        from lab_control.ui.pages.agent_collaboration import AgentCollaborationPanel
+
+        self.agent_panel = AgentCollaborationPanel(self.runtime, settings_body)
+        settings.addWidget(self.agent_panel)
         directory = QLabel("软件库存与日志目录：" + str(self.runtime.repository.root))
         directory.setWordWrap(True)
         settings.addWidget(directory)

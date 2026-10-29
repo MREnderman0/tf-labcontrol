@@ -4,27 +4,69 @@
 
 # RIGOL M300
 
-独立型号包，适配标识为 `rigol.m300`。协议和动态插槽盘点只在本包维护，公共层只负责 VISA 会话、身份匹配、占用锁和记录。
+注册标识 `rigol.m300`。精确匹配厂家 RIGOL / RIGOL TECHNOLOGIES 和型号 M300；实际序列号、固件、插槽均由实机查询，不从地址推断。
 
 ## 能力与协议
 
-- [RIGOL M300 Programming Guide](https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf)，SCPI 命令系统及编程示例。
-- 精确匹配厂家 `RIGOL TECHNOLOGIES`、型号 `M300`，通过 `*IDN?` 返回完整序列号和固件。
-- 读取 100/200/300/400/500 插槽型号、DMM 安装/启用状态、扫描列表和大小、触发模式/间隔、监视状态及错误队列。
-- 支持触发模式和扫描间隔的显式读写、读回核验；监视/DMM 状态写入需要确认并在实机计划中恢复。
-- 被动标量采集使用当前设备扫描列表的 `READ?`。没有扫描列表时明确返回 `not_configured`，不会擅自写入通道或启动测量。
+依据 [M300 Programming Guide](https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf) 的 FUNC/CONF、TEMP:TRAN、UNIT:TEMP、ROUT:SCAN、TRIG、FORM:READ 和 READ/FETCh 章节。当前输入控制覆盖 **MC3132 32 通道多路复用模块配合 MC3065 DMM**；其他插槽保留身份展示，不猜测输入能力。
 
-## 连接、范围和限制
+| 能力 | 实现及边界 |
+| --- | --- |
+| 身份与状态 | 读取五个插槽、DMM 状态、扫描列表、触发、监视及错误队列 |
+| 物理通道 | 由 MC3132 插槽动态生成；例如插槽 4 的第 28 路为 428；通道 1 为整机参数入口 |
+| 输入设置 | 逐通道 VOLT（直流电压）、RES（两线电阻）、TEMP；温度传感器 TC/THER 切换，THER 标称阻值和 C/F/K 单位 |
+| 扫描列表 | 显式设置 `(@428)` 或已识别输入的升序列表/同槽范围；`(@)` 清空；写入需确认 |
+| 采集与记录 | 显式 `READ?` 单次扫描，按真实通道返回电压、电阻或热敏温度；接入公共监测及逐帧有界记录流水线 |
+| 一致性 | 前后核对扫描列表、每路配置、单位、触发及格式；完整回包发生配置变化时丢弃，自动量程暂态由公共调度限时处理 |
 
-优先使用 LAN/USB VISA。扫描只读取身份和模块状态，不执行 `*RST`、`SYST:PRESet`、`ROUT:SCAN`、`CONF`、`INIT` 或 `ABORT`。触发间隔范围按手册为 0–359999.999 s；软件测试可短暂设置后必须恢复原值。插槽型号、序列号和通道数量以现场读回为准，不从 IP 或目录名推断。
+`READ?` 会启动扫描并覆盖仪器内部读数，**不是被动查询**。只读连接、状态同步和参数查询不会调用它；采集 API 必须显式确认。连接不写格式、不复位、不清空扫描列表。
 
-当前包不开放扫描列表编辑、模块复位、校准、存储器导出、数字输出和物理测量精度验收。未接外部负载/传感器或扫描列表为空时，采集及物理输出项目记录为 `blocked`/`not_tested`。
+## 连接与驱动
 
-## 测试与部署
+优先 LAN VXI-11 或 USB VISA，复用已登记的 `rs-visa`（Windows x64 VISA Runtime），不附带厂商 DLL。组件来源、版本、检测与安装边界见 [组件清单](../../../deployment/components.json) 和 [下载资源](../../generated/download-resources.md)。不新增 Python 包、驱动、端口服务或网络配置；枚举不修改网卡/DHCP/防火墙。USB 接口仍需独立实机验证。
 
-- 软件：`pytest -q src/lab_control/instruments/devices/rigol_m300 tests`。
-- 实机：见 [hardware/README.md](../../../src/lab_control/instruments/devices/rigol_m300/hardware/README.md)；使用显式资源和完整序列号，按运行目录 `hardware-tests` 留档。
-- 依赖：复用已登记的 `rs-visa`，不下载或复制厂商 DLL 到源码目录。
+## 单位与限制
+
+| 参数/采集 | 范围或条件 |
+| --- | --- |
+| 触发间隔 | 0～359999.999 s |
+| 热敏电阻 | 2252、3000、5000、10000、30000 Ω（25℃ 标称值）；使用仪器内置曲线 |
+| 温度单位 | C、F、K，导出为 °C、°F、K |
+| 温度设置 | 先选 TEMP，再选 THER，最后设置标称阻值；不在电压模式发温度专用命令 |
+| 当前扫描采集 | DMM 开启、监视关闭、触发 IMM 且次数为 1；UNIT/TIME/CHAN/ALAR 附加字段关闭 |
+| 多通道显示 | 同次扫描须使用相同测量功能和单位；请求通道须匹配扫描列表，旧 `(1,)` 请求表示当前扫描列表 |
+| 无效读数 | 数量不符、截断、NaN/Inf、开路或溢出哨兵（绝对值 ≥ 9e36）拒绝显示/保存；通信/解析错误不自动重试 |
+
+传感器只有“10 kΩ”标称值不能证明其温度曲线与仪器内置模型一致。显示温度属于所选曲线的换算结果，独立精度验收需传感器资料及参考温度计。已核实的数据路径为 ASCII；未确认厂商支持可用于此采集的二进制返回格式，不猜测二进制协议。
+
+## 文件与公共依赖
+
+`profile.py` 定义命令/范围，`protocol.py` 解析完整响应，`adapter.py` 管理动态通道和配置一致性；[tests](../../../src/lab_control/instruments/devices/rigol_m300/tests/test_acquisition.py) 为脱敏、人工构造的协议回归，格式已在实机试读核对，不冒充完整硬件录制。硬件入口、恢复及离线转换位于 [hardware](../../../src/lab_control/instruments/devices/rigol_m300/hardware/README.md)。公共层只提供会话、租约、监测、存储和通用扫描通道展示。
+
+## 测试入口与实机状态
+
+软件：`.venv-dev/Scripts/python.exe -m pytest -q src/lab_control/instruments/devices/rigol_m300/tests`。实机参数和授权边界见 [测试计划](../../../src/lab_control/instruments/devices/rigol_m300/hardware/README.md)。每次原始结果、失败、恢复、最终状态及摘要都写到正式运行目录，具体资产以该目录的台账为准。
+
+| 功能 | 接口及条件 | 验证范围 / 状态 | 证据位置 |
+| --- | --- | --- | --- |
+| 身份、模块、参数 | LAN，MC3132 + MC3065 | 已有实机查询和读写回证据；逐资产核对固件 | 运行目录批次与 connection-status.md |
+| 两线电阻、10 kΩ 温度 | LAN，已接单只热敏电阻 | 单通道实际读数与单位转换；不代表准确度通过 | 运行目录原始通信与逐帧数据 |
+| 连续监测、记录、停止 | 公共会话/记录流水线 | 软件回归；实机结果以本次批次为准 | results.json、记录分段与 CSV |
+| 恢复、重连 | 写入前备份、逐项读回 | 测试配置恢复；可显式选择恢复后保留应用配置 | results.json recovery/commissioning |
+
+## 已知限制与待测
+
+| 功能或问题 | 限制 / 原因 | 后续验证 |
+| --- | --- | --- |
+| 温度准确度 | 热敏电阻具体曲线、B 值/系数未知 | 厂家资料和外部参考温度计 |
+| 其他模块、热电偶/RTD、AC/电流 | 当前未实现对应输入采集与保护条件 | 独立模块协议和实机计划 |
+| 外触发、多轮扫描、附加读数字段 | 当前只支持有界即时单轮纯数值回复 | 增加帧协议、停止与恢复验证 |
+| 仪器读数内存 | 新扫描会覆盖；可备份原始读数但不能恢复内存 | 测试计划明确备份，软件记录独立保存 |
+| 未接输入与其他接口 | 无法用本次一个传感器替代逐通道/USB 验收 | 分批补测，保留历史失败 |
+
+## 扩展与移除
+
+型号命令、解析、范围与专属测试继续保留本包，通过 `devices/catalog.py` 唯一注册。修改后更新当前能力夹具及派生型号文档；历史 `capabilities-before.json` 保持不变。移除模块不得删除库存、用户配置或实机历史。
 
 ## 注册能力（自动生成）
 
@@ -36,13 +78,17 @@
 | `trigger_interval` | value: number s [0, 359999.999] | 整机 | 读/写 | 无需 | 软件已实现；实测按资产查证 |
 | `monitor_state` | value: boolean  [None, None] | 整机 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
 | `dmm_state` | value: boolean  [None, None] | 整机 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
-| `scan_list` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `scan_list` | value: text  [None, None] | 整机 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
 | `scan_size` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
 | `dmm_installed` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
-| `configuration` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `configuration` | 无 | 通道 | 读 | 无需 | 软件已实现；实测按资产查证 |
 | `errors` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
 | `system_version` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
-| `measurements` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `trigger_count` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
+| `function` | value: enum  VOLT/RES/TEMP | 通道 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
+| `temperature_sensor` | value: enum  TC/THER | 通道 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
+| `thermistor_type` | value: integer ohm 2252/3000/5000/10000/30000 | 通道 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
+| `temperature_unit` | value: enum  C/F/K | 通道 | 读/写 | 需要 | 软件已实现；实测按资产查证 |
 | `slot_100` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
 | `slot_200` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |
 | `slot_300` | 无 | 整机 | 读 | 无需 | 软件已实现；实测按资产查证 |

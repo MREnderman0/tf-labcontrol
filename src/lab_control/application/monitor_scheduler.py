@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 from collections import deque
 from dataclasses import replace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from lab_control.application.acquisition_pipeline import (
     FrozenDict,
@@ -234,8 +234,14 @@ class MonitorScheduler:
                     else "full",
                     context_id=task.acquisition_context_id if task.recording else task.monitoring_context_id,
                 )
+                admission: dict[str, Any] = {}
+                if task.before_acquire is not None:
+                    check = task.before_acquire
+                    admission["before_io"] = lambda session, check=check, request=request: check(
+                        session, request
+                    )
                 future = owner.sessions.try_submit_idle(
-                    device_id, "observe" if request.kind == "status" else "acquire", request
+                    device_id, "observe" if request.kind == "status" else "acquire", request, **admission
                 )
                 if future is not None:
                     task.index += 1

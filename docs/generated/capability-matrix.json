@@ -20599,7 +20599,7 @@
         1
       ],
       "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
-      "revision": "M300 Programming Guide v2.0; chapters 2-21, 2-61, 2-101..105, 2-191..194, 4",
+      "revision": "M300 Programming Guide; CONF/FUNC, ROUT:SCAN, TEMP:TRAN:THER:TYPE, UNIT:TEMP, READ",
       "acquisition": "scalar",
       "channel_limits": {},
       "hardware_passed": false,
@@ -20772,13 +20772,24 @@
         },
         {
           "name": "scan_list",
-          "parameters": {},
+          "parameters": {
+            "value": {
+              "kind": "text",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
           "readable": true,
-          "writable": false,
-          "requires_confirmation": false,
+          "writable": true,
+          "requires_confirmation": true,
           "channel_scoped": false,
           "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
-          "section": "ROUT:SCAN?",
+          "section": "ROUT:SCAN",
           "verification": "documented_pending_hardware",
           "option": "",
           "available": true,
@@ -20787,11 +20798,13 @@
           "schema_tested": true,
           "protocol_fixture_tested": false,
           "hardware_passed": false,
-          "ui_label": "扫描列表",
+          "ui_label": "扫描通道列表",
           "ui_location": "",
           "wire_templates": {
             "select": [],
-            "writes": [],
+            "writes": [
+              "ROUT:SCAN {value}"
+            ],
             "query": "ROUT:SCAN?",
             "custom_encoder": false
           }
@@ -20854,9 +20867,9 @@
           "readable": true,
           "writable": false,
           "requires_confirmation": false,
-          "channel_scoped": false,
+          "channel_scoped": true,
           "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
-          "section": "CONF?",
+          "section": "CONF? (@{ch})",
           "verification": "documented_pending_hardware",
           "option": "",
           "available": true,
@@ -20870,7 +20883,7 @@
           "wire_templates": {
             "select": [],
             "writes": [],
-            "query": "CONF?",
+            "query": "CONF? (@{ch})",
             "custom_encoder": false
           }
         },
@@ -20927,14 +20940,14 @@
           }
         },
         {
-          "name": "measurements",
+          "name": "trigger_count",
           "parameters": {},
           "readable": true,
           "writable": false,
           "requires_confirmation": false,
           "channel_scoped": false,
           "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
-          "section": "READ?",
+          "section": "TRIG:COUN?",
           "verification": "documented_pending_hardware",
           "option": "",
           "available": true,
@@ -20943,12 +20956,185 @@
           "schema_tested": true,
           "protocol_fixture_tested": false,
           "hardware_passed": false,
-          "ui_label": "测量读数",
+          "ui_label": "触发次数",
           "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [],
-            "query": "READ?",
+            "query": "TRIG:COUN?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "function",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "VOLT",
+                "RES",
+                "TEMP"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": true,
+          "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
+          "section": "FUNC",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "测量功能",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "FUNC \"{value}\",(@{ch})"
+            ],
+            "query": "FUNC? (@{ch})",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "temperature_sensor",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "TC",
+                "THER"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": true,
+          "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
+          "section": "TEMP:TRAN:TYPE",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "温度传感器类型",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "TEMP:TRAN:TYPE {value},(@{ch})"
+            ],
+            "query": "TEMP:TRAN:TYPE? (@{ch})",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "thermistor_type",
+          "parameters": {
+            "value": {
+              "kind": "integer",
+              "unit": "ohm",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "2252",
+                "3000",
+                "5000",
+                "10000",
+                "30000"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": true,
+          "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
+          "section": "TEMP:TRAN:THER:TYPE",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "热敏电阻标称阻值（25℃）",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "TEMP:TRAN:THER:TYPE {value},(@{ch})"
+            ],
+            "query": "TEMP:TRAN:THER:TYPE? (@{ch})",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "temperature_unit",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "C",
+                "F",
+                "K"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": true,
+          "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
+          "section": "UNIT:TEMP",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "温度单位",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "UNIT:TEMP {value},(@{ch})"
+            ],
+            "query": "UNIT:TEMP? (@{ch})",
             "custom_encoder": false
           }
         },

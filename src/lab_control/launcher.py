@@ -13,6 +13,13 @@ def worker_command(folder: Path) -> list[str]:
 
 def main() -> int:
     args = sys.argv[1:]
+    connector_executable = (
+        getattr(sys, "frozen", False) and Path(sys.executable).name.lower() == "tf-labcontrol-agent.exe"
+    )
+    if connector_executable or (args and args[0] == "--agent-connector"):
+        from lab_control.agent.connector import main as connector_main
+
+        return connector_main(args[1:] if args and args[0] == "--agent-connector" else args)
     if args and args[0] == "--csv-worker":
         if len(args) != 2:
             return 2

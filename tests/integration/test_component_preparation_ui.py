@@ -163,6 +163,9 @@ def test_runtime_maintenance_reservation_blocks_active_hardware(activity):
     rt.monitoring = SimpleNamespace(snapshots=lambda: {})
     if activity == "scan":
         rt.discovery.is_scanning = True
+        from concurrent.futures import Future
+
+        rt.discovery.future = Future()
     elif activity == "sessions":
         rt.sessions.sessions["fixture"] = object()
     elif activity == "recording":
@@ -173,6 +176,7 @@ def test_runtime_maintenance_reservation_blocks_active_hardware(activity):
         rt.begin_maintenance()
     assert not rt.sessions.maintenance_active
     rt.discovery.is_scanning = rt.discovery.connection_batch_active = False
+    rt.discovery.future = None
     rt.sessions.sessions.clear()
     rt.monitoring.snapshots = lambda: {}
     rt.begin_maintenance()

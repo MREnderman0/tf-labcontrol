@@ -76,6 +76,11 @@ def run(destination: Path) -> int:
             app.processEvents()
             destination.parent.mkdir(parents=True, exist_ok=True)
             window.grab().save(str(destination.with_suffix(".png")))
+            from lab_control.agent.verification import verify_mock
+
+            result["agent"] = verify_mock(runtime)
+            window.agent_panel.timer.stop()
+            window.agent_panel.shutdown()
             window.environment_panel.shutdown()
             window.controller.close()
             runtime.close()

@@ -35,7 +35,7 @@ JSON 的 control_page 表示型号所在页面，不保证每项底层能力都�
 | Microchip 53100A | `microchip.53100a` | 10 | phase_noise/am_noise/stability/streaming/timed_phase | [型号卡片](../devices/measurement-analyzers/phase-noise-53100a.md) |
 | Joinwit JW8105 | `joinwit.jw8105` | 6 | jw8105-power | [型号卡片](../devices/measurement-analyzers/joinwit-jw8105.md) |
 | 芯明天 XMT（完整型号待核） | `coremorrow.xmt` | 8 | 外部仪器测量输出 | [型号卡片](../devices/power-supplies/coremorrow-xmt.md) |
-| RIGOL M300 | `rigol.m300` | 16 | scalar | [型号卡片](../devices/measurement-analyzers/rigol-m300.md) |
+| RIGOL M300 | `rigol.m300` | 20 | scalar | [型号卡片](../devices/measurement-analyzers/rigol-m300.md) |
 | K+K FXE | `kplusk.fxe` | 3 | scalar:frequency | [型号卡片](../devices/measurement-analyzers/kplusk-fxe.md) |
 | Keysight / Agilent 53220A | `keysight.53220a` | 15 | scalar:frequency | [型号卡片](../devices/measurement-analyzers/keysight-53220a.md) |
 

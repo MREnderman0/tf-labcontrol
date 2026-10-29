@@ -1,7 +1,7 @@
 import pytest
 
 from lab_control.application.config import ConnectionConfig
-from lab_control.domain.instruments import AcquisitionRequest, DeviceCommand, DeviceError, DeviceIdentity
+from lab_control.domain.instruments import DeviceCommand, DeviceError, DeviceIdentity
 from lab_control.instruments.registry import build_scpi_adapter
 from lab_control.transport.base import MockTransport, ieee_block
 
@@ -62,17 +62,3 @@ def test_trigger_interval_write_is_read_back_and_error_checked():
     result = a.apply(DeviceCommand("trigger_interval", {"value": 11.0}))
     assert result.outcome == "success" and result.readback == 11.0
     assert transport.history == ["TRIG:TIM 11", "TRIG:TIM?", "SYST:ERR?"]
-
-
-def test_empty_scan_list_blocks_acquisition_without_write():
-    a, transport = adapter([("ROUT:SCAN:SIZE?", b"0")])
-    with pytest.raises(DeviceError, match="scan list is empty"):
-        a.acquire(AcquisitionRequest("scalar"))
-    assert transport.history == ["ROUT:SCAN:SIZE?"]
-
-
-def test_acquisition_requires_exact_scan_size():
-    a, transport = adapter([("ROUT:SCAN:SIZE?", b"2"), ("READ?", b"1,2,3")])
-    with pytest.raises(DeviceError, match="returned 3 values"):
-        a.acquire(AcquisitionRequest("scalar"))
-    assert transport.history == ["ROUT:SCAN:SIZE?", "READ?"]

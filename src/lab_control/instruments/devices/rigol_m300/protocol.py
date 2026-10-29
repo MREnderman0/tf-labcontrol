@@ -63,8 +63,8 @@ def csv_numbers(raw: bytes) -> tuple[float, ...]:
         values = tuple(float(item.strip()) for item in value.split(","))
     except ValueError as exc:
         raise DeviceError("Invalid M300 measurement response", "parse_error") from exc
-    if any(value != value or value in (float("inf"), float("-inf")) for value in values):
-        raise DeviceError("Non-finite M300 measurement", "overload")
+    if any(not abs(value) < 9e36 for value in values):
+        raise DeviceError("M300 measurement is non-finite, open-circuit or overloaded", "overload")
     return values
 
 
@@ -73,3 +73,41 @@ def configuration(raw: bytes) -> str:
     if not value:
         raise DeviceError("Empty M300 channel configuration", "parse_error")
     return value
+
+
+def scan_channels(raw: bytes | str) -> tuple[int, ...]:
+    value = scan_list(raw.encode("ascii") if isinstance(raw, str) else raw)[2:-1]
+    channels: list[int] = []
+    for item in value.split(",") if value else ():
+        limits = tuple(int(part) for part in item.split(":"))
+        first, last = limits[0], limits[-1]
+        if first > last or first // 100 != last // 100:
+            raise DeviceError("Invalid M300 channel range", "parse_error")
+        channels.extend(range(first, last + 1))
+    if len(channels) != len(set(channels)) or channels != sorted(channels):
+        raise DeviceError("M300 scan channels must be unique and ascending", "parse_error")
+    return tuple(channels)
+
+
+def function(raw: bytes) -> str:
+    value = token(raw).upper()
+    return {"VOLT:DC": "VOLT", "VOLTAGE": "VOLT", "RESISTANCE": "RES", "TEMPERATURE": "TEMP"}.get(
+        value, value
+    )
+
+
+def measurement_kind(config: str, unit: str = "") -> tuple[str, str]:
+    """Validate a complete single-channel CONF? before interpreting READ?."""
+    match = re.fullmatch(r"(VOLT|RES) ([^,]+),([^,]+)", config)
+    if match:
+        number(match[2])
+        number(match[3])
+        return ("voltage", "V") if match[1] == "VOLT" else ("resistance", "ohm")
+    match = re.fullmatch(r"TEMP THER,(2252|3000|5000|10000|30000),([^,]+),([^,]+)", config)
+    if match:
+        number(match[2])
+        number(match[3])
+        if unit not in {"C", "F", "K"}:
+            raise DeviceError("Invalid M300 temperature unit", "parse_error")
+        return "temperature", {"C": "°C", "F": "°F", "K": "K"}[unit]
+    raise DeviceError("Unsupported or malformed M300 channel configuration: " + config, "parse_error")

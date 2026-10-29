@@ -18,6 +18,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bundle", type=Path, default=ROOT / "dist/TF-LabControl")
     parser.add_argument("--report", type=Path, default=ROOT / ".tools/deployment/frozen-smoke.json")
+    parser.add_argument(
+        "--check-agent-default",
+        action="store_true",
+        help="For a freshly built Agent console entry, verify no-argument dispatch",
+    )
     args = parser.parse_args()
     args.report = args.report.resolve()
     args.report.parent.mkdir(parents=True, exist_ok=True)
@@ -40,6 +45,16 @@ def main() -> int:
             LAB_CONTROL_HOME=str(outside / "data"),
             LOCALAPPDATA=str(outside / "local"),
         )
+        if args.check_agent_default:
+            connector = subprocess.run(
+                [str(target / "TF-LabControl-Agent.exe")],
+                cwd=outside,
+                env=environment,
+                capture_output=True,
+                timeout=20,
+            )
+            assert connector.returncode == 2 and b"--connection" in connector.stderr
+            assert not connector.stdout and not list(outside.rglob("hardware.lock"))
         result = subprocess.run(
             [str(executable), "--deployment-check", str(args.report)],
             cwd=outside,
@@ -71,6 +86,7 @@ def main() -> int:
             outside_source=True,
             path_sanitized=True,
             corrupt_worker_preserved_input=True,
+            connector_without_arguments_requires_connection=args.check_agent_default,
             exe_sha256=hashlib.sha256(executable.read_bytes()).hexdigest(),
         )
         args.report.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")

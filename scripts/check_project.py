@@ -31,7 +31,10 @@ def commands(python: Path) -> dict[str, list[list[str]]]:
             [prefix, "scripts/generate_download_docs.py", "--check"],
             [prefix, "scripts/check_docs.py"],
         ],
-        "deployment": [[prefix, "scripts/check_deployment.py", "--distribution", "online"]],
+        "deployment": [
+            [prefix, "scripts/generate_python_materials.py", "--check"],
+            [prefix, "scripts/check_deployment.py", "--distribution", "online"],
+        ],
     }
 
 
@@ -76,6 +79,7 @@ def desktop_commands(python: Path, output: Path) -> list[list[str]]:
         [
             str(python),
             "scripts/check_desktop.py",
+            "--check-agent-default",
             "--bundle",
             str(output / "bundle/TF-LabControl"),
             "--report",

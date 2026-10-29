@@ -17,6 +17,9 @@ def workspace(qtbot, tmp_path):
     window.timer.stop()
     window.controller.timer.stop()
     runtime.monitoring.enable_settings_sync(False)
+    # Count controller reads without the idle scheduler sampling the same service.
+    # This fixture exercises GUI snapshots and shutdown, not acquisition scheduling.
+    runtime.monitoring.close()
     try:
         yield window, runtime
     finally:
