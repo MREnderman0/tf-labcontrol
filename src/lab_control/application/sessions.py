@@ -222,7 +222,13 @@ class SessionManager:
                 session.control_group = active
 
     def try_submit_idle(
-        self, device_id: str, operation: str, argument: Any = None, *, quiet: bool = False
+        self,
+        device_id: str,
+        operation: str,
+        argument: Any = None,
+        *,
+        quiet: bool = False,
+        before_io: Callable[[DeviceSession], None] | None = None,
     ) -> Future[Any] | None:
         """Atomically reserve an idle worker; background jobs never form a queue."""
         if operation not in {"read_settings", "observe", "acquire"}:
@@ -245,7 +251,13 @@ class SessionManager:
             session.background_read = quiet and operation == "read_settings"
             return _accepted_result(
                 session.worker.submit(
-                    self._execute, session, operation, argument, quiet=quiet, submitted_at=time.perf_counter()
+                    self._execute,
+                    session,
+                    operation,
+                    argument,
+                    quiet=quiet,
+                    submitted_at=time.perf_counter(),
+                    before_io=before_io,
                 )
             )
 
@@ -313,6 +325,7 @@ class SessionManager:
         *,
         expected_firmware: str = "",
         configure_acquisition: bool = True,
+        admission: Callable[[DeviceIdentity | None], None] | None = None,
     ) -> Future[DeviceIdentity]:
         # Reservation and worker submission are one admission transaction. Close
         # must not drain the worker in the gap before opening has been queued.
@@ -322,6 +335,7 @@ class SessionManager:
                 config,
                 expected_firmware=expected_firmware,
                 configure_acquisition=configure_acquisition,
+                admission=admission,
             )
 
     def _connect_locked(
@@ -331,6 +345,7 @@ class SessionManager:
         *,
         expected_firmware: str,
         configure_acquisition: bool,
+        admission: Callable[[DeviceIdentity | None], None] | None = None,
     ) -> Future[DeviceIdentity]:
         with self.lock:
             if self._closing:
@@ -367,6 +382,8 @@ class SessionManager:
 
         def opening() -> DeviceIdentity:
             try:
+                if admission:
+                    admission(None)
                 adapter = self.factory(config)
                 session.adapter = adapter
                 identity = adapter.identify()
@@ -380,6 +397,8 @@ class SessionManager:
                     )
                 if expected_firmware and identity.firmware != expected_firmware:
                     raise DeviceError("Firmware differs from transport qualification", "qualification_stale")
+                if admission:
+                    admission(identity)
                 if identity.key:
                     self.leases.acquire(
                         device_id, (f"identity:{identity.key}", f"asset:{config.adapter}:{identity.serial}")
@@ -445,7 +464,14 @@ class SessionManager:
             and argument.waveform_extent == "memory"
         )
 
-    def submit(self, device_id: str, operation: str, argument: Any = None) -> Future[Any]:
+    def submit(
+        self,
+        device_id: str,
+        operation: str,
+        argument: Any = None,
+        *,
+        before_io: Callable[[DeviceSession], None] | None = None,
+    ) -> Future[Any]:
         with self.lock:
             if self._closing:
                 raise DeviceError("Session manager is closing", "runtime_closing")
@@ -477,7 +503,12 @@ class SessionManager:
                 session.control_pending += 1
             return _accepted_result(
                 session.worker.submit(
-                    self._execute, session, operation, argument, submitted_at=time.perf_counter()
+                    self._execute,
+                    session,
+                    operation,
+                    argument,
+                    submitted_at=time.perf_counter(),
+                    before_io=before_io,
                 )
             )
 
@@ -559,7 +590,20 @@ class SessionManager:
         *,
         quiet: bool = False,
         submitted_at: float | None = None,
+        before_io: Callable[[DeviceSession], None] | None = None,
     ) -> Any:
+        if before_io is not None:
+            try:
+                before_io(session)
+            except Exception:
+                # Admission failures are not communication failures. No device I/O
+                # has occurred; leave the session usable and release this reservation.
+                with self.lock:
+                    session.pending -= 1
+                    if self._controls_instrument(operation, argument):
+                        session.control_pending -= 1
+                self.emit("task_rejected", session.device_id, operation=operation)
+                raise
         return self.operations.execute(session, operation, argument, quiet=quiet, submitted_at=submitted_at)
 
     def start_acquisition(

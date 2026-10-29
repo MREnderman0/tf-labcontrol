@@ -27,7 +27,11 @@ from lab_control.domain.instruments import AcquisitionRequest, DeviceError
 from lab_control.domain.readback import boolean_value
 from lab_control.instruments.registry import DEVICE_DEFINITIONS
 from lab_control.ui.controller import WorkspaceController
-from lab_control.ui.pages.monitoring.channel_selection import selected_input, single_input
+from lab_control.ui.pages.monitoring.channel_selection import (
+    instrument_scan_channels,
+    selected_input,
+    single_input,
+)
 from lab_control.ui.pages.monitoring.recording_state import (
     recording_phase,
     recording_save_notice,
@@ -367,6 +371,9 @@ class MonitoringDashboard(QWidget):
         self.controller.runtime.repository.save_workspace("monitor_overview/all", self.preferences)
 
     def _channels(self, device_id: str, record: dict[str, Any]) -> tuple[int, ...]:
+        scan = instrument_scan_channels(self.controller, device_id)
+        if scan is not None:
+            return scan
         category = instrument_category(record)
         if category not in {"oscilloscope", "power_supply", "optical_power_meter", "frequency_counter"}:
             return (1,)
@@ -678,7 +685,10 @@ class MonitoringDashboard(QWidget):
                 continue
             seen_devices.add(spec["device_id"])
             channels = tuple(spec["channels"])
-            if single_input(self.controller, spec["device_id"]):
+            if (
+                single_input(self.controller, spec["device_id"])
+                or instrument_scan_channels(self.controller, spec["device_id"]) is not None
+            ):
                 channels = self._channels(spec["device_id"], record)
             if not channels:
                 continue

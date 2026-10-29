@@ -6,7 +6,7 @@ import time
 from collections import deque
 from concurrent.futures import Future
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Callable
 from uuid import uuid4
 
 from lab_control.domain.instruments import (
@@ -89,3 +89,4 @@ class MonitorTask:
     scheduler_seconds: float = 0
     timings: deque[dict[str, Any]] = field(default_factory=lambda: deque(maxlen=120))
     timing_report_at: float = 0
+    before_acquire: Callable[[Any, AcquisitionRequest], None] | None = None

@@ -10,6 +10,7 @@
 - SDK：DLL 缺失、错误码、PM100D/TLPMX 通道 ABI 与 reset=0、Pico block/streaming、缓冲区释放及 Stop 失败。
 - 应用：20 台模拟设备全部开始持续采集后连续扫描 3 次，保持原会话并持续产出批次；原子别名租约、连接竞争、取消、provider 失败、增量合并、SQLite、中文配置/数据和进程互斥。
 - UI/CLI：正式页面与隔离 Mock 共用组件、固定类别、通用工作区及旧模式迁移、行/选择保持、显式资源、只读报告和采集导出。
+- Agent：[协作实验验证](../guides/agent-collaboration.md#开发验证与实现入口)覆盖官方 SDK、HTTP/HTTPS、stdio、旧协议、授权/冲突/去重/撤销、共享记录和受鉴权下载；目录冻结自检同时运行 console 连接器完整 Mock 流程。
 
 ## 执行
 

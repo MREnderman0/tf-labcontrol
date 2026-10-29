@@ -22,6 +22,7 @@ class WindowShutdown:
             return
         window._shutdown_started = True
         window.timer.stop()
+        window.agent_panel.timer.stop()
         window.controller.close()
         window.message.setText("正在停止扫描和采集并释放本软件会话…")
         central = window.centralWidget()
@@ -31,6 +32,7 @@ class WindowShutdown:
         def cleanup():
             errors = []
             for close in (
+                window.agent_panel.shutdown,
                 window.storage_panel.shutdown,
                 window.environment_panel.shutdown,
                 window.runtime.close,

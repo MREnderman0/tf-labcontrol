@@ -3,6 +3,15 @@
 from lab_control.instruments.registry import DEVICE_DEFINITIONS
 
 
+def instrument_scan_channels(controller, device_id: str) -> tuple[int, ...] | None:
+    """Use the model's cached scan list without any UI-side instrument queries."""
+    snapshot = controller.runtime.sessions.capability_snapshot(device_id)
+    details = snapshot.details if snapshot else {}
+    if details.get("acquisition_channel_selection") == "scan_list":
+        return tuple(details.get("acquisition_channels", ()))
+    return None
+
+
 def selection_key(controller, device_id: str) -> str:
     record = controller.records.get(device_id, {})
     slot = record.get("slots", {}).get("general", "")

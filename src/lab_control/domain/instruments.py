@@ -226,6 +226,9 @@ class AcquisitionRequest:
     waveform_extent: str = "default"
     duration: float | None = None
     sample_rate: float | None = None
+    # Internal policy: a passive request must not promote a setup-required read
+    # into format-changing initialization. Existing local callers retain behavior.
+    allow_setup: bool = True
 
     def validate(self) -> None:
         for name in ("duration", "sample_rate"):

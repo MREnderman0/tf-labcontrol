@@ -123,6 +123,8 @@ TF-LabControl.exe --cli environment --report C:\Temp\environment.json
 
 ## 验收与发布
 
+Agent 接入随目录包提供 `TF-LabControl-Agent.exe` 标准流连接器，与无控制台 GUI 使用同一启动分发；须携带整个目录。新增 Python 材料由 `uv.lock`、`deployment/components.json` 与开发材料清单共同登记，执行 `scripts/generate_python_materials.py` 后运行下载页生成器。MCP 固定 2.3.0，TLS 使用锁定的 cryptography；不新增系统服务或全局证书信任。局域网防火墙有单独的本机维护入口，限定程序/IP/接口/端口并支持撤销，不代表原 DHCP/网卡自动修复已实现。使用及验收边界见 [Agent 指南](../guides/agent-collaboration.md)。
+
 原部署阶段证据见[历史部署验收记录](../reviews/desktop-deployment-review.md)；此次瘦身证据见[仓库瘦身验收](../reviews/repository-slimming-review.md)。
 
 开发回归覆盖缺失/损坏材料、架构、未登记依赖、源码及冻结 worker、中文路径、转换失败保留数据、设置页异步/取消/失败/导出、网络方案冲突和旧快照。文档执行生成一致性及链接导航检查。

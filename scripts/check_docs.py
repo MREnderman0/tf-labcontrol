@@ -114,7 +114,13 @@ def command_errors(root: Path, text: str) -> list[tuple[int, str]]:
             continue
         executable = tokens.pop(0).replace("\\", "/").rsplit("/", 1)[-1].lower()
         source = None
-        launcher = executable in {"run.bat", "lab-control", "lab-control.exe", "tf-labcontrol.exe"}
+        launcher = executable in {
+            "run.bat",
+            "lab-control",
+            "lab-control.exe",
+            "tf-labcontrol.exe",
+            "tf-labcontrol-agent.exe",
+        }
         if executable in {"lab-control-cli", "lab-control-cli.exe"}:
             source = root / "src/lab_control/cli/main.py"
         if (executable.startswith("run_") and executable.endswith(".bat")) or executable in {
@@ -152,6 +158,8 @@ def command_errors(root: Path, text: str) -> list[tuple[int, str]]:
             source = root / "src/lab_control/app.py"
             if tokens and tokens[0] == "--cli":
                 source, tokens = root / "src/lab_control/cli/main.py", tokens[1:]
+            elif tokens and tokens[0] == "--agent-connector":
+                source, tokens = root / "src/lab_control/agent/connector.py", tokens[1:]
             elif tokens and tokens[0] in {"--csv-worker", "--deployment-check"}:
                 # These non-argparse worker modes are dispatched by the launcher.
                 continue

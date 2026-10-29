@@ -7,6 +7,13 @@ from lab_control.instruments.devices.definition import DeviceDefinition, DeviceD
 from .adapter import M300Adapter
 from .profile import m300
 
+
+def _readonly_check(*args, **kwargs):
+    from .hardware.verify import verify_readonly
+
+    return verify_readonly(*args, **kwargs)
+
+
 DEFINITION = DeviceDefinition(
     m300(),
     M300Adapter,
@@ -18,4 +25,7 @@ DEFINITION = DeviceDefinition(
     ),
     Path(__file__).parent,
     deployment_components=("rs-visa",),
+    acquisition_requires_confirmation=True,
+    acquisition_initiate_editable=False,
+    readonly_check=_readonly_check,
 )

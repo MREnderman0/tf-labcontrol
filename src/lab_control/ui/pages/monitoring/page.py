@@ -21,6 +21,7 @@ from lab_control.application.controls import CATEGORY_LABELS, MEASUREMENT_CATEGO
 from lab_control.instruments.registry import DEVICE_DEFINITIONS
 from lab_control.ui.controller import WorkspaceController
 from lab_control.ui.pages.device_control.form import ControlForm
+from lab_control.ui.pages.monitoring.channel_selection import instrument_scan_channels
 from lab_control.ui.pages.monitoring.plot import LivePlot
 from lab_control.ui.pages.monitoring.recording_state import recording_save_notice
 from lab_control.ui.pages.monitoring.timing import MonitoringTiming
@@ -74,6 +75,10 @@ class MonitoringPage(QWidget):
         self.channel_row = QHBoxLayout()
         self.channel_checks: dict[int, QCheckBox] = {}
         main_layout.addLayout(self.channel_row)
+        self.scan_channels_label = QLabel()
+        self.scan_channels_label.setWordWrap(True)
+        self.scan_channels_label.setObjectName("rangeHint")
+        main_layout.addWidget(self.scan_channels_label)
         self.initiate = QCheckBox("读取前执行单次采集")
         self.initiate.setToolTip(
             "会改变仪器运行状态。Pico 必须启动采集；3458A 需要确认存储/触发行为。其他设备默认读取现有数据。"
@@ -174,7 +179,7 @@ class MonitoringPage(QWidget):
                 if self.category in {"power_supply", "oscilloscope"}
                 else (1,)
             )
-            for channel in channels:
+            for channel in () if self.instrument_scan_channels() is not None else channels:
                 check = QCheckBox(f"CH {channel}")
                 check.setChecked(channel == channels[0])
                 self.channel_checks[channel] = check
@@ -192,7 +197,13 @@ class MonitoringPage(QWidget):
         self.refresh_frame(device_id)
 
     def channels(self) -> tuple[int, ...]:
+        scan = self.instrument_scan_channels()
+        if scan is not None:
+            return scan or (1,)
         return tuple(channel for channel, check in self.channel_checks.items() if check.isChecked())
+
+    def instrument_scan_channels(self) -> tuple[int, ...] | None:
+        return instrument_scan_channels(self.controller, self.selector.device_id)
 
     def source_changed(self) -> None:
         self.plot.reset()
@@ -303,6 +314,15 @@ class MonitoringPage(QWidget):
             self.add_card(self.selector.device_id, source.key, self.channels())
 
     def refresh(self) -> None:
+        scan = self.instrument_scan_channels()
+        self.scan_channels_label.setVisible(scan is not None)
+        self.scan_channels_label.setText(
+            "仪器扫描通道："
+            + ("、".join(f"CH {ch}" for ch in scan) if scan else "未配置")
+            + " · 在参数区配置扫描列表；采集会覆盖仪器内部读数，软件记录另存。"
+            if scan is not None
+            else ""
+        )
         device_id = self.selector.device_id
         state = self.controller.states.get(device_id, {})
         task = self.controller.runtime.monitoring.snapshots().get(device_id, {})
