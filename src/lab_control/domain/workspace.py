@@ -26,7 +26,8 @@ def slot_label(slot: str) -> str:
     category, _, index = slot.partition(":")
     if category == "optical_power_meter" and index:
         return f"功率计{index}"
-    return f"{CATEGORY_LABELS.get(category, category)} {'A' if index == '1' else 'B'}" if index else "未绑定"
+    suffix = {"1": "A", "2": "B"}.get(index, index)
+    return f"{CATEGORY_LABELS.get(category, category)} {suffix}" if index else "未绑定"
 
 
 def category_slots(category: str) -> tuple[str, ...]:

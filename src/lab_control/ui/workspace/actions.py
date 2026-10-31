@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -15,10 +16,10 @@ from PySide6.QtWidgets import (
 from lab_control.application.bulk_connection import device_label
 from lab_control.application.catalog import instrument_category
 from lab_control.application.config import config_from_record
-from lab_control.application.controls import CATEGORY_LABELS, slot_label
+from lab_control.application.controls import CATEGORY_LABELS
 from lab_control.domain.instruments import jsonable
-from lab_control.domain.workspace import category_slots
 from lab_control.instruments.registry import describe
+from lab_control.ui.widgets.slot_picker import choose_slot
 from lab_control.ui.widgets.workspace_combo import choose_item
 
 if TYPE_CHECKING:
@@ -118,17 +119,11 @@ class WorkspaceActions:
         records = window.runtime.inventory.all()
         record = next(r for r in records if r["id"] == device_id)
         category = instrument_category(record)
-        slots = ["", *category_slots(category)]
-        owners = {r.get("slots", {}).get(mode): r for r in records if r.get("slots", {}).get(mode)}
-        labels = ["解除绑定"]
-        for slot in slots[1:]:
-            owner = owners.get(slot)
-            suffix = f"（已绑定：{device_label(owner)}）" if owner else "（空闲）"
-            labels.append(slot_label(slot) + suffix)
-        value, accepted = choose_item(window, "功能槽位", "选择槽位；已占用槽位可确认替换", labels)
+        slot, accepted = choose_slot(window, window.runtime, device_id, category, mode)
         if not accepted:
             return
-        slot = slots[labels.index(value)]
+        records = window.runtime.inventory.all()
+        owners = {r.get("slots", {}).get(mode): r for r in records if r.get("slots", {}).get(mode)}
         owner = owners.get(slot)
         replace_id = None
         if owner and owner["id"] != device_id:
@@ -136,7 +131,9 @@ class WorkspaceActions:
             dialog.setWindowTitle("替换槽位绑定")
             dialog.setMinimumWidth(420)
             layout = QVBoxLayout(dialog)
-            prompt = QLabel(f"已有【{device_label(owner)}】绑定【{slot_label(slot)}】，是否替换？")
+            label = window.runtime.repository.function_slots.label(slot, mode)
+            prompt = QLabel(f"已有【{device_label(owner)}】绑定【{label}】，是否替换？")
+            prompt.setTextFormat(Qt.TextFormat.PlainText)
             prompt.setWordWrap(True)
             layout.addWidget(prompt)
             note = QLabel("替换后，原设备保持连接，槽位变为未绑定。")

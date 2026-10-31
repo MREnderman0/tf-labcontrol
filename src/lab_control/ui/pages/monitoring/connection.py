@@ -1,4 +1,4 @@
-"""Shared manual recovery presentation for each monitoring workspace."""
+"""Shared stop-drain and manual recovery presentation for monitoring actions."""
 
 from PySide6.QtWidgets import QPushButton
 
@@ -13,10 +13,15 @@ def refresh_reconnect_button(
     task: dict,
     *,
     busy: bool = False,
+    can_cancel: bool = False,
 ) -> None:
-    """Override only the idle failed action; an active monitor must remain stoppable."""
+    """Guard a new start while draining; existing stop/cancel actions stay available."""
     state = controller.states.get(device_id, {})
-    if state.get("activeTask") == "reconnect":
+    if task.get("stopping") and not can_cancel:
+        button.setText("正在停止…")
+        button.setEnabled(False)
+        button.setToolTip("等待在途读取和原始数据收尾；完成后可重新开始，CSV 在后台继续生成。")
+    elif state.get("activeTask") == "reconnect":
         button.setText("重连中…")
         button.setEnabled(False)
         button.setToolTip("正在重新连接并核验当前设备身份")

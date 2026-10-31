@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
 from lab_control.application.catalog import instrument_category, surface_applicable
 from lab_control.application.controls import CATEGORY_LABELS
 from lab_control.discovery.presence import LIVE_CONNECTIONS
+from lab_control.ui.pages.data_processing import DataProcessingPage
 from lab_control.ui.pages.device_control.coremorrow_e00 import CoreMorrowE00Page
 from lab_control.ui.pages.device_control.page import DeviceControlPage
 from lab_control.ui.pages.device_control.power_supply import PowerSupplyPage
@@ -75,6 +76,8 @@ class WorkspaceNavigation:
         states: dict[str, dict[str, Any]] | None = None,
     ) -> tuple[str, ...]:
         window = self.window
+        if module == "数据处理":
+            return ("single_device", "batch")
         if module not in {"设备管理", "实时监测"}:
             return ()
         monitoring_only = {
@@ -135,6 +138,11 @@ class WorkspaceNavigation:
                 if value == selected_category:
                     selected_index = index
             window.submenu.setCurrentIndex(selected_index)
+        elif module == "数据处理":
+            for label, value in (("单设备采集", "single_device"), ("批量采集", "batch")):
+                index = window.submenu.addTab(label)
+                window.submenu.setTabData(index, value)
+            window.submenu.setCurrentIndex(1 if selected_category == "batch" else 0)
         else:
             window.submenu.addTab("软件设置" if module == "系统设置" else module)
             window.submenu.setTabData(0, "")
@@ -219,6 +227,14 @@ class WorkspaceNavigation:
             page = window.dashboard
         elif module == "系统设置":
             page = window.settings_page
+        elif module == "数据处理":
+            page = window.page_map.get((module, ""))
+            if page is None:
+                page = DataProcessingPage(window.controller)
+                window.page_map[(module, "")] = page
+                window.stack.addWidget(page)
+            assert isinstance(page, DataProcessingPage)
+            page.set_scope(category)
         else:
             key = (module, category)
             page = window.page_map.get(key)
@@ -256,7 +272,6 @@ class WorkspaceNavigation:
                     title.setObjectName("pageTitle")
                     layout.addWidget(title)
                     message = {
-                        "数据处理": "数据处理工作台尚未开放。已保存数据可使用 CSV / NPZ 导出文件。",
                         "操作日志": "设备操作、监测与异常按日保存在软件运行目录的 logs 文件夹。",
                     }[module]
                     layout.addWidget(QLabel(message))

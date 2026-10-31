@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
 from lab_control.application.bulk_connection import device_label
 from lab_control.application.catalog import instrument_category, mode_applicable
 from lab_control.application.config import config_from_record
-from lab_control.application.controls import CATEGORY_LABELS, data_sources, slot_label
+from lab_control.application.controls import CATEGORY_LABELS, data_sources
 from lab_control.domain.instruments import AcquisitionRequest, DeviceError
 from lab_control.domain.readback import boolean_value
 from lab_control.instruments.registry import DEVICE_DEFINITIONS
@@ -108,7 +108,7 @@ class ResponsiveGrid(QScrollArea):
 class RecordingDeviceCard(QFrame):
     """One connected, recordable device in the monitoring overview."""
 
-    changed = Signal()
+    changed = Signal(str, bool)
     open_requested = Signal(str)
 
     def __init__(self, controller: WorkspaceController, spec: dict[str, Any], parent=None) -> None:
@@ -131,17 +131,20 @@ class RecordingDeviceCard(QFrame):
 
         self.slot = QLabel()
         self.slot.setObjectName("monitorSlot")
+        self.slot.setTextFormat(Qt.TextFormat.PlainText)
+        self.slot.setWordWrap(True)
         layout.addWidget(self.slot)
         controls = QHBoxLayout()
         self.enabled = QCheckBox("参与采样")
-        self.enabled.toggled.connect(self._changed)
+        self.enabled.toggled.connect(lambda _checked: self._changed())
         controls.addWidget(self.enabled)
         controls.addStretch()
         controls.addWidget(QLabel("采样间隔"))
         self.interval = MonitoringIntervalSpinBox()
         self.interval.setSingleStep(0.5)
         self.interval.setSuffix(" 秒")
-        self.interval.valueChanged.connect(self._changed)
+        self.interval.valueChanged.connect(lambda _value: self._changed(interval_edited=True))
+        self.interval.setToolTip("修改采样间隔会切换为自定义间隔，并按设备保存。")
         controls.addWidget(self.interval)
         layout.addLayout(controls)
 
@@ -189,10 +192,10 @@ class RecordingDeviceCard(QFrame):
         details_layout.addStretch()
         self.set_spec(spec)
 
-    def _changed(self, *_args) -> None:
+    def _changed(self, *, interval_edited: bool = False) -> None:
         self.spec["enabled"] = self.enabled.isChecked()
         self.spec["interval"] = self.interval.value()
-        self.changed.emit()
+        self.changed.emit(self.spec["device_id"], interval_edited)
 
     def set_spec(self, spec: dict[str, Any]) -> None:
         self.spec = spec
@@ -456,17 +459,17 @@ class MonitoringDashboard(QWidget):
                     device_id,
                     recording_mode,
                     float(saved["interval"]),
+                    cadence="interval",
                     notify=False,
                 )
             except (TypeError, ValueError):
                 pass
         try:
-            default_interval = float(
-                monitoring_options(self.controller, device_id, recording_mode)["interval"]
-            )
+            interval = float(monitoring_options(self.controller, device_id, recording_mode)["interval"])
         except Exception:
-            default_interval = 1.0
-        interval = float(saved.get("interval", default_interval))
+            interval = 1.0
+        # Once migrated, device timing is authoritative even when a slot's
+        # old overview preference still contains a different interval.
         interval = min(60.0, max(0.5, interval))
         if instrument_category(record) == "power_supply":
             interval = min(POWER_INTERVALS, key=lambda option: abs(option - interval))
@@ -489,7 +492,7 @@ class MonitoringDashboard(QWidget):
             "category_label": CATEGORY_LABELS.get(instrument_category(record), instrument_category(record)),
             "identity": details,
             "slot": slot,
-            "slot_label": slot_label(slot),
+            "slot_label": self.controller.runtime.repository.function_slots.label(slot, recording_mode),
             "enabled": bool(saved.get("enabled", True)),
             "interval": interval,
             "recording_mode": recording_mode,
@@ -582,8 +585,10 @@ class MonitoringDashboard(QWidget):
             f"当前显示 {len(specs)} 台已连接设备 · 已勾选 {sum(bool(s.get('enabled')) for s in specs)} 台"
         )
 
-    def _persist_card(self) -> None:
+    def _persist_card(self, changed_device: str = "", interval_edited: bool = False) -> None:
         for spec in self.specs:
+            if changed_device and spec["device_id"] != changed_device:
+                continue
             card = self.cards.get(spec["device_id"])
             if card is None:
                 continue
@@ -601,6 +606,7 @@ class MonitoringDashboard(QWidget):
                     spec["device_id"],
                     spec["recording_mode"],
                     interval,
+                    cadence="interval" if interval_edited else None,
                 )
             except Exception as exc:
                 self.controller.message.emit(str(exc))
@@ -716,13 +722,14 @@ class MonitoringDashboard(QWidget):
         return grouped, dangerous
 
     def toggle_sampling(self) -> None:
-        active = [
-            device_id
-            for device_id in self.cards
-            if self.controller.runtime.monitoring.snapshots().get(device_id, {}).get("running")
-        ]
+        active, stopping = self._sampling_state()
         if active:
             self.stop()
+            return
+        if stopping:
+            # Also guard queued clicks: never start just the faster-draining peers.
+            self._update_button()
+            self.controller.message.emit("上一批采集正在收尾，请等待勾选设备停止后再开始。")
             return
         grouped, dangerous = self._requests()
         if not grouped:
@@ -777,8 +784,24 @@ class MonitoringDashboard(QWidget):
         self._update_button()
 
     def _update_button(self) -> None:
-        active = any(
-            self.controller.runtime.monitoring.snapshots().get(device_id, {}).get("running")
-            for device_id in self.cards
+        active, stopping = self._sampling_state()
+        self.sample_button.setText(
+            "停止采样" if active else f"正在停止（{len(stopping)} 台）…" if stopping else "一键开始采样"
         )
-        self.sample_button.setText("停止采样" if active else "一键开始采样")
+        self.sample_button.setEnabled(active or not stopping)
+        self.sample_button.setToolTip(
+            "等待以下勾选设备完成在途读取和原始数据收尾：\n"
+            + "\n".join(self.cards[device_id].spec["title"] for device_id in stopping)
+            if stopping and not active
+            else ""
+        )
+
+    def _sampling_state(self) -> tuple[bool, list[str]]:
+        tasks = self.controller.runtime.monitoring.snapshots()
+        active = any(tasks.get(device_id, {}).get("running") for device_id in self.cards)
+        stopping = [
+            device_id
+            for device_id, card in self.cards.items()
+            if card.enabled.isChecked() and tasks.get(device_id, {}).get("stopping")
+        ]
+        return active, stopping

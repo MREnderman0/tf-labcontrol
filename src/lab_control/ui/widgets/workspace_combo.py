@@ -148,6 +148,7 @@ class WorkspaceComboBox(QComboBox):
         self._pending: tuple[tuple[str, Any], ...] | None = None
         self._popup = _ChoicePopup(self)
         self._popup.list.setModel(self.model())
+        self._popup_header: QWidget | None = None
         self._opening = False
         self._listening = False
         self._fit_minimum: int | None = None
@@ -204,6 +205,13 @@ class WorkspaceComboBox(QComboBox):
     def view(self) -> QListView:
         return self._popup.list
 
+    def set_popup_header(self, widget: QWidget) -> None:
+        """Place an optional editor above the choices, within the popup geometry."""
+        self._popup_header = widget
+        layout = self._popup.layout()
+        assert isinstance(layout, QVBoxLayout)
+        layout.insertWidget(0, widget)
+
     def _model_changed(self, *args) -> None:
         # Do not apply a deferred replacement from inside a model mutation signal.
         self._pending = None
@@ -220,6 +228,9 @@ class WorkspaceComboBox(QComboBox):
         below = max(0, screen.bottom() + 1 - (anchor.y() + self.height() + 3))
         above = max(0, anchor.y() - 3 - screen.top())
         chrome = 2 * POPUP_MARGIN
+        if self._popup_header is not None:
+            self._popup_header.ensurePolished()
+            chrome += self._popup_header.sizeHint().height()
         desired_rows = min(self.count(), self.maxVisibleItems())
         downward = below >= desired_rows * ROW_HEIGHT + chrome or below >= above
         space = below if downward else above

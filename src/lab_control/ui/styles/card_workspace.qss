@@ -82,6 +82,7 @@ QComboBox:disabled { color: #788286; background: #15191b; border-color: #303739;
 QComboBox::drop-down { border: 0; width: 28px; }
 QComboBox::down-arrow { image: none; width: 0; height: 0; }
 QFrame#workspaceChoicePopup { background: transparent; border: 0; }
+QWidget#slotChoiceHeader { background: #1d2325; }
 QListView#workspaceChoices { background: #1d2325; border: 0; padding: 0; outline: 0; }
 QWidget#workspaceChoicesViewport { background: #1d2325; font-size: 13px; }
 QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus { border-color: #d99342; }

@@ -6,6 +6,7 @@ import threading
 from concurrent.futures import Future
 from pathlib import Path
 from typing import Any, Callable
+from uuid import uuid4
 
 from lab_control.application.config import ConnectionConfig, canonical_resource
 from lab_control.application.leases import ProcessLease, ResourceLeases
@@ -21,7 +22,7 @@ from lab_control.discovery.service import (
     VisaDiscoveryProvider,
 )
 from lab_control.domain.instruments import DeviceIdentity, ValidationError
-from lab_control.domain.workspace import WORKSPACE_MODES, category_slots
+from lab_control.domain.workspace import CATEGORY_LABELS, GENERAL, WORKSPACE_MODES
 from lab_control.instruments.base import identity_from_scpi
 from lab_control.instruments.registry import (
     create_adapter,
@@ -51,8 +52,8 @@ class ApplicationRuntime:
                 "Use --mock for simulated configurations; real inventory cannot contain simulation"
             )
         self.hardware = hardware
-        # UI choices live for this launch. Scope/spectrum never restore a prior
-        # launch's fastest cadence; all pages share the same per-device choices.
+        # Pages share a per-device cache, populated lazily from persistent
+        # workspace preferences by the common timing controls.
         self.monitoring_preferences: dict[str, dict[str, Any]] = {}
         from lab_control.storage.runtime import hardware_lock_home
 
@@ -65,6 +66,7 @@ class ApplicationRuntime:
         self._close_lock = threading.Lock()
         self._agent_lock = threading.Lock()
         self._agent: Any = None
+        self._processing: Any = None
         lock_root = None
         try:
             if hardware:
@@ -361,6 +363,41 @@ class ApplicationRuntime:
         future.add_done_callback(save_identity)
         return saved
 
+    def create_slot(self, category: str, name: str, mode: str = GENERAL) -> str:
+        """Create a named slot, or select the existing slot with the same name."""
+        if category not in CATEGORY_LABELS or mode not in WORKSPACE_MODES:
+            raise ValidationError("Unknown slot category or workspace mode")
+        name = name.strip()
+        if not name or len(name) > 64 or any(ord(char) < 32 or ord(char) == 127 for char in name):
+            raise ValidationError("槽位名称须为 1～64 个字符，不能包含换行或控制字符")
+        with self.inventory.lock:
+            definitions = self.repository.function_slots.definitions(category, mode)
+            for slot, label in definitions.items():
+                if label.casefold() == name.casefold():
+                    return slot
+            slot = f"{category}:custom-{uuid4().hex}"
+            definitions[slot] = name
+            self.repository.function_slots.save(category, mode, definitions)
+            self.repository.audit("slot_created", slot=slot, label=name, mode=mode)
+            return slot
+
+    def delete_slot(self, slot: str, mode: str = GENERAL) -> None:
+        from lab_control.domain.instruments import DeviceError
+
+        category = slot.partition(":")[0]
+        if category not in CATEGORY_LABELS or mode not in WORKSPACE_MODES:
+            raise ValidationError("Unknown slot category or workspace mode")
+        # Binding and deletion share this lock, including their persistent writes.
+        with self.inventory.lock:
+            definitions = self.repository.function_slots.definitions(category, mode)
+            if slot not in definitions:
+                raise DeviceError("槽位已删除，请重新选择", "slot_changed")
+            if any(record.get("slots", {}).get(mode) == slot for record in self.inventory.all()):
+                raise DeviceError("该槽位已有设备绑定，请先解除绑定再删除", "slot_conflict")
+            label = definitions.pop(slot)
+            self.repository.function_slots.save(category, mode, definitions)
+            self.repository.audit("slot_deleted", slot=slot, label=label, mode=mode)
+
     def bind_slot(
         self, device_id: str, slot: str, mode: str, *, replace_device_id: str | None = None
     ) -> None:
@@ -388,7 +425,10 @@ class ApplicationRuntime:
             if slot and (record.get("identityConflict") or record["discoveryState"] == "conflict"):
                 raise DeviceError("设备身份冲突，请先核对", "identity_conflict")
             category = instrument_category(record)
-            if slot and (not mode_applicable(record, mode) or slot not in category_slots(category)):
+            if slot and (
+                not mode_applicable(record, mode)
+                or slot not in self.repository.function_slots.definitions(category, mode)
+            ):
                 raise ValidationError("Slot category or mode is incompatible with this instrument")
             self.inventory.bind_slot(device_id, slot, mode, replace_device_id=replace_device_id)
             self.repository.audit(
@@ -447,6 +487,28 @@ class ApplicationRuntime:
             self._close_once()
 
     @property
+    def processing(self):
+        with self._agent_lock:
+            if self.closed:
+                raise RuntimeError("Runtime is closed")
+            if self._processing is None:
+                from lab_control.application.processing import ProcessingService
+
+                self._processing = ProcessingService(self.repository, self._recording_path_active)
+            return self._processing
+
+    def _recording_path_active(self, folder: Path) -> bool:
+        with self.sessions.lock:
+            recordings = list(self.sessions.recordings)
+        with self.monitoring.lock:
+            recordings.extend(self.monitoring.recordings)
+        return any(
+            not recording.finished.done()
+            and (recording.folder == folder or folder in recording.folder.parents)
+            for recording in recordings
+        )
+
+    @property
     def agent(self):
         with self._agent_lock:
             if self.closed:
@@ -470,6 +532,7 @@ class ApplicationRuntime:
             except Exception as exc:
                 errors.append(exc)
         for resource in (
+            getattr(self, "_processing", None),
             self.bulk_connection,
             self.monitoring,
             self.discovery,

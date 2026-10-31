@@ -153,16 +153,7 @@ class MonitoringService:
             if self.closing:
                 raise DeviceError("Monitoring is closing")
             task = self.tasks.get(device_id)
-            if (
-                task
-                and not task.running
-                and (
-                    task.pending
-                    or task.write_pending
-                    or task.recording_preparation
-                    or (task.recorder and not task.recorder.binary_done)
-                )
-            ):
+            if task and task.stopping:
                 raise DeviceError("Wait until the current monitoring batch has stopped", "task_busy")
             if task and task.running and task.mode != mode:
                 raise DeviceError("Stop monitoring before assigning another recording mode", "task_busy")
@@ -638,6 +629,7 @@ class MonitoringService:
             return {
                 device_id: {
                     "running": task.running,
+                    "stopping": task.stopping,
                     "recording": task.recording,
                     "recording_preparing": task.recording_preparation is not None,
                     "pending": bool(

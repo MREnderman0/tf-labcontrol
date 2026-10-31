@@ -192,3 +192,98 @@ def test_batch_context_cannot_be_silently_used_for_nonrecording_monitor(overview
     with pytest.raises(ValidationError, match="requires recording"):
         runtime.monitoring.start(keys[0], (AcquisitionRequest("scalar", quantity="power"),), batch=batch)
     assert not runtime.monitoring.tasks and not batch.folder.exists()
+
+
+@pytest.mark.parametrize("slow_stage", ["read", "write", "prepare"])
+def test_restart_waits_for_all_selected_devices_to_drain_but_not_csv(
+    overview, qtbot, monkeypatch, slow_stage
+):
+    from lab_control.storage.recording_workers import CsvConversionSupervisor
+
+    runtime, controller, dashboard, keys, source = overview
+    service = runtime.monitoring
+    selected = [keys[0], keys[1], source]
+    slow = keys[1]
+    select(dashboard, selected)
+    entered, release, release_csv = threading.Event(), threading.Event(), threading.Event()
+    factory = runtime.repository.create_recording
+    convert = CsvConversionSupervisor.run
+
+    def hold_csv(supervisor):
+        supervisor.recording.thread.join()
+        if supervisor.recording.committed:
+            assert release_csv.wait(15)
+        convert(supervisor)
+
+    def create(*args, **kwargs):
+        is_slow = kwargs["context"].device_id == slow
+        if is_slow and slow_stage == "prepare":
+            entered.set()
+            assert release.wait(15)
+        recorder = factory(*args, **kwargs)
+        if is_slow and slow_stage == "write":
+            append = recorder.segments.append
+
+            def delayed_write(sequence, batch):
+                entered.set()
+                assert release.wait(15)
+                return append(sequence, batch)
+
+            recorder.segments.append = delayed_write
+        return recorder
+
+    if slow_stage == "read":
+        adapter = runtime.sessions.sessions[slow].adapter
+        acquire = adapter.acquire
+
+        def delayed_read(request):
+            entered.set()
+            assert release.wait(15)
+            return acquire(request)
+
+        monkeypatch.setattr(adapter, "acquire", delayed_read)
+    monkeypatch.setattr(runtime.repository, "create_recording", create)
+    monkeypatch.setattr(CsvConversionSupervisor, "run", hold_csv)
+    try:
+        dashboard.sample_button.click()
+        qtbot.waitUntil(entered.is_set, timeout=4000)
+        qtbot.waitUntil(
+            lambda: all(
+                service.snapshots()[key]["recording_state"].get("committed", 0) for key in (keys[0], source)
+            ),
+            timeout=4000,
+        )
+        previous = {key: service.tasks[key] for key in selected}
+        dashboard.sample_button.click()
+        qtbot.waitUntil(lambda: previous[keys[0]].recorder.binary_done, timeout=4000)
+        # The slot also guards a queued click, independently of button disabling.
+        dashboard.toggle_sampling()
+        assert all(service.tasks[key] is previous[key] for key in selected)
+        assert not any(service.tasks[key].running for key in selected)
+        assert not dashboard.sample_button.isEnabled()
+        assert "正在停止" in dashboard.sample_button.text()
+        assert service.snapshots()[slow]["stopping"]
+        release.set()
+        qtbot.waitUntil(lambda: not any(service.snapshots()[key]["stopping"] for key in selected))
+        controller.poll()
+        assert dashboard.sample_button.isEnabled()
+        assert dashboard.sample_button.text() == "一键开始采样"
+        old_recorder = previous[keys[0]].recorder
+        assert not old_recorder.finished.done(), "CSV must not hold up the next acquisition"
+        assert not any(service.tasks[key].running for key in selected)
+        dashboard.sample_button.click()
+        qtbot.waitUntil(
+            lambda: all(
+                service.tasks[key] is not previous[key]
+                and service.snapshots()[key]["recording_state"].get("committed", 0)
+                for key in selected
+            ),
+            timeout=4000,
+        )
+        new_recorders = [service.tasks[key].recorder for key in selected]
+        assert len({recorder.folder.parent for recorder in new_recorders}) == 1
+        assert new_recorders[0].folder.parent != old_recorder.folder.parent
+    finally:
+        release.set()
+        release_csv.set()
+    finish_batch(runtime, dashboard, selected, qtbot)

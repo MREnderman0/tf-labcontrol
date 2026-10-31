@@ -12,6 +12,6 @@
 
 ## 后续能力
 
-自动实验、阈值告警、完整数据处理及型号未注册功能仍需单独规划；需求文字不代表已交付。当前持久化采用 SQLite、JSONL、CSV、NPZ 等，实际格式以[数据模型](../data/data-model.md)为准。
+自动实验、阈值告警、高级数据处理算法及型号未注册功能仍需单独规划；历史整理与绘图的已实现范围见[数据处理](data-processing.md)。当前持久化采用 SQLite、JSONL、CSV、NPZ 等，实际格式以[数据模型](../data/data-model.md)为准。
 
 [原始需求快照](../archive/requirements-2026-09-23.md)保留设备需求来源与历史设想。当前交互以专题需求和[确认的设计基线](../../direction-approved.md)为准。

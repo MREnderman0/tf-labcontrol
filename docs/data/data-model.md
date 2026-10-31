@@ -64,8 +64,11 @@ storage/paths.py 的不可变 `SaveContext` 固定根目录、带时区开始时
 workspace 使用键隔离，真实与模拟分别位于各自根目录：
 
 - `current_mode`：正式界面固定为 `general`；原选择保存在迁移记录中。
+- `function_slots/<mode>/<category>`：槽位 ID 到显示名称的映射。未保存时使用该类别默认项，显式空映射表示全部删除，不重新补回默认项。自定义 ID 为 `<category>:custom-<UUID>`；名称独立保存，同类别名称去除首尾空白后忽略大小写去重。新建和删除与绑定共用库存锁；已被当前工作区任何库存设备绑定的槽位不可删除。新建、删除均留审计，写入失败保留原映射；删后同名重建使用新 ID，历史采集上下文中的 ID、名称和旧偏好记录不改写。
 - `data_storage/root`：用户选择的数据保存一级目录的绝对路径；缺省或 null 使用本运行目录的 data。保存前进行创建及写入/读回检查，失败保留原设置。
 - `monitor_overview/all`：保存所有已连接可监测设备总览卡片的 `{enabled, interval}`。槽位存在时使用 `slot:general:<slot>`，未绑定槽位使用稳定设备 ID；不保存列数、仪器句柄或运行状态。采样间隔同时写入并以 `monitor-timing/general/<device>` 作为设备级 canonical 设置，设备页和总览修改后双向同步；旧的 `monitor_overview/electronic` 与 `monitor_overview/optical` 在启动时一次性兼容迁移。
+- `monitor-timing/<mode>/<device>`：保存各类设备的采集 `interval` 和 `cadence`，正式界面使用 `general`。重启后恢复有效偏好，缺失或无效时使用类别默认；总览卡片的旧间隔不能覆盖已有设备级设置。旧 `record_interval` 和 `csv_interval` 字段仍保留兼容，界面固定逐帧记录及每 5 秒转换 CSV。
+- `phase-acquisition/<mode>/<device>`：相噪定时采集的 `sample_rate`（samples/s）和 `duration`（秒），正式界面使用 `general`。按设备恢复并校验当前能力和范围，只恢复界面选项，不自动执行设置或开始采集。
 - `monitoring_channels/optical_power_meter`：按光功率计功能槽位保存通道勾选列表；未绑定槽位使用稳定设备 ID。
 - `draft/<mode>/<device_id>/<channel>/<operation>`：`fields` 保存原输入值及单位倍率，`rows` 保存数组草稿；成功应用后清除该项，失败保留。
 - `demo_general_slots_initialized`：仅模拟入口首次初始化通用 A/B，避免再次启动覆盖用户绑定；原 `demo_slots_initialized` 键保留。
@@ -156,6 +159,20 @@ NPZ 使用 NumPy 数据数组，不保存 pickle 对象。CSV 使用 UTF-8 BOM �
 
 `export_analysis(source, destination)` 将旧／新原始记录离线导出到独立新目录，输出目录不得存在或与来源嵌套。导出只读取来源；输出说明注明原始数据所在位置，不复制原始曲线。CLI：`lab-control-cli export-analysis <来源目录> --output <新的分析目录>`。默认新记录自动生成分析 CSV，无需手动调用此接口。
 
+## 离线处理缓存 v1
+
+五类设备的历史工作台在整次采集下创建 `数据处理/<槽位或型号>_<记录标识摘要>/result-<代际>`，单设备和批量均按设备分开存储。`current.json` 原子指向最新完整代际；临时 `.processing-*` 不可见。原始录制与原来的独立 `export_analysis` 保持兼容。
+
+`result.json` 包含 `version/state/created_at/software_version`、完整记录元数据、帧数/数值数、实际 `scalar/frames` 形态、原记录警告，以及输入文件的相对路径、大小、mtime_ns、SHA256。`source` 相对于该设备结果容器（`current.json` 所在目录），输入清单相对于原始设备记录目录。文件夹整体移动不会使来源引用失效。已收尾的 WAL 计入指纹，在临时副本中合并读取；原文件和旁路文件不修改。
+
+`data.sqlite3` 的 `user_version=1`：`configs/frames/samples` 保存配置、设置时间、完整帧文档及原 dtype/shape/BLOB 数组；`timeline(seq,stamp,elapsed)` 提供随机帧定位和时间；`series` 保存通道/物理量/单位组合；`scalar` 保存按配置分段的显示索引。原精度以 `samples` 为准，显示索引采用 SQLite REAL。不同单位不会强行合并，通道缺失及配置变化保留曲线断点。相对秒数优先来自原始 monotonic 记录，缺失时由带时区的原始时间差生成，不推断仪器同步。
+
+处理 CSV 使用已有统一测量表结构，不按 UI 精度舍入；每文件最多 100 万数据行，列结构变化开启新文件。这里的文件分片独立于原有分析导出的 100 MiB 上限。`帧索引.csv` 对标量/数组均保存帧号、带时区的原始时间、相对秒数、数据文件、起止逻辑行和配置引用；配置与每通道时间来源保留在 SQLite 帧文档。长记录绘图只读取有界极值包络，整帧按需读 BLOB，不重复扫描 CSV。空记录须由摘要确认为零帧，其他缺失/损坏情况报错。
+
+自动 PNG 位于当前代际的 `图片/自动生成-标识`，结果根目录的 `png.json` 记录图片集版本、相对目录、来源 `data.sqlite3`、帧号、时间、通道、物理量/单位、尺寸和各文件大小。标量按单位分组绘制完整曲线，光谱逐帧生成，示波器逐帧且逐通道分别输出。临时图片集完成后才发布清单；重复处理复用完整集，缺图重建且保留旧集。数值缓存格式版本仍为 v1。
+
+手动论文插图及每张图的 JSON 来源说明位于 `图片/export-标识`，来源使用 `../../data.sqlite3`，同时记录通道、当前帧/显示范围、单位、尺寸、格式与样式版本；示波器 PNG 逐通道独立保存。PNG 为 600 dpi，SVG/PDF 为矢量图；超大图形只做显示用极值包络，CSV/SQLite 仍保留全部原始数据。以前已生成图片的原位置和来源引用保持兼容。操作及格式详情见[使用指南](../guides/data-processing.md)。
+
 ## 审计和报告
 
 审计记录连接参数、目标身份、操作请求/结果、步骤数、失败与清理事件；流任务记录开始/停止和错误。报告含测试范围、目标、时间、请求/读回、数据路径及 hardware_accepted=false。报告成功只代表执行了该次检查，不自动提升设备验证等级。
@@ -166,7 +183,7 @@ HDF5、高频无限流写盘、完整实验/阈值索引、遥测和科学数据
 
 运行时取得进程锁后、加载内存库存前，在同一个 SQLite 事务中执行 `workspace_migration/general-v1`。只补充缺失的通用设置，保留全部旧键、原始批次和历史数据文件；事务失败则全部回滚，下次启动可重试。迁移完成标记使后续启动不覆盖用户的新设置。
 
-光谱仪／光功率计优先使用旧 optical 设置，频谱仪优先 electronic，其他设备优先原 current_mode（缺失时 electronic）；只有键不存在才尝试另一模式，显式 null、空列表和空绑定均保留。复制参数草稿、采样间隔、软件标记、示波器微调、总览偏好和光功率计通道选择。各类别每次启动的采样间隔重置规则继续生效。
+光谱仪／光功率计优先使用旧 optical 设置，频谱仪优先 electronic，其他设备优先原 current_mode（缺失时 electronic）；只有键不存在才尝试另一模式，显式 null、空列表和空绑定均保留。复制参数草稿、采样间隔、软件标记、示波器微调、总览偏好和光功率计通道选择。各类别恢复迁移后的有效采集间隔和节奏，不在每次启动时重置。
 
 无歧义旧槽位复制到 general。同一设备旧绑定不一致、槽位类别不匹配或多设备争用同一槽位时，general 保持未绑定，库存 slotMigrationConflict 保存提示，重新绑定／解除绑定会清除此提示；原冲突依据保存在迁移记录中。既有 general 绑定和设置优先，不被旧值覆盖。未绑定设备的总览偏好使用稳定设备 ID，避免冲突槽位混用。
 

@@ -1,6 +1,6 @@
 # 系统架构与工程边界（0.3.0）
 
-当前交付为 Python 模块化单体：真实通信、设备总览、分类控制和实时监测已接通；正式入口与内部 Mock 预览共用页面并注入隔离服务。外部 Agent 可按本机实验授权通过 MCP 协作；内置完整实验编排、阈值告警和数据处理工作台仍在后续范围。
+当前交付为 Python 模块化单体：真实通信、设备总览、分类控制、实时监测和历史数据处理已接通；正式入口与内部 Mock 预览共用页面并注入隔离服务。外部 Agent 可按本机实验授权通过 MCP 协作；内置完整实验编排和阈值告警仍在后续范围。
 
 ## 目录职责
 
@@ -68,7 +68,9 @@ run.bat、Python 模块入口、lab-control 与安装版 EXE 统一调用 launch
 
 ## 存储和依赖
 
-根目录默认 %LOCALAPPDATA%/TF-LabControl，可用 LAB_CONTROL_HOME 指定。当前使用通用工作区；实验数据按设备、日期、采集开始时间分层，旧 electronic/optical 数据保持原样。单帧导出保留 NPZ/CSV，连续记录保存版本化 SQLite/BLOB 并异步转换 CSV；实际格式见[数据模型](../data/data-model.md)。HDF5、完整实验索引及处理工作台尚未接入。
+根目录默认 %LOCALAPPDATA%/TF-LabControl，可用 LAB_CONTROL_HOME 指定。当前使用通用工作区；实验数据按设备、日期、采集开始时间分层，旧 electronic/optical 数据保持原样。单帧导出保留 NPZ/CSV，连续记录保存版本化 SQLite/BLOB 并异步转换 CSV；实际格式见[数据模型](../data/data-model.md)。HDF5、完整实验索引和高级分析算法尚未接入。
+
+离线工作台由 RecordingCatalog、ProcessingService 和 ResultReader 分别负责目录发现、串行处理/文件操作与随机读取。运行时延迟创建服务，处理入口不构建设备适配器；型号包在目录注册中声明 ProcessingProfile。Qt 页面只提交任务和读取快照，后台通过单个处理 worker 与有界读取请求工作。处理结果按完整代际发布；跨盘文件操作记录可恢复日志，重启只恢复索引，不重放删除。App 中使用 pyqtgraph 交互图表，导出通过 Qt 独立绘制白底论文图，不修改唯一主题或新增依赖。
 
 Repository.audit 保留严格错误语义；恢复和清理路径使用 AuditSink.try_record 保存有界失败证据，避免审计磁盘错误遮盖原故障或阻断资源释放。不把审计失败解释为设备操作成功。
 

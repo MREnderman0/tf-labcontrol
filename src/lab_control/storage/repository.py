@@ -14,9 +14,10 @@ from uuid import uuid4
 import numpy as np
 
 from lab_control.domain.instruments import DeviceIdentity, MeasurementBatch, jsonable, utc_now
-from lab_control.domain.workspace import GENERAL, slot_label
+from lab_control.domain.workspace import GENERAL
 from lab_control.storage.audit import AuditSink
 from lab_control.storage.frame_timing import TIMING_COLUMNS, timing_columns
+from lab_control.storage.function_slots import FunctionSlots
 from lab_control.storage.paths import BatchSaveContext, SaveContext, SaveKind
 from lab_control.storage.runtime import runtime_home
 
@@ -38,6 +39,7 @@ class Repository:
         self.db.execute("CREATE TABLE IF NOT EXISTS scans (id TEXT PRIMARY KEY, document TEXT NOT NULL)")
         self.db.execute("CREATE TABLE IF NOT EXISTS workspace (id TEXT PRIMARY KEY, document TEXT NOT NULL)")
         self.db.commit()
+        self.function_slots = FunctionSlots(self)
 
     def load_workspace(self, key: str, default: Any = None) -> Any:
         with self.lock:
@@ -147,25 +149,29 @@ class Repository:
         adapter_id: str = "",
         batch: BatchSaveContext | None = None,
     ) -> SaveContext:
-        slot = ""
-        if device_id:
-            record = next((r for r in self.records() if r["id"] == device_id), {})
-            slots = record.get("slots", {})
-            slot = slots.get(GENERAL, slots.get(mode, ""))
-            adapter_id = adapter_id or record.get("adapterId", "")
-            if identity is None and record.get("identity"):
-                identity = DeviceIdentity(**record["identity"])
-        return SaveContext(
-            batch.root if batch else self.data_root,
-            mode,
-            kind,
-            device_id,
-            identity,
-            adapter_id,
-            batch=batch,
-            slot=slot,
-            slot_label=slot_label(slot) if slot else "",
-        )
+        # Capture the binding and its label together, before an unbind/delete can intervene.
+        with self.lock:
+            slot = ""
+            slot_mode = mode
+            if device_id:
+                record = next((r for r in self.records() if r["id"] == device_id), {})
+                slots = record.get("slots", {})
+                slot = slots.get(GENERAL, slots.get(mode, ""))
+                slot_mode = GENERAL if GENERAL in slots else mode
+                adapter_id = adapter_id or record.get("adapterId", "")
+                if identity is None and record.get("identity"):
+                    identity = DeviceIdentity(**record["identity"])
+            return SaveContext(
+                batch.root if batch else self.data_root,
+                mode,
+                kind,
+                device_id,
+                identity,
+                adapter_id,
+                batch=batch,
+                slot=slot,
+                slot_label=self.function_slots.label(slot, slot_mode) if slot else "",
+            )
 
     def create_recording(self, mode: str | None = None, *, context: SaveContext | None = None, **options):
         from lab_control.storage.recording import Recording

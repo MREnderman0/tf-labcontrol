@@ -9,6 +9,7 @@ from lab_control.application.runtime import ApplicationRuntime
 from lab_control.discovery.service import DiscoveryCandidate
 from lab_control.domain.instruments import DeviceIdentity
 from lab_control.ui.real_window import RealWindow
+from lab_control.ui.widgets.slot_picker import SlotBindingDialog
 from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
 
 
@@ -456,3 +457,127 @@ def test_external_slot_button_binds_and_unbinds_through_shared_dialog(workspace,
         record = next(record for record in runtime.inventory.all() if record["id"] == key)
         assert record["slots"].get("general", "") == expected
         assert window.device_pool.isVisible()
+
+
+def test_slot_popup_creates_named_slot_and_updates_all_views(workspace, qtbot):
+    window, runtime, key = workspace
+    runtime.monitoring.enable_settings_sync(False)
+    qtbot.waitUntil(lambda: not runtime.sessions.sessions[key].pending)
+    window.open_category("signal_generator")
+    selected = []
+
+    def create():
+        dialog = QApplication.activeModalWidget()
+        try:
+            assert isinstance(dialog, SlotBindingDialog)
+            combo = dialog.combo
+            combo.showPopup()
+            qtbot.wait(10)
+            assert combo.name_input.isVisible()
+            qtbot.mouseClick(combo.name_input, Qt.MouseButton.LeftButton)
+            assert combo.name_input.hasFocus()
+            combo.name_input.setText("冷却光 RF")
+            qtbot.keyClick(combo.name_input, Qt.Key.Key_Return)
+            selected.append(combo.currentData())
+            assert combo.currentText() == "冷却光 RF（空闲）"
+            assert dialog.isVisible()  # Return creates; it must not implicitly bind.
+            record = next(r for r in runtime.inventory.all() if r["id"] == key)
+            assert record.get("slots", {}).get("general", "") == ""
+            dialog.buttons.button(QDialogButtonBox.StandardButton.Ok).click()
+        finally:
+            if dialog.isVisible():
+                dialog.reject()
+
+    QTimer.singleShot(10, create)
+    qtbot.mouseClick(window.action_buttons["slot"], Qt.MouseButton.LeftButton)
+    assert selected and selected[0]
+    window.controller.poll()
+    window.refresh()
+    window.dashboard.refresh()
+    assert window.rows[key].text(4) == "冷却光 RF"
+    assert window.details.values["slot"].text() == "冷却光 RF"
+    assert window.dashboard.cards[key].slot.text() == "功能槽位：冷却光 RF"
+    context = runtime.repository.new_save_context("general", "single_frame", device_id=key)
+    assert context.slot == selected[0] and context.slot_label == "冷却光 RF"
+
+
+def test_slot_popup_deletes_only_free_rows_and_keeps_selection(workspace, qtbot):
+    _window, runtime, key = workspace
+    runtime.monitoring.enable_settings_sync(False)
+    qtbot.waitUntil(lambda: not runtime.sessions.sessions[key].pending)
+    runtime.bind_slot(key, "signal_generator:1", "general")
+    dialog = SlotBindingDialog(runtime, key, "signal_generator", "general")
+    qtbot.addWidget(dialog)
+    dialog.show()
+    combo = dialog.combo
+    combo.showPopup()
+    qtbot.wait(10)
+    assert "signal_generator:1" not in combo.deletable
+    assert "signal_generator:2" in combo.deletable
+    assert "" not in combo.deletable
+    row = combo.model().index(combo.findData("signal_generator:2"), 0)
+    rect = combo.view().visualRect(row)
+    qtbot.mouseClick(
+        combo.view().viewport(), Qt.MouseButton.LeftButton, pos=QPoint(rect.right() - 30, rect.center().y())
+    )
+    assert combo.currentData() == "signal_generator:1"
+    assert combo.findData("signal_generator:2") == -1
+    assert combo.view().isVisible()
+    assert dialog.isVisible()
+    dialog.reject()
+
+
+def test_many_custom_slots_keep_input_visible_and_support_keyboard_delete(workspace, qtbot):
+    _window, runtime, key = workspace
+    for index in range(15):
+        runtime.create_slot("signal_generator", f"自定义功能槽位 {index}")
+    dialog = SlotBindingDialog(runtime, key, "signal_generator", "general")
+    qtbot.addWidget(dialog)
+    dialog.show()
+    combo = dialog.combo
+    combo.showPopup()
+    qtbot.wait(10)
+    view = combo.view()
+    assert view.verticalScrollBar().maximum() > 0
+    popup = view.window()
+    assert popup.screen().availableGeometry().contains(popup.geometry())
+    view.verticalScrollBar().setValue(view.verticalScrollBar().maximum())
+    assert combo.name_input.isVisible()
+    assert combo.name_input.mapTo(popup, QPoint()).y() < view.mapTo(popup, QPoint()).y()
+    last = combo.model().index(combo.count() - 1, 0)
+    slot = last.data(Qt.ItemDataRole.UserRole)
+    view.setCurrentIndex(last)
+    qtbot.keyClick(view, Qt.Key.Key_Delete)
+    assert combo.findData(slot) == -1
+    assert dialog.isVisible()
+    combo.hidePopup()
+    dialog.reject()
+
+
+def test_slot_popup_validates_names_and_refreshes_stale_occupancy(workspace, qtbot):
+    _window, runtime, key = workspace
+    runtime.monitoring.enable_settings_sync(False)
+    qtbot.waitUntil(lambda: not runtime.sessions.sessions[key].pending)
+    dialog = SlotBindingDialog(runtime, key, "signal_generator", "general")
+    qtbot.addWidget(dialog)
+    dialog.show()
+    combo = dialog.combo
+    combo.showPopup()
+    qtbot.keyClick(combo.name_input, Qt.Key.Key_Return)
+    assert "1～64" in combo.feedback.text() and combo.view().isVisible()
+    combo.name_input.setText("信号源 A")
+    qtbot.keyClick(combo.name_input, Qt.Key.Key_Return)
+    assert combo.currentData() == "signal_generator:1"
+    assert combo.count() == 3
+    combo.showPopup()
+    runtime.bind_slot(key, "signal_generator:1", "general")
+    row = combo.model().index(combo.findData("signal_generator:1"), 0)
+    rect = combo.view().visualRect(row)
+    qtbot.mouseClick(
+        combo.view().viewport(), Qt.MouseButton.LeftButton, pos=QPoint(rect.right() - 30, rect.center().y())
+    )
+    assert "先解除绑定" in combo.feedback.text()
+    assert "signal_generator:1" not in combo.deletable
+    assert combo.findData("signal_generator:1") >= 0
+    combo.hidePopup()
+    dialog.reject()

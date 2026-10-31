@@ -24,7 +24,7 @@ from lab_control.ui.pages.device_control.form import ControlForm
 from lab_control.ui.pages.monitoring.channel_selection import instrument_scan_channels
 from lab_control.ui.pages.monitoring.connection import refresh_reconnect_button
 from lab_control.ui.pages.monitoring.plot import LivePlot
-from lab_control.ui.pages.monitoring.recording_state import recording_save_notice
+from lab_control.ui.pages.monitoring.recording_state import recording_phase, recording_save_notice
 from lab_control.ui.pages.monitoring.scan import ScanMonitoringPage
 from lab_control.ui.pages.monitoring.timing import MonitoringTiming
 from lab_control.ui.widgets.device_selector import DeviceSelector
@@ -366,6 +366,8 @@ class MonitoringPage(QWidget):
             and mode_applicable(record, self.controller.mode)
             and state.get("connectionState") in {"connected", "busy"}
             and state.get("activeTask") != "continuous_acquisition"
+            and not task.get("stopping")
+            and recording_phase(task) not in {"preparing", "draining"}
         )
         self.buttons["start"].setText("开始监测")
         self.buttons["start"].setEnabled(available)

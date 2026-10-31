@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from lab_control.domain.processing import ProcessingProfile
 from lab_control.instruments.devices.definition import DeviceDefinition, DeviceDocumentation
 
 from .adapter import KpluskFxeAdapter, create
@@ -32,6 +33,7 @@ DEFINITION = DeviceDefinition(
     discovery_config=normalize_discovery_config,
     discovery_lan_config=dhcp_discovery_config,
     readonly_check=_readonly_check,
+    offline_processing=ProcessingProfile("scalar"),
 )
 
 __all__ = ["DEFINITION", "KpluskFxeAdapter"]

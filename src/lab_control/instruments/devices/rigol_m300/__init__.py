@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from lab_control.domain.processing import ProcessingProfile
 from lab_control.instruments.devices.definition import DeviceDefinition, DeviceDocumentation
 
 from .adapter import M300Adapter
@@ -26,6 +27,7 @@ DEFINITION = DeviceDefinition(
     Path(__file__).parent,
     deployment_components=("rs-visa",),
     monitoring_only=True,
+    offline_processing=ProcessingProfile("scalar"),
     acquisition_requires_confirmation=True,
     acquisition_initiate_editable=False,
     readonly_check=_readonly_check,

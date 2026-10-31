@@ -43,11 +43,12 @@ def power(qapp, qtbot, tmp_path):
 @pytest.mark.parametrize(
     "old", [{"cadence": "fastest", "interval": 0.5}, {"cadence": "interval", "interval": 60}]
 )
-def test_power_startup_presets_and_shared_in_run_values(tmp_path, qtbot, old):
+def test_power_startup_restores_valid_presets_and_shared_values(tmp_path, qtbot, old):
     with ApplicationRuntime(root=tmp_path, hardware=False) as runtime:
         key = runtime.add(ConnectionConfig("mock://power-start", "gwinstek.gpd4303s", "mock"))
         pref = f"monitor-timing/general/{key}"
         runtime.repository.save_workspace(pref, old)
+    expected = old["interval"] if old["interval"] in (1, 5, 10, 60) else 1
     for _ in range(2):
         with ApplicationRuntime(root=tmp_path, hardware=False) as runtime:
             controller = SimpleNamespace(
@@ -55,21 +56,22 @@ def test_power_startup_presets_and_shared_in_run_values(tmp_path, qtbot, old):
             )
             widget = MonitoringTiming(controller)
             qtbot.addWidget(widget)
-            widget.bind(key, "electronic")
+            widget.bind(key, "general")
             assert widget.options() == dict(
-                interval=1, cadence="interval", record_interval=None, csv_interval=5
+                interval=expected, cadence="interval", record_interval=None, csv_interval=5
             )
             assert widget.cadence.isHidden() and widget.interval.isHidden()
             assert [widget.presets.itemData(i) for i in range(widget.presets.count())] == [1, 5, 10, 60]
             for seconds in (5, 10, 60, 1):
                 widget.presets.setCurrentIndex(widget.presets.findData(seconds))
-                assert monitoring_options(controller, key, "electronic")["interval"] == seconds
+                assert monitoring_options(controller, key, "general")["interval"] == seconds
             widget.presets.setCurrentIndex(2)
-            widget.bind("", "electronic")
-            widget.bind(key, "electronic")
+            widget.bind("", "general")
+            widget.bind(key, "general")
             assert widget.options()["interval"] == 10
             assert monitoring_options(controller, key, "optical")["interval"] == 1
             assert not runtime.monitoring.tasks and not runtime.sessions.sessions
+            expected = 10
 
 
 def test_measured_voltage_and_current_columns_do_not_move_with_text_length(power, qtbot):
