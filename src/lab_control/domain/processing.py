@@ -9,6 +9,9 @@ from typing import Any, Literal
 class ProcessingProfile:
     kind: Literal["scalar", "frames"]
     power_units: bool = False
+    separate_channel_pngs: bool = False
+    # Model-owned per-frame telemetry is preserved but does not split curves.
+    volatile_configuration_fields: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

@@ -33,7 +33,7 @@ DEFINITION = DeviceDefinition(
     discovery_config=normalize_discovery_config,
     discovery_lan_config=dhcp_discovery_config,
     readonly_check=_readonly_check,
-    offline_processing=ProcessingProfile("scalar"),
+    offline_processing=ProcessingProfile("scalar", volatile_configuration_fields=("device_ms", "report_log")),
 )
 
 __all__ = ["DEFINITION", "KpluskFxeAdapter"]

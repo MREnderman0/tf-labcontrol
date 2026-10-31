@@ -129,6 +129,17 @@ def test_exact_scalar_precision_units_timing_and_reuse(tmp_path, layout):
     assert not Path(info["source"]).is_absolute()
 
 
+def test_legacy_scalar_index_is_readable_but_rebuilt_for_new_continuity_rules(tmp_path):
+    context = capture(tmp_path)
+    old = processed(context)
+    metadata = processing.read_json(old / "result.json")
+    atomic_json(old / "result.json", {**metadata, "version": 1})
+    assert ResultReader(old).info()["frames"] == 3
+    rebuilt = processed(context)
+    assert rebuilt != old and old.exists()
+    assert ResultReader(rebuilt).info()["version"] == processing.PROCESSING_VERSION
+
+
 @pytest.mark.parametrize(
     "adapter,quantity,unit,axis_unit",
     [("ceyear.6362d", "spectrum", "dBm", "nm"), ("rigol.dho924", "waveform", "V", "s")],
@@ -239,7 +250,7 @@ def test_empty_unknown_bad_manifest_and_cancelled_rebuild(tmp_path, monkeypatch)
     context = capture(tmp_path)
     old = processed(context)
     cancel = threading.Event()
-    monkeypatch.setattr(processing, "PROCESSING_VERSION", 2)
+    monkeypatch.setattr(processing, "PROCESSING_VERSION", processing.PROCESSING_VERSION + 1)
     original = processing.ProcessedWriter.append
 
     def interrupted(self, frame):
@@ -461,4 +472,4 @@ def test_recycle_success_delegates_whole_directory_without_delete_fallback(
 
     monkeypatch.setattr(QFile, "moveToTrash", trash)
     assert service.trash(entry).result(10)["trash"] == (str(recycle) if tuple_result else "")
-    assert (recycle / "数据处理").is_dir() and (recycle / "_raw").is_dir()
+    assert (recycle / ".processing-cache").is_dir() and (recycle / "_raw").is_dir()

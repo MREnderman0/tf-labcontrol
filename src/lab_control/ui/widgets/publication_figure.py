@@ -9,9 +9,10 @@ from __future__ import annotations
 import math
 import os
 from pathlib import Path
+from typing import Callable
 
 import numpy as np
-from PySide6.QtCore import QMarginsF, QPointF, QRectF, QSize, QSizeF, Qt
+from PySide6.QtCore import QLineF, QMarginsF, QPointF, QRectF, QSize, QSizeF, Qt
 from PySide6.QtGui import (
     QColor,
     QFont,
@@ -21,7 +22,6 @@ from PySide6.QtGui import (
     QPageLayout,
     QPageSize,
     QPainter,
-    QPainterPath,
     QPdfWriter,
     QPen,
 )
@@ -92,6 +92,7 @@ def export_figure(
     y_label: str,
     *,
     width_mm: int = 183,
+    check_cancel: Callable[[], None] = lambda: None,
 ) -> None:
     """Write a 600-dpi PNG or vector PDF/SVG with 8-pt Arial and 0.65-pt lines."""
     if width_mm not in (89, 183) or path.suffix.lower() not in {".png", ".svg", ".pdf"}:
@@ -191,29 +192,38 @@ def export_figure(
             painter.drawText(QPointF(lx + 19, ly + 3), label)
             painter.save()
             painter.setClipRect(chart.adjusted(-1, -1, 1, 1))
-            path_data = QPainterPath()
-            connected = False
-            count = 0
-            for xx, yy in zip(x, y, strict=True):
+            # A joined, antialiased path through dense noise can spend minutes
+            # in Qt's path stroker while holding Python's GIL. Separate segments
+            # avoid that intersection work; bounded batches also allow cancel.
+            segments: list[QLineF] = []
+            previous = None
+            for count, (xx, yy) in enumerate(zip(x, y, strict=True)):
+                if count % 256 == 0:
+                    check_cancel()
                 if not np.isfinite(xx) or not np.isfinite(yy):
-                    connected = False
+                    previous = None
                     continue
                 point = QPointF(xp(float(xx)), yp(float(yy)))
-                if connected:
-                    path_data.lineTo(point)
-                else:
-                    path_data.moveTo(point)
-                connected = True
-                count += 1
-                if count % 4096 == 0:
-                    painter.drawPath(path_data)
-                    path_data = QPainterPath(point)
-            painter.drawPath(path_data)
-            if np.count_nonzero(np.isfinite(y)) == 1:
-                painter.setBrush(pen.color())
-                painter.drawEllipse(point, 1.5, 1.5)
+                if previous is not None:
+                    segments.append(QLineF(previous, point))
+                previous = point
+                if len(segments) == 256:
+                    painter.drawLines(segments)
+                    segments.clear()
+            if segments:
+                painter.drawLines(segments)
+            # A genuine gap/configuration change can leave one-point runs.
+            # Render each isolated sample without joining it across the gap.
+            valid_points = np.isfinite(x) & np.isfinite(y)
+            isolated = valid_points & ~np.r_[False, valid_points[:-1]] & ~np.r_[valid_points[1:], False]
+            painter.setBrush(pen.color())
+            for number, position in enumerate(np.flatnonzero(isolated)):
+                if number % 256 == 0:
+                    check_cancel()
+                painter.drawEllipse(QPointF(xp(float(x[position])), yp(float(y[position]))), 1.5, 1.5)
             painter.restore()
     finally:
         painter.end()
+    check_cancel()
     if isinstance(device, QImage) and not device.save(str(path)):
         raise OSError("图片保存失败")

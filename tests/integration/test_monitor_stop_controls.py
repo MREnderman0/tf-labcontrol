@@ -84,7 +84,7 @@ def test_single_device_start_disabled_until_stop_drains(
         runtime.monitoring.enable_settings_sync(False)
         qtbot.waitUntil(lambda: not runtime.sessions.sessions[key].pending)
         qtbot.waitUntil(button.isEnabled, timeout=5000)
-        grouped, _ = window.dashboard._requests()
+        grouped = window.dashboard._requests()
         requests = next(requests for device, requests, *_ in grouped if device == key)
         if slow_stage == "read":
             instance = runtime.sessions.sessions[key].adapter

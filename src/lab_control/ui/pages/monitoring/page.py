@@ -6,7 +6,6 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QLabel,
-    QMessageBox,
     QPushButton,
     QSizePolicy,
     QSpinBox,
@@ -85,7 +84,8 @@ class MonitoringPage(QWidget):
         main_layout.addWidget(self.scan_channels_label)
         self.initiate = QCheckBox("读取前执行单次采集")
         self.initiate.setToolTip(
-            "会改变仪器运行状态。Pico 必须启动采集；3458A 需要确认存储/触发行为。其他设备默认读取现有数据。"
+            "点击单次读取或开始监测后按所选方式执行。Pico 必须启动采集；"
+            "3458A 读取存储可能停止内部记录。其他设备默认读取现有数据。"
         )
         main_layout.addWidget(self.initiate)
         self.button_layout = buttons = QGridLayout()
@@ -280,20 +280,10 @@ class MonitoringPage(QWidget):
             self.controller.ensure_applicable(device_id)
             adapter = self.controller.records[device_id]["adapterId"]
             definition = DEVICE_DEFINITIONS.get(adapter)
-            confirmed = False
-            if self.initiate.isChecked() or (definition and definition.acquisition_requires_confirmation):
-                answer = QMessageBox.question(
-                    self,
-                    "确认采集行为",
-                    f"设备：{self.selector.combo.currentText()}\n通道：{self.channels()}\n"
-                    "将按所选方式启动仪器采集或读取存储；可能停止仪器内部记录。\n"
-                    "本次授权用于当前监测任务的每批读取；不改变其他设备输出。",
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                    QMessageBox.StandardButton.No,
-                )
-                if answer != QMessageBox.StandardButton.Yes:
-                    return
-                confirmed = True
+            # The explicit read/start click is the authorization for this task.
+            confirmed = self.initiate.isChecked() or bool(
+                definition and definition.acquisition_requires_confirmation
+            )
             request = source.request(
                 self.channels(), self.points.value(), self.initiate.isChecked(), confirmed
             )

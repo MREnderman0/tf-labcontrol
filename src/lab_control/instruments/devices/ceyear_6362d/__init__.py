@@ -22,5 +22,6 @@ DEFINITION = DeviceDefinition(
     identity_requires_adapter=True,
     discovery_identity=discovery_identity,
     discovery_config=normalize_discovery_config,
+    acquisition_initiate_default=True,
     offline_processing=ProcessingProfile("frames"),
 )

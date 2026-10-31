@@ -19,7 +19,7 @@ class ResultReader:
         self.metadata = read_json(folder / "result.json", {})
         if (
             not isinstance(self.metadata, dict)
-            or self.metadata.get("version") != 1
+            or self.metadata.get("version") not in {1, 2}
             or self.metadata.get("state") != "complete"
         ):
             raise ValueError("处理结果未完成或版本不支持")

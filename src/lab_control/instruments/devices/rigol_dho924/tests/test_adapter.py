@@ -54,6 +54,35 @@ def test_stable_frames_keep_original_time_and_only_waveform_queries():
     assert obj.acquire(replace(req, context_id="run2")).validation == "full"
 
 
+def test_cached_settings_still_decode_new_waveform_samples_for_each_channel(monkeypatch):
+    obj, peer = ready()
+    req = AcquisitionRequest("waveform", (1, 4), consistency="stream", context_id="fresh-samples")
+    original = peer.query
+    counts = {1: 0, 4: 0}
+
+    def changed_waveform(command):
+        reply = original(command)
+        if command == ":WAV:DATA?":
+            channel = int(peer.state[":WAV:SOUR"][-1])
+            counts[channel] += 1
+            codes = np.full(1000, 32768 + channel * counts[channel], dtype="<u2")
+            return ieee_block(codes.tobytes()) + b"\n"
+        return reply
+
+    monkeypatch.setattr(peer, "query", changed_waveform)
+    first = obj.acquire(req)
+    saved = [m.values.copy() for m in first.measurements]
+    second = obj.acquire(req)
+    assert second.validation == "cached"
+    assert first.settings_timestamps == second.settings_timestamps
+    assert counts == {1: 2, 4: 2}
+    for old, new, expected in zip(first.measurements, second.measurements, saved, strict=True):
+        np.testing.assert_array_equal(old.values, expected)
+        np.testing.assert_allclose(new.values, expected * 2)
+        assert not np.shares_memory(old.values, new.values)
+    assert not any(command in peer.history for command in (":RUN", ":STOP", ":SING"))
+
+
 def test_corrupt_and_changed_descriptors_do_not_return_frames():
     obj, peer = ready()
     req = AcquisitionRequest("waveform", consistency="live", context_id="x")

@@ -8,6 +8,8 @@ from lab_control.application.runtime import ApplicationRuntime
 from lab_control.domain.instruments import AcquisitionRequest
 from lab_control.instruments.devices.ceyear_6362d.hardware.validate_control import install_metadata_sinks
 from lab_control.instruments.devices.ceyear_6362d.tests.test_contract import Instrument, adapter
+from lab_control.ui.pages.monitoring.timing import save_monitoring_interval
+from lab_control.ui.real_window import RealWindow
 
 
 def wait_for(predicate):
@@ -30,6 +32,45 @@ def test_labels_distinguish_real_and_mock_without_changing_optical_card():
     mock = ConnectionConfig("mock://6362d", "ceyear.6362d", "mock")
     assert data_sources(real)[0].label == "光谱曲线"
     assert data_sources(mock)[0].label == "光谱曲线（模拟）"
+
+
+def test_overview_sampling_initiates_fresh_spectra_after_restart(qtbot, tmp_path):
+    runtime = ApplicationRuntime(root=tmp_path, hardware=False)
+    wire = Instrument()
+    key = connect(runtime, wire)
+    report = {}
+    install_metadata_sinks(runtime, report)
+    samples = []
+
+    def scan_values():
+        scans = wire.history.count(":INITIATE")
+        samples.append(scans)
+        return f"-60,{-20 + scans},-50".encode()
+
+    wire.values[":TRACE:DATA:Y? TRA"] = scan_values
+    window = RealWindow(runtime)
+    qtbot.addWidget(window)
+    try:
+        runtime.monitoring.enable_settings_sync(False)
+        window.navigate("实时监测")
+        save_monitoring_interval(window.controller, key, "general", 0.5, cadence="interval")
+        for _ in range(2):
+            before = len(samples)
+            window.dashboard.toggle_sampling()
+            qtbot.waitUntil(lambda: len(samples) >= before + 2, timeout=5000)
+            runtime.monitoring.stop(key).result(5)
+            request = runtime.monitoring.tasks[key].requests[0]
+            assert request.initiate and request.confirmed
+        assert samples == list(range(1, len(samples) + 1))
+        assert all(item["metadata"]["new_scan_verified"] for item in report["recorded_metadata"])
+        assert wire.history.count(":INITIATE") == len(samples)
+    finally:
+        window.timer.stop()
+        window.controller.close()
+        runtime.close()
+        window.bridge.worker.shutdown(wait=True)
+        window.closing = True
+        window.close()
 
 
 @pytest.mark.parametrize("bad", [b"", b"1,nan,3", b"#218short"])

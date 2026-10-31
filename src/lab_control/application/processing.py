@@ -16,7 +16,7 @@ from uuid import uuid4
 from lab_control.application.leases import FileLease
 from lab_control.domain.processing import RecordingEntry
 from lab_control.storage.layout import atomic_json, raw_folder
-from lab_control.storage.processing import ProcessingCancelled, process_device
+from lab_control.storage.processing import ProcessingCancelled, image_home, process_device
 from lab_control.storage.recording_catalog import RecordingCatalog, linked, read_device, read_json
 from lab_control.storage.repository import Repository
 
@@ -118,7 +118,7 @@ class ProcessingService:
         return self.worker.submit(run)
 
     def process(self, entry: RecordingEntry) -> Future:
-        from lab_control.application.processing_figures import generate_pngs
+        from lab_control.application.processing_figures import generate_pngs, publish_pngs
         from lab_control.ui.widgets.publication_figure import prepare_publication_font
 
         # Resolve the installed font on the calling GUI thread before workers
@@ -154,11 +154,15 @@ class ProcessingService:
                         lambda done, total: self._update(entry.key, done=done, total=total),
                         finalize=figures,
                     )
+                    self._update(entry.key, stage="整理图片目录")
+                    images = image_home(entry.folder, device)
+                    publish_pngs(result, images, cancel)
                     results.append(
                         {
                             "device": device.label,
                             "source": str(device.folder),
                             "result": str(result),
+                            "images": str(images),
                             "error": "",
                         }
                     )
@@ -182,53 +186,6 @@ class ProcessingService:
         with self.lock:
             if event := self.cancel_events.get(entry.key):
                 event.set()
-
-    def export_figure(self, entry: RecordingEntry, payload: dict) -> Future:
-        if payload.get("format") not in {"png", "svg", "pdf"}:
-            raise ValueError("不支持的图片格式")
-
-        def operation(_cancel):
-            from lab_control.ui.widgets.publication_figure import export_figure
-
-            folder = Path(payload["folder"]).resolve(strict=True)
-            if not folder.is_relative_to(entry.folder / "数据处理"):
-                raise ValueError("图片必须保存在本次采集的处理结果中")
-            self._files(folder)
-            images = folder / "图片"
-            images.mkdir(exist_ok=True)
-            name = f"frame-{payload['frame']}" if payload.get("frame") else "time-series"
-            identity = uuid4().hex[:10]
-            staging = images / f".processing-figure-{identity}"
-            staging.mkdir()
-            destination = images / f"export-{identity}"
-            separate = payload.get("quantity") == "waveform" and payload["format"] == "png"
-            groups = [[curve] for curve in payload["curves"]] if separate else [payload["curves"]]
-            paths = []
-            try:
-                for index, curves in enumerate(groups, 1):
-                    suffix = f"-{curves[0][0].replace(' ', '')}" if separate else ""
-                    path = staging / f"{name}{suffix}-{index}.{payload['format']}"
-                    export_figure(
-                        path, curves, payload["x_label"], payload["y_label"], width_mm=payload["width_mm"]
-                    )
-                    atomic_json(
-                        path.with_suffix(".json"),
-                        {key: value for key, value in payload.items() if key not in {"folder", "curves"}}
-                        | {
-                            "source": "../../data.sqlite3",
-                            "channels": [curve[0] for curve in curves],
-                            "style": "nature-inspired-v1",
-                            "note": "显示用极值包络；原精度完整数据保留在 CSV 与 SQLite 中",
-                        },
-                    )
-                    paths.append(str(destination / path.name))
-                staging.rename(destination)
-            finally:
-                if staging.exists() and staging.resolve().parent == images.resolve() and not linked(staging):
-                    shutil.rmtree(staging)
-            return {"figure": paths[0], "figures": paths}
-
-        return self._submit(entry, "figure", operation)
 
     def move(self, entry: RecordingEntry, parent: Path) -> Future:
         return self._submit(entry, "move", lambda _cancel: self._move(entry, parent / entry.name))

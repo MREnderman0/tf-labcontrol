@@ -11,7 +11,6 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QLabel,
-    QMessageBox,
     QPushButton,
     QScrollArea,
     QSizePolicy,
@@ -676,9 +675,8 @@ class MonitoringDashboard(QWidget):
         if action == "open" and device_id in self.cards:
             self._open_device(device_id)
 
-    def _requests(self) -> tuple[list[tuple[str, tuple[AcquisitionRequest, ...], float, str]], list[str]]:
+    def _requests(self) -> list[tuple[str, tuple[AcquisitionRequest, ...], float, str]]:
         grouped = []
-        dangerous = []
         seen_devices: set[str] = set()
         for spec in self.specs:
             card = self.cards.get(spec["device_id"])
@@ -709,17 +707,13 @@ class MonitoringDashboard(QWidget):
                 continue
             definition = DEVICE_DEFINITIONS.get(record.get("adapterId", ""))
             initiate = bool(definition and definition.acquisition_initiate_default)
-            requires_confirmation = initiate or bool(
-                definition and definition.acquisition_requires_confirmation
-            )
+            # Clicking start authorizes sampling for the selected devices.
+            confirmed = initiate or bool(definition and definition.acquisition_requires_confirmation)
             requests = tuple(
-                source.request(channels, initiate=initiate, confirmed=requires_confirmation)
-                for source in sources
+                source.request(channels, initiate=initiate, confirmed=confirmed) for source in sources
             )
             grouped.append((record["id"], requests, card.interval.value(), self._recording_mode(record)))
-            if requires_confirmation:
-                dangerous.append(device_label(record))
-        return grouped, dangerous
+        return grouped
 
     def toggle_sampling(self) -> None:
         active, stopping = self._sampling_state()
@@ -731,21 +725,9 @@ class MonitoringDashboard(QWidget):
             self._update_button()
             self.controller.message.emit("上一批采集正在收尾，请等待勾选设备停止后再开始。")
             return
-        grouped, dangerous = self._requests()
+        grouped = self._requests()
         if not grouped:
             self.controller.message.emit("请至少勾选一台已连接设备")
-            return
-        if (
-            dangerous
-            and QMessageBox.question(
-                self,
-                "确认开始采样",
-                "以下设备会启动仪器采样：\n" + "\n".join(dangerous),
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No,
-            )
-            != QMessageBox.StandardButton.Yes
-        ):
             return
         try:
             # Freeze one root, timestamp and batch ID for this start action.

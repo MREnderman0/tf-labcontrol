@@ -7,7 +7,7 @@ from typing import Any
 
 import numpy as np
 import pyqtgraph as pg
-from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
@@ -24,7 +24,6 @@ from PySide6.QtWidgets import (
 from lab_control.application.processing import ProcessingService
 from lab_control.domain.oscilloscope import COLORS, ScopeDisplay, engineering
 from lab_control.storage.processing_results import ResultReader
-from lab_control.ui.widgets.publication_figure import prepare_publication_font
 from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
 
 CHANNEL_PALETTE = (*COLORS, "#86accf", "#d3a8b6", "#95c7af", "#beb5db")
@@ -32,11 +31,8 @@ CHANNEL_STYLES = (Qt.PenStyle.SolidLine, Qt.PenStyle.DashLine, Qt.PenStyle.DotLi
 
 
 class ProcessingViewer(QWidget):
-    export_requested = Signal(object)
-
     def __init__(self, service: ProcessingService, parent=None):
         super().__init__(parent)
-        prepare_publication_font()
         self.service = service
         self.reader: ResultReader | None = None
         self.info: dict[str, Any] = {}
@@ -71,19 +67,6 @@ class ProcessingViewer(QWidget):
         fit.clicked.connect(self.fit_all)
         tools.addWidget(fit)
         tools.addStretch()
-        self.figure_width = WorkspaceComboBox()
-        self.figure_width.addItem("双栏 183 mm", 183)
-        self.figure_width.addItem("单栏 89 mm", 89)
-        tools.addWidget(self.figure_width)
-        self.figure_format = WorkspaceComboBox()
-        self.figure_format.addItems(["PNG", "SVG", "PDF"])
-        tools.addWidget(self.figure_format)
-        self.export_button = QPushButton("导出论文插图")
-        self.export_button.setToolTip(
-            "Nature 风格：白底、Arial 字体、简洁坐标轴；PNG 600 dpi，SVG/PDF 为矢量图"
-        )
-        self.export_button.clicked.connect(self.export_current)
-        tools.addWidget(self.export_button)
         layout.addLayout(tools)
         split = QSplitter()
         self.channels = QListWidget()
@@ -427,44 +410,3 @@ class ProcessingViewer(QWidget):
         if self.info.get("power_units") and unit in {"W", "dBm"}:
             return "W" if self.watts.isChecked() else "dBm"
         return unit
-
-    def export_current(self) -> None:
-        if (
-            self.reader is None
-            or not self.plot_data
-            or self.future is not None
-            or self.pending is not None
-            or self.range_timer.isActive()
-        ):
-            self.status.setText("请等待当前曲线加载完成后导出")
-            return
-        quantity, unit, axis_unit = self.group.currentData()
-        labels = {
-            "power": "Power",
-            "frequency": "Frequency",
-            "temperature": "Temperature",
-            "waveform": "Voltage",
-            "spectrum": "Power",
-            "voltage": "Voltage",
-            "resistance": "Resistance",
-        }
-        x_label = (
-            "Elapsed time (s)"
-            if self.info["kind"] == "scalar"
-            else {"nm": "Wavelength (nm)", "s": "Time (s)"}.get(axis_unit, f"X ({axis_unit})")
-        )
-        self.export_requested.emit(
-            {
-                "folder": self.reader.folder,
-                "quantity": quantity,
-                "curves": list(self.plot_data),
-                "x_label": x_label,
-                "y_label": f"{labels.get(quantity, quantity)} ({self.display_unit(unit)})",
-                "width_mm": self.figure_width.currentData(),
-                "format": self.figure_format.currentText().lower(),
-                "frame": self.slider.value() if self.info["kind"] == "frames" else None,
-                "series": [series["id"] for series in self.selected()],
-                "bounds": self.plot.viewRange(),
-                "timestamp": self.status.text(),
-            }
-        )

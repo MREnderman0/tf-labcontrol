@@ -26,7 +26,7 @@ from lab_control.storage.paths import filename_part
 from lab_control.storage.recording import read_frames
 from lab_control.storage.recording_catalog import PROCESSING_FOLDER, linked, read_json
 
-PROCESSING_VERSION = 1
+PROCESSING_VERSION = 2
 
 
 class ProcessingCancelled(Exception):
@@ -130,13 +130,24 @@ def iter_source_frames(device: RecordedDevice) -> Iterator[dict[str, Any]]:
 
 
 def result_home(entry_folder: Path, device: RecordedDevice) -> Path:
+    return entry_folder / ".processing-cache" / image_home(entry_folder, device).name
+
+
+def image_home(entry_folder: Path, device: RecordedDevice) -> Path:
     key = str(device.metadata.get("run_id") or device.folder.name)
     suffix = hashlib.sha256(key.encode("utf-8")).hexdigest()[:12]
     label = device.metadata.get("slot_label") or (device.metadata.get("identity") or {}).get("model")
     return entry_folder / PROCESSING_FOLDER / f"{filename_part(label or device.label)}_{suffix}"
 
 
-def current_result(home: Path) -> Path | None:
+def current_result(home: Path, *, legacy: bool = True) -> Path | None:
+    if linked(home.parent) or linked(home):
+        return None
+    # Existing captures remain viewable before their first processing with the
+    # image-only layout. New caches never live inside the visible model folder.
+    if legacy and home.parent.name == ".processing-cache" and not (home / "current.json").is_file():
+        old_home = home.parent.parent / PROCESSING_FOLDER / home.name
+        return current_result(old_home, legacy=False)
     pointer = read_json(home / "current.json", {})
     if not isinstance(pointer, dict):
         raise ValueError("处理结果索引格式损坏")
@@ -197,8 +208,16 @@ def reusable_result(folder: Path, metadata: dict[str, Any]) -> bool:
 class ProcessedWriter:
     """Buffered CSV plus exact typed arrays; only a published generation is readable."""
 
-    def __init__(self, folder: Path, metadata: dict[str, Any], cancel: threading.Event):
+    def __init__(
+        self,
+        folder: Path,
+        metadata: dict[str, Any],
+        cancel: threading.Event,
+        *,
+        volatile_configuration_fields: tuple[str, ...] = (),
+    ):
         self.folder, self.metadata, self.cancel = folder, metadata, cancel
+        self.volatile_configuration_fields = volatile_configuration_fields
         self.db = sqlite3.connect(folder / "data.sqlite3")
         self.db.executescript("""
             PRAGMA user_version=1;
@@ -280,7 +299,12 @@ class ProcessedWriter:
         self.db.execute("INSERT OR IGNORE INTO configs VALUES (?,?)", (config_id, config))
         self.db.execute("INSERT INTO frames VALUES (?,?,?)", (seq, config_id, _json(document)))
         self.db.execute("INSERT INTO timeline VALUES (?,?,?)", (seq, stamp, elapsed))
-        setting_id = hashlib.sha256(_json(frame.get("configuration", {})).encode("utf-8")).hexdigest()
+        settings = {
+            key: value
+            for key, value in frame.get("configuration", {}).items()
+            if key not in self.volatile_configuration_fields
+        }
+        setting_id = hashlib.sha256(_json(settings).encode("utf-8")).hexdigest()
         for index, sample in enumerate(samples):
             data = np.asarray(sample["values"])
             axis = None if sample.get("axis") is None else np.asarray(sample["axis"])
@@ -380,7 +404,7 @@ def process_device(
     if linked(home.parent) or linked(home):
         raise ValueError("处理目录不能是符号链接或目录联接")
     try:
-        previous = current_result(home)
+        previous = current_result(home, legacy=False)
     except (OSError, ValueError, TypeError):
         previous = None  # Rebuild a damaged pointer without removing prior generations.
     if previous:
@@ -394,11 +418,22 @@ def process_device(
                 finalize(previous)
             return previous
     home.mkdir(parents=True, exist_ok=True)
+    if os.name == "nt":
+        import ctypes
+
+        attributes = home.parent.stat().st_file_attributes
+        if not ctypes.windll.kernel32.SetFileAttributesW(str(home.parent), attributes | 0x02):
+            raise ctypes.WinError()
     staging = home / f".processing-{uuid4().hex}"
     staging.mkdir()
     writer = None
     try:
-        writer = ProcessedWriter(staging, device.metadata, cancel)
+        writer = ProcessedWriter(
+            staging,
+            device.metadata,
+            cancel,
+            volatile_configuration_fields=profile.volatile_configuration_fields,
+        )
         for frame in iter_source_frames(device):
             writer.append(frame)
             if writer.frames % 64 == 0:

@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 from lab_control.domain.processing import RecordingEntry
-from lab_control.storage.processing import current_result, result_home
+from lab_control.storage.processing import current_result, image_home, result_home
 from lab_control.ui.pages.processing_viewer import ProcessingViewer
 from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
 
@@ -95,6 +95,7 @@ class DataProcessingPage(QWidget):
         self.devices.currentIndexChanged.connect(self.show_device)
         bar.addWidget(self.devices, 1)
         self.process_button = QPushButton("处理本次采集")
+        self.process_button.setToolTip("整理数据并自动生成 PNG 图片")
         self.process_button.clicked.connect(lambda: self.process(self.entry) if self.entry else None)
         bar.addWidget(self.process_button)
         self.cancel_button = QPushButton("取消处理")
@@ -116,7 +117,6 @@ class DataProcessingPage(QWidget):
         self.progress.hide()
         body.addWidget(self.progress)
         self.viewer = ProcessingViewer(self.service)
-        self.viewer.export_requested.connect(self.export_figure)
         body.addWidget(self.viewer, 1)
         self.stack.addWidget(detail)
         self.timer = QTimer(self)
@@ -202,6 +202,8 @@ class DataProcessingPage(QWidget):
             button.clicked.connect(lambda _checked=False, e=entry, action=handler: action(e))
             if label == "移入回收站":
                 button.setToolTip("将本次采集及处理结果一起移入系统回收站")
+            elif label == "处理数据":
+                button.setToolTip("整理数据并自动生成 PNG 图片")
             row.addWidget(button)
             buttons.append(button)
         cancel = QPushButton("取消")
@@ -239,7 +241,10 @@ class DataProcessingPage(QWidget):
             if damaged:
                 status = damaged
             if busy:
-                status = f"{job.get('device') or '后台任务'} · {job['done']}/{job['total'] or '…'}"
+                status = (
+                    f"{job.get('device') or '后台任务'} · {job.get('stage', '整理数据')} · "
+                    f"{job['done']}/{job['total'] or '…'}"
+                )
             elif job.get("state") in {"failed", "cancelled"}:
                 status = job.get("error", "处理失败")
             elif any(result.get("error") for result in job.get("results", [])):
@@ -295,19 +300,15 @@ class DataProcessingPage(QWidget):
                 self.message.setText(
                     "；".join(errors) if errors else "操作完成；原始时间和设备身份保持不变。"
                 )
-                if isinstance(result, dict) and result.get("figure"):
-                    self.message.setText("论文插图已保存。")
+                if isinstance(result, list) and not errors:
+                    self.message.setText("处理完成，PNG 图片已自动保存，可点击“打开处理目录”查看。")
                 if isinstance(result, dict) and result.get("destination") and self.stack.currentIndex() == 1:
                     self.pending_destination = Path(result["destination"])
                 if isinstance(result, dict) and "trash" in result:
                     self.stack.setCurrentIndex(0)
                     self.entry = None
                     self.viewer.clear()
-                if (
-                    self.entry
-                    and self.stack.currentIndex() == 1
-                    and not (isinstance(result, dict) and result.get("figure"))
-                ):
+                if self.entry and self.stack.currentIndex() == 1:
                     self.show_device()
             except Exception as exc:
                 self.message.setText(str(exc))
@@ -344,6 +345,10 @@ class DataProcessingPage(QWidget):
         if self.entry is None:
             return
         folder = self.entry.folder / "数据处理"
+        if self.devices.currentIndex() >= 0:
+            selected = image_home(self.entry.folder, self.entry.devices[self.devices.currentIndex()])
+            if selected.is_dir():
+                folder = selected
         self._open_path(folder if folder.is_dir() else self.entry.folder)
 
     def show_device(self) -> None:
@@ -363,10 +368,6 @@ class DataProcessingPage(QWidget):
 
     def process(self, entry: RecordingEntry) -> None:
         self._run(lambda: self.service.process(entry))
-
-    def export_figure(self, payload: dict) -> None:
-        if self.entry:
-            self._run(lambda: self.service.export_figure(self.entry, payload))
 
     def _run(self, action) -> None:
         try:

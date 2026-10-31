@@ -1,9 +1,82 @@
 """The monitoring overview is driven by connected sessions and slot preferences."""
 
+import pytest
+from PySide6.QtWidgets import QMessageBox
+
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.runtime import ApplicationRuntime
+from lab_control.demo.instrument import SimulatedInstrument
 from lab_control.ui.pages.monitoring.timing import save_monitoring_interval
 from lab_control.ui.real_window import RealWindow
+
+
+@pytest.mark.parametrize(
+    "adapter,action",
+    [
+        ("rigol.m300", "overview"),
+        ("keysight.3458a", "overview"),
+        ("keysight.3458a", "start"),
+        ("keysight.3458a", "once"),
+        ("ceyear.6362d", "overview"),
+    ],
+)
+def test_sampling_click_starts_selected_device_without_confirmation(
+    qtbot, tmp_path, monkeypatch, adapter, action
+):
+    runtime = ApplicationRuntime(root=tmp_path, hardware=False)
+
+    def instrument(config):
+        result = SimulatedInstrument(config)
+        if config.adapter == "rigol.m300":
+            result.capability_details = {
+                "acquisition_channel_selection": "scan_list",
+                "acquisition_channels": [1, 2],
+            }
+        return result
+
+    runtime.sessions.factory = instrument
+    key = runtime.add(ConnectionConfig("mock://direct-sampling/selected", adapter, "mock"))
+    other = runtime.add(ConnectionConfig("mock://direct-sampling/unselected", "joinwit.jw8105", "mock"))
+    for device in (key, other):
+        runtime.connect(device).result(3)
+    window = RealWindow(runtime)
+    qtbot.addWidget(window)
+    popups = []
+    monkeypatch.setattr(
+        QMessageBox, "question", lambda *args: popups.append(args) or QMessageBox.StandardButton.No
+    )
+    try:
+        runtime.monitoring.enable_settings_sync(False)
+        window.navigate("实时监测")
+        window.dashboard.cards[other].enabled.setChecked(False)
+        save_monitoring_interval(window.controller, key, "general", 0.5, cadence="interval")
+        if action == "overview":
+            window.dashboard.sample_button.click()
+        else:
+            window.navigate("实时监测", "multimeter", key)
+            page = window.stack.currentWidget()
+            qtbot.waitUntil(page.buttons[action].isEnabled)
+            page.buttons[action].click()
+        assert not popups
+        qtbot.waitUntil(lambda: key in runtime.monitoring.tasks, timeout=5000)
+        task = runtime.monitoring.tasks[key]
+        qtbot.waitUntil(
+            lambda: runtime.monitoring.latest(key, task.requests[0].kind) is not None, timeout=5000
+        )
+        assert task.requests[0].confirmed
+        if adapter == "rigol.m300":
+            assert task.requests[0].channels == (1, 2)
+        if adapter in {"keysight.3458a", "ceyear.6362d"}:
+            assert task.requests[0].initiate
+        assert other not in runtime.monitoring.tasks
+        runtime.monitoring.stop(key).result(5)
+    finally:
+        window.timer.stop()
+        window.controller.close()
+        runtime.close()
+        window.bridge.worker.shutdown(wait=True)
+        window.closing = True
+        window.close()
 
 
 def test_monitor_overview_uses_connected_devices_and_slot_preferences(qtbot, tmp_path):
