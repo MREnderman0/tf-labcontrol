@@ -13,6 +13,6 @@
 
 源码目录可先执行 `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/launch-kplusk-config.ps1 -VerifyOnly` 做离线校验，再去掉 `-VerifyOnly` 打开工具。目录式发行包使用 `maintenance/launch-kplusk-config.ps1`。启动器只做哈希校验和启动，不自动写 IP。
 
-FXE 使用静态 IPv4，不支持依赖 DHCP 的换机流程。新电脑先用 USB 打开配置工具读出完整型号、序列号和原始网络配置，确认实验网口后只修改目标 IP、掩码和网关并点击 `Update Configuration`/`Start Update`；设备重启后拔掉 USB、接交换机，用 KK Library 以 `<IP>[:<Port>]` 直连并读取报告。电脑网卡、交换机和防火墙保持不变，参数读回和官方协议连接分别留档。
+后续现场 K+K 按 DHCP 部署。FXE2 支持 DHCP，使用独立的 FXE2 配置工具；上列 5.1.0 工具和现有启动器只针对旧 FXE1，不得用于 FXE2。FXE2 工具尚未登记为本项目可准备组件，若后续引入须同步组件清单、哈希、许可与下载页面。已启用 DHCP 的设备直接使用有效租约，经官方版本查询核对型号和序列号后关联 MAC；后续扫描重新核验身份并更新地址。旧 FXE1 静态流程不应推广到 FXE2，版本字符串中残留的旧 IP 也不能替代租约地址。
 
 `runtime/` 从官方归档的指定成员逐字节恢复；映射、大小与哈希在 [组件清单](../../../components.json)。未签名归档按官方来源与固定哈希验证，不声称 Authenticode 通过。库加载优先复用完整缓存；离线发行按所选组件闭包装配，联网发行不内置这些载荷。

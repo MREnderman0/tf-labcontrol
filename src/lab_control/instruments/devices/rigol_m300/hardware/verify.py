@@ -33,6 +33,7 @@ from .validate_control import RecordingTransport, save_json
 class ThermistorTest:
     def __init__(self, app, device, folder: Path, report: dict, channel: int):
         self.app, self.device, self.folder, self.report, self.channel = app, device, folder, report, channel
+        self.channels = (channel,)
         self.latent: dict[str, Any] = {}
         self.initial: dict[str, Any] = {}
         self.modified = False
@@ -84,7 +85,7 @@ class ThermistorTest:
             while True:
                 try:
                     frame = self.app.sessions.submit(
-                        self.device, "acquire", AcquisitionRequest("scalar", (self.channel,), confirmed=True)
+                        self.device, "acquire", AcquisitionRequest("scalar", self.channels, confirmed=True)
                     ).result()
                     break
                 except DeviceError as exc:
@@ -95,10 +96,8 @@ class ThermistorTest:
                     )
                     self.checkpoint()
                     time.sleep(0.1)
-            if (
-                len(frame.measurements) != 1
-                or not len(frame.measurements[0].values)
-                or frame.measurements[0].quality != "good"
+            if tuple(m.channel for m in frame.measurements) != self.channels or any(
+                len(m.values) != 1 or m.quality != "good" for m in frame.measurements
             ):
                 raise DeviceError("Invalid input frame", "acquisition_failed")
             raw = jsonable(frame)
@@ -120,6 +119,13 @@ class ThermistorTest:
         self.apply("thermistor_type", nominal, ch)
         self.apply("temperature_unit", "C", ch)
         self.apply("scan_list", f"(@{ch})")
+
+    def set_temperature_unit(self, unit: str) -> None:
+        for channel in self.channels:
+            self.apply("temperature_unit", unit, channel)
+
+    def prepare(self) -> None:
+        _prepare_single(self, self.report, self.folder, self.channel)
 
     def restore(self) -> dict[str, Any]:
         """Observe each field first; do not replay an uncertain test command."""
@@ -176,7 +182,7 @@ class ThermistorTest:
         app, device = self.app, self.device
         app.monitoring.start(
             device,
-            (AcquisitionRequest("scalar", (self.channel,), confirmed=True),),
+            (AcquisitionRequest("scalar", self.channels, confirmed=True),),
             interval=0.5,
             record_interval=None,
             recording=True,
@@ -203,9 +209,9 @@ class ThermistorTest:
         ):
             raise DeviceError("Recording completeness check failed: " + str(state))
         if any(
-            m["channel"] != self.channel or m["unit"] != "°C"
+            tuple(m["channel"] for m in frame["measurements"]) != self.channels
+            or any(m["unit"] != "°C" for m in frame["measurements"])
             for frame in frames
-            for m in frame["measurements"]
         ):
             raise DeviceError("Recording channel/unit mismatch")
         self.report["stages"]["monitoring"] = dict(state="passed", frames=len(frames), duration=duration)
@@ -228,6 +234,7 @@ def verify(
     *,
     root=None,
     channel: int | None = None,
+    channel_nominals: dict[int, int] | None = None,
     nominal=10000,
     duration=8.0,
     leave_configured=False,
@@ -247,6 +254,7 @@ def verify(
         operator="user-authorized project hardware entry",
         scope=dict(
             channel=channel,
+            channel_nominals=channel_nominals,
             nominal_ohm=nominal,
             duration=duration,
             leave_configured=leave_configured,
@@ -288,11 +296,20 @@ def verify(
         str(p.relative_to(Path(__file__).parents[1])): hashlib.sha256(p.read_bytes()).hexdigest()
         for p in Path(__file__).parents[1].rglob("*.py")
     }
-    app, test, device = None, None, ""
+    app, device = None, ""
+    test: ThermistorTest | None = None
     stage = "identity"
     try:
         if config.adapter != "rigol.m300" or not config.expected_serial:
             raise ValueError("Explicit M300 adapter and expected serial required")
+        if channel_nominals is not None:
+            from .thermistor_bank import validate_channel_nominals
+
+            validate_channel_nominals(channel_nominals)
+            if channel is not None:
+                raise ValueError("Choose either one channel or a channel bank")
+            if not 1 <= duration <= 60:
+                raise ValueError("Choose a bounded 1..60 second monitoring test")
         if channel is not None and (
             nominal not in (2252, 3000, 5000, 10000, 30000) or not 1 <= duration <= 60
         ):
@@ -360,79 +377,58 @@ def verify(
         report["stages"]["parameter_read"] = dict(
             state="passed" if not report["initial_status"]["errors"] else "failed"
         )
-        if channel is not None:
-            test = ThermistorTest(app, device, folder, report, channel)
+        if channel is not None or channel_nominals is not None:
+            if channel_nominals is not None:
+                from .thermistor_bank import ThermistorBankTest
+
+                test = ThermistorBankTest(app, device, folder, report, channel_nominals)
+            else:
+                assert channel is not None
+                test = ThermistorTest(app, device, folder, report, channel)
             connected_adapter = app.sessions.sessions[device].adapter
             assert isinstance(connected_adapter, M300Adapter)
-            if channel == 1 or channel not in connected_adapter.capabilities().channels:
+            if any(ch == 1 or ch not in connected_adapter.capabilities().channels for ch in test.channels):
                 raise ValueError("Channel must be an identified MC3132 input")
             stage = "parameter_control"
-            test.initial = test.snapshot()
-            report["initial_snapshot"] = test.initial
-            save_json(folder / "initial_snapshot.json", test.initial)
-            initial = test.initial
-            if (
-                initial["function"] not in {"VOLT", "RES", "TEMP"}
-                or initial["scan_list"] not in {"(@)", f"(@{channel})"}
-                or initial["monitor_state"] != "0"
-                or initial["trigger_source"] != "IMM"
-                or float(initial["trigger_count"]) != 1
-                or any(initial[f"format_{key}"] != "0" for key in ("UNIT", "TIME", "CHAN", "ALAR"))
-                or any(float(v) for v in initial["relays"].split(","))
-            ):
-                raise DeviceError(
-                    "Initial state differs from idle single-scan plan; no test writes", "not_configured"
-                )
-            if initial["function"] == "TEMP" and test.q(f"TEMP:TRAN:TYPE? (@{channel})") not in {
-                "TC",
-                "THER",
-            }:
-                raise DeviceError("Original temperature sensor is outside this restoration plan")
-            if initial["function"] == "TEMP":
-                test.latent.update(
-                    sensor=test.q(f"TEMP:TRAN:TYPE? (@{channel})"), unit=test.q(f"UNIT:TEMP? (@{channel})")
-                )
-                if test.latent["sensor"] == "THER":
-                    test.latent["thermistor_type"] = int(float(test.q(f"TEMP:TRAN:THER:TYPE? (@{channel})")))
-                report["temperature_original"] = test.latent
-            points = int(float(test.q("DATA:POIN?")))
-            report["memory_backup"] = dict(
-                points=points,
-                raw=test.q("FETC?") if points else "",
-                restoration="READ? replaces reading memory; original values saved here, instrument memory cannot be restored",
-            )
-            if not test.q("SYST:ERR?").startswith(("0,", "+0,")):
-                raise DeviceError("Pre-existing instrument error")
-            test.apply("function", "RES", channel)
-            if test.q(f"RES:RANG:AUTO? (@{channel})") != "1":
-                raise DeviceError("Resistance autorange is off; leave latent range unchanged")
-            test.apply("scan_list", f"(@{channel})")
+            test.prepare()
             stage = "resistance"
             test.capture("resistance")
             report["stages"][stage] = dict(state="passed")
             test.configure_temperature(nominal)
             stage = "temperature"
             test.capture("temperature")
-            test.apply("temperature_unit", "F", channel)
+            test.set_temperature_unit("F")
             test.capture("fahrenheit", 1)
-            test.apply("temperature_unit", "C", channel)
+            test.set_temperature_unit("C")
             report["stages"][stage] = dict(state="passed", assumed_curve=True)
             current = test.snapshot()
-            unchanged = all(current[k] == initial[k] for k in initial if k.startswith("channel_"))
+            unchanged = all(current[k] == test.initial[k] for k in test.initial if k.startswith("channel_"))
             if not unchanged:
                 raise DeviceError("Other channel configuration changed")
-            report["stages"]["parameter_control"] = dict(state="passed", other_31_channels_unchanged=True)
+            report["stages"]["parameter_control"] = dict(state="passed", unselected_channels_unchanged=True)
             stage = "monitoring"
             test.monitor(duration)
-    except Exception as exc:
-        report["error"], report["traceback"] = str(exc), traceback.format_exc()
-        report["stages"][stage] = dict(state="failed", reason=str(exc))
+    except (Exception, KeyboardInterrupt) as exc:
+        report["error"], report["traceback"] = str(exc) or type(exc).__name__, traceback.format_exc()
+        blocked = isinstance(exc, DeviceError) and exc.code in {
+            "process_busy",
+            "resource_busy",
+            "driver_missing",
+            "not_configured",
+        }
+        report["stages"][stage] = dict(state="blocked" if blocked else "failed", reason=str(exc))
     finally:
         if app and device:
+            finalization_stage = "recovery"
             try:
-                app.monitoring.stop(device).result(timeout=30)
+                try:
+                    app.monitoring.stop(device).result(timeout=30)
+                except Exception as exc:
+                    report["stop_error"] = str(exc)
+                    report["stages"]["stop"] = dict(state="failed", reason=str(exc))
                 if test and test.modified:
                     report["stages"]["recovery"] = test.restore()
+                finalization_stage = "reconnect"
                 app.sessions.disconnect(device)
                 identity = app.connect(device, configure_acquisition=False).result()
                 again = (
@@ -455,24 +451,38 @@ def verify(
                     leave_configured
                     and test
                     and not report.get("error")
+                    and not report.get("stop_error")
                     and matched
                     and report["stages"]["recovery"]["state"] == "passed"
                 ):
+                    finalization_stage = "commissioning"
                     test.configure_temperature(nominal)
                     test.capture("commissioned", 1)
                     report["final_state"] = test.snapshot()
                     report["stages"]["commissioning"] = dict(
                         state="passed",
-                        channel=channel,
-                        nominal_ohm=nominal,
+                        channels=test.channels,
+                        channel_nominals=channel_nominals or {test.channel: nominal},
                         unit="°C",
-                        scan_list=f"(@{channel})",
+                        scan_list=test.q("ROUT:SCAN?"),
                         note="After verified restoration, user-requested thermistor configuration deliberately retained; no scan running",
                     )
             except Exception as exc:
                 report["finalization_error"] = str(exc)
                 report["final_state_warning"] = "Final settings not fully verified; inspect raw transcript"
-                report["stages"]["recovery"] = dict(state="failed", reason=str(exc))
+                report["stages"][finalization_stage] = dict(state="failed", reason=str(exc))
+                if finalization_stage == "commissioning" and test:
+                    try:
+                        recovery = test.restore()
+                        report["stages"]["commissioning_recovery"] = recovery
+                        if recovery["state"] == "passed":
+                            report["final_state_warning"] = (
+                                "Commissioning failed; original settings restored and verified"
+                            )
+                    except Exception as recovery_exc:
+                        report["stages"]["commissioning_recovery"] = dict(
+                            state="failed", reason=str(recovery_exc)
+                        )
         if app:
             try:
                 app.close()
@@ -498,17 +508,71 @@ def verify(
     return report
 
 
+def _prepare_single(test, report, folder, channel):
+    test.initial = test.snapshot()
+    report["initial_snapshot"] = test.initial
+    save_json(folder / "initial_snapshot.json", test.initial)
+    initial = test.initial
+    if (
+        initial["function"] not in {"VOLT", "RES", "TEMP"}
+        or initial["scan_list"] not in {"(@)", f"(@{channel})"}
+        or initial["monitor_state"] != "0"
+        or initial["trigger_source"] != "IMM"
+        or float(initial["trigger_count"]) != 1
+        or any(initial[f"format_{key}"] != "0" for key in ("UNIT", "TIME", "CHAN", "ALAR"))
+        or any(float(v) for v in initial["relays"].split(","))
+    ):
+        raise DeviceError(
+            "Initial state differs from idle single-scan plan; no test writes", "not_configured"
+        )
+    if initial["function"] == "TEMP" and test.q(f"TEMP:TRAN:TYPE? (@{channel})") not in {
+        "TC",
+        "THER",
+    }:
+        raise DeviceError("Original temperature sensor is outside this restoration plan")
+    if initial["function"] == "TEMP":
+        test.latent.update(
+            sensor=test.q(f"TEMP:TRAN:TYPE? (@{channel})"), unit=test.q(f"UNIT:TEMP? (@{channel})")
+        )
+        if test.latent["sensor"] == "THER":
+            test.latent["thermistor_type"] = int(float(test.q(f"TEMP:TRAN:THER:TYPE? (@{channel})")))
+        report["temperature_original"] = test.latent
+    points = int(float(test.q("DATA:POIN?")))
+    report["memory_backup"] = dict(
+        points=points,
+        raw=test.q("FETC?") if points else "",
+        restoration="READ? replaces reading memory; original values saved here, instrument memory cannot be restored",
+    )
+    if not test.q("SYST:ERR?").startswith(("0,", "+0,")):
+        raise DeviceError("Pre-existing instrument error")
+    test.apply("function", "RES", channel)
+    if test.q(f"RES:RANG:AUTO? (@{channel})") != "1":
+        raise DeviceError("Resistance autorange is off; leave latent range unchanged")
+    test.apply("scan_list", f"(@{channel})")
+
+
 def main(argv=None, *, readonly=False) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--resource", required=True)
     parser.add_argument("--expected-serial", required=True)
     parser.add_argument("--home", type=Path, default=application_home())
     if not readonly:
-        parser.add_argument("--channel", type=int, required=True)
+        selection = parser.add_mutually_exclusive_group(required=True)
+        selection.add_argument("--channel", type=int)
+        selection.add_argument("--group", action="append", help="Physical channel range=nominal ohms")
         parser.add_argument("--nominal", type=int, choices=(2252, 3000, 5000, 10000, 30000), default=10000)
         parser.add_argument("--duration", type=float, default=8)
         parser.add_argument("--leave-configured", action="store_true")
+        parser.add_argument("--input-condition", default="thermistor; curve unverified")
     args = parser.parse_args(argv)
+    channel_nominals = None
+    if not readonly and args.group:
+        from .thermistor_bank import parse_groups
+
+        try:
+            channel_nominals = parse_groups(args.group)
+        except (ValueError, DeviceError) as exc:
+            parser.error(str(exc))
     folder = (
         args.home
         / "hardware-tests"
@@ -529,9 +593,11 @@ def main(argv=None, *, readonly=False) -> int:
             if readonly
             else dict(
                 channel=args.channel,
+                channel_nominals=channel_nominals,
                 nominal=args.nominal,
                 duration=args.duration,
                 leave_configured=args.leave_configured,
+                input_condition=args.input_condition,
             )
         ),
     )

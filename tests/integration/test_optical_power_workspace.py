@@ -144,11 +144,12 @@ def test_jw8105_all_channel_monitoring_records_and_filters(qapp, qtbot, tmp_path
         assert page.channels() == (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16)
         assert page.readout_grid.itemAt(0).widget() is page.cards[1]
         assert page.readout_grid.itemAt(1).widget() is page.cards[2]
-        assert page.readout_grid.itemAtPosition(0, 1).widget() is page.cards[2]
-        assert page.readout_grid.itemAtPosition(1, 0).widget() is page.cards[3]
+        assert page.readout_grid.itemAtPosition(1, 0).widget() is page.cards[2]
+        assert page.readout_grid.itemAtPosition(2, 0).widget() is page.cards[3]
         assert page.readout_scroll.horizontalScrollBarPolicy().name == "ScrollBarAlwaysOff"
         qtbot.waitUntil(lambda: page.plot.displayed_frame is not None, timeout=8000)
-        assert page.cards[1].value.toolTip() == page.cards[1].value.text()
+        assert "原始" in page.cards[1].value.toolTip()
+        assert "30 分钟" in page.cards[1].peak.toolTip()
         assert page.record_button.text() == "开始记录"
         page.record()
         qtbot.waitUntil(lambda: runtime.monitoring.tasks[device].recording, timeout=8000)
@@ -173,15 +174,17 @@ def test_jw8105_all_channel_monitoring_records_and_filters(qapp, qtbot, tmp_path
         assert runtime.monitoring.tasks[device].running
         assert runtime.monitoring.tasks[device].recording
         qtbot.waitUntil(lambda: page.plot.displayed_frame is not None, timeout=8000)
-        assert not page.cards[8].isVisible()
-        assert 8 not in page.plot.curves
+        assert page.cards[8].isVisible()
+        assert page.cards[8].value.text() == "未监测"
+        assert not page.plot.curves[8].isVisible()
 
         for check in page.channel_checks.values():
             check.setChecked(False)
         qtbot.waitUntil(lambda: runtime.monitoring.tasks[device].requests == (), timeout=8000)
         assert page.channels() == ()
         assert runtime.monitoring.snapshots()[device]["running"]
-        assert all(not card.isVisible() for card in page.cards.values())
+        assert all(card.isVisible() for card in page.cards.values())
+        assert all(card.value.text() == "未监测" for card in page.cards.values())
         page.channel_checks[1].setChecked(True)
         qtbot.waitUntil(lambda: runtime.monitoring.tasks[device].requests[0].channels == (1,), timeout=8000)
         assert runtime.monitoring.tasks[device].running

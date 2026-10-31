@@ -350,7 +350,7 @@ class FphAdapter(ScpiAdapter):
             ):
                 result = self.apply(cmd)
                 if result.outcome != "success":
-                    raise DeviceError(result.error, "acquisition_failed")
+                    raise DeviceError(result.error, "configuration_uncertain")
         cached = (
             request.consistency in {"live", "stream"}
             and not request.initiate

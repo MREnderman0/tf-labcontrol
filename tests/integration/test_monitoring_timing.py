@@ -170,7 +170,7 @@ def test_settle_deadline_does_not_save_late_inflight_frame(tmp_path, monkeypatch
 
 
 @pytest.mark.parametrize("code", ["timeout", "disconnected", "parse_error"])
-def test_transport_and_parse_faults_still_stop_without_retry(tmp_path, code):
+def test_transport_and_parse_faults_reconnect_before_reading_next_frame(tmp_path, code):
     runtime, key = connected(tmp_path)
     with runtime:
         session = runtime.sessions.sessions[key]
@@ -180,10 +180,13 @@ def test_transport_and_parse_faults_still_stop_without_retry(tmp_path, code):
             calls.append(1)
             raise DeviceError("fixture failure", code)
 
+        old_adapter = session.adapter
         session.adapter.acquire = acquire
         runtime.monitoring.start(key, (AcquisitionRequest("spectrum"),), interval=0.05)
-        wait_for(lambda: not runtime.monitoring.snapshots()[key]["running"])
-        assert calls == [1] and session.state == "degraded"
+        wait_for(lambda: runtime.monitoring.snapshots()[key]["sequence"] >= 1)
+        assert calls == [1] and old_adapter.closed
+        assert session.adapter is not old_adapter and session.state == "busy"
+        assert runtime.monitoring.snapshots()[key]["running"]
 
 
 def test_record_interval_is_separate_and_slow_writer_does_not_stall_display(tmp_path):
@@ -216,7 +219,7 @@ def test_record_interval_is_separate_and_slow_writer_does_not_stall_display(tmp_
         assert runtime.monitoring.snapshots()[key]["sequence"] > len(paths) * 2
 
 
-def test_completed_slow_frame_does_not_add_an_extra_refresh_delay(tmp_path, monkeypatch):
+def test_completed_slow_frame_starts_new_period_without_catchup(tmp_path, monkeypatch):
     runtime, key = connected(tmp_path)
     with runtime:
         request = AcquisitionRequest("spectrum")
@@ -229,7 +232,7 @@ def test_completed_slow_frame_does_not_add_an_extra_refresh_delay(tmp_path, monk
         with runtime.monitoring.lock:
             monkeypatch.setattr("lab_control.application.monitor_scheduler.time.monotonic", lambda: 11.5)
             runtime.monitoring._finish_batch(key, task)
-            assert task.next_at == 10.5 and task.acquisition_seconds == 1.5
+            assert task.next_at == 12 and task.acquisition_seconds == 1.5
             monkeypatch.undo()
 
 

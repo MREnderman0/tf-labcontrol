@@ -7,6 +7,7 @@
     ],
     "models": [
       "FXE",
+      "FXE2",
       "FXE-compatible K+K counter"
     ],
     "category": "frequency_counter",

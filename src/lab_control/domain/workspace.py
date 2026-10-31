@@ -31,5 +31,5 @@ def slot_label(slot: str) -> str:
 
 def category_slots(category: str) -> tuple[str, ...]:
     """Stable logical slot IDs shared by validation, migration and presentation."""
-    count = 3 if category == "optical_power_meter" else 2
+    count = 4 if category == "optical_power_meter" else 2
     return tuple(f"{category}:{index}" for index in range(1, count + 1))

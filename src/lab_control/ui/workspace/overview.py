@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
 )
 
 from lab_control.application.bulk_connection import device_label
-from lab_control.application.catalog import instrument_category
+from lab_control.application.catalog import instrument_category, surface_applicable
 from lab_control.application.controls import CATEGORY_LABELS, slot_label
 from lab_control.discovery.presence import is_current, presence_label
 from lab_control.ui.controller import (
@@ -361,7 +361,8 @@ class WorkspaceOverview:
             window.connection_summary.setText(window.connection_result_text(connection_progress))
             window.connection_summary.setToolTip("")
         connected = sum(
-            s["connectionState"] in {"connected", "busy", "degraded"} for s in window.states.values()
+            s["connectionState"] in {"connected", "busy", "degraded", "recovering"}
+            for s in window.states.values()
         )
         identified = sum(bool(item["identity"]) for item in current_records.values())
         errors = sum(
@@ -389,7 +390,8 @@ class WorkspaceOverview:
                 records
             )
             live = sum(
-                window.states.get(item["id"], {}).get("connectionState") in {"connected", "busy", "degraded"}
+                window.states.get(item["id"], {}).get("connectionState")
+                in {"connected", "busy", "degraded", "recovering"}
                 for item in records
             )
             known = sum(bool(item["identity"]) for item in records)
@@ -429,6 +431,7 @@ class WorkspaceOverview:
                 "disconnected": "未连接",
                 "busy": "忙碌",
                 "connecting": "连接中",
+                "recovering": "自动重连中",
                 "degraded": "异常",
                 "error": "异常",
             }
@@ -436,6 +439,7 @@ class WorkspaceOverview:
                 "connected": "#8de3a3",
                 "busy": "#efc66e",
                 "connecting": "#efc66e",
+                "recovering": "#efc66e",
                 "degraded": "#ee7474",
                 "error": "#ee7474",
             }
@@ -489,7 +493,7 @@ class WorkspaceOverview:
             elif presence_scope == "history":
                 show &= device_id not in current_records
             if current_filter == "connected":
-                show &= connection in {"connected", "busy", "degraded"}
+                show &= connection in {"connected", "busy", "degraded", "recovering"}
             elif current_filter in {"disconnected", "busy"}:
                 show &= connection == current_filter
             elif current_filter == "unknown":
@@ -540,8 +544,11 @@ class WorkspaceOverview:
                 button.setVisible(
                     not bool(
                         record
-                        and instrument_category(record)
-                        in {"spectrum_analyzer", "oscilloscope", "power_supply", "optical_power_meter"}
+                        and (
+                            not surface_applicable(record, "management")
+                            or instrument_category(record)
+                            in {"spectrum_analyzer", "oscilloscope", "power_supply", "optical_power_meter"}
+                        )
                     )
                 )
             enabled = bool(record)
@@ -593,7 +600,7 @@ class WorkspaceOverview:
                 enabled &= bool(
                     record
                     and instrument_category(record) in CATEGORY_LABELS
-                    and state.get("connectionState") in {"connected", "busy", "degraded"}
+                    and state.get("connectionState") in {"connected", "busy", "degraded", "recovering"}
                 )
             if key in {"connect", "reconnect", "resource", "configure"}:
                 enabled &= not scanning
@@ -648,6 +655,7 @@ class WorkspaceOverview:
                     "busy": "忙碌 / 采集中",
                     "connecting": "连接中",
                     "degraded": "连接异常",
+                    "recovering": "自动重连中",
                     "error": "连接错误",
                 }.get(connection, connection),
                 "task": display_task(state) or "空闲",

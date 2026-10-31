@@ -266,7 +266,7 @@ def test_initiated_acquisition_timeout_is_not_retried():
     item.transport.values[":STATUS:OPERATION:CONDITION?"] = b"0"
     with pytest.raises(DeviceError) as error:
         item.acquire(AcquisitionRequest("spectrum", initiate=True, confirmed=True))
-    assert error.value.code == "acquisition_failed"
+    assert error.value.code == "configuration_uncertain"
     assert item.transport.history.count(":INITIATE") == 1
 
 

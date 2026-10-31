@@ -17,6 +17,7 @@ from lab_control.application.config import config_from_record
 from lab_control.application.controls import DataSource, data_sources
 from lab_control.domain.instruments import AcquisitionRequest
 from lab_control.ui.controller import state_label
+from lab_control.ui.pages.monitoring.connection import refresh_reconnect_button
 from lab_control.ui.pages.monitoring.oscilloscope_controls import OscilloscopeControls
 from lab_control.ui.pages.monitoring.oscilloscope_plot import OscilloscopePlot
 from lab_control.ui.pages.monitoring.recording_state import (
@@ -210,6 +211,8 @@ class OscilloscopeMonitoringPage(QWidget):
             self.controller.message.emit(str(exc))
 
     def toggle_monitoring(self) -> None:
+        if self.controller.reconnect_if_needed(self.device_id):
+            return
         service = self.controller.runtime.monitoring
         if self.controls and self.controls.running:
             self.controls.restart = False
@@ -301,7 +304,7 @@ class OscilloscopeMonitoringPage(QWidget):
         self.start_button.setText("暂停监测" if task.get("running") else "开始监测")
         self.start_button.setEnabled(
             bool(
-                connected
+                (connected or task.get("running"))
                 and not busy
                 and (task.get("running") or self.controls and self.controls.channels())
                 and not (task.get("pending") and not task.get("running"))
@@ -310,6 +313,7 @@ class OscilloscopeMonitoringPage(QWidget):
         if self.controls and self.controls.running and self.controls.restart:
             self.start_button.setText("取消续监测")
             self.start_button.setEnabled(bool(connected))
+        refresh_reconnect_button(self.start_button, self.controller, self.device_id, task, busy=busy)
         self.record_button.refresh(
             task, connected=connected, busy=busy, locked=bool(state.get("controlsLocked"))
         )
@@ -329,9 +333,9 @@ class OscilloscopeMonitoringPage(QWidget):
         )
         self.status.setText(
             task.get("error")
+            or task.get("notice")
             or task.get("recording_notice")
             or recording_save_notice(task)
-            or task.get("notice")
             or (
                 "完整波形读取中 · 完成后自动续采"
                 if self.memory_busy

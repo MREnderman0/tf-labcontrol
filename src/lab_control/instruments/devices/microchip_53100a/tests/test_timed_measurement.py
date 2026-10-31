@@ -132,7 +132,67 @@ def test_failure_never_publishes_invalid_or_complete_result(instrument, failure)
     with pytest.raises(DeviceError):
         frames.extend(run)
     assert all(not f.configuration["complete"] for f in frames)
-    assert history.count("start") == 1 and history.count("stop") == 1
+    assert history.count("start") == 1
+    assert history.count("stop") == (0 if failure == "gap" else 1)
+
+
+def test_gap_resumes_active_run_without_start_or_settings_replay(instrument):
+    adapter, state, history, stream = instrument
+    stream.fail_at = 13
+    run = adapter.run_acquisition(REQUEST, threading.Event())
+    first = next(run)
+    with pytest.raises(DeviceError, match="gap"):
+        next(run)
+    assert state["running"] and "stop" not in history
+    resume_state = dict(adapter.recorded_run_state)
+    stream.fail_at = None
+    frames = list(adapter.resume_acquisition(REQUEST, threading.Event(), resume_state, 1.3))
+    assert history.count("start") == history.count("set phaserate 10") == history.count("stop") == 1
+    assert frames[-1].configuration["samples"] == 91
+    assert frames[-1].configuration["acquisition_epoch"] == first.configuration["acquisition_epoch"] + 1
+    assert frames[-1].configuration["has_data_gaps"]
+    assert frames[-1].configuration["stability_scope"] == "current_contiguous_epoch"
+
+
+def test_resume_refuses_changed_rate_without_restoring_settings(instrument):
+    adapter, state, history, stream = instrument
+    stream.fail_at = 3
+    with pytest.raises(DeviceError):
+        list(adapter.run_acquisition(REQUEST, threading.Event()))
+    state["rate"] = 100
+    before = list(history)
+    with pytest.raises(DeviceError, match="参数"):
+        list(adapter.resume_acquisition(REQUEST, threading.Event(), adapter.recorded_run_state, 1))
+    assert not any(command.startswith("set ") or command == "start" for command in history[len(before) :])
+
+
+def test_public_recording_runner_resumes_finite_phase_stream(instrument, tmp_path):
+    from pathlib import Path
+
+    from lab_control.application.runtime import ApplicationRuntime
+    from lab_control.storage.recording import read_frames
+
+    adapter, state, history, stream = instrument
+    identity = adapter.identity
+    adapter.identify = lambda: identity
+    adapter.close = lambda: None
+    stream.fail_at = 13
+
+    def reopen():
+        stream.fail_at = None
+
+    adapter.reopen_acquisition = reopen
+    with ApplicationRuntime(root=tmp_path, hardware=False) as runtime:
+        runtime.sessions.factory = lambda _c: adapter
+        device = runtime.add(adapter.config)
+        runtime.connect(device, configure_acquisition=False).result(3)
+        paths = runtime.sessions.start_acquisition(device, REQUEST).result(10)
+        frames = [f for p in paths for f in read_frames(Path(p))]
+        assert sum("_acquisition_gap" in f["configuration"] for f in frames) == 1
+        assert frames[-1]["configuration"]["complete"]
+        assert frames[-1]["configuration"]["acquisition_epoch"] == 1
+        assert history.count("start") == history.count("stop") == 1
+        assert not state["running"]
 
 
 @pytest.mark.parametrize(

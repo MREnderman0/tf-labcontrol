@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 from typing import Any, Callable
 from uuid import uuid4
 
+from lab_control.application.acquisition_recovery import Recovery
+from lab_control.application.power_window import PowerWindow
 from lab_control.domain.instruments import (
     AcquisitionRequest,
     MeasurementBatch,
@@ -62,6 +64,7 @@ class MonitorTask:
     # remains the fast path; this lets hidden pages catch up without affecting
     # acquisition or recording.
     frame_history: dict[tuple[str, str], deque[MonitorFrame]] = field(default_factory=dict)
+    power_window: PowerWindow = field(default_factory=PowerWindow)
     error: str = ""
     last_path: str = ""
     stop_future: Future[Any] | None = None
@@ -90,3 +93,5 @@ class MonitorTask:
     timings: deque[dict[str, Any]] = field(default_factory=lambda: deque(maxlen=120))
     timing_report_at: float = 0
     before_acquire: Callable[[Any, AcquisitionRequest], None] | None = None
+    recovery: Recovery | None = None
+    recovery_pending: Future[Any] | None = None

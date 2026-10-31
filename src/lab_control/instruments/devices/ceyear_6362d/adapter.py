@@ -249,7 +249,7 @@ class Ceyear6362DAdapter(ScpiAdapter):
             trace_preparation = self._prepare_live_trace(command)
             result = self.apply(command)
             if result.outcome != "success":
-                raise DeviceError(result.error, "acquisition_failed")
+                raise DeviceError(result.error, "configuration_uncertain")
         before = self._snapshot()
         timestamp = utc_now()
         count = self.read("trace_points")

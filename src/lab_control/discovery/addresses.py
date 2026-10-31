@@ -5,18 +5,8 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import Any
 
-from lab_control.domain.connections import ConnectionConfig
+from lab_control.domain.connections import ConnectionConfig, network_host
 from lab_control.domain.instruments import DeviceError, DeviceIdentity
-
-
-def network_host(resource: str) -> str:
-    if resource.upper().startswith("TCPIP"):
-        return resource.split("::")[1].lower()
-    if resource.lower().startswith("tcp://"):
-        from urllib.parse import urlparse
-
-        return urlparse(resource).hostname or ""
-    return ""
 
 
 def remember_identity(record: dict[str, Any], resource: str, identity: DeviceIdentity, scan_id: str) -> None:

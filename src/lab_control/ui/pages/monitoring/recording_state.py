@@ -107,7 +107,12 @@ class RecordingButton(QToolButton):
         self.setAccessibleName(text)
         self.setIcon(self.icons[phase != "idle"])
         self.setEnabled(
-            bool(connected and task.get("running") and not busy and phase not in {"draining", "preparing"})
+            bool(
+                (connected or (task.get("recovering") and phase == "recording"))
+                and task.get("running")
+                and not busy
+                and phase not in {"draining", "preparing"}
+            )
             and (phase == "recording" or not locked)
         )
         self.setToolTip(

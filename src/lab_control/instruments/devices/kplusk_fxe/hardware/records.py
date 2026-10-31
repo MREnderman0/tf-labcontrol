@@ -9,14 +9,16 @@ ADAPTER_ID = "kplusk.fxe"
 
 
 def recognizes(report: dict[str, Any], folder: Path) -> bool:
-    return matches(report, folder, ADAPTER_ID, ("K+K FXE", "K+K FXE (完整变体待核对)"))
+    return matches(report, folder, ADAPTER_ID, ("K+K FXE", "K+K FXE2", "K+K FXE (完整变体待核对)"))
 
 
 def summarize(report: dict[str, Any]) -> dict[str, Any]:
+    identity = report.get("identity", {})
+    actual_model = identity.get("model", "") if isinstance(identity, dict) else ""
     summary = normalize(
         report,
         adapter_id=ADAPTER_ID,
-        model="K+K FXE (完整变体待核对)",
+        model=f"K+K {actual_model}" if actual_model in {"FXE", "FXE2"} else "K+K FXE (完整变体待核对)",
         stage_names={
             "enumeration": "enumeration",
             "identity": "identity",
@@ -34,7 +36,7 @@ def summarize(report: dict[str, Any]) -> dict[str, Any]:
             "reconnection": "reconnection",
             "physical_output": "physical_output",
         },
-        expected_models=("FXE", "K+K FXE", "K+K FXE (完整变体待核对)"),
+        expected_models=("FXE", "FXE2", "K+K FXE", "K+K FXE (完整变体待核对)"),
     )
     # The project resource grammar accepts a bare K+K IP. Preserve that
     # operator-facing value while recording the verified physical interface.

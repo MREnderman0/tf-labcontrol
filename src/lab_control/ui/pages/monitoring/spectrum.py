@@ -24,6 +24,7 @@ from lab_control.application.config import config_from_record
 from lab_control.application.controls import DataSource, data_sources
 from lab_control.domain.spectrum import SpectrumMarker
 from lab_control.ui.controller import state_label
+from lab_control.ui.pages.monitoring.connection import refresh_reconnect_button
 from lab_control.ui.pages.monitoring.recording_state import (
     RecordingButton,
     recording_phase,
@@ -200,6 +201,8 @@ class SpectrumMonitoringPage(QWidget):
         self.selector.select(spec["device_id"])
 
     def toggle_monitoring(self) -> None:
+        if self.controller.reconnect_if_needed(self.device_id):
+            return
         if not self.source or not self.device_id:
             return
         service = self.controller.runtime.monitoring
@@ -322,8 +325,13 @@ class SpectrumMonitoringPage(QWidget):
         )
         self.start_button.setText("暂停监测" if task.get("running") else "开始监测")
         self.start_button.setEnabled(
-            connected and not busy and not (task.get("pending") and not task.get("running"))
+            bool(
+                (connected or task.get("running"))
+                and not busy
+                and not (task.get("pending") and not task.get("running"))
+            )
         )
+        refresh_reconnect_button(self.start_button, self.controller, self.device_id, task, busy=busy)
         self.record_button.refresh(
             task, connected=connected, busy=busy, locked=bool(state.get("controlsLocked"))
         )
@@ -342,9 +350,9 @@ class SpectrumMonitoringPage(QWidget):
             self.plot.update_markers()
         text = (
             task.get("error")
+            or task.get("notice")
             or task.get("recording_notice")
             or recording_save_notice(task)
-            or task.get("notice")
             or (
                 "设置中 · 曲线读取暂停"
                 if busy

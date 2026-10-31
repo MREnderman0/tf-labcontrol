@@ -46,7 +46,8 @@ def test_directory_browse_save_open_and_reload(settings_window, qtbot, monkeypat
     qtbot.waitUntil(lambda: panel.status.text().startswith("已保存"))
     effective = chosen / "simulation"
     assert runtime.repository.data_root == effective
-    assert str(effective) in panel.effective.text() and "模拟" in panel.effective.text()
+    # Windows path normalization may change only the casing of parent folders.
+    assert str(runtime.repository.data_root) in panel.effective.text() and "模拟" in panel.effective.text()
     opened = []
     monkeypatch.setattr(
         "lab_control.ui.pages.storage_settings.QDesktopServices.openUrl",

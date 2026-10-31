@@ -201,13 +201,18 @@ class OpticalSpectrumControls(QFrame):
             self.finish("参数已刷新 · 草稿已保留" if self.refresh_only else "修改已应用 · 已核对读回")
             return
         names, self.read_pending = self.read_pending[:4], self.read_pending[4:]
-        self.controller.watch(
-            self.controller.runtime.sessions.submit(self.device_id, "read_settings", (tuple(names), 1)),
-            self._read_done,
-            lambda exc: self.finish(
-                ("参数读取失败：" if self.refresh_only else "设置已执行，读回未确认：") + str(exc)
-            ),
-        )
+
+        def failed(exc):
+            self.finish(("参数读取失败：" if self.refresh_only else "设置已执行，读回未确认：") + str(exc))
+
+        try:
+            self.controller.watch(
+                self.controller.runtime.sessions.submit(self.device_id, "read_settings", (tuple(names), 1)),
+                self._read_done,
+                failed,
+            )
+        except Exception as exc:
+            failed(exc)
 
     def _read_done(self, readings) -> None:
         from lab_control.domain.readback import usable_reading

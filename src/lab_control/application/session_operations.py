@@ -17,6 +17,7 @@ from lab_control.domain.instruments import (
     utc_now,
 )
 from lab_control.transport.diagnostics import capture_io
+from lab_control.transport.read_wait import acquisition_read_wait
 
 if TYPE_CHECKING:
     from lab_control.application.sessions import DeviceSession, SessionManager
@@ -48,7 +49,13 @@ class SessionOperations:
             request = replace(request, consistency="full")
         started = time.perf_counter()
         started_utc = utc_now()
-        with capture_io() as capture:
+        with (
+            capture_io() as capture,
+            acquisition_read_wait(
+                session.monitoring or session.active_task == "continuous_acquisition",
+                transport=getattr(session.adapter, "transport", None),
+            ),
+        ):
             try:
                 try:
                     batch = session.adapter.acquire(request)
@@ -227,7 +234,8 @@ class SessionOperations:
                 if not isinstance(argument, AcquisitionRequest):
                     raise TypeError("Expected AcquisitionRequest")
                 argument.validate()
-                readings = adapter.read_settings((argument.quantity,), argument.channels[0])
+                with acquisition_read_wait(session.monitoring, transport=getattr(adapter, "transport", None)):
+                    readings = adapter.read_settings((argument.quantity,), argument.channels[0])
                 manager._cache_readings(session, readings)
                 reading = readings[0]
                 value = reading.value
@@ -305,7 +313,7 @@ class SessionOperations:
                     "operation_failed", device_id=device_id, operation=operation, code=code, error=str(exc)
                 )
             if not quiet:
-                manager.emit("error", device_id, error=str(exc), code=code)
+                manager.emit("error", device_id, operation=operation, error=str(exc), code=code)
             if (
                 operation == "acquire"
                 and isinstance(exc, DeviceError)

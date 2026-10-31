@@ -14,11 +14,14 @@ from lab_control.application.acquisition_pipeline import (
     validate_cadence,
     validate_recorded_batch,
 )
+from lab_control.application.acquisition_recovery import RECOVERABLE_CODES
 from lab_control.application.frame_exports import FrameExportService
+from lab_control.application.monitor_recovery import MonitorRecovery
 from lab_control.application.monitor_scheduler import MonitorScheduler
 from lab_control.application.monitoring_state import CaptureSave as CaptureSave
 from lab_control.application.monitoring_state import MonitorFrame as MonitorFrame
 from lab_control.application.monitoring_state import MonitorTask as MonitorTask
+from lab_control.application.power_window import PowerWindowSnapshot
 from lab_control.application.recordings import retain_recording
 from lab_control.application.sessions import SessionManager
 from lab_control.application.settings_sync import SettingsSync
@@ -78,6 +81,7 @@ class MonitoringService:
         self.unsubscribe = sessions.subscribe(self._event)
         self.exports = FrameExportService(self)
         self.scheduler = MonitorScheduler(self)
+        self.recovery = MonitorRecovery(self)
         self.thread = threading.Thread(target=self._loop, name="monitor-scheduler", daemon=True)
         self.thread.start()
 
@@ -259,6 +263,19 @@ class MonitoringService:
             task = self.tasks.get(device_id)
             if not task or not task.running:
                 raise DeviceError("Monitoring must be running before refreshing requests", "task_busy")
+            previous_channels = {
+                ch
+                for request in task.requests
+                if request.kind == "scalar" and request.quantity == "power"
+                for ch in request.channels
+            }
+            next_channels = {
+                ch
+                for request in merged
+                if request.kind == "scalar" and request.quantity == "power"
+                for ch in request.channels
+            }
+            task.power_window.mark_gap(previous_channels ^ next_channels)
             task.requests = merged
             task.request_revision += 1
             task.frames.clear()
@@ -503,6 +520,7 @@ class MonitoringService:
             if task.stop_future and not task.stop_future.done():
                 return task.stop_future
             task.running = False
+            self.recovery.cancel(task)
             task.recording = False
             task.recording_cancelled = True
             if not task.configuration_wait_expired:
@@ -603,6 +621,18 @@ class MonitoringService:
             frames = tuple(frame for frame in frames if frame.session_id == session_id)
         return frames
 
+    def power_window(self, device_id: str) -> PowerWindowSnapshot | None:
+        """Read a coherent 30-minute display/statistics snapshot without instrument I/O."""
+        with self.lock:
+            task = self.tasks.get(device_id)
+            if task is None:
+                return None
+            return task.power_window.snapshot(
+                task.monitoring_context_id,
+                time.perf_counter(),
+                stopped=not task.running and not task.pending,
+            )
+
     def snapshots(self) -> dict[str, dict[str, Any]]:
         with self.lock:
             return {
@@ -610,7 +640,14 @@ class MonitoringService:
                     "running": task.running,
                     "recording": task.recording,
                     "recording_preparing": task.recording_preparation is not None,
-                    "pending": bool(task.pending or task.write_pending or task.recording_preparation),
+                    "pending": bool(
+                        task.pending
+                        or task.write_pending
+                        or task.recording_preparation
+                        or task.recovery_pending
+                    ),
+                    "recovering": task.recovery is not None,
+                    "recovery": task.recovery.snapshot() if task.recovery else {},
                     "error": task.error,
                     "sequence": task.sequence,
                     "monitoring_context_id": task.monitoring_context_id,
@@ -651,12 +688,17 @@ class MonitoringService:
             if result.outcome != "success":
                 self._pause(event["device_id"], result.error or result.outcome)
         elif event["event"] == "error":
+            if event.get("operation") in {"acquire", "observe"} and event.get("code") in RECOVERABLE_CODES:
+                # The completed read owns classification, buffer release and recovery.
+                # An unrelated settings error must still pause the target task.
+                return
             self._pause(event["device_id"], event.get("error", "Device operation failed"))
 
     def _pause(self, device_id: str, error: str) -> None:
         with self.lock:
             task = self.tasks.get(device_id)
             if task:
+                self.recovery.cancel(task)
                 task.running, task.error = False, error
                 task.recording = False
                 self.audit.try_record("monitor_paused", device_id=device_id, error=error)
@@ -688,6 +730,7 @@ class MonitoringService:
             for task in self.tasks.values():
                 task.running = False
                 task.recording = False
+                self.recovery.cancel(task)
         self.wake.set()
         for cleanup in (
             lambda: self.preparer.shutdown(wait=True),

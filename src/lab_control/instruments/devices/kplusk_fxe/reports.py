@@ -27,6 +27,7 @@ class ReportReader:
         self.clock = time.monotonic
         self.sleep = time.sleep
         self.on_report: Callable[[Any], None] | None = None
+        self.version_report: str | None = None
 
     def poll(self) -> bool:
         report = self.library.get_kk_report(self.source_id)
@@ -37,6 +38,8 @@ class ReportReader:
             self.on_report(report)
         log = str(getattr(report, "to_log_str", lambda: "")() or "")
         self.logs.append(log)
+        if kind == 2 and int(getattr(report, "get_header", lambda: -1)()) == 0x7001:
+            self.version_report = log
         # Decode immediately: the official wrapper reuses internal lists.
         decoded: DecodedReport | None = parse_frequency_report(report)
         if decoded is None:

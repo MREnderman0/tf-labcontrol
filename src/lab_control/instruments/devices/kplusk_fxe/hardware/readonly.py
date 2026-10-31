@@ -126,6 +126,7 @@ def verify(
         device = app.add(config)
         identity = app.connect(device, configure_acquisition=False).result(50)
         report["identity"] = jsonable(identity)
+        report["model"] = f"K+K {identity.model}"
         snapshot = app.sessions.capability_snapshot(device)
         if snapshot is None or snapshot.stale or not snapshot.channels:
             raise DeviceError(snapshot.error if snapshot else "No capabilities", "acquisition_failed")
@@ -133,8 +134,8 @@ def verify(
         report["capabilities"] = jsonable(snapshot)
         report["stages"]["enumeration"] = {"state": "not_tested", "reason": "仅连接指定地址，未扫描"}
         report["stages"]["identity"] = {
-            "state": "blocked",
-            "reason": "protocol_only；完整型号变体和序列号尚未从设备读回",
+            "state": "passed" if identity.serial and identity.confidence == "protocol" else "blocked",
+            "reason": "以设备版本报告核对完整型号及序列号；缺失身份时不视为通过",
         }
         passed("official_protocol_connection", "官方库直连并读取完整测量报告")
         passed("compatibility_connection", "正式会话、进程锁及只读能力识别通过", channels=channels)

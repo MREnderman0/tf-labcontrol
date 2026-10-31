@@ -72,6 +72,7 @@ def validate_recorded_batch(batch: MeasurementBatch) -> None:
         "monitor_refresh_interval",
         "monitor_save_interval",
         "monitor_cadence",
+        "_acquisition_gap",
     }
     if batch.validation == "cached" and (
         not batch.performance.get("acquisition_context_id")

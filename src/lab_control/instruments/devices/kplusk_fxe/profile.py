@@ -50,7 +50,7 @@ def profile() -> Profile:
     return Profile(
         adapter_id="kplusk.fxe",
         manufacturer=("K+K", "K+K Messtechnik"),
-        models=("FXE", "FXE-compatible K+K counter"),
+        models=("FXE", "FXE2", "FXE-compatible K+K counter"),
         category="frequency_counter",
         channels=tuple(range(1, 25)),
         source=OFFICIAL_DOWNLOADS,

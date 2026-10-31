@@ -82,3 +82,24 @@ def canonical_resource(resource: str) -> str:
     if match:
         return f"SOCKET:{match[1]}:{int(match[2])}"
     return value
+
+
+def network_host(resource: str) -> str:
+    """Extract a LAN host without importing device modules or opening a connection."""
+    from urllib.parse import urlparse
+
+    value = resource.strip()
+    if value.upper().startswith("TCPIP"):
+        parts = value.split("::")
+        return parts[1].lower() if len(parts) >= 3 else ""
+    if value.lower().startswith(("tcp://", "vicp://")):
+        return urlparse(value).hostname or ""
+    if value.lower().startswith("mock://"):
+        return ""
+    try:
+        parsed = urlparse(value if "://" in value else "//" + value)
+        # Literal addresses and URI endpoints are shared transport syntax.
+        # Do not interpret arbitrary SDK names or serial identifiers as hosts.
+        return str(ipaddress.ip_address(parsed.hostname or ""))
+    except ValueError:
+        return ""

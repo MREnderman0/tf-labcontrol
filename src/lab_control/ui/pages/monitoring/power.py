@@ -18,6 +18,7 @@ from lab_control.application.config import config_from_record
 from lab_control.application.controls import data_sources
 from lab_control.domain.instruments import AcquisitionRequest
 from lab_control.ui.controller import state_label
+from lab_control.ui.pages.monitoring.connection import refresh_reconnect_button
 from lab_control.ui.pages.monitoring.power_controls import PowerControls
 from lab_control.ui.pages.monitoring.power_plot import CHANNEL_COLORS, PowerPlot
 from lab_control.ui.pages.monitoring.recording_state import (
@@ -221,6 +222,8 @@ class PowerMonitoringPage(QWidget):
         self.refresh()
 
     def toggle_monitoring(self) -> None:
+        if self.controller.reconnect_if_needed(self.device_id):
+            return
         if (
             self.controller.runtime.monitoring.snapshots().get(self.device_id, {}).get("running")
             or self.transition
@@ -307,7 +310,7 @@ class PowerMonitoringPage(QWidget):
         )
         self.start_button.setText("暂停监测" if task.get("running") or self.transition else "开始监测")
         self.start_button.setEnabled(
-            connected
+            (connected or bool(task.get("running")))
             and not busy
             and (bool(self.channels()) or bool(task.get("running")) or self.transition)
             and not (task.get("pending") and not task.get("running") and not self.transition)
@@ -316,6 +319,9 @@ class PowerMonitoringPage(QWidget):
         for check in self.channel_checks.values():
             check.setEnabled(connected and not busy and not locked and not self.transition)
         self.timing.refresh(task)
+        refresh_reconnect_button(
+            self.start_button, self.controller, self.device_id, task, busy=busy or self.transition
+        )
         self.record_button.refresh(task, connected=connected, busy=busy or self.transition, locked=locked)
         update_recording_frame(self.chart, task)
         self.once_action.setEnabled(
@@ -335,6 +341,7 @@ class PowerMonitoringPage(QWidget):
         self.status.setText(
             task.get("error")
             or task.get("recording_notice")
+            or task.get("notice")
             or recording_save_notice(task)
             or (
                 "记录收尾中 · 正在排空已接收数据"

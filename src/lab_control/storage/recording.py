@@ -282,6 +282,7 @@ class Recording:
         self.context.validate(mode, "continuous")
         self.folder = self.context.folder
         self.raw_folder = self.context.raw_folder
+        self.prepare_storage = prepare_storage
         if prepare_storage:
             self.context.prepare()
         self.csv_interval, self.wake = csv_interval, wake
@@ -365,6 +366,28 @@ class Recording:
             self.accepting = False
         self.event.set()
         return self.finished
+
+    def note_event(self, event: str, details: dict[str, Any]) -> None:
+        """Persist acquisition gaps even when no subsequent valid frame arrives."""
+        if not self.prepare_storage:
+            return
+        from lab_control.domain.recording import RecordingError
+
+        with self.lock:
+            try:
+                with (self.raw_folder / "acquisition-events.jsonl").open("a", encoding="utf-8") as stream:
+                    stream.write(
+                        _json(
+                            {"event": event, "timestamp": datetime.now(timezone.utc).isoformat(), **details}
+                        )
+                        + "\n"
+                    )
+                    stream.flush()
+            except OSError as exc:
+                self.error = f"采集缺口记录写入失败：{exc}"
+                self.accepting = False
+                self.event.set()
+                raise RecordingError(self.outcome()) from exc
 
     def snapshot(self) -> dict[str, Any]:
         with self.lock:

@@ -14,7 +14,7 @@ class DeviceControlPage(QWidget):
         heading = QLabel(CATEGORY_LABELS[category] + "管理")
         heading.setObjectName("pageTitle")
         layout.addWidget(heading)
-        self.selector = DeviceSelector(controller, category)
+        self.selector = DeviceSelector(controller, category, surface="management")
         layout.addWidget(self.selector)
         self.form = ControlForm(controller)
         self.note = QLabel()

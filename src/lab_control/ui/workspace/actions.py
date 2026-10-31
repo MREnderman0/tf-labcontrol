@@ -52,7 +52,9 @@ class WorkspaceActions:
         try:
             if key == "connect":
                 config = config_from_record(window.records[device_id])
-                if config.usb_instance_id and not config.expected_serial:
+                # A USB-to-serial bridge identifies the connection, not the
+                # instrument serial. Reuse its saved adapter as bulk connect does.
+                if config.usb_instance_id and config.transport != "serial" and not config.expected_serial:
                     serial, accepted = QInputDialog.getText(
                         window, "核对设备序列号", "请输入设备铭牌序列号；连接后将与设备实际读回再次核对"
                     )

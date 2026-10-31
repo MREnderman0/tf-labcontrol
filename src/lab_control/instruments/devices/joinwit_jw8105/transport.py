@@ -6,6 +6,7 @@ from typing import Any
 
 from lab_control.domain.connections import ConnectionConfig
 from lab_control.domain.instruments import DeviceError, Unsupported
+from lab_control.transport.diagnostics import measured, synchronized
 from lab_control.transport.streams import SerialTransport
 from lab_control.transport.visa import VisaRuntime, VisaTransport
 
@@ -31,9 +32,11 @@ class Jw8105SerialTransport(SerialTransport):
             raise Unsupported(f"pyserial is required for JW8105: {exc}") from exc
         super().__init__(port, BAUD_RATE, timeout, b"", **settings)
 
+    @synchronized
+    @measured("query")
     def query_frame(self, payload: bytes) -> bytes:
-        self.write(payload)
         try:
+            self.write(payload)
             return read_framed(self._read_exact)
         except DeviceError as exc:
             # A timed-out binary exchange leaves the byte boundary unknown.
@@ -65,14 +68,19 @@ class Jw8105VisaTransport(VisaTransport):
             self.close()
             raise
 
+    @synchronized
+    @measured("query")
     def query_frame(self, payload: bytes) -> bytes:
-        self.write(payload)
         try:
+            self.write(payload)
             return read_framed(self._read_exact)
-        except DeviceError as exc:
-            if exc.code in {"timeout", "disconnected"}:
+        except Exception as exc:
+            # Raw VISA exact reads can raise VisaIOError; normalize them at the
+            # transport boundary so shared recovery sees the same codes as serial.
+            error = self._error(exc)
+            if error.code in {"timeout", "disconnected"}:
                 self.close()
-            raise
+            raise error from exc
 
 
 def create_transport(config: ConnectionConfig, runtime: VisaRuntime):

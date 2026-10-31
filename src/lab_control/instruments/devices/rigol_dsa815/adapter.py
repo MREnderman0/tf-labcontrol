@@ -460,7 +460,7 @@ class Dsa815Adapter(ScpiAdapter):
             ):
                 result = self.apply(cmd)
                 if result.outcome != "success":
-                    raise DeviceError(result.error, "acquisition_failed")
+                    raise DeviceError(result.error, "configuration_uncertain")
         fields = FRAME_SETTINGS
         checked_before = self._read_frame_settings(fields)
         before = {**(self._acquisition_context or {}), **checked_before}

@@ -36,7 +36,7 @@ def acquire(adapter: ScpiAdapter, request: AcquisitionRequest) -> tuple[Measurem
     if request.initiate:
         applied = adapter.apply(DeviceCommand("single", confirmed=True))
         if applied.outcome != "success":
-            raise DeviceError(applied.error, "acquisition_failed")
+            raise DeviceError(applied.error, "configuration_uncertain")
         transport.query("*OPC?")
     result: list[Measurement] = []
     for channel in request.channels:

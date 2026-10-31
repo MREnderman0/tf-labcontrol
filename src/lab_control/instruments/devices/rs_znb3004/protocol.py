@@ -31,10 +31,10 @@ def acquire(adapter: ScpiAdapter, request: AcquisitionRequest) -> tuple[Measurem
     if request.initiate:
         continuous = adapter.apply(DeviceCommand("continuous", {"value": False}, confirmed=True))
         if continuous.outcome != "success":
-            raise DeviceError(continuous.error, "acquisition_failed")
+            raise DeviceError(continuous.error, "configuration_uncertain")
         applied = adapter.apply(DeviceCommand("single", confirmed=True))
         if applied.outcome != "success":
-            raise DeviceError(applied.error, "acquisition_failed")
+            raise DeviceError(applied.error, "configuration_uncertain")
         transport.query("*OPC?")
     result: list[Measurement] = []
     transport.write("FORM ASC")

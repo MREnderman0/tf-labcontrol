@@ -72,6 +72,7 @@ class Microchip53100AAdapter(ScpiAdapter):
     recorded_run_kinds = ("timed_phase",)
     server: Any = None
     service_inspected = False
+    recorded_run_state: dict[str, Any]
     capability_schema = staticmethod(capability_schema)
 
     def capabilities(self):
@@ -178,6 +179,25 @@ class Microchip53100AAdapter(ScpiAdapter):
         from .measurement import acquire_run
 
         return acquire_run(self, request, stop)
+
+    def reopen_acquisition(self) -> None:
+        """Keep the managed TSERVE process and its instrument selection alive."""
+        self.transport.close()
+        self.transport.open()
+
+    def resume_acquisition(self, request: AcquisitionRequest, stop, state, elapsed: float):
+        from .measurement import acquire_run
+
+        return acquire_run(self, request, stop, resume_state=state)
+
+    def cancel_acquisition_recovery(self) -> None:
+        """One stop after verified reconnection; never replay an uncertain stop."""
+        try:
+            self._query("stop")
+            if not is_ready(self._query("show state")):
+                raise DeviceError("TSERVE did not return to Ready", "cleanup_failed")
+        except Exception as exc:
+            raise DeviceError("仪器测量停止未确认；最终状态未知：" + str(exc), "cleanup_failed") from exc
 
     def apply(self, command: DeviceCommand) -> ApplyResult:
         self._context(command.channel, {})

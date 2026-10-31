@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from lab_control.application.config import canonical_resource
+from lab_control.domain.connections import network_host
 from lab_control.domain.instruments import DeviceError
 
 
@@ -37,6 +38,8 @@ class ResourceLeases:
                 )
                 if host:
                     keys.add("HOST:" + host[1].rstrip("."))
+                elif endpoint := network_host(key):
+                    keys.add("HOST:" + endpoint.rstrip(".").upper())
             if unknown_alias in keys:
                 if identified and unknown_alias in self._owners and self._owners[unknown_alias] != owner:
                     raise DeviceError("Resource is owned by another session or probe", "resource_busy")

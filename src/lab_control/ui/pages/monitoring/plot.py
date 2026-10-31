@@ -14,6 +14,7 @@ from lab_control.application.acquisition_pipeline import validate_displayed_batc
 from lab_control.application.controls import DataSource
 from lab_control.application.monitoring import MonitorFrame
 from lab_control.domain.instruments import DeviceError
+from lab_control.ui.pages.monitoring.scalar_readouts import ScalarReadouts
 from lab_control.ui.pages.monitoring.trace_view import TraceView
 
 
@@ -35,9 +36,7 @@ class LivePlot(QWidget):
         super().__init__(parent)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        self.value = QLabel("—")
-        self.value.setObjectName("liveValue")
-        self.value.setWordWrap(True)
+        self.value = ScalarReadouts()
         layout.addWidget(self.value)
         self.plot_item = MonitoringPlotItem()
         self.plot_item.fit_requested.connect(self.fit_current)
@@ -58,6 +57,8 @@ class LivePlot(QWidget):
         self.unit_signature: tuple[str, str] | None = None
         self.axis_signature: tuple | None = None
         self.displayed_frame: MonitorFrame | None = None
+        self.readout_context: tuple | None = None
+        self.readout_quantities: tuple[str, ...] = ()
         self.trace_view = TraceView(self.plot)
 
     def reset(self) -> None:
@@ -68,11 +69,13 @@ class LivePlot(QWidget):
         self.unit_signature = None
         self.axis_signature = None
         self.displayed_frame = None
+        self.readout_context = None
+        self.readout_quantities = ()
         self.trace_view.reset()
         self.plot_item.one_shot_fit = False
         self.plot_item.showButtons()
         self.plot.enableAutoRange()
-        self.value.setText("—")
+        self.value.clear()
         self.meta.setText("尚无数据")
 
     def show_frame(self, frame: MonitorFrame, source: DataSource, channels: tuple[int, ...]) -> None:
@@ -121,13 +124,13 @@ class LivePlot(QWidget):
                 candidate, source.key, channels, points, waveform=source.kind == "waveform"
             )
         used = set()
-        values_text = []
+        readings: dict[tuple[int, str], tuple[str, str]] = {}
         for measurement in wanted:
             values = np.asarray(measurement.values)
             key = (measurement.channel, measurement.quantity)
             if not values.size:
                 text = measurement.metadata.get("display_value")
-                values_text.append("未知" if text is None else str(text))
+                readings[key] = ("未知" if text is None else str(text), measurement.unit)
                 continue
             unit = measurement.unit
             if np.iscomplexobj(values):
@@ -180,12 +183,26 @@ class LivePlot(QWidget):
                 self.plot.setLogMode(x=log_x, y=source.quantity == "stability")
                 self.axis_signature = axis_signature
             digits = 12 if measurement.quantity == "frequency" else 6
-            values_text.append(f"CH {measurement.channel}  {values[-1]:.{digits}g} {unit}")
+            readings[key] = (f"{values[-1]:.{digits}g}", unit)
         for key, curve in self.curves.items():
             if key not in used:
                 curve.hide()
-        self.value.setText("   ·   ".join(values_text) or "没有所选通道的数据")
-        self.value.setVisible(source.view == "number" or any(len(m.values) <= 1 for m in wanted))
+        # Keep selected channel slots even when a frame has no value for one.
+        # Sorting also prevents device report order from moving the readouts.
+        context = (frame.session_id, source, tuple(sorted(set(channels))))
+        quantities = {m.quantity for m in wanted}
+        if context == self.readout_context:
+            quantities.update(self.readout_quantities)
+        quantities.discard("")
+        self.readout_context = context
+        self.readout_quantities = tuple(sorted(quantities)) or (source.measurement or source.quantity,)
+        keys = tuple(
+            (channel, quantity) for channel in sorted(set(channels)) for quantity in self.readout_quantities
+        )
+        self.value.show_values(keys, readings)
+        self.value.setVisible(
+            source.kind == "scalar" or source.view == "number" or any(len(m.values) <= 1 for m in wanted)
+        )
         quality = " / ".join(sorted({m.quality.value for m in wanted}))
         count = (
             " · 实收 " + " / ".join(f"CH {m.channel}: {len(m.values)} 点" for m in wanted)

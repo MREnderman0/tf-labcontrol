@@ -21272,7 +21272,7 @@
     },
     {
       "adapter_id": "kplusk.fxe",
-      "model": "K+K FXE",
+      "model": "K+K FXE / FXE2",
       "category": "frequency_counter",
       "control_page": "实时监测 / 频率计数器",
       "channels": [

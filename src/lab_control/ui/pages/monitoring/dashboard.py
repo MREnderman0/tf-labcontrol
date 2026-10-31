@@ -234,6 +234,9 @@ class RecordingDeviceCard(QFrame):
         if task.get("error"):
             detail = task["error"]
             status = "异常"
+        elif task.get("recovering"):
+            detail = task.get("notice") or "通信中断 · 正在自动重连，记录任务保留"
+            status = "自动重连"
         elif phase == "preparing":
             detail = recording_save_notice(task)
             status = "准备中"

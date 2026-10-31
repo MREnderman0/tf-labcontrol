@@ -86,8 +86,15 @@ QListView#workspaceChoices { background: #1d2325; border: 0; padding: 0; outline
 QWidget#workspaceChoicesViewport { background: #1d2325; font-size: 13px; }
 QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus { border-color: #d99342; }
 QCheckBox { spacing: 8px; padding: 5px 0; }
-QCheckBox::indicator { width: 15px; height: 15px; background: #171c1e; border: 1px solid #61736a; }
-QCheckBox::indicator:checked { background: #d99342; border-color: #d99342; }
+QCheckBox::indicator, QAbstractItemView::indicator, QGroupBox::indicator, QMenu::indicator:non-exclusive {
+    width: 14px; height: 14px; border-radius: 8px;
+    background: #171c1e; border: 1px solid #61736a; image: none;
+}
+QCheckBox::indicator:checked, QAbstractItemView::indicator:checked, QGroupBox::indicator:checked, QMenu::indicator:non-exclusive:checked { background: #d99342; border-color: #d99342; }
+QCheckBox::indicator:indeterminate, QAbstractItemView::indicator:indeterminate { background: #725334; border-color: #e3a252; }
+QCheckBox::indicator:hover, QCheckBox::indicator:focus, QAbstractItemView::indicator:hover, QGroupBox::indicator:hover { border-color: #f0bc72; }
+QCheckBox::indicator:disabled, QAbstractItemView::indicator:disabled, QGroupBox::indicator:disabled { background: #15191b; border-color: #465053; }
+QCheckBox::indicator:checked:disabled, QAbstractItemView::indicator:checked:disabled, QGroupBox::indicator:checked:disabled { background: #756149; border-color: #756149; }
 QToolTip { color: #f5f5ef; background: #303739; border: 1px solid #879296; padding: 6px; }
 QScrollBar:vertical { background: #101315; width: 11px; margin: 0; }
 QScrollBar:horizontal { background: #101315; height: 11px; margin: 0; }
@@ -111,7 +118,11 @@ QLabel#monitorCategoryTitle { color: #e3a252; font-size: 14px; font-weight: 700;
 QLabel#monitorSlot { color: #d2a66d; background: #201c17; border: 1px solid #705333; border-radius: 3px; padding: 5px 7px; }
 QLabel#controlTitle { font-size: 15px; font-weight: 600; color: #e7e9e8; }
 QLabel#readback, QLabel#mutedText { color: #9dabad; font-size: 12px; }
-QLabel#liveValue { font-size: 20px; color: #e3a252; }
+QFrame#scalarReadout { background: #182125; border: 1px solid #343e42; border-radius: 5px; }
+QFrame#scalarReadout QLabel { background: transparent; border: 0; }
+QLabel#scalarReadoutChannel { color: #c7d1d0; font-size: 12px; font-weight: 600; }
+QLabel#scalarReadoutUnit { color: #9dabad; font-size: 12px; }
+QLabel#scalarReadoutValue { font-family: "Consolas", "DejaVu Sans Mono", monospace; font-size: 20px; color: #e3a252; }
 QPushButton#cardLink { text-align: left; padding: 4px 0; border: 0; background: transparent; font-weight: 600; }
 QTabWidget::pane { border: 1px solid #343b3e; }
 QTabBar::tab { background: #1d2325; color: #aeb5b5; padding: 9px 12px; border-bottom: 2px solid transparent; }
@@ -244,10 +255,27 @@ QLabel#spectrumChartTitle { color: #e2b77e; font-size: 14px; font-weight: 600; }
   QWidget#powerMeterReadoutPanel { background: transparent; }
   QFrame#powerMeterReadoutCard { background: #151b1d; border: 1px solid #3b4243; border-top: 2px solid #986b38; border-radius: 8px; min-height: 92px; max-height: 106px; }
   QFrame#powerMeterReadoutCard QLabel { background: transparent; }
+  QFrame#powerMeterReadoutCard QCheckBox { background: transparent; padding: 0; spacing: 6px; }
   QLabel#powerMeterTitle { color: #e2b77e; font-size: 14px; font-weight: 600; }
   QLabel#powerMeterChannel { color: #e3a252; font-size: 14px; font-weight: 600; }
   QLabel#powerMeterValue { color: #e3a252; font-size: 17px; font-weight: 600; padding: 1px 0; }
   QLabel#powerMeterMeta, QLabel#powerMeterStatus { color: #9dabad; font-size: 11px; }
+QFrame#powerMeterReadoutList, QFrame#scanReadoutList { background: #151b1d; border: 1px solid #3b4243; border-top: 2px solid #986b38; border-radius: 8px; }
+QFrame#powerMeterReadoutList QWidget, QFrame#scanReadoutList QWidget { background: transparent; }
+QFrame#scanReadoutCell { border: 0; border-bottom: 1px solid #283133; border-radius: 0; }
+QFrame#scanReadoutCell:hover { background: #1d2527; }
+QFrame#scanReadoutCell QCheckBox { font-size: 12px; padding: 0; spacing: 6px; }
+QLabel#scanReadoutValue, QLabel#scanReadoutUnit { color: #e3a252; font-size: 13px; font-weight: 600; padding: 0; }
+QLabel#scanReadoutSummary { color: #99aaa8; font-size: 11px; }
+QFrame#powerMeterReadoutRow { border: 0; border-bottom: 1px solid #283133; border-radius: 0; }
+QFrame#powerMeterReadoutRow:hover { background: #1d2527; }
+QFrame#powerMeterReadoutRow QCheckBox { padding: 0; spacing: 0; }
+QLabel#powerReadoutHeading { color: #99aaa8; font-size: 11px; }
+QLabel#powerReadoutChannel { font-size: 12px; font-weight: 600; }
+QPushButton#powerReadoutValue { color: #e3a252; font-size: 13px; font-weight: 600; text-align: right; padding: 0; min-height: 24px; max-height: 24px; border: 0; border-radius: 3px; }
+QPushButton#powerReadoutValue:hover, QPushButton#powerReadoutValue:focus { background: #352d22; color: #f0bc72; }
+QLabel#powerReadoutPeak { color: #cbd4d1; font-size: 13px; }
+QFrame#powerMeterReadoutRow[participating="false"] QPushButton#powerReadoutValue, QFrame#powerMeterReadoutRow[participating="false"] QLabel#powerReadoutPeak { color: #788286; }
 QLabel#spectrumHealth { color: #b8c5bd; font-size: 12px; padding: 2px 0; }
 QFrame#spectrumControls { border: 0; background: transparent; }
 QFrame#spectrumControls QScrollArea { border: 0; background: transparent; }
@@ -281,7 +309,7 @@ QLabel#scopeControlValue { font-size: 12px; color: #e2d9c8; }
 QLabel#scopeSampleRate { font-size: 12px; color: #b3c1b9; }
 QLabel#scopeSampleRate[stale="true"] { color: #788286; }
 QFrame#scopeSection QCheckBox { font-size: 13px; spacing: 7px; padding: 0; }
-QFrame#scopeSection QCheckBox::indicator { width: 14px; height: 14px; border-radius: 3px; }
+QFrame#scopeSection QCheckBox::indicator { width: 14px; height: 14px; border-radius: 8px; }
 QFrame#scopeControls QSlider::groove:horizontal { height: 3px; background: #3b494c; border-radius: 1px; }
 QFrame#scopeControls QSlider::sub-page:horizontal { background: #ac7c43; border-radius: 1px; }
 QFrame#scopeControls QSlider::handle:horizontal { width: 12px; margin: -5px 0; border-radius: 6px; background: #deb273; border: 1px solid #edc58e; }
