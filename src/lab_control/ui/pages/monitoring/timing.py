@@ -46,19 +46,20 @@ def monitoring_intervals(controller, device_id: str, mode: str) -> tuple[float, 
 
 def monitoring_options(controller, device_id: str, mode: str) -> dict:
     category = instrument_category(controller.records.get(device_id, {}))
-    reset_on_launch = category in {"spectrum_analyzer", "oscilloscope", "power_supply"}
     # A spectrum scan is a complete instrument sweep. Ten seconds is the
     # conservative first-run cadence; a saved per-device value still wins.
     default_interval = (
         10.0 if category == "optical_spectrometer" else 1.0 if category == "power_supply" else 0.5
     )
-    default_cadence = "interval" if reset_on_launch or category == "optical_spectrometer" else "fastest"
+    default_cadence = (
+        "interval"
+        if category in {"spectrum_analyzer", "oscilloscope", "power_supply", "optical_spectrometer"}
+        else "fastest"
+    )
     key = f"monitor-timing/{mode}/{device_id}"
     preferences = controller.runtime.monitoring_preferences
     if key not in preferences:
-        preferences[key] = (
-            {} if reset_on_launch or not device_id else controller.runtime.repository.load_workspace(key, {})
-        )
+        preferences[key] = controller.runtime.repository.load_workspace(key, {}) if device_id else {}
     stored = preferences[key]
     task = controller.runtime.monitoring.snapshots().get(device_id, {})
     values = task if task.get("running") else stored
@@ -181,6 +182,11 @@ class MonitoringTiming(QWidget):
         self.presets.blockSignals(True)
         self.presets.setCurrentIndex(max(0, self.presets.findData(float(interval))))
         self.presets.blockSignals(False)
+        options = monitoring_options(self.controller, device_id, self.mode)
+        self.cadence.blockSignals(True)
+        self.cadence.setCurrentIndex(self.cadence.findData(options["cadence"]))
+        self.cadence.blockSignals(False)
+        self.interval.setEnabled(self.fixed_interval or options["cadence"] == "interval")
 
     def _interval_value_changed(self, _value: float) -> None:
         if self.device_id:

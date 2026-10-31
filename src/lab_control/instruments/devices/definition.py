@@ -8,6 +8,7 @@ from typing import Any, Callable
 
 from lab_control.domain.connections import ConnectionConfig
 from lab_control.domain.instruments import CapabilitySet, DeviceIdentity, InstrumentAdapter
+from lab_control.domain.processing import ProcessingProfile
 from lab_control.instruments.base import Profile, ScpiAdapter
 
 
@@ -79,6 +80,7 @@ class DeviceDefinition:
     serial_driver_managed: bool = False
     # Shared workspaces must respect instruments which measure one input at a time.
     acquisition_channel_selection: str = "multiple"
+    offline_processing: ProcessingProfile | None = None
 
     def __post_init__(self) -> None:
         if self.acquisition_channel_selection not in {"single", "multiple"}:

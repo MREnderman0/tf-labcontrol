@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import pyqtgraph as pg
-from PySide6.QtCore import QUrl
+from PySide6.QtCore import QSignalBlocker, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QFormLayout,
@@ -104,6 +104,8 @@ class PhaseNoiseMonitoringPage(QWidget):
         controls.addWidget(self.estimate)
         self.rate.currentIndexChanged.connect(self.estimate_samples)
         self.duration.valueChanged.connect(self.estimate_samples)
+        self.rate.currentIndexChanged.connect(self.save_acquisition_preferences)
+        self.duration.valueChanged.connect(self.save_acquisition_preferences)
         self.frequency_panel = QWidget()
         self.frequency_layout = QVBoxLayout(self.frequency_panel)
         self.frequency_layout.setContentsMargins(0, 0, 0, 0)
@@ -169,19 +171,23 @@ class PhaseNoiseMonitoringPage(QWidget):
             self.frequency_layout.removeWidget(editor)
             editor.deleteLater()
         self.editors.clear()
-        self.rate.clear()
-        self.supported = False
+        # Rebuilding choices and restoring a device must not save intermediate
+        # defaults over its preferences or apply settings to the instrument.
+        with QSignalBlocker(self.rate), QSignalBlocker(self.duration):
+            self.rate.clear()
+            self.supported = False
+            if device_id:
+                caps = self.controller.capabilities(device_id)
+                try:
+                    caps.get("timed_phase")
+                    sample = caps.get("sample_rate")
+                    for rate in sample.parameters["value"].choices:
+                        self.rate.addItem(f"{int(float(rate)):,} 次/秒", int(float(rate)))
+                    self.supported = True
+                except DeviceError:
+                    self.status.setText("当前连接暂不支持定时相位采集；本机 USB 托管连接可用。")
+            self.restore_acquisition_preferences()
         if device_id:
-            caps = self.controller.capabilities(device_id)
-            try:
-                caps.get("timed_phase")
-                sample = caps.get("sample_rate")
-                for rate in sample.parameters["value"].choices:
-                    self.rate.addItem(f"{int(float(rate)):,} 次/秒", int(float(rate)))
-                self.rate.setCurrentIndex(max(0, self.rate.findData(100)))
-                self.supported = True
-            except DeviceError:
-                self.status.setText("当前连接暂不支持定时相位采集；本机 USB 托管连接可用。")
             for name, label in (("input_frequency", "DUT 输入频率"), ("reference_frequency", "参考频率")):
                 try:
                     caps.get(name)
@@ -194,6 +200,43 @@ class PhaseNoiseMonitoringPage(QWidget):
         if self.isVisible():
             self.focus_settings()
         self.refresh()
+
+    @property
+    def acquisition_key(self):
+        return f"phase-acquisition/{self.controller.mode}/{self.device_id}"
+
+    def restore_acquisition_preferences(self):
+        saved = (
+            self.controller.runtime.repository.load_workspace(self.acquisition_key, {})
+            if self.device_id
+            else {}
+        )
+        if not isinstance(saved, dict):
+            saved = {}
+        rate = saved.get("sample_rate", 100)
+        if isinstance(rate, bool) or not isinstance(rate, (int, float)):
+            rate = 100
+        index = self.rate.findData(rate)
+        self.rate.setCurrentIndex(index if index >= 0 else max(0, self.rate.findData(100)))
+        duration = saved.get("duration", 60)
+        if (
+            isinstance(duration, bool)
+            or not isinstance(duration, int)
+            or not self.duration.minimum() <= duration <= self.duration.maximum()
+        ):
+            duration = 60
+        self.duration.setValue(duration)
+
+    def save_acquisition_preferences(self):
+        if not self.device_id or not self.supported:
+            return
+        try:
+            self.controller.runtime.repository.save_workspace(
+                self.acquisition_key,
+                {"sample_rate": self.rate.currentData(), "duration": self.duration.value()},
+            )
+        except Exception as exc:
+            self.controller.message.emit(str(exc))
 
     def focus_settings(self):
         self.controller.focus_settings(

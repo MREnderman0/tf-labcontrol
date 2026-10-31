@@ -33,17 +33,17 @@ def test_four_model_only_meters_keep_slots_in_ui_and_after_restart(qtbot, tmp_pa
     try:
         for index, key in enumerate(ids, 1):
 
-            def choose(_parent, _title, _prompt, labels, selected=index):
-                assert [label.split("（")[0] for label in labels] == [
-                    "解除绑定",
+            def choose(_parent, selected_runtime, _device_id, category, mode, selected=index):
+                definitions = selected_runtime.repository.function_slots.definitions(category, mode)
+                assert list(definitions.values()) == [
                     "功率计1",
                     "功率计2",
                     "功率计3",
                     "功率计4",
                 ]
-                return labels[selected], True
+                return list(definitions)[selected - 1], True
 
-            monkeypatch.setattr("lab_control.ui.workspace.actions.choose_item", choose)
+            monkeypatch.setattr("lab_control.ui.workspace.actions.choose_slot", choose)
             window.choose_slot(key)
         window.controller.poll()
         window.refresh()

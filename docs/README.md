@@ -6,6 +6,7 @@
 
 - [安装与启动](../README.md)
 - [控制与监测](guides/control-and-monitoring.md)、[输入范围规则](guides/input-ranges.md)
+- [历史采集与数据处理](guides/data-processing.md)：单设备/批量历史、完整曲线、逐帧时间线及论文插图
 - [Agent 协作实验](guides/agent-collaboration.md)：MCP 接入、实验授权、Codex、局域网连接器和结果下载
 - [相噪定时采集与 ADEV/MDEV](requirements/realtime-monitoring.md#相噪仪定时采集)：采样率、时长、自动保存及实测边界
 - [光功率计全通道实时监测](guides/control-and-monitoring.md#光功率计全通道监测)：通道筛选、W 显示与自动连续记录

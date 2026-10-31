@@ -57,6 +57,46 @@ def test_page_and_overview_share_exclusive_selection(workspace, qtbot):
     assert page.channels() == (2,)
 
 
+@pytest.mark.parametrize("running", [False, True])
+def test_overview_interval_selects_custom_cadence_and_survives_restart(qtbot, tmp_path, running):
+    config = ConnectionConfig("mock://counter-timing", "keysight.53220a", "mock")
+    for launch in range(2):
+        with ApplicationRuntime(root=tmp_path, hardware=False) as runtime:
+            wire = Counter()
+            runtime.sessions.factory = lambda c: build_scpi_adapter(c, wire)
+            device = runtime.add(config)
+            runtime.connect(device, configure_acquisition=False).result(3)
+            parent = QWidget()
+            qtbot.addWidget(parent)
+            controller = WorkspaceController(runtime, parent)
+            controller.timer.stop()
+            runtime.monitoring.enable_settings_sync(False)
+            try:
+                page = FrequencyCounterMonitoringPage(controller, parent=parent)
+                page.select_device(device)
+                dashboard = MonitoringDashboard(controller, parent=parent)
+                qtbot.wait(1)
+                assert page.timing.options()["cadence"] == ("fastest" if launch == 0 else "interval")
+                if running:
+                    page.toggle_monitoring()
+                    assert runtime.monitoring.snapshots()[device]["running"]
+                if launch == 0:
+                    dashboard.cards[device].interval.setValue(1)
+                # Verify the mode immediately, before a periodic page refresh.
+                assert page.timing.options()["cadence"] == "interval"
+                assert page.timing.interval.isEnabled() and page.timing.interval.value() == 1
+                saved = runtime.repository.load_workspace(f"monitor-timing/general/{device}")
+                assert (saved["cadence"], saved["interval"]) == ("interval", 1)
+                if running:
+                    task = runtime.monitoring.snapshots()[device]
+                    assert (task["cadence"], task["interval"]) == ("interval", 1)
+                    runtime.monitoring.stop(device).result(3)
+                else:
+                    assert not runtime.monitoring.tasks
+            finally:
+                controller.close()
+
+
 def test_trend_export_and_every_frame_recording(workspace, qtbot):
     runtime, device, _, controller, page = workspace
     runtime.monitoring.start(device, (request(),), interval=0.05, recording=True)

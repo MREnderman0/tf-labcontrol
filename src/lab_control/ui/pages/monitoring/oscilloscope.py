@@ -313,7 +313,14 @@ class OscilloscopeMonitoringPage(QWidget):
         if self.controls and self.controls.running and self.controls.restart:
             self.start_button.setText("取消续监测")
             self.start_button.setEnabled(bool(connected))
-        refresh_reconnect_button(self.start_button, self.controller, self.device_id, task, busy=busy)
+        refresh_reconnect_button(
+            self.start_button,
+            self.controller,
+            self.device_id,
+            task,
+            busy=busy,
+            can_cancel=bool(self.controls and self.controls.running and self.controls.restart),
+        )
         self.record_button.refresh(
             task, connected=connected, busy=busy, locked=bool(state.get("controlsLocked"))
         )

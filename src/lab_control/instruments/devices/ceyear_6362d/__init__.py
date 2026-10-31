@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from lab_control.domain.processing import ProcessingProfile
 from lab_control.instruments.devices.definition import DeviceDefinition, DeviceDocumentation
 
 from .adapter import Ceyear6362DAdapter
@@ -21,4 +22,5 @@ DEFINITION = DeviceDefinition(
     identity_requires_adapter=True,
     discovery_identity=discovery_identity,
     discovery_config=normalize_discovery_config,
+    offline_processing=ProcessingProfile("frames"),
 )

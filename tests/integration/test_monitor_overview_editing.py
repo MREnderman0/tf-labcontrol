@@ -9,7 +9,11 @@ from lab_control.application.runtime import ApplicationRuntime
 from lab_control.domain.instruments import AcquisitionRequest
 from lab_control.ui.controller import WorkspaceController
 from lab_control.ui.pages.monitoring.dashboard import MonitoringDashboard
-from lab_control.ui.pages.monitoring.timing import MonitoringTiming, monitoring_options
+from lab_control.ui.pages.monitoring.timing import (
+    MonitoringTiming,
+    monitoring_options,
+    save_monitoring_interval,
+)
 
 
 @pytest.fixture
@@ -118,6 +122,19 @@ def test_categories_start_new_rows_and_devices_wrap_at_three(workspace, qtbot):
     window.resize(1450, 900)
     qtbot.waitUntil(lambda: group.grid.columns == 3)
     assert dashboard.grid.horizontalScrollBar().maximum() == 0
+
+
+def test_overview_changes_cadence_only_for_the_explicit_interval_edit(workspace):
+    _, controller, dashboard, _, meters = workspace
+    for key in meters:
+        save_monitoring_interval(controller, key, "general", 2, cadence="fastest")
+    changed, other = meters[:2]
+    dashboard.cards[other].enabled.setChecked(False)
+    assert all(monitoring_options(controller, key, "general")["cadence"] == "fastest" for key in meters)
+    dashboard.cards[changed].interval.setValue(3)
+    assert monitoring_options(controller, changed, "general")["cadence"] == "interval"
+    assert all(monitoring_options(controller, key, "general")["cadence"] == "fastest" for key in meters[1:])
+    assert not controller.runtime.monitoring.tasks
 
 
 @pytest.mark.parametrize("view", ["overview", "detail"])

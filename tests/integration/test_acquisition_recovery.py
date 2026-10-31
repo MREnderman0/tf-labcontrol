@@ -148,6 +148,12 @@ def test_stop_during_identity_read_never_resumes_acquisition(tmp_path):
             assert entered.wait(3)
             stopped = runtime.monitoring.stop(device)
             assert not stopped.done()
+            task = runtime.monitoring.tasks[device]
+            assert runtime.monitoring.snapshots()[device]["stopping"]
+            with pytest.raises(DeviceError) as caught:
+                runtime.monitoring.start(device, (AcquisitionRequest("waveform", points=32),))
+            assert caught.value.code == "task_busy"
+            assert runtime.monitoring.tasks[device] is task
         finally:
             release.set()
         stopped.result(5)

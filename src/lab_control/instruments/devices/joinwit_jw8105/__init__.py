@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from lab_control.domain.processing import ProcessingProfile
 from lab_control.instruments.devices.definition import DeviceDefinition, DeviceDocumentation
 
 from .adapter import Jw8105Adapter
@@ -22,6 +23,7 @@ DEFINITION = DeviceDefinition(
     transport_factory=create_transport,
     capability_schema=capability_schema,
     identity_requires_adapter=True,
+    offline_processing=ProcessingProfile("scalar", power_units=True),
 )
 
 __all__ = ["DEFINITION", "Jw8105Adapter"]

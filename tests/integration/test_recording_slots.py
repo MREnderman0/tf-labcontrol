@@ -30,7 +30,8 @@ def assert_saved_slot(folder, slot, label, key):
 
 
 @pytest.mark.parametrize("entry", ["displayed", "capture", "monitor", "direct"])
-def test_four_identical_meters_save_distinct_slot_attribution(tmp_path, monkeypatch, entry):
+@pytest.mark.parametrize("custom", [False, True])
+def test_four_identical_meters_save_distinct_slot_attribution(tmp_path, monkeypatch, entry, custom):
     monkeypatch.setattr(
         SimulatedInstrument,
         "identify",
@@ -44,6 +45,9 @@ def test_four_identical_meters_save_distinct_slot_attribution(tmp_path, monkeypa
             key = runtime.add(ConnectionConfig(f"mock://save-meter-{index}", "joinwit.jw8105", "mock"))
             runtime.connect(key).result(3)
             slot, label = f"optical_power_meter:{index}", f"功率计{index}"
+            if custom:
+                label = f"光路功率 {index}"
+                slot = runtime.create_slot("optical_power_meter", label)
             runtime.bind_slot(key, slot, "general")
             service = runtime.monitoring
             if entry == "displayed":
@@ -73,5 +77,6 @@ def test_four_identical_meters_save_distinct_slot_attribution(tmp_path, monkeypa
         assert len(set(folders)) == 4
         # Offline conversion uses the saved label, even after a new slot binding.
         runtime.bind_slot(key, "", "general")
+        runtime.delete_slot(slot)
         exported = export_analysis(folders[-1], tmp_path / "重新导出")
         assert_saved_slot(exported, slot, label, key)

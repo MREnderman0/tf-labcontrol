@@ -95,3 +95,15 @@ class MonitorTask:
     before_acquire: Callable[[Any, AcquisitionRequest], None] | None = None
     recovery: Recovery | None = None
     recovery_pending: Future[Any] | None = None
+
+    @property
+    def stopping(self) -> bool:
+        """A stopped task still owns I/O or binary data; CSV alone does not block restart."""
+        return not self.running and bool(
+            self.pending is not None
+            or self.write_pending is not None
+            or self.recording_preparation is not None
+            or self.recovery is not None
+            or self.recovery_pending is not None
+            or (self.recorder is not None and not self.recorder.binary_done)
+        )

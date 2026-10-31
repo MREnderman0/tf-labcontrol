@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
 
 from lab_control.application.bulk_connection import device_label
 from lab_control.application.catalog import instrument_category, surface_applicable
-from lab_control.application.controls import CATEGORY_LABELS, slot_label
+from lab_control.application.controls import CATEGORY_LABELS
 from lab_control.discovery.presence import is_current, presence_label
 from lab_control.ui.controller import (
     background_read_only,
@@ -465,7 +465,9 @@ class WorkspaceOverview:
                     else presence_label(record, state)
                 ),
                 window.controller.slot_notice(record["id"])
-                or slot_label(record.get("slots", {}).get(window.controller.mode, "")),
+                or window.runtime.repository.function_slots.label(
+                    record.get("slots", {}).get(window.controller.mode, ""), window.controller.mode
+                ),
             ]
             badges_changed = row.text(3) != texts[3] or row.text(4) != texts[4]
             for index, text in enumerate(texts):
@@ -669,7 +671,9 @@ class WorkspaceOverview:
                 "aliases": "\n".join(r for r in record["resources"] if r != config["resource"]) or "无",
                 "mode": "通用工作区",
                 "slot": window.controller.slot_notice(record["id"])
-                or slot_label(record.get("slots", {}).get(window.controller.mode, "")),
+                or window.runtime.repository.function_slots.label(
+                    record.get("slots", {}).get(window.controller.mode, ""), window.controller.mode
+                ),
                 "presence": presence_label(record, state),
                 "identity_state": identity_state,
                 "seen": seen.toLocalTime().toString("yyyy-MM-dd HH:mm:ss")

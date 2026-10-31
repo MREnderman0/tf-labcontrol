@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWi
 
 from lab_control.application.bulk_connection import device_label
 from lab_control.application.catalog import surface_applicable
-from lab_control.application.controls import CATEGORY_LABELS, slot_label
+from lab_control.application.controls import CATEGORY_LABELS
 from lab_control.ui.controller import WorkspaceController, display_connection_state, state_label
 from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
 
@@ -67,7 +67,8 @@ class DeviceSelector(QWidget):
             slot = entry.get("slots", {}).get(self.controller.mode)
             connection = display_connection_state(self.controller.states[entry["id"]])
             suffix = " · " + state_label(connection) if connection != "connected" else ""
-            entries.append(((slot_label(slot) + " · " if slot else "") + label + suffix, entry["id"]))
+            slot_name = self.controller.runtime.repository.function_slots.label(slot, self.controller.mode)
+            entries.append(((slot_name + " · " if slot else "") + label + suffix, entry["id"]))
         signature = tuple(entries)
         if signature != self.signature:
             self.combo.replace_items(entries, select_first=self.signature is None)

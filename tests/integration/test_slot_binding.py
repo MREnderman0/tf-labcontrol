@@ -7,7 +7,7 @@ from lab_control.application.config import ConnectionConfig
 from lab_control.application.runtime import ApplicationRuntime
 from lab_control.demo.instrument import SimulatedInstrument
 from lab_control.discovery.service import DiscoveryCandidate, Inventory
-from lab_control.domain.instruments import DeviceError
+from lab_control.domain.instruments import DeviceError, ValidationError
 
 
 @pytest.fixture
@@ -153,3 +153,94 @@ def test_alias_merge_preserves_explicit_unbinding_and_marks_conflicting_choices(
     assert slots(runtime)[key]["electronic"] == historical
     assert slots(runtime)[extra["id"]]["electronic"] == placeholder
     assert next(r for r in runtime.inventory.all() if r["id"] == extra["id"])["discoveryState"] == "conflict"
+
+
+def test_custom_slots_persist_and_saved_labels_survive_deletion(tmp_path):
+    with ApplicationRuntime(root=tmp_path, hardware=False) as runtime:
+        key = runtime.add(ConnectionConfig("mock://named", "rs.sma100b", "mock"))
+        slot = runtime.create_slot("signal_generator", "  冷却光 RF  ")
+        assert runtime.create_slot("signal_generator", "冷却光 rf") == slot
+        runtime.bind_slot(key, slot, "general")
+        context = runtime.repository.new_save_context("general", "single_frame", device_id=key)
+        assert context.slot == slot and context.slot_label == "冷却光 RF"
+        # Category and mode boundaries still apply to user-created slots.
+        with pytest.raises(ValidationError):
+            runtime.bind_slot(key, slot, "optical")
+        wrong = runtime.create_slot("power_supply", "冷却光 RF")
+        with pytest.raises(ValidationError):
+            runtime.bind_slot(key, wrong, "general")
+    with ApplicationRuntime(root=tmp_path, hardware=False) as runtime:
+        assert slots(runtime)[key]["general"] == slot
+        assert runtime.repository.function_slots.label(slot) == "冷却光 RF"
+        with pytest.raises(DeviceError, match="先解除绑定"):
+            runtime.delete_slot(slot)
+        runtime.bind_slot(key, "", "general")
+        runtime.delete_slot(slot)
+        recreated = runtime.create_slot("signal_generator", "冷却光 RF")
+        assert recreated != slot  # Deleted-slot preferences must not attach to a new slot.
+        assert context.slot_label == "冷却光 RF"
+        with pytest.raises(ValidationError):
+            runtime.bind_slot(key, slot, "general")
+
+
+def test_deleting_all_default_slots_persists_without_reseeding_or_changing_other_modes(tmp_path):
+    with ApplicationRuntime(root=tmp_path, hardware=False) as runtime:
+        for slot in runtime.repository.function_slots.definitions("signal_generator"):
+            runtime.delete_slot(slot)
+    with ApplicationRuntime(root=tmp_path, hardware=False) as runtime:
+        assert runtime.repository.function_slots.definitions("signal_generator") == {}
+        assert len(runtime.repository.function_slots.definitions("signal_generator", "electronic")) == 2
+        assert len(runtime.repository.function_slots.definitions("optical_power_meter")) == 4
+        key = runtime.add(ConnectionConfig("mock://empty", "rs.sma100b", "mock"))
+        with pytest.raises(ValidationError):
+            runtime.bind_slot(key, "signal_generator:1", "general")
+        assert runtime.create_slot("signal_generator", "新槽位")
+
+
+@pytest.mark.parametrize("name", ["", "   ", "x" * 65, "a\nb", "a\x00b", "a\x7fb"])
+def test_invalid_slot_names_do_not_change_definitions(workspace, name):
+    runtime, _ = workspace
+    before = runtime.repository.function_slots.definitions("signal_generator")
+    with pytest.raises(ValidationError):
+        runtime.create_slot("signal_generator", name)
+    assert runtime.repository.function_slots.definitions("signal_generator") == before
+
+
+def test_custom_slot_replacement_keeps_busy_and_occupancy_guards(workspace):
+    runtime, (first, second, _) = workspace
+    slot = runtime.create_slot("signal_generator", "实验光路")
+    runtime.bind_slot(first, slot, "general")
+    with pytest.raises(DeviceError, match="先解除绑定"):
+        runtime.delete_slot(slot)
+    runtime.sessions.sessions[first].recording = True
+    try:
+        with pytest.raises(DeviceError) as error:
+            runtime.bind_slot(second, slot, "general", replace_device_id=first)
+        assert error.value.code == "task_busy"
+    finally:
+        runtime.sessions.sessions[first].recording = False
+    runtime.bind_slot(second, slot, "general", replace_device_id=first)
+    assert slots(runtime)[first]["general"] == ""
+    assert slots(runtime)[second]["general"] == slot
+
+
+@pytest.mark.parametrize("action", ["create", "delete"])
+def test_slot_catalog_write_failure_keeps_previous_definitions(workspace, action):
+    runtime, _ = workspace
+    before = runtime.repository.function_slots.definitions("signal_generator")
+    with runtime.repository.db:
+        runtime.repository.db.execute(
+            "CREATE TRIGGER fail_slot_catalog BEFORE INSERT ON workspace "
+            "WHEN NEW.id LIKE 'function_slots/%' "
+            "BEGIN SELECT RAISE(ABORT, 'fixture write failure'); END"
+        )
+    try:
+        with pytest.raises(sqlite3.IntegrityError):
+            if action == "create":
+                runtime.create_slot("signal_generator", "新槽位")
+            else:
+                runtime.delete_slot("signal_generator:1")
+        assert runtime.repository.function_slots.definitions("signal_generator") == before
+    finally:
+        with runtime.repository.db:
+            runtime.repository.db.execute("DROP TRIGGER fail_slot_catalog")

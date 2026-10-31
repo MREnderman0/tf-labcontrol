@@ -320,7 +320,12 @@ class PowerMonitoringPage(QWidget):
             check.setEnabled(connected and not busy and not locked and not self.transition)
         self.timing.refresh(task)
         refresh_reconnect_button(
-            self.start_button, self.controller, self.device_id, task, busy=busy or self.transition
+            self.start_button,
+            self.controller,
+            self.device_id,
+            task,
+            busy=busy or self.transition,
+            can_cancel=self.transition,
         )
         self.record_button.refresh(task, connected=connected, busy=busy or self.transition, locked=locked)
         update_recording_frame(self.chart, task)
