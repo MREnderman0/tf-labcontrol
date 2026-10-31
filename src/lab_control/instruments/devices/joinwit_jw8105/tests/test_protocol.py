@@ -113,6 +113,28 @@ def test_read_settings_and_acquisition_are_read_only() -> None:
     assert transport.history == [build_frame(1, 0x0140), build_frame(1, 0x0162)]
 
 
+def test_repeated_acquisition_reads_a_new_display_power_frame_each_time() -> None:
+    first = bytes.fromhex("5D 07 00 00") * 8
+    second = bytes.fromhex("6D 07 00 00") * 8
+    transport = MockFrameTransport(
+        [
+            build_frame(1, 0x0141, b"\0" * 4),
+            build_frame(1, 0x0163, first),
+            build_frame(1, 0x0163, second),
+        ]
+    )
+    adapter = Jw8105Adapter(transport, DEFINITION.profile, config())
+    adapter.identify()
+    first_batch = adapter.acquire(AcquisitionRequest(channels=(1,)))
+    second_batch = adapter.acquire(AcquisitionRequest(channels=(1,)))
+    assert first_batch.measurements[0].values != second_batch.measurements[0].values
+    assert transport.history == [
+        build_frame(1, 0x0140),
+        build_frame(1, 0x0162),
+        build_frame(1, 0x0162),
+    ]
+
+
 @pytest.mark.parametrize("options, channels", [((), (9, 16)), (("module=2",), (1, 8))])
 def test_display_acquisition_only_queries_selected_module(options, channels) -> None:
     power = b"".join(int(index - 1000).to_bytes(4, "little", signed=True) for index in range(8))

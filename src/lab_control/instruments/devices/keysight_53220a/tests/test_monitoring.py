@@ -50,7 +50,7 @@ def test_page_and_overview_share_exclusive_selection(workspace, qtbot):
     assert page.channels() == (2,)
     assert dashboard._channels(device, controller.records[device]) == (2,)
     dashboard.refresh()
-    grouped, _ = dashboard._requests()
+    grouped = dashboard._requests()
     assert grouped[0][1][0].channels == (2,)
     assert grouped[0][1][0].points == 1
     page.channel_checks[2].click()

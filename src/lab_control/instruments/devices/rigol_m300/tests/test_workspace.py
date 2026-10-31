@@ -43,9 +43,9 @@ def test_scan_metadata_reaches_channel_selector_plot_and_recording_request(qtbot
         assert page.channels() == (428,) and not page.channel_checks
         dashboard = MonitoringDashboard(controller, owner)
         qtbot.addWidget(dashboard)
-        grouped, confirmation = dashboard._requests()
+        grouped = dashboard._requests()
         assert grouped[0][1][0].channels == (428,)
-        assert grouped[0][1][0].confirmed and confirmation
+        assert grouped[0][1][0].confirmed
         scan = page.scan_page
         assert scan is not None and scan.isVisible()
         assert page.splitter.isHidden() and not page.form.editors
@@ -66,11 +66,11 @@ def test_scan_metadata_reaches_channel_selector_plot_and_recording_request(qtbot
         assert page.channels() == tuple(range(401, 420))
         assert tuple(scan.cards) == tuple(range(401, 420))
         assert "19 路" in scan.channel_title.text()
-        grouped, _ = dashboard._requests()
+        grouped = dashboard._requests()
         assert grouped[0][1][0].channels == tuple(range(401, 420))
         instrument.capability_details["acquisition_channels"] = []
         app.sessions.submit(device, "refresh_capabilities").result()
-        assert dashboard._requests()[0] == []
+        assert dashboard._requests() == []
         page.refresh()
         assert not scan.start_button.isEnabled()
         qtbot.wait(20)
