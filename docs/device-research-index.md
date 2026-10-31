@@ -64,7 +64,7 @@
 | Joinwit JW8105 | `joinwit.jw8105` | RS232；RJ45 选件待核对 | [卡片](devices/measurement-analyzers/joinwit-jw8105.md) |
 | 芯明天 XMT（完整型号待核） | `coremorrow.xmt` | USB 串口 / VISA ASRL；COM 参数由现场配置指定 | [卡片](devices/power-supplies/coremorrow-xmt.md) |
 | RIGOL M300 | `rigol.m300` | LAN / USB VISA；优先 PyVISA | [卡片](devices/measurement-analyzers/rigol-m300.md) |
-| K+K FXE | `kplusk.fxe` | Ethernet（经交换机直连设备 IP）；USB 仅用于官方配置工具 | [卡片](devices/measurement-analyzers/kplusk-fxe.md) |
+| K+K FXE / FXE2 | `kplusk.fxe` | Ethernet（FXE2 使用 DHCP，已登记身份随租约更新地址） | [卡片](devices/measurement-analyzers/kplusk-fxe.md) |
 | Keysight / Agilent 53220A | `keysight.53220a` | LAN VXI-11 / VISA SOCKET；优先 PyVISA | [卡片](devices/measurement-analyzers/keysight-53220a.md) |
 <!-- device-modules:end -->
 

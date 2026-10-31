@@ -20,6 +20,7 @@ from lab_control.application.controls import DataSource
 from lab_control.domain.instruments import AcquisitionRequest, DeviceError
 from lab_control.instruments.registry import DEVICE_DEFINITIONS
 from lab_control.ui.pages.monitoring.channel_selection import selected_input, selection_key, single_input
+from lab_control.ui.pages.monitoring.connection import refresh_reconnect_button
 from lab_control.ui.pages.monitoring.plot import LivePlot
 from lab_control.ui.pages.monitoring.recording_state import (
     RecordingButton,
@@ -228,6 +229,8 @@ class FrequencyCounterMonitoringPage(QWidget):
         self.refresh()
 
     def toggle_monitoring(self) -> None:
+        if self.controller.reconnect_if_needed(self.device_id):
+            return
         task = self.controller.runtime.monitoring.snapshots().get(self.device_id, {})
         if task.get("running") or task.get("pending"):
             self.controller.watch(
@@ -291,7 +294,10 @@ class FrequencyCounterMonitoringPage(QWidget):
         self.toggle_button.setText(
             "收尾中…" if draining else "停止监测" if task.get("running") else "开始监测"
         )
-        self.toggle_button.setEnabled(bool(connected and self.channels() and not draining))
+        self.toggle_button.setEnabled(
+            bool((connected or task.get("running")) and self.channels() and not draining)
+        )
+        refresh_reconnect_button(self.toggle_button, self.controller, self.device_id, task)
         self.record_button.refresh(
             task,
             connected=connected,
@@ -305,6 +311,7 @@ class FrequencyCounterMonitoringPage(QWidget):
         )
         self.status.setText(
             task.get("error")
+            or task.get("notice")
             or self.channel_notice
             or task.get("recording_notice")
             or recording_save_notice(task)

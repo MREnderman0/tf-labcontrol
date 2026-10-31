@@ -9,6 +9,7 @@ from typing import Any, Callable, TypeVar
 from uuid import uuid4
 
 from lab_control.application.acquisition_pipeline import validate_cadence
+from lab_control.application.acquisition_recovery import AcquisitionRecovery, Recovery
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.leases import ResourceLeases
 from lab_control.application.recorded_acquisition import RecordedAcquisitionRunner
@@ -92,10 +93,11 @@ class DeviceSession:
     acquisition_preparation: dict[str, Any] = field(default_factory=dict)
     acquisition_setup_enabled: bool = False
     direct_recording: Recording | None = None
+    recovery: Recovery | None = None
 
     @property
     def controls_locked(self) -> bool:
-        return self.recording or self.active_task == "continuous_acquisition"
+        return self.recording or self.active_task == "continuous_acquisition" or self.recovery is not None
 
 
 class SessionManager:
@@ -119,6 +121,7 @@ class SessionManager:
         self._close_lock = threading.Lock()
         self.operations = SessionOperations(self)
         self.acquisition_runner = RecordedAcquisitionRunner(self)
+        self.recovery = AcquisitionRecovery(self)
 
     def subscribe(self, callback: Callable[[dict[str, Any]], None]) -> Callable[[], None]:
         with self.lock:
@@ -159,6 +162,7 @@ class SessionManager:
                     "identity": jsonable(item.identity),
                     "monitoring": item.monitoring,
                     "recording": item.recording,
+                    "recovery": item.recovery.snapshot() if item.recovery else {},
                     "controlsLocked": item.controls_locked,
                     "acquisitionPreparation": deepcopy(item.acquisition_preparation),
                     "configurationVersion": item.configuration_version,
@@ -219,6 +223,10 @@ class SessionManager:
             if session:
                 if active and session.controls_locked:
                     raise DeviceError("采集中参数已锁定，请先停止采集或记录", "task_busy")
+                if active and (
+                    self._closing or session.closing or session.state not in {"connected", "busy"}
+                ):
+                    raise DeviceError("设备连接不可用，请先重连", "disconnected")
                 session.control_group = active
 
     def try_submit_idle(
@@ -518,15 +526,88 @@ class SessionManager:
             if enabled and (
                 self._closing
                 or session.closing
-                or session.state not in {"connected", "busy"}
+                or (
+                    session.state not in {"connected", "busy"}
+                    and not (session.state in {"recovering", "degraded"} and session.monitoring)
+                )
                 or (session.stream_future and not session.stream_future.done())
                 or (recording and (session.control_group or session.control_pending))
             ):
                 raise DeviceError("Session cannot start monitoring", "task_busy")
             session.monitoring, session.recording = enabled, recording if enabled else False
+            if not enabled and not session.pending and session.active_task == "monitoring":
+                session.active_task = ""
             if not session.pending and session.state in {"connected", "busy"}:
                 session.state = "busy" if enabled else "connected"
                 session.active_task = "monitoring" if enabled else ""
+
+    def reconnect(self, device_id: str) -> Future[DeviceIdentity]:
+        """Explicitly retry an idle failed session once, retaining identity and leases."""
+        with self.lock:
+            session = self.sessions.get(device_id)
+            if self._closing or session is None or session.closing:
+                raise DeviceError("设备会话已关闭，请在设备总览连接", "disconnected")
+            if (
+                session.state not in {"degraded", "error"}
+                or session.pending
+                or session.monitoring
+                or session.controls_locked
+                or session.control_pending
+                or session.control_group
+                or (session.stream_future and not session.stream_future.done())
+            ):
+                raise DeviceError("请等待当前操作及记录收尾完成后重连", "task_busy")
+            if session.identity is None:
+                raise DeviceError("缺少原设备身份，请在设备总览重新连接并核验", "identity_conflict")
+            recovery = Recovery(session.last_error, "disconnected")
+            session.pending += 1
+            session.recovery = recovery
+            session.state, session.active_task = "recovering", "reconnect"
+
+            def retry() -> DeviceIdentity:
+                try:
+                    self.recovery.reconnect(session, recovery)
+                    # A manual reconnect starts a new display/settings context.
+                    with self.lock:
+                        session.session_id = uuid4().hex
+                    self.audit.try_record("manual_reconnect_succeeded", device_id=device_id)
+                    assert session.identity is not None
+                    return session.identity
+                except Exception as exc:
+                    with self.lock:
+                        session.state, session.last_error = "degraded", str(exc)
+                    self.audit.try_record("manual_reconnect_failed", device_id=device_id, error=str(exc))
+                    raise
+                finally:
+                    with self.lock:
+                        session.pending -= 1
+                        session.active_task = ""
+                        session.recovery = None
+                    self.emit("task_finished", device_id)
+
+            return _accepted_result(session.worker.submit(retry))
+
+    def try_recover(self, device_id: str, recovery: Recovery) -> Future[Any] | None:
+        """Reserve one reconnect on the same worker; keep endpoint/identity leases."""
+        with self.lock:
+            session = self.sessions.get(device_id)
+            if self._closing or session is None or session.closing or recovery.cancelled.is_set():
+                raise DeviceError("自动重连已取消", "recovery_cancelled")
+            if session.pending or session.control_pending or session.control_group:
+                return None
+            session.pending += 1
+            session.recovery = recovery
+            session.state = "recovering"
+
+            def reconnect() -> None:
+                try:
+                    self.recovery.reconnect(session, recovery)
+                finally:
+                    with self.lock:
+                        session.pending -= 1
+                    self.emit("task_finished", device_id)
+
+            return _accepted_result(session.worker.submit(reconnect))
 
     @staticmethod
     def _invalidate_acquisition(session: DeviceSession, reason: str) -> None:

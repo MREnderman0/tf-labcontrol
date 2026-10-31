@@ -11,9 +11,15 @@
 .venv-dev\Scripts\python.exe -m lab_control.instruments.devices.rigol_m300.hardware.readonly --resource '<VISA资源>' --expected-serial '<完整序列号>'
 # 已授权的热敏电阻接入测试；默认恢复原设置
 .venv-dev\Scripts\python.exe -m lab_control.instruments.devices.rigol_m300.hardware.verify --resource '<VISA资源>' --expected-serial '<完整序列号>' --channel 428 --nominal 10000 --duration 12
+# 多通道不同标称值：必须使用已识别插槽的物理编号；下例为第 4 槽
+.venv-dev\Scripts\python.exe -m lab_control.instruments.devices.rigol_m300.hardware.verify --resource '<VISA资源>' --expected-serial '<完整序列号>' --group 401:416=5000 --group 417:419=10000 --duration 12
 ```
 
 `--home` 必须指向已核验的正式运行目录，不可换目录绕过占用。`--leave-configured` 只在用户要求配置设备时使用：先完成恢复和重连核验，再显式留下指定通道的 TEMP/THER、标称阻值、℃ 和扫描列表。结束时关闭软件采集和会话，不持续后台读取。旧 `validate_control` 入口转发到相同计划，不再无条件修改触发间隔。
+
+`--group` 可重复，不能与 `--channel` 混用；重叠、跨槽范围、非 MC3132 输入及不支持的阻值在通信前拒绝。`--input-condition` 保存传感器名称、接线和曲线已知程度。5 kΩ/10 kΩ 只决定仪器内置换算档位，不自动确认 MF501 或其他厂家的具体曲线。
+
+多通道计划先保存所有目标输入和其同槽未选输入、继电器、全局扫描及原有读数。原扫描列表只能包含本次输入，继电器必须全部打开，DMM/触发/附加字段满足单轮条件。逐路切换 RES 并检查原自动量程已开启，采集三次完整扫描；随后按组切换 TEMP/THER 和各自标称阻值，验证三次 ℃、一次 ℉ 及连续记录。每帧必须按序包含全部选定通道，缺路或任一路无效则整帧不显示、不保存。恢复逐路处理已尝试写入的输入，失败不阻断其他输入恢复；完整状态和未选输入逐项比较。保留配置阶段失败则尝试恢复原设置，并单独记录该次恢复结果。
 
 ## 备份与步骤
 

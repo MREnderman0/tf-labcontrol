@@ -344,7 +344,7 @@ class DHO924Adapter(ScpiAdapter):
             if original != "STOP":
                 result = self.apply(DeviceCommand("stop"))
                 if result.outcome != "success":
-                    raise DeviceError(result.error, "acquisition_failed")
+                    raise DeviceError(result.error, "configuration_uncertain")
             batch = self._read_frame(request, memory=True)
             self.restore_transfer(transfer)
             if original != "STOP":

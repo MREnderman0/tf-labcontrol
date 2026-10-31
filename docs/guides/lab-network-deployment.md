@@ -2,26 +2,15 @@
 
 应用程序可迁移，实验网配置按电脑生成。不能把开发电脑的网卡 GUID、IP、MAC 保留名单、程序安装路径、防火墙规则或租约复制为新电脑的默认配置。仪器用完整型号与序列号核验身份，IP 只是当前连接地址。参见[实验网发现](../architecture/lan-discovery.md)。
 
-## K+K FXE 计数器：静态地址和换电脑
+## K+K FXE / FXE2：DHCP 与换电脑
 
-K+K FXE 的以太网配置有一个特殊前提：设备使用静态 IPv4，官方资料没有 DHCP 配置流程。普通交换机只转发数据，不会给 FXE 分配地址；换电脑时必须先用 USB 读写设备配置，再把设备接回交换机。不要把“扫描不到 DHCP 租约”解释为网线故障，也不要把 IP 单独当作设备身份。
+后续现场 K+K 统一启用 DHCP。FXE2 支持动态地址；普通交换机本身不分配地址，须由实验网已有 DHCP 或电脑上绑定实验口的服务提供。已登记设备按有效租约中的 MAC 查找当前 IP，再以官方版本查询核对完整型号及序列号；成功后更新原资产地址，不固定当次租约。没有有效租约或身份不符时不访问旧 DHCP 地址，未知租约也不会被猜测为 K+K。首次接入需要先明确目标及当次地址并核验身份。
 
-项目离线材料在 `deployment/packages/tools/kplusk/`，启动器为 `scripts/launch-kplusk-config.ps1`；目录式发行包中对应文件位于 `maintenance/launch-kplusk-config.ps1`。启动器先核对官方 FXE1 配置工具的 SHA256，再打开工具；它不会改电脑网卡、启动 DHCP、添加防火墙规则或自动写设备参数。正式安装包的同一材料位于 `maintenance/packages/tools/kplusk/`。
+换电脑时备份库存、设备角色和实机历史，重新选择实际网口、检查 DHCP 服务及组件；不复制旧网卡 GUID、租约或防火墙规则。设备继续使用 DHCP，不为配合旧电脑地址而改回静态。连接与扫描不写网络或测量设置。详细操作与边界见 [K+K 型号卡片](../devices/measurement-analyzers/kplusk-fxe.md)。
 
-### 首次安装或更换电脑
+项目 `kplusk-config-tool` 和 `scripts/launch-kplusk-config.ps1` 当前对应 **FXE1** 配置工具；FXE2 需要厂家独立的 FXE2 工具，不能混用。FXE2 工具尚未作为已准备组件分发，后续引入须同步下载资源清单。若设备已启用 DHCP，则无需为扫描重新配置固件或网络。官方材料清单见 `deployment/packages/tools/kplusk/README.md`。
 
-1. 先结束采集和其他 K+K 软件，确认本机固定运行目录和硬件锁可用。把 FXE 通过 USB 接到新电脑；不要先拔掉旧设备或把新设备接到旧设备正在使用的地址。
-2. 运行 `scripts/launch-kplusk-config.ps1`，在官方工具中选中明确的 USB 设备。先记录完整 Hardware、USB serial、Firmware、CAN Receive/Transmit ID、Extended Format、Nickname、IP、Subnetmask 和 Standard gateway；没有完整型号或序列号时停止，不按 IP 猜设备。
-3. 只勾选 `Update Configuration`，填写现场实验网段的静态 IP、掩码和网关。隔离交换机没有上级路由时网关填 `0.0.0.0`；不要把电脑的实验网卡地址当作网关。不要勾选 `Update Firmware` 或 `Update Bootloader`，不要改 CAN、Nickname 或报告设置。
-4. 点击 `Start Update`，等待工具提示完成和设备重启。保留写入前截图/JSON；失败或弹窗内容也要留档，不能重复点击不确定的写入。
-5. 设备重启后接入交换机，在新电脑上重新确认选中的物理 Ethernet 网卡和同一 `/24` 网段。电脑网卡设置只由用户或维护执行器明确处理，普通扫描不修改它。
-6. 先只读检查目标 IP 的 ARP/Ping，再用 KK Library 以 `<IP>[:<Port>]` 直连并读报告。`TCP:<IP>:<Port>` 表示连接到 K+K TCP server，不是直接连接 FXE。USB 配置读回、官方协议连接和物理输出测量分开记录。
-
-### 自动换机策略
-
-FXE 不适合“插上就靠 DHCP 自动配置”。项目应为每个设备角色保存一份本机运行台账：目标静态 IP、掩码/网关、完整型号、USB VID/PID、序列号、CAN ID、配置哈希和最近验证批次。替换设备时按 USB 身份匹配角色，先检查目标地址是否已被占用，再生成可审阅的修改方案；只有用户确认后才通过官方工具写入网络字段。重启后必须完成 USB 完整读回和 KK Library 直连验证，验证成功才更新库存。
-
-同一角色可以复用原静态地址，但旧设备仍在线时禁止把地址写给替换设备；多个 FXE 必须使用不同地址。换电脑只迁移角色和历史记录，不迁移旧网卡 GUID、租约、防火墙规则或绝对路径。完整硬件证据留在运行目录 `hardware-tests`，源码和发行包只保留脱敏步骤与官方材料哈希。
+如需通过 USB 修改网络，先确认完整型号与序列号，备份原配置，只写授权的网络字段，设备重启后读回。旧 FXE1 的静态流程不代表 FXE2 不支持 DHCP。版本字符串里残留的旧 IP 不作为当前地址依据。LAN 只读连接、重连、参数控制与物理测量分别留档，不把通信通过视为整机验收。
 
 ## 安装与环境修复目标
 

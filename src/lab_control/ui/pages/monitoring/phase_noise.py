@@ -313,7 +313,9 @@ class PhaseNoiseMonitoringPage(QWidget):
         )
         self.stop_button.setEnabled(busy)
         self.folder.setEnabled(self.device_id in self.paths)
-        if self.device_id in self.outcomes:
+        if state.get("recovery"):
+            self.status.setText("通信中断 · 正在自动重连，恢复后继续采集")
+        elif self.device_id in self.outcomes:
             self.status.setText(self.outcomes[self.device_id])
         elif self.supported:
             self.status.setText("准备就绪 · 等待开始")

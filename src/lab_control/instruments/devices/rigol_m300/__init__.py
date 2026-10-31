@@ -25,6 +25,7 @@ DEFINITION = DeviceDefinition(
     ),
     Path(__file__).parent,
     deployment_components=("rs-visa",),
+    monitoring_only=True,
     acquisition_requires_confirmation=True,
     acquisition_initiate_editable=False,
     readonly_check=_readonly_check,

@@ -19,6 +19,8 @@ class StreamingLibrary(FakeLibrary):
     sequence = 0
 
     def get_kk_report(self, source):
+        if self.binary_reports:
+            return super().get_kk_report(source)
         time.sleep(0.01)
         self.sequence += 1
         return BinaryReport(

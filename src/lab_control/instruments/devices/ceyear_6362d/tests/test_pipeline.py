@@ -43,7 +43,8 @@ def test_invalid_6362d_frame_never_displays_or_records(tmp_path, bad):
         runtime.monitoring.start(
             key, (AcquisitionRequest("spectrum"),), mode="optical", record_interval=None, recording=True
         )
-        wait_for(lambda: not runtime.monitoring.tasks[key].running)
+        wait_for(lambda: runtime.monitoring.tasks[key].recovery is not None)
+        assert runtime.monitoring.tasks[key].running
         runtime.monitoring.stop(key).result(3)
         assert runtime.monitoring.latest(key, "spectrum") is None
         assert not report.get("recorded_metadata")

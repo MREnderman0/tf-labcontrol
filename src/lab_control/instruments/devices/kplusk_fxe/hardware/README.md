@@ -1,6 +1,8 @@
-# K+K FXE 实机只读计划
+# K+K FXE / FXE2 实机只读计划
 
 本入口只接受用户明确指定的 K+K IP 或 `kplusk://IP[:port]`，通过正式会话、监测页及记录器执行只读连接、实际通道识别、频率读取、默认 60 秒监测与逐帧记录、当前帧保存、部分通道选择和重连。不扫描其他地址，不改网卡，不调用设备设置 API，也不进行物理输出测量。首次采集失败立即留档，不用循环重试掩盖失败。
+
+现场 K+K 保持 DHCP，执行前从有效租约核对当前地址，不能照抄上次 IP。身份使用官方只读版本查询 `0x81` 和 `0x7001 VERSION` 回包核对完整型号及序列号，版本文本中的旧 IP 不参与定位。常规扫描对已登记资产按 MAC 跟随租约，每次仍核对真实身份；本入口不配置 DHCP 或强制设备换租。
 
 ```powershell
 .venv-dev\Scripts\python.exe -m lab_control.instruments.devices.kplusk_fxe.hardware.readonly `

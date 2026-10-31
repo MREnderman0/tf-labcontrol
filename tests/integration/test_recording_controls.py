@@ -10,6 +10,27 @@ from lab_control.application.runtime import ApplicationRuntime
 from lab_control.ui.real_window import RealWindow
 
 
+def test_record_stop_remains_available_during_reconnection(qtbot):
+    from lab_control.ui.pages.monitoring.recording_state import RecordingButton
+
+    button = RecordingButton()
+    qtbot.addWidget(button)
+    button.refresh(
+        {"running": True, "recovering": True, "recording": True},
+        connected=False,
+        busy=False,
+        locked=True,
+    )
+    assert button.isEnabled() and button.text() == "停止记录"
+    button.refresh(
+        {"running": True, "recovering": True, "recording": False},
+        connected=False,
+        busy=False,
+        locked=True,
+    )
+    assert not button.isEnabled()
+
+
 @pytest.mark.parametrize(
     "adapter,category", [("lecroy.9404m", "oscilloscope"), ("rigol.dsa815", "spectrum_analyzer")]
 )

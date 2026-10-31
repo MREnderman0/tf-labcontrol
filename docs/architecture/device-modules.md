@@ -14,17 +14,21 @@
 
 通用 UI/CLI、会话、身份与占用锁、传输分帧、存储留在公共层。真正通用的协议辅助函数可放 `instruments/common/`；公共层不反向导入型号包，型号包不交叉导入，不导入旧的混合型号集合。范围和型号差异不能塞回公共类。
 
-采集错误分类、暂态上限及刷新/保存调度遵循[监测一致性规则](live-acquisition.md)。型号包验证回包并提供配置差异；公共层统一决定无效帧丢弃、任务暂停和连接状态，不复制各型号的任务恢复循环。
+采集错误分类、暂态上限及刷新/保存调度遵循[监测一致性规则](live-acquisition.md)。型号包验证回包并提供配置差异；公共层统一决定无效帧丢弃、自动重连、任务暂停和连接状态，不复制各型号的任务恢复循环。有限硬件流通过型号 `recorded_run_state`、`resume_acquisition` 声明安全续接，按需提供保留自有服务的 `reopen_acquisition` 与一次停止核验的 `cancel_acquisition_recovery`；公共层不猜测型号 start/stop 命令。控制或采集初始化应答不确定必须使用不可自动重试的错误分类，不能误标为普通读超时。
 
 内部 `DeviceDefinition` 将能力、适配器构造和文档关联起来。唯一注册入口是 `devices/catalog.py` 的 `DEVICE_MODULES`；重复适配标识立即报错。`registry.PROFILES`、`match`、`describe`、`create_adapter` 对现有调用方保持兼容。协议测试通过 `build_scpi_adapter(config, transport)` 注入 MockTransport，使用同一型号工厂，不用通用类代替型号实现。
 
 非 SCPI 型号可声明可选 `factory`、`capability_schema` 和只读 `discovery_factory`。公共运行时只调用已注册元数据，不写入型号命令或启动型号服务；发现入口只返回候选、观察来源和驱动错误。服务生命周期与身份边界留在型号包，工厂仅在显式连接且公共资源锁取得后运行。连接配置的可选 `usb_instance_id` 也参与资产占用锁；旧配置缺少新增字段时保留原路线。
+
+型号可通过 `monitoring_only=True` 声明只提供监测/记录界面，公共导航及管理设备选择据此过滤，不影响显式兼容层参数 API。扫描列表能力以 `acquisition_channel_selection="scan_list"` 和缓存的 `acquisition_channels` 声明；公共扫描监测页据此显示完整通道，不包含型号命令或输入配置写入。
 
 `discovery_connection_only_transports` 声明哪些传输在发现阶段只保留候选、必须显式连接后才核验身份；公共发现不会为这些候选构造适配器、加载连接 SDK 或发送设置。它与 `identity_requires_adapter` 分开：后者只选择允许探测时的身份协议，不表示禁止探测。Pico 的 `pico`、PM100D 的 `tlpmx/pm100d`、53100A 的 `tserve` 分别在包内声明；未列出的传输沿用原发现策略，不因此新增支持承诺。CoreMorrow 串口仍在公共租约内执行型号只读身份查询。枚举回调自身的驱动要求仍按型号声明，与连接和身份探测分开。
 
 型号可注册 `readonly_check(config, folder, *, duration, root, input_condition)`，由显式 CLI `verify-readonly` 分发，源码与冻结程序使用同一入口。公共 CLI 要求唯一资源及型号，不扫描或猜测目标；型号入口负责调用正式会话、留档和返回阶段结果，不能直接绕过公共占用锁。未注册入口的型号明确拒绝。实机入口保持延迟导入，加载注册表不得连接设备。
 
 需要先认证的已验证 LAN 主地址，可声明只读 `discovery_identity(transport, config)`。公共发现取得资源锁并打开传输后，只有库存主地址仍归属该身份、未撤销且无冲突时才选择此回调；回调只执行型号握手和读取本次真实身份，不初始化采集、不写测量设置。传入的是新发现配置，不携带旧型号、序列号、选件或限值；返回的身份重新通过公共型号匹配和地址归属核验，地址复用不能继承旧资产设置。未登记的型号没有回调，公共层不猜认证命令。
+
+型号可注册纯函数 `discovery_lan_config(config, address)`，将已验证资源的协议/端口重建到当前 DHCP 地址。公共层只传入资源、适配器、传输及超时，不携带旧序列号、限值、选件或别名；回调不得打开设备或写设置。实际探测仍经公共进程/主机锁及型号身份入口完成，完整身份吻合后才能更新资产和 MAC 绑定。
 
 ## 新增与扩展
 

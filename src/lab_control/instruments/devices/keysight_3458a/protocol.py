@@ -14,6 +14,7 @@ from lab_control.domain.instruments import (
     Unsupported,
 )
 from lab_control.transport.base import numeric_values
+from lab_control.transport.read_wait import read_timeout
 
 if TYPE_CHECKING:
     from lab_control.instruments.base import ScpiAdapter
@@ -40,7 +41,7 @@ def acquire(adapter: ScpiAdapter, request: AcquisitionRequest) -> tuple[Measurem
     else:
         transport.write(f"RMEM 1,{request.points}")
     parts, size = ([], 0)
-    deadline = time.monotonic() + adapter.config.timeout
+    deadline = time.monotonic() + read_timeout(adapter.config.timeout)
     while size < request.points:
         if time.monotonic() > deadline:
             raise DeviceError("3458A readings timed out", "timeout")

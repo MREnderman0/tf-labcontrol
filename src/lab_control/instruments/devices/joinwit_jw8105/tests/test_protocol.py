@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import threading
+
 import pytest
 
 from lab_control.application.config import ConnectionConfig
@@ -199,6 +201,7 @@ def test_invalid_module_option_is_rejected() -> None:
 
 def test_serial_frame_timeout_closes_poisoned_handle(monkeypatch) -> None:
     transport = object.__new__(jw_transport.Jw8105SerialTransport)
+    transport.lock = threading.RLock()
     closed: list[bool] = []
     transport.write = lambda _payload: None
     transport._read_exact = lambda _count: b""
@@ -211,3 +214,24 @@ def test_serial_frame_timeout_closes_poisoned_handle(monkeypatch) -> None:
     with pytest.raises(DeviceError, match="timeout"):
         transport.query_frame(b"request")
     assert closed == [True]
+
+
+def test_visa_frame_timeout_is_normalized_and_closes_handle(monkeypatch):
+    from pyvisa.constants import StatusCode
+    from pyvisa.errors import VisaIOError
+
+    transport = object.__new__(jw_transport.Jw8105VisaTransport)
+    transport.lock = threading.RLock()
+    writes, closed = [], []
+    transport.write = writes.append
+    transport._read_exact = lambda _count: b""
+    transport.close = lambda: closed.append(True)
+
+    def timed_out(_reader):
+        raise VisaIOError(StatusCode.error_timeout)
+
+    monkeypatch.setattr(jw_transport, "read_framed", timed_out)
+    with pytest.raises(DeviceError) as failure:
+        transport.query_frame(build_frame(1, 0x0162))
+    assert failure.value.code == "timeout"
+    assert closed == [True] and writes == [build_frame(1, 0x0162)]

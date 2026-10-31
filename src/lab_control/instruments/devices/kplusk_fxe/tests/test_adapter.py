@@ -73,6 +73,15 @@ class LogReport:
     def get_report_type(self):
         return 2
 
+    def get_header(self):
+        return int(self.text[:4], 16)
+
+    def get_content(self):
+        return self.text[4:].encode()
+
+    def get_device_ms(self):
+        return 0
+
     def to_log_str(self) -> str:
         return self.text
 
@@ -84,6 +93,15 @@ class FakeLibrary:
         self.closed: list[int] = []
         self._source = 7
         self.binary_reports: list[object] = []
+        self.commands: list[bytes] = []
+
+    def send_command(self, source: int, command: bytes) -> Result:
+        assert source == self._source
+        self.commands.append(command)
+        self.binary_reports.insert(
+            0, LogReport("7001VERSION FXE2 / # TEST-517 User 1 / E20-1.19 / IP: 198.51.100.20")
+        )
+        return Result()
 
     def get_source_id(self) -> int:
         return self._source
@@ -134,9 +152,10 @@ def test_factory_opens_official_direct_ip_without_writes() -> None:
     assert library.opened == (7, "192.0.2.10", False)
     identity = adapter.identify()
     assert identity.manufacturer == "K+K"
-    assert identity.model == "FXE"
+    assert identity.model == "FXE2" and identity.serial == "TEST-517"
+    assert library.commands == [b"\x81"]
     status = adapter.read_status()
-    assert status.values["reports"] == ("7015; 123", "1900; raw")
+    assert status.values["reports"][1:] == ("7015; 123", "1900; raw")
     assert status.values["report_interpretation"] == "raw_protocol_only"
     adapter.close()
     assert library.closed == [7]

@@ -34,6 +34,7 @@ from lab_control.domain.instruments import (
 )
 from lab_control.instruments.base import ScpiAdapter
 
+from .identity import parse_version_identity
 from .profile import capability_schema, profile
 from .protocol import FrequencyReport, PhaseReport, validate_channels
 from .reports import ReportReader
@@ -199,19 +200,26 @@ class KpluskFxeAdapter(ScpiAdapter):
     def identify(self) -> DeviceIdentity:
         if self._mock:
             return super().identify()
+        if self.identity is not None:
+            return self.identity
         library = self._native()
-        firmware = int(library.get_firmware_version(self.source_id))
-        user_id = int(library.get_user_id(self.source_id))
-        identity = DeviceIdentity(
-            "K+K",
-            "FXE",
-            serial="",
-            firmware=str(firmware) if firmware >= 0 else "",
-            confidence="protocol_only",
-            raw=f"firmware={firmware}; user_id={user_id}",
-        )
-        self.identity = identity
-        return identity
+        # 0x81 requests the version report; it does not configure acquisition.
+        # Keep one consumer so interleaved measurement frames remain available.
+        _result_error(library.send_command(self.source_id, b"\x81"), "version query")
+        deadline = self.reports.clock() + self.config.timeout
+        busy = 0
+        while self.reports.version_report is None:
+            remaining = deadline - self.reports.clock()
+            if remaining <= 0:
+                raise DeviceError("K+K version report timed out", "timeout")
+            if not self.reports.poll():
+                self.reports.sleep(min(0.05, remaining))
+            else:
+                busy += 1
+                if busy % 64 == 0:
+                    self.reports.sleep(min(0.001, remaining))
+        self.identity = parse_version_identity(self.reports.version_report)
+        return self.identity
 
     def _read_reports(self, limit: int = 8) -> tuple[str, ...]:
         if self._mock:
@@ -286,7 +294,9 @@ class KpluskFxeAdapter(ScpiAdapter):
         latest_log = ""
         source_report_type = "RT_DOUBLE"
         derived_from_phase = False
-        deadline = self.reports.clock() + self.reports.wait_seconds()
+        from lab_control.transport.read_wait import read_timeout
+
+        deadline = self.reports.clock() + read_timeout(self.reports.wait_seconds())
         while self.reports.clock() < deadline:
             decoded, latest_log = self.reports.next(deadline)
             count = len(decoded.parts) if isinstance(decoded, PhaseReport) else len(decoded.values)

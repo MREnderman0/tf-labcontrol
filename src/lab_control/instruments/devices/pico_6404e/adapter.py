@@ -23,6 +23,7 @@ from lab_control.domain.instruments import (
     Unsupported,
     ValidationError,
 )
+from lab_control.transport.read_wait import read_timeout
 from lab_control.transport.sdk import VendorLibrary
 
 SOURCE = "https://www.picotech.com/helpfiles/6000a-api/"
@@ -261,7 +262,7 @@ class PicoAdapter:
                 raise ValidationError("Explicitly configure each requested channel before capture")
         if self.buffers:
             raise DeviceError("Previous SDK cleanup failed; reconnect before capture", "resource_busy")
-        deadline = time.monotonic() + self.config.timeout
+        deadline = time.monotonic() + read_timeout(self.config.timeout)
         overflow = 0
         try:
             # Keep every registered ctypes buffer alive until Stop and deregistration complete.

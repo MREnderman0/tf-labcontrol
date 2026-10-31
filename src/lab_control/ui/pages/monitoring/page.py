@@ -22,21 +22,25 @@ from lab_control.instruments.registry import DEVICE_DEFINITIONS
 from lab_control.ui.controller import WorkspaceController
 from lab_control.ui.pages.device_control.form import ControlForm
 from lab_control.ui.pages.monitoring.channel_selection import instrument_scan_channels
+from lab_control.ui.pages.monitoring.connection import refresh_reconnect_button
 from lab_control.ui.pages.monitoring.plot import LivePlot
 from lab_control.ui.pages.monitoring.recording_state import recording_save_notice
+from lab_control.ui.pages.monitoring.scan import ScanMonitoringPage
 from lab_control.ui.pages.monitoring.timing import MonitoringTiming
 from lab_control.ui.widgets.device_selector import DeviceSelector
 from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
 
 
 class MonitoringPage(QWidget):
+    scan_page: ScanMonitoringPage | None = None
+
     def __init__(self, controller: WorkspaceController, category: str, add_card, parent=None) -> None:
         super().__init__(parent)
         self.controller, self.category, self.add_card = controller, category, add_card
         self.sources: tuple[DataSource, ...] = ()
         self.signature = None
         layout = QVBoxLayout(self)
-        title = QLabel(CATEGORY_LABELS[category] + "实时监测")
+        title = self.title = QLabel(CATEGORY_LABELS[category] + "实时监测")
         title.setObjectName("pageTitle")
         layout.addWidget(title)
         self.selector = DeviceSelector(controller, category)
@@ -123,15 +127,21 @@ class MonitoringPage(QWidget):
                 lambda: controller.navigate.emit("设备管理", category, self.selector.device_id)
             )
             main_layout.addWidget(manage)
+        self.scan_page = None
+        if category == "multimeter":
+            self.scan_page = ScanMonitoringPage(controller, add_card, self, manage_selection=False)
+            layout.addWidget(self.scan_page, 1)
+            self.scan_page.hide()
+            self.scan_page.selector.selected.connect(lambda device: self.selector.select(device))
         self.selector.selected.connect(self.select_device)
-        self.selector.channel_changed.connect(
-            lambda _ch: self.form.set_device(
-                self.selector.device_id, self.selector.channel.currentData() or 1
-            )
-        )
+        self.selector.channel_changed.connect(self._select_parameter_channel)
         controller.refreshed.connect(self.refresh)
         controller.frame_ready.connect(self.refresh_frame)
         self.select_device(self.selector.device_id)
+
+    def _select_parameter_channel(self, _channel: int) -> None:
+        if self.instrument_scan_channels() is None:
+            self.form.set_device(self.selector.device_id, self.selector.channel.currentData() or 1)
 
     def resizeEvent(self, event) -> None:  # noqa: N802
         super().resizeEvent(event)
@@ -139,7 +149,7 @@ class MonitoringPage(QWidget):
         if self.splitter.orientation() != orientation:
             self.splitter.setOrientation(orientation)
             self.splitter.setSizes([500, 260] if orientation == Qt.Orientation.Vertical else [820, 400])
-        QTimer.singleShot(0, self.reflow_buttons)
+        QTimer.singleShot(0, self, self.reflow_buttons)
 
     def showEvent(self, event) -> None:  # noqa: N802
         super().showEvent(event)
@@ -156,6 +166,20 @@ class MonitoringPage(QWidget):
             self.button_layout.addWidget(button, index // columns, index % columns)
 
     def select_device(self, device_id: str) -> None:
+        if self.scan_page is not None:
+            scan = bool(device_id) and instrument_scan_channels(self.controller, device_id) is not None
+            self.scan_page.setVisible(scan)
+            self.title.setVisible(not scan)
+            self.selector.setVisible(not scan)
+            if scan:
+                self.empty.hide()
+                self.splitter.hide()
+                self.form.set_device("", 1)
+                self.scan_page.selector.select(device_id)
+                self.scan_page.select_device(device_id)
+                return
+            if self.scan_page.device_id:
+                self.scan_page.select_device("")
         self.timing.bind(device_id, self.controller.mode)
         self.splitter.setVisible(bool(device_id))
         self.empty.setVisible(not device_id)
@@ -199,7 +223,7 @@ class MonitoringPage(QWidget):
     def channels(self) -> tuple[int, ...]:
         scan = self.instrument_scan_channels()
         if scan is not None:
-            return scan or (1,)
+            return scan
         return tuple(channel for channel, check in self.channel_checks.items() if check.isChecked())
 
     def instrument_scan_channels(self) -> tuple[int, ...] | None:
@@ -236,6 +260,9 @@ class MonitoringPage(QWidget):
     def focus_card(self, spec: dict) -> None:
         channels = tuple(spec["channels"])
         self.selector.select(spec["device_id"], channels[0] if channels else 1)
+        if self.scan_page is not None and self.instrument_scan_channels() is not None:
+            self.scan_page.focus_card(spec)
+            return
         self.source.setCurrentIndex(max(0, self.source.findData(spec["source"])))
         for channel, check in self.channel_checks.items():
             check.setChecked(channel in channels)
@@ -244,6 +271,8 @@ class MonitoringPage(QWidget):
         return next((source for source in self.sources if source.key == self.source.currentData()), None)
 
     def start(self, once: bool = False) -> None:
+        if not once and self.controller.reconnect_if_needed(self.selector.device_id):
+            return
         device_id, source = self.selector.device_id, self.selected_source()
         if not device_id or not source:
             return
@@ -315,6 +344,9 @@ class MonitoringPage(QWidget):
 
     def refresh(self) -> None:
         scan = self.instrument_scan_channels()
+        if self.scan_page is not None and scan is not None:
+            self.scan_page.refresh()
+            return
         self.scan_channels_label.setVisible(scan is not None)
         self.scan_channels_label.setText(
             "仪器扫描通道："
@@ -335,10 +367,12 @@ class MonitoringPage(QWidget):
             and state.get("connectionState") in {"connected", "busy"}
             and state.get("activeTask") != "continuous_acquisition"
         )
+        self.buttons["start"].setText("开始监测")
         self.buttons["start"].setEnabled(available)
+        refresh_reconnect_button(self.buttons["start"], self.controller, device_id, task)
         self.buttons["once"].setEnabled(available and not task.get("running") and not task.get("pending"))
         self.buttons["stop"].setEnabled(bool(task.get("running") or task.get("pending")))
-        self.buttons["record"].setEnabled(available and bool(task.get("running")))
+        self.buttons["record"].setEnabled(bool((available or task.get("recording")) and task.get("running")))
         self.buttons["record"].setText("停止记录" if task.get("recording") else "开始记录")
         self.buttons["save"].setEnabled(
             self.plot.displayed_frame is not None
@@ -348,8 +382,8 @@ class MonitoringPage(QWidget):
         text = (
             task.get("error")
             or task.get("recording_notice")
-            or recording_save_notice(task)
             or task.get("notice")
+            or recording_save_notice(task)
             or (
                 "正在记录原始数据"
                 if task.get("recording")
@@ -364,6 +398,8 @@ class MonitoringPage(QWidget):
             self.form.set_device(device_id, self.selector.channel.currentData() or 1)
 
     def refresh_frame(self, device_id: str) -> None:
+        if getattr(self, "scan_page", None) is not None and self.instrument_scan_channels() is not None:
+            return
         source = self.selected_source()
         if device_id != self.selector.device_id or not self.isVisible() or not source:
             return

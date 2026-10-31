@@ -8,6 +8,7 @@ from typing import Any
 from lab_control.domain.instruments import DeviceError
 from lab_control.transport.base import MAX_MESSAGE, BufferedReader
 from lab_control.transport.diagnostics import measured, synchronized
+from lab_control.transport.read_wait import temporary_timeout
 
 
 class TcpSocketTransport:
@@ -52,6 +53,9 @@ class TcpSocketTransport:
 
     def _receive_some(self, count: int) -> bytes:
         return self._receive(count)
+
+    def acquisition_timeout(self):
+        return temporary_timeout(self, "sock")
 
     def _receive(self, count: int) -> bytes:
         if self.sock is None:
@@ -242,6 +246,9 @@ class SerialTransport:
         first = self._receive(1)
         available = min(count - 1, int(self.handle.in_waiting))
         return first + (self._receive(available) if available > 0 else b"")
+
+    def acquisition_timeout(self):
+        return temporary_timeout(self, "handle")
 
     def _receive(self, count: int) -> bytes:
         try:

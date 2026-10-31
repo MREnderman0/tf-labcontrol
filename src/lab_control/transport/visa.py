@@ -6,6 +6,7 @@ from typing import Any
 from lab_control.domain.instruments import DeviceError
 from lab_control.transport.base import MAX_MESSAGE, BufferedReader, block_payload
 from lab_control.transport.diagnostics import measured, synchronized
+from lab_control.transport.read_wait import temporary_timeout
 
 
 class VisaRuntime:
@@ -110,10 +111,16 @@ class VisaTransport:
         self.lock = threading.RLock()
         self.handle: Any = None
         self.reader = BufferedReader(
-            lambda count: bytes(self.handle.read_bytes(count, break_on_termchar=False)),
+            self._receive,
             terminator.encode(),
             self._read_text_some,
         )
+
+    def acquisition_timeout(self):
+        return temporary_timeout(self, "handle", 1000)
+
+    def _receive(self, count: int) -> bytes:
+        return bytes(self.handle.read_bytes(count, break_on_termchar=False))
 
     def _read_text_some(self, count: int) -> bytes:
         # viRead ends at TERMCHAR or END, unlike read_bytes(count), which loops

@@ -101,8 +101,7 @@ class WorkspaceNavigation:
             if value in available
             and not (module == "设备管理" and value in monitoring_only)
             and (
-                value != "power_supply"
-                or any(
+                any(
                     surface_applicable(
                         record,
                         "management" if module == "设备管理" else "monitoring",
@@ -159,6 +158,18 @@ class WorkspaceNavigation:
 
     def navigate(self, module: str, category: str = "", device_id: str = "") -> None:
         window = self.window
+        requested = window.controller.records.get(device_id)
+        if module == "设备管理" and requested and not surface_applicable(requested, "management"):
+            module = "实时监测"
+        if (
+            module == "设备管理"
+            and category
+            and not any(
+                instrument_category(record) == category and surface_applicable(record, "management")
+                for record in window.controller.connected_records(category)
+            )
+        ):
+            module = "实时监测"
         if module == "设备管理" and category in {
             "spectrum_analyzer",
             "oscilloscope",

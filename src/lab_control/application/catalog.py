@@ -22,15 +22,17 @@ def mode_applicable(record: dict[str, Any], mode: str) -> bool:
 def surface_applicable(record: dict[str, Any], surface: str) -> bool:
     """Return whether a connected model belongs on a workspace surface.
 
-    Surface policy is intentionally scoped to power supplies. Other device
-    categories keep their existing module routing, while un-packaged or
-    simulated power supplies retain the historical monitoring-only behavior.
+    Models may explicitly opt into monitoring only. Power supplies declare
+    their surfaces independently; other models retain their category routing.
+    Un-packaged and simulated supplies retain monitoring-only behavior.
     """
     if surface not in {"management", "monitoring"}:
         raise ValueError(f"Unknown workspace surface: {surface}")
+    definition = DEVICE_DEFINITIONS.get(record.get("adapterId", ""))
+    if definition is not None and definition.monitoring_only:
+        return surface == "monitoring" and definition.monitoring_surface
     if instrument_category(record) != "power_supply":
         return True
-    definition = DEVICE_DEFINITIONS.get(record.get("adapterId", ""))
     if definition is None:
         return surface == "monitoring"
     return definition.management_surface if surface == "management" else definition.monitoring_surface

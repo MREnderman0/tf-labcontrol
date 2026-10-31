@@ -165,6 +165,32 @@ class WorkspaceController(QObject):
         if future is not None:
             self.watch(future)
 
+    def reconnect_if_needed(self, device_id: str) -> bool:
+        """Consume the monitor action for a failed session; never restart sampling."""
+        self.refresh_snapshot()
+        state = self.states.get(device_id, {})
+        if state.get("activeTask") == "reconnect":
+            return True
+        task = self.runtime.monitoring.snapshots().get(device_id, {})
+        if state.get("connectionState") not in {"degraded", "error"} or task.get("running"):
+            return False
+        try:
+            self.ensure_applicable(device_id)
+            self.watch(
+                self.runtime.sessions.reconnect(device_id),
+                lambda _identity: self._reconnect_finished(),
+                lambda _error: self.refreshed.emit(),
+            )
+        except Exception as exc:
+            self.message.emit(str(exc))
+        self.refresh_snapshot()
+        self.refreshed.emit()
+        return True
+
+    def _reconnect_finished(self) -> None:
+        self.refreshed.emit()
+        self.message.emit("设备已重新连接，可开始监测")
+
     def set_recording(self, *args, **kwargs) -> None:
         future = self.runtime.monitoring.set_recording(*args, **kwargs, background=True)
         if future is not None:
@@ -273,6 +299,7 @@ def state_label(state: str) -> str:
     return {
         "connected": "已连接",
         "connecting": "连接中",
+        "recovering": "正在自动重连",
         "disconnected": "未连接",
         "busy": "任务运行中",
         "degraded": "需要检查",

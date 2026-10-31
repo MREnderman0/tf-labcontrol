@@ -52,7 +52,9 @@ class TserveTransport(TcpSocketTransport):
 
     def read(self) -> bytes:
         data = bytearray()
-        deadline = time.monotonic() + self.timeout
+        from lab_control.transport.read_wait import read_timeout
+
+        deadline = time.monotonic() + read_timeout(self.timeout)
         previous = self.sock.gettimeout() if self.sock is not None else None
         try:
             while len(data) < 4 * 1024 * 1024:

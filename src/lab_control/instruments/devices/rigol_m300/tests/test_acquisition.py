@@ -155,3 +155,31 @@ def test_uncertain_write_is_never_replayed():
     result = a.apply(DeviceCommand("function", {"value": "TEMP"}, 428, True))
     assert result.outcome == "uncertain"
     assert transport.history == ['FUNC "TEMP",(@428)']
+
+
+def test_nineteen_channel_bank_keeps_each_nominal_and_value_in_order():
+    channels = tuple(range(401, 420))
+    replies = snapshot(channels)
+    for i, (query, reply) in enumerate(replies):
+        if query.startswith("CONF?") and int(query[-4:-1]) <= 416:
+            replies[i] = (query, reply.replace(b"10000", b"5000"))
+    values = tuple(20 + index / 10 for index in range(19))
+    raw = ",".join(map(str, values)).encode()
+    a, transport = input_adapter(replies + [("READ?", raw)] + replies)
+    frame = a.acquire(AcquisitionRequest("scalar", channels, confirmed=True))
+    assert tuple(m.channel for m in frame.measurements) == channels
+    assert tuple(m.values[0] for m in frame.measurements) == values
+    assert all(m.unit == "°C" for m in frame.measurements)
+    assert all("THER,5000," in m.metadata["configuration"] for m in frame.measurements[:16])
+    assert all("THER,10000," in m.metadata["configuration"] for m in frame.measurements[16:])
+    assert transport.history.count("READ?") == 1
+
+
+def test_one_open_input_rejects_entire_bank_without_replaying_scan():
+    channels = tuple(range(401, 420))
+    raw = ",".join(["25.0"] * 18 + ["9.9E37"]).encode()
+    a, transport = input_adapter(snapshot(channels) + [("READ?", raw)])
+    with pytest.raises(DeviceError) as exc:
+        a.acquire(AcquisitionRequest("scalar", channels, confirmed=True))
+    assert exc.value.code == "overload"
+    assert transport.history[-1] == "READ?" and transport.history.count("READ?") == 1

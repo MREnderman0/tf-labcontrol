@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-LIVE_CONNECTIONS = {"connected", "busy", "degraded"}
+LIVE_CONNECTIONS = {"connected", "busy", "degraded", "recovering"}
 
 
 def is_current(record: dict[str, Any], session: dict[str, Any] | None = None) -> bool:

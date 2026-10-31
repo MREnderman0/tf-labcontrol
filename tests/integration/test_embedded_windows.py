@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QWidget
 
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.runtime import ApplicationRuntime
-from lab_control.ui.pages.monitoring.optical_power import PowerMeterReadoutCard
+from lab_control.ui.pages.monitoring.optical_power_readout import PowerMeterReadoutRow
 from lab_control.ui.pages.monitoring.optical_spectrum_controls import OpticalSpectrumControls
 from lab_control.ui.real_window import RealWindow
 
@@ -138,7 +138,7 @@ def test_refresh_switch_and_reconnect_never_show_embedded_controls_as_windows(
     assert not runtime.monitoring.tasks
 
 
-def test_hidden_power_channels_stay_owned_and_are_retired_on_device_switch(workspace, qtbot, qapp):
+def test_unselected_power_rows_stay_owned_and_are_retired_on_device_switch(workspace, qtbot, qapp):
     window, runtime, events = workspace
     first, second = add_pair(runtime, "joinwit.jw8105")
     runtime.repository.save_workspace("monitoring_channels/optical_power_meter", {f"device:{first}": [1, 2]})
@@ -146,19 +146,20 @@ def test_hidden_power_channels_stay_owned_and_are_retired_on_device_switch(works
     window.navigate("实时监测", "optical_power_meter", first)
     page = window.stack.currentWidget()
     assert page.channels() == (1, 2)
-    # Include channels not currently in the grid when checking lifetime.
+    # Unselected channels stay in the list and remain owned by its viewport.
     page.channel_checks[16].setChecked(False)
     old_cards = list(page.cards.values())
     assert all(card.parentWidget() is page.readout_body for card in old_cards)
-    assert not page.cards[16].isVisible()
+    assert page.cards[16].isVisible()
+    assert page.cards[16].value.text() == "未监测"
     page.selector.select(second)
     assert all(not card.isVisible() for card in old_cards)
     qapp.sendPostedEvents(None, QEvent.Type.DeferredDelete)
     assert all(not shiboken6.isValid(card) for card in old_cards)
-    assert len(page.readout_body.findChildren(PowerMeterReadoutCard)) == 16
+    assert len(page.readout_body.findChildren(PowerMeterReadoutRow)) == 16
     for check in page.channel_checks.values():
         check.setChecked(False)
-    assert not any(card.isVisible() for card in page.cards.values())
+    assert all(card.isVisible() for card in page.cards.values())
     page.channel_checks[1].setChecked(True)
     qtbot.wait(30)
     assert page.cards[1].isVisible()

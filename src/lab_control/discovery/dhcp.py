@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 from lab_control.discovery.lan import LanDiscoverySettings, discovery_networks
 from lab_control.discovery.types import DiscoveryCandidate
-from lab_control.domain.connections import ConnectionConfig
+from lab_control.domain.connections import ConnectionConfig, network_host
 from lab_control.domain.instruments import DeviceError
 
 
@@ -128,6 +128,8 @@ class DhcpLeaseDiscoveryProvider:
         self.inventory, self.settings = inventory, settings
 
     def enumerate(self) -> tuple[DiscoveryCandidate, ...]:
+        from lab_control.instruments.registry import DEVICE_DEFINITIONS
+
         if not self.settings.enabled:
             return ()
         networks, restriction = discovery_networks(self.settings)
@@ -139,6 +141,16 @@ class DhcpLeaseDiscoveryProvider:
             config = record.get("config", {})
             resource = config.get("resource", "")
             parts = resource.split("::")
+            host = network_host(resource)
+            definition = DEVICE_DEFINITIONS.get(config.get("adapter", ""))
+            model_config = definition.discovery_lan_config if definition is not None else None
+            visa_resource = (
+                config.get("transport") == "visa"
+                and len(parts) in (3, 4)
+                and bool(re.fullmatch(r"TCPIP\d*", parts[0], re.I))
+                and parts[-1].upper() in {"INSTR", "SOCKET"}
+                and (parts[-1].upper() != "SOCKET" or (len(parts) == 4 and parts[2].isdigit()))
+            )
             entry = record.get("candidates", {}).get(resource, {})
             identity_key = record.get("identityKey")
             if (
@@ -147,19 +159,16 @@ class DhcpLeaseDiscoveryProvider:
                 or record.get("primaryResourceExplicit")
                 or record.get("identityConflict")
                 or record.get("discoveryState") == "conflict"
-                or config.get("transport") != "visa"
                 or not config.get("adapter")
-                or len(parts) not in (3, 4)
-                or not re.fullmatch(r"TCPIP\d*", parts[0], re.I)
-                or parts[-1].upper() not in {"INSTR", "SOCKET"}
-                or (parts[-1].upper() == "SOCKET" and (len(parts) != 4 or not parts[2].isdigit()))
+                or not host
+                or not (visa_resource or model_config)
             ):
                 continue
             binding = record.get("dhcpBinding", {})
             if binding.get("identityKey") == identity_key:
                 matched = [lease for lease in leases if lease.mac == binding.get("mac")]
             elif entry.get("verifiedIdentityKey") == identity_key and not entry.get("retired"):
-                matched = [lease for lease in leases if lease.address == parts[1]]
+                matched = [lease for lease in leases if lease.address == host]
             else:
                 continue
             if len(matched) != 1:
@@ -171,17 +180,25 @@ class DhcpLeaseDiscoveryProvider:
                 for net in networks
             ) or (restriction and not any(address in net for net in restriction)):
                 continue
-            actual = "::".join((parts[0], lease.address, *parts[2:]))
+            timeout = config.get("timeout", self.settings.timeout)
+            if model_config:
+                probe_config = model_config(
+                    ConnectionConfig(resource, config["adapter"], config["transport"], timeout=timeout),
+                    lease.address,
+                )
+            else:
+                actual = "::".join((parts[0], lease.address, *parts[2:]))
+                probe_config = ConnectionConfig(actual, timeout=timeout)
             candidates.append(
                 DiscoveryCandidate(
-                    ConnectionConfig(actual, timeout=config.get("timeout", self.settings.timeout)),
+                    probe_config,
                     self.name,
                     {
                         "dhcpMac": lease.mac,
                         "expectedIdentityKey": identity_key,
                         "scope": [str(net) for net in networks],
                     },
-                    safe_scpi=True,
+                    safe_scpi=not bool(model_config),
                 )
             )
         return tuple(candidates)

@@ -12,7 +12,11 @@ from lab_control.storage.repository import Repository
 
 @pytest.mark.parametrize(
     ("code", "expected_state", "expected_version"),
-    [("configuration_changed", "connected", 1), ("timeout", "degraded", 0), ("parse_error", "degraded", 0)],
+    [
+        ("configuration_changed", "connected", 1),
+        ("identity_conflict", "degraded", 0),
+        ("configuration_uncertain", "degraded", 0),
+    ],
 )
 def test_direct_failure_classification_and_device_isolation(
     tmp_path, monkeypatch, code, expected_state, expected_version

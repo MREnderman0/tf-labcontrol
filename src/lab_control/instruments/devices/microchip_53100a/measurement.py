@@ -18,6 +18,7 @@ from lab_control.domain.instruments import (
     MeasurementBatch,
     utc_now,
 )
+from lab_control.transport.read_wait import read_timeout
 
 from .profile import FREQUENCIES
 from .stability import deviations
@@ -138,25 +139,48 @@ def spectrum(raw: str) -> tuple[Measurement, ...]:
 
 
 def acquire_run(
-    adapter: "Microchip53100AAdapter", request: AcquisitionRequest, stop: Event
+    adapter: "Microchip53100AAdapter",
+    request: AcquisitionRequest,
+    stop: Event,
+    *,
+    resume_state: dict | None = None,
 ) -> Iterator[MeasurementBatch]:
     from .adapter import is_ready, serial_response
 
     validate_run(adapter, request)
     assert adapter.identity is not None and request.sample_rate is not None and request.duration is not None
-    if not is_ready(adapter._query("show state")):
+    state = adapter._query("show state")
+    continuing = bool(resume_state and re.search(r"\bCollecting\b", state, re.I))
+    if not is_ready(state) and not continuing:
         raise DeviceError("Stop the existing measurement before starting another", "task_busy")
     settings = {r.operation: r.value for r in adapter.read_settings(tuple(FREQUENCIES))}
     original_rate = adapter.read_sample_rate()
     rate = request.sample_rate
-    total = int(rate * request.duration) + 1
+    if resume_state and (
+        resume_state["settings"] != settings or resume_state["sample_rate"] != original_rate
+    ):
+        raise DeviceError("相噪续采参数与中断前不一致；未重放设置", "configuration_changed")
+    total = int(resume_state["remaining_samples"]) if resume_state else int(rate * request.duration) + 1
+    if total <= 0:
+        if continuing:
+            adapter.cancel_acquisition_recovery()
+        return
     values = np.empty(total, dtype=np.float64)
     acquired = 0
     first_stamp = 0.0
     latest_spectrum: tuple[Measurement, ...] = ()
     stream = None
     started = False
+    collecting = False
+    interrupted = False
     verified = False
+    epoch = int(resume_state.get("epoch", 0)) + 1 if resume_state else 0
+    adapter.recorded_run_state = {
+        "settings": settings,
+        "sample_rate": rate,
+        "remaining_samples": total,
+        "epoch": epoch,
+    }
     base = {
         "sample_rate": rate,
         "requested_duration": request.duration,
@@ -169,6 +193,9 @@ def acquire_run(
         "spectrum_smoothing": False,
         "source": "TSERVE continuous phase stream",
         "hardware_validation": "pending_signal_test",
+        "acquisition_epoch": epoch,
+        "has_data_gaps": bool(resume_state),
+        "stability_scope": "current_contiguous_epoch",
     }
 
     def config(**extra):
@@ -196,11 +223,18 @@ def acquire_run(
         if stop.is_set():
             return
         started = True  # Includes an uncertain start: cleanup is attempted once, never replayed.
-        adapter._query("start")
+        if not continuing:
+            try:
+                adapter._query("start")
+            except DeviceError as exc:
+                raise DeviceError(str(exc), "configuration_uncertain") from exc
+        collecting = True
         while acquired < total and not stop.is_set():
             rows = []
             for _ in range(min(int(rate), total - acquired)):
-                sample = stream.read(stop, 30 if acquired == 0 else max(3, adapter.config.timeout))
+                sample = stream.read(
+                    stop, 30 if acquired == 0 else read_timeout(max(3, adapter.config.timeout))
+                )
                 if sample is None:
                     break
                 stamp, phase = sample
@@ -230,6 +264,9 @@ def acquire_run(
                 )
                 new_spectrum = latest_spectrum
             data = np.asarray(rows)
+            # Only valid published rows consume the remaining sample budget.
+            # A failed partial chunk is discarded and collected afresh.
+            adapter.recorded_run_state["remaining_samples"] = total - acquired
             yield MeasurementBatch(
                 adapter.identity,
                 (
@@ -246,10 +283,15 @@ def acquire_run(
                 config(complete=False, final=False, first_timestamp=first_stamp),
                 validation="full",
             )
+    except DeviceError as exc:
+        if collecting and exc.code in {"timeout", "disconnected", "parse_error", "data_gap"}:
+            # Resume a new contiguous epoch without replaying the running measurement.
+            interrupted = True
+        raise
     finally:
         if stream is not None:
             stream.close()
-        if started:
+        if started and not interrupted:
             try:
                 adapter._query("stop")
                 if not is_ready(adapter._query("show state")):

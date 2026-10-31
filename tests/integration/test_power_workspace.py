@@ -72,6 +72,22 @@ def test_power_startup_presets_and_shared_in_run_values(tmp_path, qtbot, old):
             assert not runtime.monitoring.tasks and not runtime.sessions.sessions
 
 
+def test_measured_voltage_and_current_columns_do_not_move_with_text_length(power, qtbot):
+    window, page, *_ = power
+    labels = page.controls.panels[1].measurements
+    window.resize(1100, 760)
+    qtbot.wait(20)
+    positions = None
+    for voltage, current in (("1", "2"), ("-123456.789012", "1e-12"), ("—", "123456789.123456")):
+        labels["voltage"].setText(f"实测 {voltage} V")
+        labels["current"].setText(f"实测 {current} A")
+        qtbot.wait(15)
+        geometry = {key: label.geometry().getRect() for key, label in labels.items()}
+        if positions is None:
+            positions = geometry
+        assert geometry == positions
+
+
 def test_navigation_one_read_feeds_both_trends_and_no_parameter_polling(power, qtbot, monkeypatch):
     window, page, runtime, key, adapter = power
     assert window.current_module == "实时监测"

@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import QApplication, QDialog, QListWidget, QPushButton, QWidget
+from PySide6.QtWidgets import QApplication, QDialog, QInputDialog, QListWidget, QPushButton, QWidget
 
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.runtime import ApplicationRuntime
@@ -11,7 +11,27 @@ from lab_control.domain.instruments import DeviceCommand, ValidationError
 from lab_control.instruments.registry import build_scpi_adapter
 from lab_control.transport.base import MockTransport
 from lab_control.ui.real_window import RealWindow
+from lab_control.ui.workspace.actions import WorkspaceActions
 from lab_control.ui.workspace.dialogs import ConnectionDialogs
+
+
+def test_native_usb_connection_still_requests_required_serial(qtbot, monkeypatch):
+    config = ConnectionConfig(
+        "USBPNP::FIXTURE-USB", "microchip.53100a", "tserve", usb_instance_id="FIXTURE-USB"
+    )
+    window = QWidget()
+    qtbot.addWidget(window)
+    window.selected_id = "fixture"
+    window.records = {"fixture": {"config": asdict(config)}}
+    prompts = []
+
+    def cancel_prompt(parent, title, prompt):
+        prompts.append((title, prompt))
+        return "", False
+
+    monkeypatch.setattr(QInputDialog, "getText", cancel_prompt)
+    WorkspaceActions(window).action("connect")
+    assert len(prompts) == 1 and prompts[0][0] == "核对设备序列号"
 
 
 @pytest.mark.parametrize("model,transport", [("itech.it6322", "tcp"), ("microchip.53100a", "tserve")])

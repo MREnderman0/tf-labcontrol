@@ -1,16 +1,18 @@
-"""Three model-only meters keep distinct slot bindings throughout the workspace."""
+"""Four model-only meters keep distinct slots and reuse saved connection settings."""
 
 import pytest
+from PySide6.QtWidgets import QInputDialog
 
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.runtime import ApplicationRuntime
 from lab_control.demo.instrument import SimulatedInstrument
+from lab_control.discovery.service import DiscoveryCandidate
 from lab_control.domain.instruments import DeviceError, DeviceIdentity, ValidationError
 from lab_control.ui.real_window import RealWindow
 from lab_control.ui.widgets.device_selector import DeviceSelector
 
 
-def test_three_model_only_meters_keep_slots_in_ui_and_after_restart(qtbot, tmp_path, monkeypatch):
+def test_four_model_only_meters_keep_slots_in_ui_and_after_restart(qtbot, tmp_path, monkeypatch):
     monkeypatch.setattr(
         SimulatedInstrument,
         "identify",
@@ -19,7 +21,7 @@ def test_three_model_only_meters_keep_slots_in_ui_and_after_restart(qtbot, tmp_p
     runtime = ApplicationRuntime(root=tmp_path, hardware=False)
     runtime.monitoring.enable_settings_sync(False)
     ids = []
-    for index in range(1, 4):
+    for index in range(1, 5):
         key = runtime.add(ConnectionConfig(f"mock://meter-{index}", "joinwit.jw8105", "mock"))
         runtime.connect(key).result(5)
         ids.append(key)
@@ -37,6 +39,7 @@ def test_three_model_only_meters_keep_slots_in_ui_and_after_restart(qtbot, tmp_p
                     "功率计1",
                     "功率计2",
                     "功率计3",
+                    "功率计4",
                 ]
                 return labels[selected], True
 
@@ -46,11 +49,11 @@ def test_three_model_only_meters_keep_slots_in_ui_and_after_restart(qtbot, tmp_p
         window.refresh()
         selector.refresh()
         window.dashboard.refresh()
-        assert len(runtime.inventory.all()) == 3
-        assert len(runtime.sessions.sessions) == 3
+        assert len(runtime.inventory.all()) == 4
+        assert len(runtime.sessions.sessions) == 4
         assert tuple(card.category for card in window.card_grid.cards) == ("optical_power_meter",)
-        assert window.cards["optical_power_meter"].online_count.text() == "03"
-        assert selector.combo.count() == 3
+        assert window.cards["optical_power_meter"].online_count.text() == "04"
+        assert selector.combo.count() == 4
         for index, key in enumerate(ids, 1):
             text = selector.combo.itemText(selector.combo.findData(key))
             assert text.startswith(f"功率计{index} · JW8105")
@@ -60,7 +63,7 @@ def test_three_model_only_meters_keep_slots_in_ui_and_after_restart(qtbot, tmp_p
             runtime.bind_slot(ids[0], "optical_power_meter:3", "general")
         assert conflict.value.code == "slot_conflict"
         with pytest.raises(ValidationError):
-            runtime.bind_slot(ids[0], "optical_power_meter:4", "general")
+            runtime.bind_slot(ids[0], "optical_power_meter:5", "general")
         runtime.sessions.disconnect(ids[1])
         window.controller.poll()
         selector.refresh()
@@ -77,3 +80,66 @@ def test_three_model_only_meters_keep_slots_in_ui_and_after_restart(qtbot, tmp_p
         for key in reversed(ids):
             reopened.connect(key).result(5)
         assert {r["id"]: r["slots"] for r in reopened.inventory.all()} == expected
+
+
+@pytest.mark.parametrize("entry", ["connect", "reconnect", "connect_all"])
+def test_serial_meter_connection_reuses_saved_model_without_identity_prompt(
+    qtbot, tmp_path, monkeypatch, entry
+):
+    runtime = ApplicationRuntime(root=tmp_path, hardware=False)
+    runtime.monitoring.enable_settings_sync(False)
+    config = ConnectionConfig("COM77", "joinwit.jw8105", "serial", usb_instance_id="FIXTURE-USB-BRIDGE")
+    identity = DeviceIdentity("Joinwit", "JW8105", confidence="model_only")
+    opened = []
+
+    class Meter(SimulatedInstrument):
+        def identify(self):
+            return identity
+
+    def factory(selected):
+        opened.append(selected)
+        return Meter(selected)
+
+    monkeypatch.setattr(runtime.sessions, "factory", factory)
+    record = runtime.inventory.merge(
+        DiscoveryCandidate(config, "serial"), "scan-fixture", identity, config.adapter
+    )
+    key = record["id"]
+    runtime.bind_slot(key, "optical_power_meter:4", "general")
+    if entry in {"connect", "reconnect"}:
+        runtime.connect(key).result(3)
+        if entry == "connect":
+            runtime.sessions.disconnect(key)
+        opened.clear()
+    window = RealWindow(runtime)
+    qtbot.addWidget(window)
+    window.timer.stop()
+    window.controller.timer.stop()
+    window.selected_id = key
+    watched = []
+    monkeypatch.setattr(window.bridge, "watch", lambda future, label: watched.append(future))
+    monkeypatch.setattr(QInputDialog, "getText", lambda *a, **kw: pytest.fail("Unexpected identity prompt"))
+    monkeypatch.setattr(window, "configure_adapter", lambda *a: pytest.fail("Unexpected model prompt"))
+    monkeypatch.setattr(window, "_failed", pytest.fail)
+    try:
+        if entry == "connect_all":
+            window.connect_all()
+        else:
+            window.action(entry)
+        assert len(watched) == 1
+        qtbot.waitUntil(watched[0].done, timeout=3000)
+        result = watched[0].result()
+        if entry == "connect_all":
+            assert [item["status"] for item in result["items"]] == ["connected"]
+        else:
+            assert result == identity
+        assert opened == [config]
+        saved = next(r for r in runtime.inventory.all() if r["id"] == key)
+        assert saved["config"]["expected_serial"] == ""
+        assert saved["identity"]["confidence"] == "model_only"
+        assert saved["slots"] == {"general": "optical_power_meter:4"}
+    finally:
+        window.controller.close()
+        window.bridge.worker.shutdown()
+        runtime.close()
+        window.closing = True

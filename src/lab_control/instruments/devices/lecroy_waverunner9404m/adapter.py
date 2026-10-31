@@ -419,7 +419,7 @@ class WaveRunner9404MAdapter(ScpiAdapter):
             # that a newly triggered sweep exists or replay SINGLE after timeout.
             result = self.apply(DeviceCommand("single", confirmed=True))
             if result.outcome != "success":
-                raise DeviceError(result.error, "acquisition_failed")
+                raise DeviceError(result.error, "configuration_uncertain")
             deadline = time.monotonic() + min(self.config.timeout, 5.0)
             while self.read("trigger_mode") != "STOP":
                 if time.monotonic() >= deadline:

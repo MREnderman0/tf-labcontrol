@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 from lab_control.application.acquisition_pipeline import (
     FrozenDict,
     immutable_batch,
+    validate_displayed_batch,
 )
 from lab_control.application.monitoring_state import MonitorFrame, MonitorTask
 from lab_control.domain.instruments import (
@@ -53,6 +54,7 @@ class MonitorScheduler:
             if exc.code != "configuration_changed":
                 raise
             task.configuration_changes += 1
+            task.power_window.mark_gap()
             task.frames.clear()
             task.frame_interval, task.last_frame_at = None, 0
             if task.once:
@@ -71,12 +73,14 @@ class MonitorScheduler:
             return
         good = all(m.quality in {Quality.GOOD, Quality.SIMULATED} for m in batch.measurements)
         if not good:
+            invalid = [m for m in batch.measurements if m.quality not in {Quality.GOOD, Quality.SIMULATED}]
             raise DeviceError(
                 "; ".join(
                     m.metadata.get("error", m.quality.value)
                     for m in batch.measurements
                     if m.quality not in {Quality.GOOD, Quality.SIMULATED}
-                )
+                ),
+                invalid[0].quality.value,
             )
         if task.configuration_wait_expired:
             # Drain an already submitted read without extending the 30 s wait.
@@ -84,6 +88,15 @@ class MonitorScheduler:
             if record_session and task.recorder:
                 task.recorder.cancel_reservation()
             return
+        if request.kind != "status":
+            validate_displayed_batch(batch)
+        if record_session and task.recorder:
+            owner._validate_saved_batch(batch)
+        if task.recovery:
+            batch = owner.sessions.recovery.complete(
+                owner.sessions.sessions[device_id], task.recovery, batch, task.recorder
+            )
+            task.recovery = None
         batch = immutable_batch(batch)
         if record_session and task.recorder:
             batch = replace(
@@ -99,7 +112,6 @@ class MonitorScheduler:
                     }
                 ),
             )
-            owner._validate_saved_batch(batch)
             if not task.recorder.submit(batch):
                 task.recording = False
                 task.recording_notice = task.recorder.pause_reason
@@ -128,6 +140,7 @@ class MonitorScheduler:
         )
         if request.kind == "scalar":
             task.frame_history.setdefault(key, deque(maxlen=1200)).append(task.frames[key])
+            task.power_window.add(task.frames[key])
         task.timings.append(
             {
                 "sequence": task.sequence,
@@ -148,9 +161,10 @@ class MonitorScheduler:
                 callback(device_id)
             except Exception as exc:
                 owner.audit.try_record("frame_listener_failed", device_id=device_id, error=str(exc))
-        # Start-to-start interval: slow device I/O does not incur another full
-        # interval afterwards. There is still only one in-flight read, no catch-up queue.
-        task.next_at = 0 if task.cadence == "fastest" else task.last_started_at + task.interval
+        # Keep normal start-to-start cadence. After an overrun, start a new
+        # period from receipt instead of immediately sending a catch-up read.
+        due = task.last_started_at + task.interval
+        task.next_at = 0 if task.cadence == "fastest" else (due if due > now else now + task.interval)
         if task.once:
             task.running = False
 
@@ -177,16 +191,26 @@ class MonitorScheduler:
                 if task.recorder:
                     info = task.recorder.snapshot()
                     task.last_path = info["last_path"] or task.last_path
+                    if info["error"]:
+                        task.recording = False
+                        task.recording_notice = info["error"]
                     if info["paused"]:
                         task.recording = False
                         task.recording_notice = info["paused"]
                     if not task.recording and not task.pending_record_session:
                         task.recorder.finish()
+                if task.recovery:
+                    if owner.recovery.tick(device_id, task):
+                        continue
+                    snapshots = {s["stableDeviceId"]: s for s in owner.sessions.snapshots()}
                 state = snapshots.get(device_id)
-                if not state or state["connectionState"] in {"error", "degraded"}:
+                if (not state or state["connectionState"] in {"error", "degraded"}) and not task.pending:
                     task.running = False
                     task.error = task.error or (state or {}).get("lastError", "Device disconnected")
-                if state and task.running:
+                # A worker can mark the session degraded before its Future is
+                # complete. Let finish_batch classify that read before updating
+                # the monitoring flag, or set_monitoring could pause recovery.
+                if state and task.running and not task.pending:
                     owner.sessions.set_monitoring(
                         device_id,
                         True,
@@ -260,13 +284,16 @@ class MonitorScheduler:
             except Exception as exc:
                 if task.recorder:
                     task.recorder.cancel_reservation()
-                owner._pause(device_id, str(exc))
+                if not owner.recovery.begin(device_id, task, exc):
+                    owner._pause(device_id, str(exc))
             finally:
+                task.power_window.advance(time.perf_counter(), stopped=not task.running and not task.pending)
                 # An error can finish the last in-flight read/write during close.
                 # Release the monitoring flag in this tick, before _loop may exit.
                 if (
                     not task.running
                     and not task.pending
+                    and not task.recovery_pending
                     and not task.write_pending
                     and task.recording_preparation is None
                     and (not task.recorder or task.recorder.binary_done)
@@ -297,7 +324,10 @@ class MonitorScheduler:
                     owner.closing
                     and not owner.capture_saves
                     and all(
-                        not t.pending and not t.write_pending and t.recording_preparation is None
+                        not t.pending
+                        and not t.write_pending
+                        and not t.recovery_pending
+                        and t.recording_preparation is None
                         for t in owner.tasks.values()
                     )
                 ):

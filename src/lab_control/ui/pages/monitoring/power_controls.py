@@ -4,7 +4,7 @@ from typing import Any, cast
 
 import shiboken6
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QScrollArea, QSizePolicy, QVBoxLayout, QWidget
 
 from lab_control.application.settings_sync import SettingsSync
 from lab_control.domain.instruments import DeviceError
@@ -40,6 +40,10 @@ class PowerMonitorChannel(ParameterGroup):
         for name, editor in self.editors.items():
             label = QLabel("实测 — " + ("V" if name == "voltage" else "A"))
             label.setObjectName("powerLiveValue")
+            # Equal readout columns must not resize when a value gains digits.
+            label.setMinimumWidth(0)
+            label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+            label.setWordWrap(False)
             actual.addWidget(label, 1)
             self.measurements[name] = label
             field_title = editor.findChild(QLabel, "controlTitle")

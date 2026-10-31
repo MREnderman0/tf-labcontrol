@@ -52,11 +52,16 @@ class DeviceDefinition:
     # common discovery service supplies only the current physical IPv4 sources;
     # transport selection and model-specific routing stay in the device pack.
     discovery_config: Callable[[ConnectionConfig, tuple[str, ...]], ConnectionConfig] | None = None
+    # Rebuild only the protocol/resource for a verified asset's current DHCP IP.
+    # The caller supplies a fresh config without serial, limits, aliases or options.
+    discovery_lan_config: Callable[[ConnectionConfig, str], ConnectionConfig] | None = None
     # Optional workspace placement for power-supply model packages.  Existing
     # power supplies remain monitoring-only by default; a package can opt into
     # the dedicated management surface without changing its protocol profile.
     management_surface: bool = False
     monitoring_surface: bool = True
+    # Models that expose monitoring/recording without a parameter-control page.
+    monitoring_only: bool = False
     # Explicit, model-owned read-only acceptance entry, also usable by frozen CLI.
     readonly_check: Callable[..., dict[str, Any]] | None = None
     model: DeviceModel | None = None
