@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QPushButton,
     QScrollArea,
     QSizePolicy,
@@ -335,12 +336,26 @@ class MonitoringDashboard(QWidget):
         self.groups: dict[str, DeviceCategoryGroup] = {}
         self.preferences: dict[str, dict[str, Any]] = {}
         self.legacy_preferences: dict[str, dict[str, dict[str, Any]]] = {}
+        self._timed_stop_timer = QTimer(self)
+        self._timed_stop_timer.setSingleShot(True)
+        self._timed_stop_timer.timeout.connect(self._stop_timed_sampling)
+        self._timed_task_refs: dict[str, Any] = {}
+        self._timed_duration = 0
         layout = QVBoxLayout(self)
         heading = QLabel("实时监测总览")
         heading.setObjectName("pageTitle")
         layout.addWidget(heading)
         toolbar = QHBoxLayout()
         toolbar.addStretch()
+        toolbar.addWidget(QLabel("定时停止"))
+        self.duration_input = QLineEdit()
+        self.duration_input.setObjectName("samplingDuration")
+        self.duration_input.setPlaceholderText("留空不定时")
+        self.duration_input.setFixedWidth(112)
+        self.duration_input.setToolTip("输入 1～2,147,483 秒的正整数；留空表示不启用定时停止。")
+        toolbar.addWidget(self.duration_input)
+        toolbar.addWidget(QLabel("秒"))
+        toolbar.addSpacing(8)
         self.sample_button = QPushButton("一键开始采样")
         self.sample_button.setObjectName("primaryButton")
         self.sample_button.clicked.connect(self.toggle_sampling)
@@ -718,12 +733,18 @@ class MonitoringDashboard(QWidget):
     def toggle_sampling(self) -> None:
         active, stopping = self._sampling_state()
         if active:
+            self._cancel_timed_stop()
             self.stop()
             return
         if stopping:
             # Also guard queued clicks: never start just the faster-draining peers.
             self._update_button()
             self.controller.message.emit("上一批采集正在收尾，请等待勾选设备停止后再开始。")
+            return
+        try:
+            duration = self._parse_duration()
+        except ValueError:
+            self.controller.message.emit("定时秒数请输入 1～2,147,483 的正整数，留空表示不定时。")
             return
         grouped = self._requests()
         if not grouped:
@@ -736,6 +757,7 @@ class MonitoringDashboard(QWidget):
         except Exception as exc:
             self.controller.message.emit(f"创建采集批次失败：{exc}")
             return
+        started_tasks: dict[str, Any] = {}
         for device_id, requests, interval, recording_mode in grouped:
             try:
                 record = self.controller.records[device_id]
@@ -752,17 +774,65 @@ class MonitoringDashboard(QWidget):
                     recording=True,
                     batch=batch,
                 )
+                task = self.controller.runtime.monitoring.tasks.get(device_id)
+                if task is not None and task.running:
+                    started_tasks[device_id] = task
             except Exception as exc:
                 self.controller.message.emit(f"{self.controller.records[device_id]['adapterId']}：{exc}")
+        if duration is None:
+            self._cancel_timed_stop()
+        elif started_tasks:
+            self._schedule_timed_stop(started_tasks, duration)
+        else:
+            self._cancel_timed_stop()
         self._update_button()
 
     def start(self) -> None:
         self.toggle_sampling()
 
     def stop(self) -> None:
+        self._cancel_timed_stop()
         for device_id in tuple(self.cards):
             if self.controller.runtime.monitoring.snapshots().get(device_id, {}).get("running"):
                 self.controller.watch(self.controller.runtime.monitoring.stop(device_id))
+        self._update_button()
+
+    def _parse_duration(self) -> int | None:
+        value = self.duration_input.text().strip()
+        if not value:
+            return None
+        if not value.isascii() or not value.isdigit():
+            raise ValueError
+        duration = int(value)
+        if not 1 <= duration <= 2_147_483:
+            raise ValueError
+        return duration
+
+    def _schedule_timed_stop(self, tasks: dict[str, Any], duration: int) -> None:
+        self._timed_task_refs = dict(tasks)
+        self._timed_duration = duration
+        self._timed_stop_timer.start(duration * 1000)
+
+    def _cancel_timed_stop(self) -> None:
+        if self._timed_stop_timer.isActive():
+            self._timed_stop_timer.stop()
+        self._timed_task_refs.clear()
+        self._timed_duration = 0
+
+    def _stop_timed_sampling(self) -> None:
+        tasks = self._timed_task_refs
+        duration = self._timed_duration
+        self._timed_task_refs = {}
+        self._timed_duration = 0
+        stopped = 0
+        monitoring = self.controller.runtime.monitoring
+        for device_id, expected in tasks.items():
+            current = monitoring.tasks.get(device_id)
+            if current is expected and current.running:
+                self.controller.watch(monitoring.stop(device_id))
+                stopped += 1
+        if stopped:
+            self.controller.message.emit(f"已达到定时 {duration} 秒，已停止 {stopped} 台设备采样。")
         self._update_button()
 
     def _update_button(self) -> None:

@@ -174,3 +174,125 @@ def test_monitor_overview_includes_optical_power_meter_in_electronic_layout(qtbo
         window.closing = True
         window.bridge.worker.shutdown()
         runtime.close()
+
+
+def test_monitor_overview_optional_timed_sampling_and_manual_cancel(qtbot, tmp_path):
+    runtime = ApplicationRuntime(root=tmp_path, hardware=False)
+    device = runtime.add(ConnectionConfig("mock://overview/timed", "rs.sma100b", "mock"))
+    runtime.connect(device).result(3)
+    window = RealWindow(runtime)
+    qtbot.addWidget(window)
+    window.controller.timer.stop()
+    runtime.monitoring.enable_settings_sync(False)
+    messages = []
+    window.controller.message.connect(messages.append)
+    try:
+        window.navigate("实时监测")
+        save_monitoring_interval(window.controller, device, "general", 0.5, cadence="interval")
+
+        # Blank means the existing indefinite one-click behavior.
+        assert window.dashboard.duration_input.text() == ""
+        window.dashboard.toggle_sampling()
+        qtbot.waitUntil(lambda: runtime.monitoring.snapshots().get(device, {}).get("recording"), timeout=5000)
+        assert not window.dashboard._timed_stop_timer.isActive()
+        window.dashboard.stop()
+        qtbot.waitUntil(
+            lambda: not runtime.monitoring.snapshots().get(device, {}).get("stopping"), timeout=5000
+        )
+
+        # Manual stop cancels a pending timer and leaves the input for the next run.
+        window.dashboard.duration_input.setText("60")
+        window.dashboard.toggle_sampling()
+        qtbot.waitUntil(lambda: window.dashboard._timed_stop_timer.isActive(), timeout=5000)
+        window.dashboard.toggle_sampling()
+        assert not window.dashboard._timed_stop_timer.isActive()
+        qtbot.waitUntil(
+            lambda: not runtime.monitoring.snapshots().get(device, {}).get("stopping"), timeout=5000
+        )
+
+        # The real one-shot timer stops the task and uses the normal stop path.
+        window.dashboard.duration_input.setText("1")
+        window.dashboard.toggle_sampling()
+        qtbot.waitUntil(lambda: window.dashboard._timed_stop_timer.isActive(), timeout=5000)
+        qtbot.waitUntil(lambda: not window.dashboard._timed_stop_timer.isActive(), timeout=4000)
+        qtbot.waitUntil(
+            lambda: not runtime.monitoring.snapshots().get(device, {}).get("stopping"), timeout=5000
+        )
+        assert any("已达到定时 1 秒" in message for message in messages)
+        assert runtime.repository.load_workspace("monitor_overview/all", {})
+        assert all(
+            "duration" not in value
+            for value in runtime.repository.load_workspace("monitor_overview/all", {}).values()
+        )
+    finally:
+        window.controller.close()
+        runtime.close()
+        window.closing = True
+        window.close()
+
+
+def test_monitor_overview_rejects_invalid_duration_without_starting(qtbot, tmp_path):
+    runtime = ApplicationRuntime(root=tmp_path, hardware=False)
+    device = runtime.add(ConnectionConfig("mock://overview/invalid-duration", "rs.sma100b", "mock"))
+    runtime.connect(device).result(3)
+    window = RealWindow(runtime)
+    qtbot.addWidget(window)
+    window.controller.timer.stop()
+    runtime.monitoring.enable_settings_sync(False)
+    messages = []
+    window.controller.message.connect(messages.append)
+    try:
+        window.navigate("实时监测")
+        for value in ("0", "-1", "1.5", "abc", "2147484"):
+            window.dashboard.duration_input.setText(value)
+            window.dashboard.toggle_sampling()
+            assert not runtime.monitoring.tasks
+            assert not window.dashboard._timed_stop_timer.isActive()
+        assert len(messages) == 5
+        assert all("定时秒数请输入" in message for message in messages)
+    finally:
+        window.controller.close()
+        runtime.close()
+        window.closing = True
+        window.close()
+
+
+def test_monitor_overview_timed_sampling_only_stops_successful_devices(qtbot, tmp_path, monkeypatch):
+    runtime = ApplicationRuntime(root=tmp_path, hardware=False)
+    first = runtime.add(ConnectionConfig("mock://overview/timed-first", "rs.sma100b", "mock"))
+    failed = runtime.add(ConnectionConfig("mock://overview/timed-failed", "rs.sma100b", "mock"))
+    runtime.connect(first).result(3)
+    runtime.connect(failed).result(3)
+    window = RealWindow(runtime)
+    qtbot.addWidget(window)
+    window.controller.timer.stop()
+    runtime.monitoring.enable_settings_sync(False)
+    original = window.controller.start_monitoring
+    messages = []
+    window.controller.message.connect(messages.append)
+    try:
+        window.navigate("实时监测")
+        save_monitoring_interval(window.controller, first, "general", 0.5, cadence="interval")
+        save_monitoring_interval(window.controller, failed, "general", 0.5, cadence="interval")
+
+        def start(device_id, *args, **kwargs):
+            if device_id == failed:
+                raise RuntimeError("fixture start failure")
+            return original(device_id, *args, **kwargs)
+
+        monkeypatch.setattr(window.controller, "start_monitoring", start)
+        window.dashboard.duration_input.setText("1")
+        window.dashboard.toggle_sampling()
+        qtbot.waitUntil(lambda: first in runtime.monitoring.tasks, timeout=5000)
+        assert failed not in runtime.monitoring.tasks
+        assert window.dashboard._timed_stop_timer.isActive()
+        qtbot.waitUntil(lambda: not window.dashboard._timed_stop_timer.isActive(), timeout=4000)
+        qtbot.waitUntil(
+            lambda: not runtime.monitoring.snapshots().get(first, {}).get("stopping"), timeout=5000
+        )
+        assert any("fixture start failure" in message for message in messages)
+    finally:
+        window.controller.close()
+        runtime.close()
+        window.closing = True
+        window.close()
