@@ -29,6 +29,28 @@ class M300Adapter(ScpiAdapter):
     acquisition_revision = "m300-channel-scalar-v2"
     capability_revision = 0
 
+    def bind_control_state(self, load, save) -> None:
+        from .connection_setup import ThermistorConnectionSetup
+
+        self.connection_setup = ThermistorConnectionSetup(self, load, save)
+
+    def remember_thermistor_setup(self, channels: dict[int, int], *, unit="C", confirmed=False) -> None:
+        """Explicitly authorize a persistent setup for this verified asset, without writing it."""
+        if not hasattr(self, "connection_setup"):
+            raise DeviceError("需要正式会话保存 M300 连接配置", "storage_required")
+        self.connection_setup.remember(channels, unit=unit, confirmed=confirmed)
+
+    def disable_thermistor_setup(self, *, confirmed=False) -> None:
+        if not hasattr(self, "connection_setup"):
+            raise DeviceError("需要正式会话保存 M300 连接配置", "storage_required")
+        self.connection_setup.disable(confirmed=confirmed)
+
+    def prepare_acquisition(self) -> None:
+        """Apply an explicitly remembered asset setup; discovery/read-only connections skip this."""
+        self.acquisition_preparation: dict[str, Any] = {"status": "not_configured"}
+        if hasattr(self, "connection_setup"):
+            self.connection_setup.prepare()
+
     def _remember(self, name: str, value: Any) -> None:
         if self.capability_details.get(name) != value:
             self.capability_details[name] = value

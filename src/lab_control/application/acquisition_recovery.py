@@ -111,7 +111,8 @@ class AcquisitionRecovery:
         manager.emit("recovery_started", session.device_id, recovery=recovery.snapshot())
         candidate = None
         try:
-            # Do not send LOCAL, reset, saved parameter settings or output commands.
+            # Teardown never sends LOCAL, reset or output commands. Any authorized
+            # model setup runs only after the replacement identity is verified below.
             reopen = getattr(session.adapter, "reopen_acquisition", None)
             if callable(reopen):
                 # Keep model-owned measurement services alive across socket failures.
@@ -150,7 +151,7 @@ class AcquisitionRecovery:
                 )
             prepare = getattr(candidate, "prepare_acquisition", None)
             if session.acquisition_setup_enabled and callable(prepare):
-                # Only the model's declared format initialization is authorized.
+                # Only the model's declared, already-authorized acquisition setup may run.
                 # Its failure may follow an uncertain write: never automatically repeat it.
                 try:
                     prepare()

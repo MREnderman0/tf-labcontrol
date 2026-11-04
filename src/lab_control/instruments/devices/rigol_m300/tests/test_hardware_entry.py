@@ -12,6 +12,32 @@ def done(value=None):
     return future
 
 
+def test_connection_setup_failure_is_recorded_without_git_or_hardware(monkeypatch, tmp_path):
+    from lab_control.domain.connections import ConnectionConfig
+
+    from ..hardware import connection_setup
+
+    def unavailable(*_args, **_kwargs):
+        raise FileNotFoundError("git is not installed")
+
+    def forbidden(*_args, **_kwargs):
+        raise AssertionError("Invalid profile must not open a runtime")
+
+    monkeypatch.setattr(connection_setup.subprocess, "check_output", unavailable)
+    monkeypatch.setattr(connection_setup, "ApplicationRuntime", forbidden)
+    folder = tmp_path / "hardware-tests" / "RIGOL-M300-TEST" / "invalid-profile"
+    result = connection_setup.commission(
+        ConnectionConfig("mock://m300", "rigol.m300", "mock", expected_serial="TEST"),
+        folder,
+        root=tmp_path,
+        channels={401: 1234},
+    )
+    assert result["error"] and result["model_source_hashes"]
+    assert result["source_version"].startswith("Installed package")
+    assert (folder / "results.json").is_file() and (folder / "summary.json").is_file()
+    assert (folder / "record.md").is_file()
+
+
 def test_record_converter_preserves_structured_revision_without_changing_original():
     report = {"source_version": {"commit": "example"}, "model_source_hashes": {"adapter.py": "digest"}}
     summary = summarize(report)
