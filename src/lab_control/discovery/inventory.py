@@ -104,7 +104,19 @@ class Inventory:
                     for entry in record.get("candidates", {}).values()
                 ):
                     matches[(config.adapter, config.transport)] = config
-        return next(iter(matches.values())) if len(matches) == 1 else None
+        if len(matches) != 1:
+            return None
+        profile = next(iter(matches.values()))
+        # A bridge signature selects only wire defaults. Never copy another
+        # asset's serial, aliases, limits, options or secondary data endpoint.
+        return ConnectionConfig(
+            profile.resource,
+            profile.adapter,
+            profile.transport,
+            baud_rate=profile.baud_rate,
+            timeout=profile.timeout,
+            terminator=profile.terminator,
+        )
 
     def merge(
         self,

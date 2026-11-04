@@ -168,6 +168,11 @@ def create_adapter(config: ConnectionConfig, runtime: VisaRuntime) -> Instrument
     try:
         transport.open()
         return build_scpi_adapter(config, transport)
-    except Exception:
-        transport.close()
+    except Exception as exc:
+        try:
+            transport.close()
+        except Exception as cleanup:
+            from lab_control.domain.instruments import ResourceCleanupError
+
+            raise ResourceCleanupError(transport, cleanup, exc) from cleanup
         raise

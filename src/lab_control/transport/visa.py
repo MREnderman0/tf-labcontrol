@@ -81,10 +81,8 @@ class VisaRuntime:
 
     def release(self, handle: Any) -> None:
         with self._lock:
-            try:
-                handle.close()
-            finally:
-                self._handles.discard(handle)
+            handle.close()
+            self._handles.discard(handle)
 
     def close(self) -> None:
         with self._lock:
@@ -152,8 +150,8 @@ class VisaTransport:
 
     def close(self) -> None:
         if self.handle is not None:
-            handle, self.handle = self.handle, None
-            self.runtime.release(handle)
+            self.runtime.release(self.handle)
+            self.handle = None
 
     def _error(self, exc: Exception) -> DeviceError:
         if isinstance(exc, DeviceError):

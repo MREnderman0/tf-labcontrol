@@ -12,6 +12,7 @@ from lab_control.application.config import ConnectionConfig, canonical_resource
 from lab_control.application.leases import ProcessLease, ResourceLeases
 from lab_control.application.sessions import SessionManager
 from lab_control.application.static_addresses import StaticAddressStore
+from lab_control.discovery.probe_lifetime import probe_handle
 from lab_control.discovery.service import (
     ConfiguredDiscoveryProvider,
     DiscoveryCandidate,
@@ -32,6 +33,10 @@ from lab_control.instruments.registry import (
 )
 from lab_control.storage.repository import Repository
 from lab_control.transport.visa import VisaRuntime
+
+# If a driver cannot confirm closure, keep both handles and the global hardware
+# gate alive until process exit. Garbage collection must not release that gate.
+_UNRELEASED_RUNTIMES: list[Any] = []
 
 
 class ApplicationRuntime:
@@ -182,12 +187,10 @@ class ApplicationRuntime:
             not candidate.safe_scpi or (definition is not None and definition.identity_requires_adapter)
         ):
             adapter = create_adapter(config, self.visa)
-            try:
+            with probe_handle(adapter):
                 return adapter.identify(), config.adapter
-            finally:
-                adapter.close()
         transport = transport_for(config, self.visa)
-        try:
+        with probe_handle(transport):
             transport.open()
             identity_probe = None
             if not config.adapter and candidate.safe_scpi and config.resource.upper().startswith("TCPIP"):
@@ -211,8 +214,6 @@ class ApplicationRuntime:
                 else identity_from_scpi(transport.query("*IDN?"))
             )
             return identity, match(identity)
-        finally:
-            transport.close()
 
     def add(self, config: ConnectionConfig) -> str:
         if not self.hardware and config.transport != "mock":
@@ -542,6 +543,17 @@ class ApplicationRuntime:
             self.process_lease,
         ):
             if resource is not None:
+                uncertain = bool(
+                    getattr(self.sessions, "sessions", {}) or getattr(self.discovery, "unreleased_probes", {})
+                )
+                if (
+                    uncertain
+                    and getattr(self, "hardware", False)
+                    and (resource is self.visa or resource is self.process_lease)
+                ):
+                    if not any(runtime is self for runtime in _UNRELEASED_RUNTIMES):
+                        _UNRELEASED_RUNTIMES.append(self)
+                    continue
                 if resource is self.repository and agent is not None:
                     try:
                         agent.finalize_close()

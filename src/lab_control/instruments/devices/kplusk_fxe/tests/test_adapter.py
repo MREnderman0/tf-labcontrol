@@ -10,6 +10,23 @@ from lab_control.domain.instruments import AcquisitionRequest, DeviceCommand, De
 from lab_control.instruments.devices.kplusk_fxe.adapter import KpluskFxeAdapter
 
 
+def test_failed_official_close_is_reported_and_retryable(monkeypatch):
+    library = FakeLibrary()
+    adapter = KpluskFxeAdapter(ConnectionConfig("192.0.2.40", "kplusk.fxe", "kplusk"), library)
+    original = library.close_connection
+
+    def fail(_source_id):
+        raise OSError("fixture vendor close failed")
+
+    monkeypatch.setattr(library, "close_connection", fail)
+    with pytest.raises(OSError, match="vendor close"):
+        adapter.close()
+    assert not adapter._closed
+    monkeypatch.setattr(library, "close_connection", original)
+    adapter.close()
+    assert adapter._closed
+
+
 @dataclass
 class Result:
     result_code: str = "KK_NO_ERR"

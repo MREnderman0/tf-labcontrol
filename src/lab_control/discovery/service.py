@@ -10,8 +10,10 @@ from uuid import uuid4
 from lab_control.application.leases import ResourceLeases
 from lab_control.application.sessions import SessionManager
 from lab_control.discovery.addresses import network_host
+from lab_control.discovery.admission import probe_claims
 from lab_control.discovery.inventory import Inventory as Inventory
 from lab_control.discovery.presence import LIVE_CONNECTIONS
+from lab_control.discovery.probe_lifetime import ProbeCleanupError
 from lab_control.discovery.providers import ConfiguredDiscoveryProvider as ConfiguredDiscoveryProvider
 from lab_control.discovery.providers import SerialDiscoveryProvider as SerialDiscoveryProvider
 from lab_control.discovery.providers import VendorSdkDiscoveryProvider as VendorSdkDiscoveryProvider
@@ -53,6 +55,7 @@ class DiscoveryService:
         # Protected by the same lock as scan admission; checked by every frontend.
         self.connection_batch_active = False
         self.closing = False
+        self.unreleased_probes: dict[str, ProbeCleanupError] = {}
 
     @property
     def is_scanning(self) -> bool:
@@ -254,6 +257,8 @@ class DiscoveryService:
                 return {"resource": candidate.config.resource, "reason": "cancelled"}
             identity, adapter, error, reason = None, candidate.config.adapter, "", "metadata_only"
             error_code = ""
+            admission_basis = ""
+            blocking_owners: set[str] = set()
             owner = "probe:" + uuid4().hex
             leased = False
             definition = DEVICE_DEFINITIONS.get(candidate.config.adapter)
@@ -261,43 +266,67 @@ class DiscoveryService:
                 if candidate.error_code:
                     raise DeviceError(candidate.error, candidate.error_code)
                 with self.sessions.lock:
+                    claims = probe_claims(candidate, self.inventory)
+                    admission_basis = claims.basis
+                    blockers = self.sessions.discovery_blockers() | self.unreleased_probes.keys()
+                    blocking_owners = self.leases.conflicts(claims.resources)
                     active = self.leases.owner(candidate.config.resource)
                     session = self.sessions.sessions.get(active or "")
-                    if session is not None:
+                    if claims.conflict:
+                        raise DeviceError(
+                            "Resolve the asset identity conflict before probing", "identity_conflict"
+                        )
+                    if session is not None and blocking_owners <= {active}:
                         adapter = session.config.adapter
                         if session.state in LIVE_CONNECTIONS and not session.closing:
                             identity, reason = session.identity, "cached_active_session"
                         else:
                             reason = "cached_session_unconfirmed"
-                    elif self.sessions.sessions:
+                    elif blocking_owners:
                         reason = "deferred_possible_alias_of_active_device"
+                        admission_basis = "owned_resource_or_asset"
                     elif (
                         definition is not None
                         and candidate.config.transport in definition.discovery_connection_only_transports
                     ):
                         reason = "sdk_identity_requires_explicit_connection"
+                    elif blockers and (
+                        not claims.trusted
+                        or any(not self.leases.owns_resources(device_id) for device_id in blockers)
+                    ):
+                        blocking_owners = blockers
+                        reason = "deferred_possible_alias_of_active_device"
                     elif candidate.config.adapter or candidate.safe_scpi:
                         self.leases.acquire(
                             owner,
-                            (candidate.config.resource, *candidate.config.aliases, "discovery:unknown_alias"),
+                            (*claims.resources, "discovery:unknown_alias"),
                             identified=True,
                         )
                         leased = True
                 if leased:
                     identity, adapter = self.probe(candidate)
-                    expected = candidate.descriptor.get("expectedIdentityKey")
-                    if expected and identity.key != expected:
-                        identity, adapter = None, ""
-                        raise DeviceError(
-                            "DHCP address returned a different instrument identity", "identity_conflict"
-                        )
                     reason = "identified"
+                expected = candidate.descriptor.get("expectedIdentityKey")
+                if expected and identity is not None and identity.key != expected:
+                    identity, adapter = None, ""
+                    raise DeviceError(
+                        "DHCP address returned a different instrument identity", "identity_conflict"
+                    )
             except Exception as exc:
                 error, reason = str(exc), "probe_failed"
                 error_code = exc.code if isinstance(exc, DeviceError) else ""
+                if isinstance(exc, ProbeCleanupError):
+                    with self.sessions.lock:
+                        self.unreleased_probes[owner] = exc
             finally:
-                if leased:
-                    self.leases.release(owner)
+                if leased and owner not in self.unreleased_probes:
+                    try:
+                        self.leases.release(owner)
+                    except Exception as exc:
+                        with self.sessions.lock:
+                            self.unreleased_probes[owner] = ProbeCleanupError(None, exc)
+                        identity, adapter = None, ""
+                        error, reason, error_code = str(exc), "probe_failed", "cleanup_failed"
             record = self.inventory.merge(
                 candidate, scan_id, identity, adapter, error, reason, error_code=error_code
             )
@@ -308,6 +337,8 @@ class DiscoveryService:
                 "reason": reason,
                 "error": error,
                 "errorCode": error_code,
+                "admissionBasis": admission_basis,
+                "blockingOwners": sorted(blocking_owners),
             }
             self.inventory.repository.audit("discovery_result", scan_id=scan_id, **item)
             return item
@@ -355,3 +386,16 @@ class DiscoveryService:
     def close(self) -> None:
         self.cancel()
         self.worker.shutdown(wait=True)
+        errors = []
+        for owner, failure in tuple(self.unreleased_probes.items()):
+            try:
+                if failure.resource is not None:
+                    failure.resource.close()
+                self.leases.release(owner)
+                del self.unreleased_probes[owner]
+            except Exception as exc:
+                errors.append(exc)
+        if errors:
+            for secondary in errors[1:]:
+                errors[0].add_note(f"Additional probe cleanup failure: {secondary}")
+            raise errors[0]

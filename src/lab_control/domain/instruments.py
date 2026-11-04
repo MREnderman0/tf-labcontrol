@@ -26,6 +26,16 @@ class ValidationError(DeviceError):
         super().__init__(message, "invalid_parameter")
 
 
+class ResourceCleanupError(DeviceError):
+    """A failed factory/probe must hand its uncertain handle back to its owner."""
+
+    def __init__(self, resource: Any, cleanup: Exception, primary: Exception | None = None):
+        super().__init__(f"Resource release unconfirmed: {cleanup}", "cleanup_failed")
+        self.resource = resource
+        if primary is not None:
+            self.add_note(f"Original operation failure: {primary}")
+
+
 class Unsupported(DeviceError):
     def __init__(self, message: str) -> None:
         super().__init__(message, "unsupported")

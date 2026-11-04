@@ -376,8 +376,7 @@ class KpluskFxeAdapter(ScpiAdapter):
             return
         if not self._closed:
             library = self._native()
-            with contextlib.suppress(Exception):
-                library.close_connection(self.source_id)
+            library.close_connection(self.source_id)
             self._closed = True
 
 

@@ -11,8 +11,19 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from lab_control.application.config import canonical_resource
-from lab_control.domain.connections import network_host
+from lab_control.domain.connections import ConnectionConfig, network_host
 from lab_control.domain.instruments import DeviceError
+
+
+def connection_claims(config: ConnectionConfig) -> tuple[str, ...]:
+    """The same endpoint/asset claims apply to sessions and discovery handles."""
+    return (
+        config.resource,
+        *config.aliases,
+        *(("USBPNP::" + config.usb_instance_id,) if config.usb_instance_id else ()),
+        *((config.data_resource,) if config.data_resource else ()),
+        *((f"asset:{config.adapter}:{config.expected_serial}",) if config.expected_serial else ()),
+    )
 
 
 class ResourceLeases:
@@ -25,21 +36,37 @@ class ResourceLeases:
         self.root = root
         self._files: dict[str, dict[str, FileLease]] = {}
 
+    @staticmethod
+    def keys(resources: tuple[str, ...]) -> set[str]:
+        keys = {canonical_resource(item) for item in resources}
+        for key in tuple(keys):
+            host = (
+                re.match(r"TCPIP\d*::([^:]+)::", key)
+                or re.match(r"(?:TCP|VICP)://([^/:]+)", key)
+                or re.match(r"SOCKET:([^:]+):", key)
+            )
+            if host:
+                keys.add("HOST:" + host[1].rstrip("."))
+            elif endpoint := network_host(key):
+                keys.add("HOST:" + endpoint.rstrip(".").upper())
+        return keys
+
+    def conflicts(self, resources: tuple[str, ...]) -> set[str]:
+        with self._lock:
+            return {self._owners[key] for key in self.keys(resources) if key in self._owners}
+
+    def owns_resources(self, owner: str) -> bool:
+        with self._lock:
+            return owner in self._owners.values() or owner in self._files
+
+    def probes_active(self) -> bool:
+        with self._lock:
+            return bool(self._shared_unknown_owners or self.owner("discovery:unknown_alias"))
+
     def acquire(self, owner: str, resources: tuple[str, ...], *, identified: bool = False) -> None:
         with self._lock:
-            keys = {canonical_resource(item) for item in resources}
+            keys = self.keys(resources)
             unknown_alias = canonical_resource("discovery:unknown_alias")
-            # All LAN protocols on the same endpoint address one physical instrument.
-            for key in tuple(keys):
-                host = (
-                    re.match(r"TCPIP\d*::([^:]+)::", key)
-                    or re.match(r"(?:TCP|VICP)://([^/:]+)", key)
-                    or re.match(r"SOCKET:([^:]+):", key)
-                )
-                if host:
-                    keys.add("HOST:" + host[1].rstrip("."))
-                elif endpoint := network_host(key):
-                    keys.add("HOST:" + endpoint.rstrip(".").upper())
             if unknown_alias in keys:
                 if identified and unknown_alias in self._owners and self._owners[unknown_alias] != owner:
                     raise DeviceError("Resource is owned by another session or probe", "resource_busy")
@@ -85,10 +112,22 @@ class ResourceLeases:
 
     def release(self, owner: str) -> None:
         with self._lock:
+            # A failed OS close must not make the ownership map advertise a free resource.
+            files = self._files.get(owner, {})
+            errors = []
+            for key, lease in reversed(tuple(files.items())):
+                try:
+                    lease.close()
+                    del files[key]
+                except Exception as exc:
+                    errors.append(exc)
+            if errors:
+                for secondary in errors[1:]:
+                    errors[0].add_note(f"Additional lease release failure: {secondary}")
+                raise errors[0]
+            self._files.pop(owner, None)
             self._owners = {key: value for key, value in self._owners.items() if value != owner}
             self._shared_unknown_owners.discard(owner)
-            for lease in reversed(tuple(self._files.pop(owner, {}).values())):
-                lease.close()
 
 
 class FileLease:

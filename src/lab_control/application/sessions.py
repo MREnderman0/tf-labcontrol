@@ -11,7 +11,7 @@ from uuid import uuid4
 from lab_control.application.acquisition_pipeline import validate_cadence
 from lab_control.application.acquisition_recovery import AcquisitionRecovery, Recovery
 from lab_control.application.config import ConnectionConfig
-from lab_control.application.leases import ResourceLeases
+from lab_control.application.leases import ResourceLeases, connection_claims
 from lab_control.application.recorded_acquisition import RecordedAcquisitionRunner
 from lab_control.application.recordings import retain_recording
 from lab_control.application.session_operations import SessionOperations
@@ -24,6 +24,7 @@ from lab_control.domain.instruments import (
     InstrumentAdapter,
     MeasurementBatch,
     ParameterReading,
+    ResourceCleanupError,
     jsonable,
     utc_now,
 )
@@ -72,6 +73,8 @@ class DeviceSession:
     state: str = "connecting"
     identity: DeviceIdentity | None = None
     adapter: InstrumentAdapter | None = None
+    cleanup_handle: Any = None
+    resource_state: str = "held"
     active_task: str = ""
     background_read: bool = False
     pending: int = 0
@@ -154,6 +157,7 @@ class SessionManager:
                     "adapterId": item.config.adapter,
                     "recordingState": item.direct_recording.snapshot() if item.direct_recording else {},
                     "connectionState": item.state,
+                    "resourceReleaseState": item.resource_state,
                     "activeTask": item.active_task,
                     "backgroundRead": item.background_read,
                     "pending": item.pending,
@@ -360,7 +364,7 @@ class SessionManager:
                 raise DeviceError("Session manager is closing", "runtime_closing")
             if self.maintenance_active:
                 raise DeviceError("安装向导运行期间暂停连接", "maintenance_busy")
-            if self.leases.owner("discovery:unknown_alias"):
+            if self.leases.probes_active():
                 raise DeviceError(
                     "Identity probe is using an unconfirmed physical resource; retry after scan",
                     "resource_busy",
@@ -369,13 +373,7 @@ class SessionManager:
                 raise DeviceError(
                     "Device already has a session; disconnect explicitly first", "resource_busy"
                 )
-            resources = (
-                config.resource,
-                *config.aliases,
-                *(("USBPNP::" + config.usb_instance_id,) if config.usb_instance_id else ()),
-                *((config.data_resource,) if config.data_resource else ()),
-                *((f"asset:{config.adapter}:{config.expected_serial}",) if config.expected_serial else ()),
-            )
+            resources = connection_claims(config)
             # An explicit adapter/resource pair is safe to open alongside another
             # selected device even when the model protocol cannot report a serial
             # number (JW8105 is one such model).  The endpoint, aliases and any
@@ -448,19 +446,55 @@ class SessionManager:
                 self.emit("connected", device_id, identity=jsonable(identity))
                 return identity
             except Exception as exc:
-                if session.adapter:
-                    try:
-                        session.adapter.close()
-                    except Exception as cleanup_error:
-                        self.audit.try_record("cleanup_failed", device_id=device_id, error=str(cleanup_error))
-                    session.adapter = None
+                try:
+                    if isinstance(exc, ResourceCleanupError):
+                        # The factory could not return an adapter, but still
+                        # owns a partially opened transport. Do not drop it or
+                        # automatically retry a failed close here.
+                        session.cleanup_handle = exc.resource
+                        raise exc
+                    self._close_adapter(session)
+                    with self.lock:
+                        self.leases.release(device_id)
+                        session.resource_state = "released"
+                except Exception as cleanup_error:
+                    with self.lock:
+                        session.resource_state = "release_unconfirmed"
+                    exc.add_note(f"Adapter/resource cleanup failed: {cleanup_error}")
+                    self.audit.try_record("cleanup_failed", device_id=device_id, error=str(cleanup_error))
                 with self.lock:
-                    session.state, session.last_error = "error", str(exc)
-                self.leases.release(device_id)
-                self.emit("error", device_id, error=str(exc))
+                    session.state = "error"
+                    session.last_error = "\n".join((str(exc), *getattr(exc, "__notes__", ())))
+                self.emit("error", device_id, error=session.last_error)
                 raise
 
         return _accepted_result(session.worker.submit(opening))
+
+    def discovery_blockers(self) -> set[str]:
+        """Called under the session lock while reserving a discovery handle."""
+        with self.lock:
+            return {
+                device_id
+                for device_id, session in self.sessions.items()
+                if getattr(session, "resource_state", "held") != "released"
+                or session.adapter is not None
+                or session.closing
+                or self.leases.owns_resources(device_id)
+            }
+
+    def _close_adapter(self, session: DeviceSession) -> None:
+        for attribute in ("adapter", "cleanup_handle"):
+            handle = getattr(session, attribute)
+            if handle is None:
+                continue
+            try:
+                handle.close()
+            except Exception:
+                with self.lock:
+                    session.resource_state = "release_unconfirmed"
+                raise
+            with self.lock:
+                setattr(session, attribute, None)
 
     @staticmethod
     def _controls_instrument(operation: str, argument: Any) -> bool:
@@ -815,6 +849,7 @@ class SessionManager:
         def teardown() -> None:
             adapter = session.adapter
             if adapter is None:
+                self._close_adapter(session)
                 return
             failure = None
             try:
@@ -836,7 +871,7 @@ class SessionManager:
                 failure = exc
             finally:
                 try:
-                    adapter.close()
+                    self._close_adapter(session)
                 except Exception as exc:
                     if failure is None:
                         failure = exc
@@ -850,11 +885,29 @@ class SessionManager:
             session.worker.submit(teardown).result()
         except Exception as exc:
             errors.append(exc)
-        for cleanup in (lambda: session.worker.shutdown(wait=True), lambda: self.leases.release(device_id)):
+        if session.adapter is None and session.cleanup_handle is None:
             try:
-                cleanup()
+                with self.lock:
+                    self.leases.release(device_id)
+                    session.resource_state = "released"
             except Exception as exc:
                 errors.append(exc)
+        if session.resource_state != "released":
+            with self.lock:
+                session.resource_state = "release_unconfirmed"
+                session.state, session.closing = "error", False
+                session.last_error = "\n".join(
+                    text for exc in errors for text in (str(exc), *getattr(exc, "__notes__", ()))
+                )
+            self.audit.try_record("cleanup_failed", device_id=device_id, error=session.last_error)
+            self.emit("error", device_id, error=session.last_error)
+            for secondary in errors[1:]:
+                errors[0].add_note(f"Additional disconnect failure: {secondary}")
+            raise errors[0]
+        try:
+            session.worker.shutdown(wait=True)
+        except Exception as exc:
+            errors.append(exc)
         with self.lock:
             del self.sessions[device_id]
         self.audit.try_record(
@@ -892,6 +945,9 @@ class SessionManager:
                 self.disconnect(device_id, drain_reads=True)
             except Exception as exc:
                 errors.append(exc)
+                # Keep uncertain handles and claims, but do not leave an idle
+                # worker running after the runtime has closed admission.
+                session.worker.shutdown(wait=True)
         for recording in tuple(self.recordings):
             try:
                 recording.finish().result()

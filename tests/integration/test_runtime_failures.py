@@ -227,6 +227,45 @@ def test_runtime_close_attempts_every_resource_after_failures():
     assert len(calls) == 7
 
 
+def test_uncertain_hardware_close_retains_visa_and_process_gate_until_exit():
+    from types import SimpleNamespace
+
+    from lab_control.application.runtime import _UNRELEASED_RUNTIMES, ApplicationRuntime
+
+    runtime = ApplicationRuntime.__new__(ApplicationRuntime)
+    calls = []
+
+    def resource(name):
+        def close():
+            calls.append(name)
+            if name == "sessions":
+                raise OSError("driver release unconfirmed")
+
+        return SimpleNamespace(close=close, lock=threading.RLock())
+
+    for name in (
+        "bulk_connection",
+        "monitoring",
+        "discovery",
+        "sessions",
+        "visa",
+        "repository",
+        "process_lease",
+    ):
+        setattr(runtime, name, resource(name))
+    runtime.sessions.sessions = {"uncertain": object()}
+    runtime.hardware, runtime.closed = True, False
+    runtime._close_lock = threading.Lock()
+    try:
+        with pytest.raises(OSError, match="release unconfirmed"):
+            runtime.close()
+        assert "repository" in calls
+        assert "visa" not in calls and "process_lease" not in calls
+        assert any(item is runtime for item in _UNRELEASED_RUNTIMES)
+    finally:
+        _UNRELEASED_RUNTIMES.remove(runtime)
+
+
 def test_required_control_audit_failure_sends_no_command(tmp_path, monkeypatch):
     from lab_control.domain.instruments import DeviceCommand
 
@@ -342,25 +381,37 @@ def test_accepted_stream_future_cannot_cancel_instrument_work(tmp_path, monkeypa
         repository.close()
 
 
-def test_disconnect_preserves_release_error_and_still_removes_session(tmp_path, monkeypatch):
+@pytest.mark.parametrize("close_fails", [False, True])
+def test_disconnect_releases_claims_only_after_confirmed_close(tmp_path, monkeypatch, close_fails):
     repository, sessions = connected(tmp_path)
     adapter = sessions.sessions["test"].adapter
+    original_close = adapter.close
 
     def release():
         raise OSError("release failed")
 
     def close():
-        raise OSError("adapter close failed")
+        if close_fails:
+            raise OSError("adapter close failed")
+        original_close()
 
     monkeypatch.setattr(adapter, "release_control", release, raising=False)
     monkeypatch.setattr(adapter, "close", close)
     try:
         with pytest.raises(DeviceError, match="release failed") as failure:
             sessions.disconnect("test")
-        assert "adapter close failed" in " ".join(failure.value.__notes__)
+        if close_fails:
+            assert "adapter close failed" in " ".join(failure.value.__notes__)
+            assert sessions.sessions["test"].adapter is adapter
+            assert sessions.sessions["test"].resource_state == "release_unconfirmed"
+            assert sessions.leases.owner("mock://failure") == "test"
+            monkeypatch.setattr(adapter, "close", original_close)
+            with pytest.raises(DeviceError, match="disconnected|未确认"):
+                sessions.disconnect("test")
         assert "test" not in sessions.sessions
         assert not sessions.leases.owner("mock://failure")
     finally:
+        monkeypatch.setattr(adapter, "close", original_close)
         sessions.close()
         repository.close()
 

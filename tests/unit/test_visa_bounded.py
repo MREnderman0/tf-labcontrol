@@ -5,7 +5,32 @@ from pyvisa.constants import StatusCode
 
 from lab_control.domain.instruments import DeviceError
 from lab_control.transport.base import block_payload
-from lab_control.transport.visa import VisaTransport
+from lab_control.transport.visa import VisaRuntime, VisaTransport
+
+
+def test_failed_close_keeps_transport_and_runtime_ownership_for_retry():
+    class Handle:
+        fails = True
+
+        def close(self):
+            if self.fails:
+                raise OSError("fixture VISA close failed")
+
+    handle = Handle()
+    runtime = VisaRuntime(
+        manager=SimpleNamespace(open_resource=lambda *_a, **_kw: handle, close=lambda: None)
+    )
+    wire = VisaTransport(runtime, "USB::CLOSE-FAILURE")
+    wire.handle = runtime.open(wire.resource)
+    with pytest.raises(OSError):
+        wire.close()
+    assert wire.handle is handle
+    with pytest.raises(DeviceError, match="sessions"):
+        runtime.close()
+    handle.fails = False
+    wire.close()
+    assert wire.handle is None
+    runtime.close()
 
 
 def transport(raw):
