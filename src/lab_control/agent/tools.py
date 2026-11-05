@@ -29,6 +29,16 @@ class Device(Grant):
     device_id: str = Field(min_length=1, max_length=128)
 
 
+class Slots(Grant):
+    category: str | None = Field(default=None, min_length=1, max_length=128)
+    workspace: Literal["general", "electronic", "optical"] = "general"
+
+
+class Slot(Grant):
+    slot_id: str = Field(min_length=1, max_length=128)
+    workspace: Literal["general", "electronic", "optical"] = "general"
+
+
 class Request(Device):
     request_id: str = Field(min_length=1, max_length=128)
 
@@ -104,6 +114,8 @@ class Artifact(Grant):
 TOOLS = (
     ("get_server_info", Empty, "查看服务信息与本客户端的实验授权；先调用此工具。", True),
     ("list_devices", Grant, "列出实验授权内的设备和缓存状态；不扫描仪器。", True),
+    ("list_slots", Slots, "列出已授权设备绑定的功能槽位及缓存状态；不连接或访问仪器。", True),
+    ("resolve_slot", Slot, "解析槽位当前绑定及指纹；结果是快照，不锁定设备或扩大授权。", True),
     ("get_capabilities", Device, "读取连接会话的能力、单位、通道、范围与副作用说明。", True),
     ("get_device_state", Device, "读取缓存的会话、监测和记录状态；输出未知不能解释为关闭。", True),
     ("connect_device", Connect, "连接指定资产或复用会话；默认跳过会改变设置的采集初始化。", False),

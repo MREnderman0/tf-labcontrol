@@ -172,6 +172,21 @@ class AgentPolicy:
             self._save()
             self.repository.audit_sink.try_record("agent_grant_revoked", grant_id=grant_id)
 
+    def require_grant(self, client_id: str, grant_id: str) -> dict:
+        """Validate collection queries even when no matching assets are present."""
+        self.require_client(client_id)
+        with self.lock:
+            grant = self.grants.get(grant_id, {})
+            if (
+                grant.get("client_id") != client_id
+                or not grant.get("enabled")
+                or grant.get("expires_at", 0) <= time.time()
+            ):
+                fail("实验授权已失效，请在软件中重新授权", "grant_expired")
+            if "view" not in grant["actions"]:
+                fail("查看设备未获授权")
+            return deepcopy(grant)
+
     def check(
         self,
         client_id: str,

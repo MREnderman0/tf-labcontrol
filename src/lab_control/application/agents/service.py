@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import threading
 import time
 from concurrent.futures import Future, ThreadPoolExecutor
@@ -21,7 +23,7 @@ from lab_control.domain.instruments import (
     jsonable,
     utc_now,
 )
-from lab_control.domain.workspace import GENERAL
+from lab_control.domain.workspace import CATEGORY_LABELS, GENERAL, WORKSPACE_MODES
 from lab_control.storage.agent_ledger import ACTIVE, AgentLedger
 
 
@@ -96,6 +98,62 @@ class AgentService:
         if not result:
             fail("无可用实验授权", "grant_expired")
         return result
+
+    def list_slots(
+        self, client: str, grant_id: str, category: str | None = None, workspace: str = GENERAL
+    ) -> list[dict]:
+        """Read logical bindings without discovering, connecting or querying hardware."""
+        if workspace not in WORKSPACE_MODES or (category is not None and category not in CATEGORY_LABELS):
+            raise ValidationError("未知设备类别或工作区")
+        if self.closing or self.runtime.closed:
+            fail("软件正在退出", "runtime_closing")
+        # Match bind_slot's lock order. Definitions, identity and binding must
+        # describe one snapshot; keep revocation serialized until it is built.
+        with self.runtime.sessions.lock, self.runtime.inventory.lock, self.policy.lock:
+            grant = self.policy.require_grant(client, grant_id)
+            result = []
+            for record in self.runtime.inventory.all():
+                device = record["id"]
+                slot = record.get("slots", {}).get(workspace, "")
+                slot_category = slot.partition(":")[0]
+                if device not in grant["devices"] or not slot or (category and slot_category != category):
+                    continue
+                if slot_category not in CATEGORY_LABELS:
+                    continue
+                definitions = self.repository.function_slots.definitions(slot_category, workspace)
+                if slot not in definitions:
+                    continue
+                self._check(client, grant_id, device, "view")
+                identity = self.identity(device)
+                binding = {
+                    "workspace": workspace,
+                    "slot_id": slot,
+                    "device_id": device,
+                    "identity": identity,
+                }
+                fingerprint = hashlib.sha256(
+                    json.dumps(binding, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode(
+                        "utf-8"
+                    )
+                ).hexdigest()
+                result.append(
+                    {
+                        **binding,
+                        "category": slot_category,
+                        "label": definitions[slot],
+                        "state": self._public_state(device),
+                        "cached": True,
+                        "binding_fingerprint": fingerprint,
+                    }
+                )
+            return sorted(result, key=lambda item: (item["category"], item["slot_id"]))
+
+    def resolve_slot(self, client: str, grant_id: str, slot_id: str, workspace: str = GENERAL) -> dict:
+        # An absent, unbound or unauthorized slot has the same public result.
+        for slot in self.list_slots(client, grant_id, workspace=workspace):
+            if slot["slot_id"] == slot_id:
+                return slot
+        fail("槽位不可用，请刷新并核对设备绑定与授权", "slot_unavailable")
 
     def get_device_state(self, client: str, grant_id: str, device_id: str) -> dict:
         self._check(client, grant_id, device_id, "view")

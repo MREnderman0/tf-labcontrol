@@ -133,7 +133,16 @@ def test_sdk_http_auth_origin_and_full_mock_flow(experiment):
     async def run():
         async with remote_client({"url": url}, True, token) as remote:
             listed = await remote.list_tools()
-            assert len(listed.tools) == 18
+            assert len(listed.tools) == 20
+            runtime.bind_slot(device, "oscilloscope:1", "general")
+            slots = await remote.call_tool("list_slots", {"grant_id": grant})
+            assert not slots.is_error
+            slot = slots.structured_content["data"][0]
+            assert slot["device_id"] == device and slot["slot_id"] == "oscilloscope:1"
+            resolved = await remote.call_tool("resolve_slot", {"grant_id": grant, "slot_id": slot["slot_id"]})
+            assert not resolved.is_error and resolved.structured_content["data"] == slot
+            bad = await remote.call_tool("list_slots", {"grant_id": grant, "workspace": "invalid"})
+            assert bad.is_error
             info = await remote.call_tool("get_server_info", {})
             assert not info.is_error, info
             params = {"grant_id": grant, "device_id": device}
@@ -297,7 +306,7 @@ def test_stdio_connector_has_only_protocol_stdout(experiment, tmp_path):
             env={"LAB_CONTROL_AGENT_TOKEN": token},
         )
         async with Client(parameters, read_timeout_seconds=10) as client:
-            assert len((await client.list_tools()).tools) == 18
+            assert len((await client.list_tools()).tools) == 20
             result = await client.call_tool("get_server_info", {})
             assert not result.is_error and result.structured_content["data"]["simulation"]
 
