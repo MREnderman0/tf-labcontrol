@@ -9,6 +9,7 @@
 - [实时监测](realtime-monitoring.md)
 - [日志和设置](logging-and-settings.md)
 - [数据处理](data-processing.md)
+- [光频梳热试验数据处理](thermal-test-data-processing.md)
 
 ## 后续能力
 
