@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from lab_control.domain.voltage_waveform_metrics import VOLTAGE_WAVEFORM_STATISTICS_PROFILE
 from lab_control.instruments.devices.definition import DeviceDefinition, DeviceDocumentation
 
 from .adapter import Rto64Adapter, rto64
@@ -12,4 +13,5 @@ DEFINITION = DeviceDefinition(
     DeviceDocumentation("R&S RTO64", "oscilloscopes/rto64", "LAN / USB VISA", "64 位 VISA Runtime"),
     Path(__file__).parent,
     deployment_components=("rs-visa",),
+    metric_profiles=(VOLTAGE_WAVEFORM_STATISTICS_PROFILE,),
 )

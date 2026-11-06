@@ -19,6 +19,13 @@
       "source": "https://www.picotech.com/helpfiles/6000a-api/",
       "revision": "SDK headers/examples",
       "acquisition": "block/streaming",
+      "metric_profiles": [
+        {
+          "id": "voltage.waveform_statistics",
+          "version": "2",
+          "automatic_capture": false
+        }
+      ],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -278,6 +285,18 @@
       "source": "https://github.com/Thorlabs/Light_Analysis_Examples/blob/main/Python/Thorlabs%20PMxxx%20Power%20Meters/TLPMX_dll/TLPMX.py",
       "revision": "SDK headers/examples",
       "acquisition": "scalar",
+      "metric_profiles": [
+        {
+          "id": "optical_power.fluctuation",
+          "version": "1",
+          "automatic_capture": false
+        },
+        {
+          "id": "optical_power.reference_deviation",
+          "version": "1",
+          "automatic_capture": false
+        }
+      ],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -515,6 +534,13 @@
       "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
       "revision": "1335.9090 revision 12: 17.4, 17.9.1; REAL32 qualified on FW 01.400",
       "acquisition": "rtm",
+      "metric_profiles": [
+        {
+          "id": "voltage.waveform_statistics",
+          "version": "2",
+          "automatic_capture": false
+        }
+      ],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -1691,6 +1717,13 @@
       "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1801_6687_01/RTO6_UserManual_en_14.pdf",
       "revision": "1801.6687 revision 14",
       "acquisition": "rto",
+      "metric_profiles": [
+        {
+          "id": "voltage.waveform_statistics",
+          "version": "2",
+          "automatic_capture": false
+        }
+      ],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -2299,6 +2332,13 @@
       "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000ZE_ProgrammingGuide_EN.pdf",
       "revision": "DS1000Z-E Programming Guide",
       "acquisition": "rigol_scope",
+      "metric_profiles": [
+        {
+          "id": "voltage.waveform_statistics",
+          "version": "2",
+          "automatic_capture": false
+        }
+      ],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -3130,6 +3170,13 @@
       "source": "https://cdn.teledynelecroy.com/files/manuals/maui-remote-control-and-automation-manual.pdf",
       "revision": "MAUI Remote Control & Automation, IEEE 488.2 chapters 6-7",
       "acquisition": "lecroy",
+      "metric_profiles": [
+        {
+          "id": "voltage.waveform_statistics",
+          "version": "2",
+          "automatic_capture": false
+        }
+      ],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -3676,6 +3723,7 @@
       "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1179_7491_01/ZNB3000_UserManual_en_09.pdf",
       "revision": "1179.7491 revision 09, Remote commands",
       "acquisition": "vna",
+      "metric_profiles": [],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -4200,6 +4248,7 @@
       "source": "https://www.keysight.com/us/en/assets/9018-01343/user-manuals/9018-01343.pdf",
       "revision": "03458-90014, Command reference",
       "acquisition": "dmm",
+      "metric_profiles": [],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -4822,6 +4871,7 @@
       "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2025/12/SDG6000X_ProgrammingGuide_EN06A.pdf",
       "revision": "EN06A",
       "acquisition": "",
+      "metric_profiles": [],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -6284,6 +6334,7 @@
       "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2025/12/SDG6000X_ProgrammingGuide_EN06A.pdf",
       "revision": "EN06A §§3.1–3.4, 3.15, 3.22–3.23; CN06A pp.8–11",
       "acquisition": "",
+      "metric_profiles": [],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -6723,6 +6774,7 @@
       "source": "https://download.tek.com/manual/077100401_Referencemanual.pdf",
       "revision": "077100401 September 2014, section 5",
       "acquisition": "power",
+      "metric_profiles": [],
       "channel_limits": {
         "3": {
           "voltage": 5,
@@ -7309,6 +7361,7 @@
       "source": "https://www.siglent.eu/_downloads/140e4cc86e0498634759dcffa81aab7e",
       "revision": "SPD4000X user/programming manual EN01B, chapter 10",
       "acquisition": "power",
+      "metric_profiles": [],
       "channel_limits": {
         "1": {
           "voltage": 6,
@@ -8142,6 +8195,218 @@
       ]
     },
     {
+      "adapter_id": "siglent.sps5000x",
+      "model": "SIGLENT SPS5000X 系列",
+      "category": "power_supply",
+      "control_page": "实时监测 / 电源",
+      "channels": [
+        1
+      ],
+      "source": "https://int.siglent.com/u_file/download/22_06_28/SPS5000X_Usermanual_E02B.pdf",
+      "revision": "SPS5000X User Manual E02B, Remote Control",
+      "acquisition": "power",
+      "metric_profiles": [],
+      "channel_limits": {},
+      "hardware_passed": false,
+      "operations": [
+        {
+          "name": "voltage",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "V",
+              "minimum": 0,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": 0.001
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://int.siglent.com/u_file/download/22_06_28/SPS5000X_Usermanual_E02B.pdf",
+          "section": ":SOURCE:VOLTAGE:SET",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": true,
+          "hardware_passed": false,
+          "ui_label": "电压设定",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              ":SOURCE:VOLTAGE:SET CH{ch},{value}"
+            ],
+            "query": ":SOURCE:VOLTAGE:SET? CH{ch}",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "current",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "A",
+              "minimum": 0,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": 0.001
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://int.siglent.com/u_file/download/22_06_28/SPS5000X_Usermanual_E02B.pdf",
+          "section": ":SOURCE:CURRENT:SET",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "电流设定",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              ":SOURCE:CURRENT:SET CH{ch},{value}"
+            ],
+            "query": ":SOURCE:CURRENT:SET? CH{ch}",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "measured_voltage",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://int.siglent.com/u_file/download/22_06_28/SPS5000X_Usermanual_E02B.pdf",
+          "section": "MEASURE:VOLTAGE? CH{ch}",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "实测电压",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "MEASURE:VOLTAGE? CH{ch}",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "measured_current",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://int.siglent.com/u_file/download/22_06_28/SPS5000X_Usermanual_E02B.pdf",
+          "section": "MEASURE:CURRENT? CH{ch}",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "实测电流",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "MEASURE:CURRENT? CH{ch}",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "measured_power",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://int.siglent.com/u_file/download/22_06_28/SPS5000X_Usermanual_E02B.pdf",
+          "section": "MEASURE:POWER? CH{ch}",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "实测功率",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "MEASURE:POWER? CH{ch}",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "all_outputs",
+          "parameters": {
+            "value": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": false,
+          "source": "https://int.siglent.com/u_file/download/22_06_28/SPS5000X_Usermanual_E02B.pdf",
+          "section": "OUTPUT",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "整机输出",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "OUTPUT {value}"
+            ],
+            "query": "OUTPUT?",
+            "custom_encoder": false
+          }
+        }
+      ]
+    },
+    {
       "adapter_id": "itech.it6322",
       "model": "ITECH IT6322",
       "category": "power_supply",
@@ -8154,6 +8419,7 @@
       "source": "https://jdingtech.com.tw/Official/sharefile/ITECH_Protocol_IT6322_V1.0.0.1.pdf",
       "revision": "Manufacturer manual IT6322-402205 V2.2 (2018-03-30), distributor-hosted copy, chapters 3-8",
       "acquisition": "power",
+      "metric_profiles": [],
       "channel_limits": {
         "3": {
           "voltage": 5,
@@ -8467,6 +8733,7 @@
       "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/waveform-generators/DG5000Pro_ProgrammingGuide_EN.pdf",
       "revision": "DG5000 Pro Programming Guide",
       "acquisition": "",
+      "metric_profiles": [],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -10132,6 +10399,7 @@
       "source": "https://www.tek.com/-/media/documents/077148803_afg31000_series_programmersmanual_nov2020.pdf",
       "revision": "077148803",
       "acquisition": "",
+      "metric_profiles": [],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -11602,6 +11870,7 @@
       "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2023/01/SDG_Programming-Guide_PG02-E05A-12.pdf",
       "revision": "PG02-E05A / SDG2000X EN02H pp. 7-9",
       "acquisition": "",
+      "metric_profiles": [],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -13296,6 +13565,7 @@
       "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1178_3834_01/SMA100B_UserManual_en_14.pdf",
       "revision": "1178.3834.01 revision 14",
       "acquisition": "",
+      "metric_profiles": [],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -14654,6 +14924,7 @@
       "source": "https://www.gwinstek.com/en-US/products/downloadSeriesDownNew/7840/1477",
       "revision": "82PD-433S0MC1, Remote Control; model rated specifications",
       "acquisition": "power",
+      "metric_profiles": [],
       "channel_limits": {
         "3": {
           "voltage": 10,
@@ -14999,6 +15270,13 @@
       "source": "https://beyondmeasure.rigoltech.com/acton/attachment/1579/f-06f0/1/-/-/-/-/dsa800programpdf.pdf",
       "revision": "DSA800 Programming Guide chapters 2-16, 2-48, 2-75, 2-126..149, 2-188..199",
       "acquisition": "dsa",
+      "metric_profiles": [
+        {
+          "id": "spectrum.peak_and_snr",
+          "version": "1",
+          "automatic_capture": false
+        }
+      ],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -16561,6 +16839,13 @@
       "source": "https://cdn.teledynelecroy.com/files/manuals/maui-remote-control-and-automation-manual.pdf",
       "revision": "MAUI February 2026, parts 6-7; WR9404M specifications",
       "acquisition": "lecroy",
+      "metric_profiles": [
+        {
+          "id": "voltage.waveform_statistics",
+          "version": "2",
+          "automatic_capture": false
+        }
+      ],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -17363,6 +17648,13 @@
       "source": "https://download.rigol.com/en/Manual/Digital%20Oscilloscope/DHO800/DHO800900_ProgrammingGuide_EN.pdf",
       "revision": "DHO800900 Programming Guide PGA39106-1110: 3.3, 3.6, 3.26-3.28",
       "acquisition": "dho924",
+      "metric_profiles": [
+        {
+          "id": "voltage.waveform_statistics",
+          "version": "2",
+          "automatic_capture": false
+        }
+      ],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -18529,6 +18821,13 @@
       "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1321_1011_01/FPH_User_Manual_en_21.pdf",
       "revision": "1321.1011 revision 21; conservative FPH02 V1.40 subset",
       "acquisition": "fph",
+      "metric_profiles": [
+        {
+          "id": "spectrum.peak_and_snr",
+          "version": "1",
+          "automatic_capture": false
+        }
+      ],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -19800,6 +20099,7 @@
       "source": "https://www.ceyear.com/optical_spectrum_test-163?act=97&type=file",
       "revision": "6362 series Programming Manual B.11, 2025-08; software >=2.1.0; pp.5,17,88-101,105-114",
       "acquisition": "ceyear_6362d",
+      "metric_profiles": [],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -20557,6 +20857,13 @@
       "source": "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf",
       "revision": "DS50002991G; TimeLab 1.780A release notes",
       "acquisition": "phase_noise/am_noise/stability/streaming/timed_phase",
+      "metric_profiles": [
+        {
+          "id": "phase_noise.at_offset",
+          "version": "1",
+          "automatic_capture": false
+        }
+      ],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -20910,6 +21217,18 @@
       "source": "https://www.joinwit.com/pro-info/638.html",
       "revision": "V23.02.02 user-supplied protocol evidence; 115200 8-bit no parity; stop bit unspecified",
       "acquisition": "jw8105-power",
+      "metric_profiles": [
+        {
+          "id": "optical_power.fluctuation",
+          "version": "1",
+          "automatic_capture": false
+        },
+        {
+          "id": "optical_power.reference_deviation",
+          "version": "1",
+          "automatic_capture": false
+        }
+      ],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -21117,6 +21436,7 @@
       "source": "https://www.coremorrow.com/en/proshow-26-313-1.html",
       "revision": "E00.C3-13 positive 0..120 V control envelope from vendor E00.C table; serial frame and encoder verified, exact instrument serial and physical output pending",
       "acquisition": "",
+      "metric_profiles": [],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -21398,6 +21718,7 @@
       "source": "https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/data-aquisition/M300_ProgrammingGuide_EN.pdf",
       "revision": "M300 Programming Guide; CONF/FUNC, ROUT:SCAN, TEMP:TRAN:THER:TYPE, UNIT:TEMP, READ",
       "acquisition": "scalar",
+      "metric_profiles": [],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -22101,6 +22422,7 @@
       "source": "https://kplusk-messtechnik.de/downloads/index.html",
       "revision": "K+K Library 21.2.2 / Python wrapper 2.1; read-only compatibility subset",
       "acquisition": "scalar:frequency",
+      "metric_profiles": [],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -22196,6 +22518,7 @@
       "source": "https://www.keysight.com/us/en/assets/9018-03351/user-manuals/9018-03351.pdf",
       "revision": "53220-90001 edition 4, April 2023; CH1/CH2 single frequency",
       "acquisition": "scalar:frequency",
+      "metric_profiles": [],
       "channel_limits": {},
       "hardware_passed": false,
       "operations": [
@@ -22707,6 +23030,229 @@
           }
         }
       ]
+    },
+    {
+      "adapter_id": "custom.optical_comb_pump",
+      "model": "光梳地检泵浦驱动",
+      "category": "pump_driver",
+      "control_page": "设备管理 / 泵浦驱动",
+      "channels": [
+        1
+      ],
+      "source": "泵浦激光驱动设备通信说明",
+      "revision": "未注明",
+      "acquisition": "scalar",
+      "metric_profiles": [],
+      "channel_limits": {},
+      "hardware_passed": false,
+      "operations": [
+        {
+          "name": "pump_output_off",
+          "parameters": {},
+          "readable": false,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": true,
+          "source": "泵浦激光驱动设备通信说明",
+          "section": "3.5, 5.1",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": false,
+          "protocol_fixture_tested": true,
+          "hardware_passed": false,
+          "ui_label": "关闭 CH 1 泵浦输出",
+          "ui_location": ""
+        },
+        {
+          "name": "current",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "A",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "泵浦激光驱动设备通信说明",
+          "section": "5.1",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": false,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "电流设定",
+          "ui_location": ""
+        },
+        {
+          "name": "temperature",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "°C",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "泵浦激光驱动设备通信说明",
+          "section": "5.1",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": false,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "温度",
+          "ui_location": ""
+        },
+        {
+          "name": "output",
+          "parameters": {
+            "value": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "泵浦激光驱动设备通信说明",
+          "section": "5.1",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": false,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "通道输出",
+          "ui_location": ""
+        },
+        {
+          "name": "thermistor_beta",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "泵浦激光驱动设备通信说明",
+          "section": "5.1",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": false,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "热敏电阻 B 值",
+          "ui_location": ""
+        },
+        {
+          "name": "pump_lowpass",
+          "parameters": {
+            "value": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "泵浦激光驱动设备通信说明",
+          "section": "5.1",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": false,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "LD 低通滤波器",
+          "ui_location": ""
+        },
+        {
+          "name": "pump_current_limit",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "A",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "泵浦激光驱动设备通信说明",
+          "section": "5.1",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": false,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "电流上限读回",
+          "ui_location": ""
+        }
+      ]
     }
   ],
   "pending": {
@@ -22716,7 +23262,6 @@
     "multi-channel optical power meter": "Model and protocol required",
     "temperature_controller": "Model and protocol required",
     "electronic_load": "Model and protocol required",
-    "pump_driver": "Model, protocol and interlocks required",
     "other optical_spectrometers": "Exact model and protocol required; Ceyear 6362D has an independent module"
   }
 }

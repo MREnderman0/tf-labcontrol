@@ -103,6 +103,8 @@ class Inventory:
         identical bridge be probed after insertion without treating its COM
         number as the device identity.
         """
+        from lab_control.instruments.registry import requires_manual_connection
+
         signature = self._serial_signature(descriptor)
         if signature is None or not descriptor.get("usb_serial"):
             return None
@@ -115,7 +117,7 @@ class Inventory:
                     config = ConnectionConfig(**record["config"])
                 except (KeyError, TypeError, ValueError):
                     continue
-                if config.transport != "serial":
+                if config.transport != "serial" or requires_manual_connection(config.adapter):
                     continue
                 if any(
                     self._serial_signature(entry.get("rawDescriptor", {})) == signature
@@ -147,6 +149,8 @@ class Inventory:
         *,
         error_code: str = "",
     ) -> dict[str, Any]:
+        from lab_control.instruments.registry import requires_manual_connection
+
         with self.lock:
             resource = candidate.config.resource
             stable_existing = self.by_stable_id(candidate.config.usb_instance_id)
@@ -170,8 +174,11 @@ class Inventory:
                 existing = (
                     resource_existing
                     if resource_existing
-                    and not resource_existing.get("adapterId")
                     and not resource_existing.get("identityKey")
+                    and (
+                        not resource_existing.get("adapterId")
+                        or requires_manual_connection(resource_existing["adapterId"])
+                    )
                     else None
                 )
             else:
@@ -309,6 +316,7 @@ class Inventory:
                 and record.get("adapterId")
                 and record.get("config")
                 and not record.get("identityConflict")
+                and not requires_manual_connection(record["adapterId"])
             ):
                 # The adapter profile follows the USB bridge; only the current
                 # COM endpoint is refreshed for this scan.

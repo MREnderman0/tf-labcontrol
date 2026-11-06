@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from lab_control.domain.instruments import DeviceError, MeasurementBatch, utc_now
+from lab_control.instruments.registry import requires_manual_connection
 
 if TYPE_CHECKING:
     from lab_control.application.sessions import DeviceSession, SessionManager
@@ -82,6 +83,8 @@ class AcquisitionRecovery:
 
     def reconnect(self, session: DeviceSession, recovery: Recovery) -> None:
         """One attempt on the existing device worker, keeping every resource lease."""
+        if session.config.transport != "mock" and requires_manual_connection(session.config.adapter):
+            raise DeviceError("请断开会话后重新手动选择串口", "manual_reconnect_required")
         manager = self.manager
 
         def check() -> None:

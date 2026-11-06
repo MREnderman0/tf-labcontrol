@@ -22,6 +22,7 @@ from lab_control.application.bulk_connection import device_label
 from lab_control.application.catalog import instrument_category, surface_applicable
 from lab_control.application.controls import CATEGORY_LABELS
 from lab_control.discovery.presence import is_current, presence_label
+from lab_control.instruments.registry import requires_manual_connection
 from lab_control.ui.controller import (
     background_read_only,
     display_connection_state,
@@ -82,6 +83,10 @@ class WorkspaceOverview:
         window.address_list_button = QPushButton("地址列表")
         window.address_list_button.clicked.connect(window.show_static_addresses)
         toolbar.addWidget(window.address_list_button)
+        if window.runtime.hardware and requires_manual_connection("custom.optical_comb_pump"):
+            manual_pump = QPushButton("手动连接泵浦")
+            manual_pump.clicked.connect(lambda: window.show_manual_serial("custom.optical_comb_pump"))
+            toolbar.addWidget(manual_pump)
         window.device_list_button = QPushButton("设备列表")
         window.device_list_button.clicked.connect(lambda: window.open_category(""))
         toolbar.addWidget(window.device_list_button)
@@ -335,10 +340,14 @@ class WorkspaceOverview:
         window.scan_button.setText("扫描中…" if running else "扫描设备")
         window.cancel_button.setEnabled(running)
         window.cancel_button.setVisible(running)
-        window.connect_all_button.setEnabled(not running and not connecting and bool(current_records))
+        batch_devices = any(
+            not (window.runtime.hardware and requires_manual_connection(record["adapterId"]))
+            for record in current_records.values()
+        )
+        window.connect_all_button.setEnabled(not running and not connecting and batch_devices)
         window.connect_all_button.setText("连接中…" if connecting else "一键连接")
         window.connect_all_button.setToolTip(
-            "正在扫描并核验设备，完成后可连接" if running else "连接所有当前发现的设备，已有会话保持不变"
+            "正在扫描并核验设备，完成后可连接" if running else "连接当前发现的设备；手动串口设备单独连接"
         )
         window.stop_connect_button.setVisible(connecting)
         window.stop_connect_button.setEnabled(connection_progress["state"] == "running")
@@ -688,6 +697,7 @@ class WorkspaceOverview:
                     "cached_session_unconfirmed": "会话尚未确认",
                     "deferred_possible_alias_of_active_device": "可能为活动设备别名，延后探测",
                     "sdk_identity_requires_explicit_connection": "需手动连接后确认身份",
+                    "manual_connection_required": "需手动选择串口",
                     "not_seen": "本次未发现",
                     "scan_cancelled": "扫描已取消",
                     "enumeration_unconfirmed": "枚举尚未确认",

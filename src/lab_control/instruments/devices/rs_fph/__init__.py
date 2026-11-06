@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from lab_control.domain.spectrum_metrics import SPECTRUM_PEAK_AND_SNR_PROFILE
 from lab_control.instruments.devices.definition import DeviceDefinition, DeviceDocumentation
 
 from .adapter import FphAdapter
@@ -13,4 +14,5 @@ DEFINITION = DeviceDefinition(
     DeviceDocumentation("R&S FPH02", "spectrum-analyzers/rs-fph", "LAN；优先 PyVISA", "64 位 VISA Runtime"),
     Path(__file__).parent,
     deployment_components=("rs-visa",),
+    metric_profiles=(SPECTRUM_PEAK_AND_SNR_PROFILE,),
 )

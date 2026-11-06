@@ -1,9 +1,9 @@
 import threading
-import time
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
+from lab_control.application.agents.policy import INTERNAL_CLIENT
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.runtime import ApplicationRuntime
 from lab_control.domain.instruments import DeviceError, ValidationError
@@ -19,7 +19,7 @@ def slots(tmp_path):
             runtime.connect(device).result(3)
             devices.append(device)
         service = runtime.agent
-        client, _ = service.policy.create_client("slot reader")
+        client = INTERNAL_CLIENT
         grant = service.policy.create_grant(
             client, devices[:2], ["view"], channels=[1], operations=[], limits={}
         )
@@ -82,17 +82,15 @@ def test_disconnect_rebind_and_delete_recreate(slots):
     assert error.value.code == "slot_unavailable"
 
 
-@pytest.mark.parametrize("reason", ["expired", "revoked", "client_revoked", "other_client", "identity"])
+@pytest.mark.parametrize("reason", ["unknown", "revoked", "legacy_client", "identity"])
 def test_invalid_authority_never_returns_slot_metadata(slots, monkeypatch, reason):
     _runtime, service, client, grant, _devices, _custom = slots
-    if reason == "expired":
-        service.policy.grants[grant]["expires_at"] = time.time() - 1
+    if reason == "unknown":
+        grant = "unknown"
     elif reason == "revoked":
         service.policy.revoke_grant(grant)
-    elif reason == "client_revoked":
-        service.policy.revoke_client(client)
-    elif reason == "other_client":
-        client, _ = service.policy.create_client("other")
+    elif reason == "legacy_client":
+        service.policy.grants[grant]["client_id"] = "legacy"
     else:
         monkeypatch.setattr(service.policy, "identity_lookup", lambda _device: {"serial": "changed"})
     with pytest.raises(DeviceError):

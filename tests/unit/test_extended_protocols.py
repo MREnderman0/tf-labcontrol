@@ -36,10 +36,15 @@ FIXTURES = sorted((Path(__file__).parents[1] / "fixtures/protocols").glob("*/con
 @pytest.mark.parametrize("path", FIXTURES, ids=lambda p: p.parent.name)
 def test_manufacturer_control_fixtures(path):
     case = json.loads(path.read_text(encoding="utf-8"))
+    identity_exchanges = case.get("identity_exchanges", [])
     device, transport = device_for(
-        case["adapter"], [(cmd, reply.encode()) for cmd, reply in case["exchanges"]]
+        case["adapter"], [(cmd, reply.encode()) for cmd, reply in identity_exchanges + case["exchanges"]]
     )
-    if "identity_reply" in case:
+    if identity_exchanges:
+        for payload in reversed(device.connection_commands):
+            transport.exchanges.appendleft((payload, b""))
+        device.identify()
+    elif "identity_reply" in case:
         from lab_control.instruments.base import identity_from_scpi
 
         device.identity = identity_from_scpi(case["identity_reply"].encode())

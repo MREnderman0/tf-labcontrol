@@ -1,11 +1,14 @@
+import pytest
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import QApplication, QDialogButtonBox, QLineEdit, QPushButton
 
 from lab_control.application.runtime import ApplicationRuntime
 from lab_control.ui.real_window import RealWindow
+from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
 
 
-def test_address_toolbar_opens_shared_dialog_and_persists_entry(qtbot, tmp_path):
+@pytest.mark.parametrize("adapter,port", [("ceyear.6362d", 10001), ("siglent.sps5000x", 5025)])
+def test_address_toolbar_opens_shared_dialog_and_persists_entry(qtbot, tmp_path, adapter, port):
     runtime = ApplicationRuntime(root=tmp_path, hardware=False)
     window = RealWindow(runtime)
     qtbot.addWidget(window)
@@ -16,11 +19,16 @@ def test_address_toolbar_opens_shared_dialog_and_persists_entry(qtbot, tmp_path)
     def interact():
         dialog = QApplication.activeModalWidget()
         assert dialog is not None
+        model = dialog.findChild(WorkspaceComboBox)
+        index = model.findData(adapter)
+        assert index >= 0
+        model.setCurrentIndex(index)
         address = dialog.findChild(QLineEdit, "staticAddressInput")
         address.setText("192.168.0.120")
         save = next(button for button in dialog.findChildren(QPushButton) if button.text() == "保存并扫描")
         qtbot.mouseClick(save, Qt.MouseButton.LeftButton)
-        assert runtime.static_addresses.entries()[0].address == "192.168.0.120"
+        (entry,) = runtime.static_addresses.entries()
+        assert (entry.address, entry.adapter, entry.port) == ("192.168.0.120", adapter, port)
         seen.append("saved")
         close = dialog.findChild(QDialogButtonBox).button(QDialogButtonBox.StandardButton.Close)
         qtbot.mouseClick(close, Qt.MouseButton.LeftButton)

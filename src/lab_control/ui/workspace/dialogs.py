@@ -25,8 +25,13 @@ from PySide6.QtWidgets import (
 
 from lab_control.application.config import config_from_record
 from lab_control.domain.instruments import DeviceError
-from lab_control.instruments.registry import DEVICE_DEFINITIONS, PROFILES, SDK_ADAPTERS
-from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox
+from lab_control.instruments.registry import (
+    DEVICE_DEFINITIONS,
+    PROFILES,
+    SDK_ADAPTERS,
+    requires_manual_connection,
+)
+from lab_control.ui.widgets.workspace_combo import WorkspaceComboBox, choose_item
 
 if TYPE_CHECKING:
     from lab_control.ui.real_window import RealWindow
@@ -37,6 +42,39 @@ class ConnectionDialogs:
 
     def __init__(self, window: RealWindow) -> None:
         self.window = window
+
+    def connect_manual_serial(self, adapter: str) -> None:
+        from lab_control.discovery.providers import SerialDiscoveryProvider
+
+        window = self.window
+        definition = DEVICE_DEFINITIONS[adapter]
+        title = definition.documentation.title
+        try:
+            ports = sorted(
+                {
+                    candidate.config.resource
+                    for candidate in SerialDiscoveryProvider().enumerate()
+                    if re.fullmatch(r"COM[1-9][0-9]*", candidate.config.resource, re.I)
+                },
+                key=lambda port: int(port[3:]),
+            )
+            if not ports:
+                window._failed("未发现 COM 口，请检查串口接线与驱动。")
+                return
+            port, accepted = choose_item(window, title, "请核对接线并选择设备所接的 COM 口。", ports)
+            if not accepted:
+                return
+            device_id, future = window.runtime.connect_manual_serial(adapter, port)
+            window.message.setText(f"正在连接 {title} · {port}…")
+
+            def connected(_identity) -> None:
+                window.refresh()
+                window.navigate("设备管理", definition.category, device_id)
+                window.message.setText(f"{title} · {port} 已连接，CH 1 协议读回通过。")
+
+            window.controller.watch(future, connected)
+        except (DeviceError, OSError, ValueError) as exc:
+            window._failed(str(exc))
 
     def show_static_addresses(self) -> None:
         """Open the compact model-and-endpoint dialog."""
@@ -67,7 +105,10 @@ class ConnectionDialogs:
         for adapter_id, profile in sorted(PROFILES.items()):
             manufacturer = profile.manufacturer[0] if profile.manufacturer else "未知厂家"
             models = "/".join(profile.models[:2]) or adapter_id
-            model.addItem(f"{manufacturer} {models} · {adapter_id}", adapter_id)
+            name = f"{manufacturer} {models}"
+            if len(profile.models) > 2:
+                name = DEVICE_DEFINITIONS[adapter_id].documentation.title
+            model.addItem(f"{name} · {adapter_id}", adapter_id)
         default_model = model.findData("ceyear.6362d")
         if default_model >= 0:
             model.setCurrentIndex(default_model)
@@ -241,6 +282,9 @@ class ConnectionDialogs:
         window = self.window
         record = window.records[device_id]
         current = config_from_record(record)
+        if requires_manual_connection(current.adapter) and window.runtime.hardware:
+            self.connect_manual_serial(current.adapter)
+            return
         dialog = QDialog(window)
         dialog.setWindowTitle("为已发现资源指定适配器")
         form = QFormLayout(dialog)
@@ -252,7 +296,7 @@ class ConnectionDialogs:
         timeout.setRange(0.1, 60)
         timeout.setValue(current.timeout)
         adapter, transport = WorkspaceComboBox(), WorkspaceComboBox()
-        adapter.addItems([*PROFILES, *SDK_ADAPTERS])
+        adapter.addItems([key for key in (*PROFILES, *SDK_ADAPTERS) if not requires_manual_connection(key)])
         if current.adapter:
             adapter.setCurrentText(current.adapter)
         transport.addItems(["visa", "serial", "tcp", "vicp", "tlpmx", "pm100d", "pico", "tserve", "kplusk"])

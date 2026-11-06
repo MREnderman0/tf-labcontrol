@@ -26,7 +26,7 @@
 | 相噪仪 | 53100A | Microchip USB / TSERVE | 实现与连接路线见下方模块索引；实测按资产查证 | [模块索引](#独立型号模块自动生成) |
 | 温控 | 商用温控仪 | 待型号、串口/以太网/SDK 依据 | 仅类别模拟 | [待补卡片](devices/temperature-load-drivers/temperature-controller.md) |
 | 负载 | 电子负载 | 待型号和接口 | 仅类别模拟 | [待补卡片](devices/temperature-load-drivers/electronic-load.md) |
-| 泵浦 | 地检泵浦驱动 | 待厂家协议、型号和联锁 | 仅类别模拟 | [待补卡片](devices/temperature-load-drivers/pump-driver.md) |
+| 泵浦 | 光梳地检泵浦驱动（自制） | RS232，手动选择 COM 口 | 现行能力与实机状态见模块索引 | [模块索引](#独立型号模块自动生成) |
 | 光谱 | 光谱仪 | 待型号与 SDK/SCPI 依据 | 仅类别模拟 | [待补卡片](devices/temperature-load-drivers/optical-spectrum-analyzer.md) |
 | 基础设施 | 交换机、测试台式机 | 网络及运行环境盘点 | 不进入仪器兼容层 | 本索引 |
 | 未确认标识 | MY54410307 | 疑似序列号或资产编号 | 原样保留，不建立型号适配器 | 本索引 |
@@ -50,6 +50,7 @@
 | Siglent SDG6032X-E | `siglent.sdg6032xe` | USB / LAN VXI-11 / explicitly configured VISA SOCKET | [卡片](devices/signal-sources/sdg6032xe.md) |
 | Keithley 2231A-30-3 | `keithley.2231a` | 2231A-001 USB 适配器 / 虚拟串口 | [卡片](devices/power-supplies/keithley-2231a.md) |
 | Siglent SPD4306X | `siglent.spd4306x` | USB / LAN VISA / 已配置 TCP Socket | [卡片](devices/power-supplies/spd4306x.md) |
+| SIGLENT SPS5000X 系列 | `siglent.sps5000x` | USB-TMC / LAN VXI-11 / TCP Socket 5025 | [卡片](devices/power-supplies/sps5000x.md) |
 | ITECH IT6322 | `itech.it6322` | RS-232 / 已安装 USB 或 GPIB 接口 | [卡片](devices/power-supplies/it6322.md) |
 | RIGOL DG5504 Pro | `rigol.dg5504pro` | LAN / USB；优先 PyVISA | [卡片](devices/signal-sources/dg5504-pro.md) |
 | Tektronix AFG31252 | `tek.afg31252` | USB Device / LAN / GPIB（核对实际接口） | [卡片](devices/signal-sources/afg31252.md) |
@@ -67,6 +68,7 @@
 | RIGOL M300 | `rigol.m300` | LAN / USB VISA；优先 PyVISA | [卡片](devices/measurement-analyzers/rigol-m300.md) |
 | K+K FXE / FXE2 | `kplusk.fxe` | Ethernet（FXE2 使用 DHCP，已登记身份随租约更新地址） | [卡片](devices/measurement-analyzers/kplusk-fxe.md) |
 | Keysight / Agilent 53220A | `keysight.53220a` | LAN VXI-11 / VISA SOCKET；优先 PyVISA | [卡片](devices/measurement-analyzers/keysight-53220a.md) |
+| 光梳地检泵浦驱动 | `custom.optical_comb_pump` | RS232，手动选择 COM 口，115200 8N1 | [卡片](devices/temperature-load-drivers/pump-driver.md) |
 <!-- device-modules:end -->
 
 ## 现场盘点与状态提升

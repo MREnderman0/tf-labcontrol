@@ -418,6 +418,9 @@ class RealWindow(QMainWindow):
     def show_static_addresses(self) -> None:
         self._dialogs.show_static_addresses()
 
+    def show_manual_serial(self, adapter: str) -> None:
+        self._dialogs.connect_manual_serial(adapter)
+
     def configure_adapter(self, device_id: str) -> None:
         self._dialogs.configure_adapter(device_id)
 

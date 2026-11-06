@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import os
 import socket
 import subprocess
 import sys
@@ -15,6 +14,7 @@ from mcp import Client
 from mcp.client.stdio import StdioServerParameters
 
 from lab_control.agent.server import AgentServer
+from lab_control.application.agents.policy import INTERNAL_CLIENT
 from lab_control.application.config import ConnectionConfig
 
 
@@ -25,9 +25,8 @@ def verify_mock(runtime, *, connector: Path | None = None, codex: Path | None = 
     device = runtime.add(config)
     runtime.connect(device, configure_acquisition=False).result(10)
     service = runtime.agent
-    client, token = service.policy.create_client("isolated acceptance")
     grant = service.policy.create_grant(
-        client,
+        INTERNAL_CLIENT,
         [device],
         [
             "view",
@@ -40,11 +39,14 @@ def verify_mock(runtime, *, connector: Path | None = None, codex: Path | None = 
             "record",
             "stop",
             "results",
+            "process",
         ],
         channels=[1],
         operations=["timebase"],
         limits={"timebase": {"value": [0.0001, 0.01]}},
     )
+    full_grant, granted, skipped = service.grant_all_devices()
+    assert (granted, skipped) == (1, 0)
     runtime.sessions.disconnect(device)
     ports = []
     for _ in range(2):
@@ -67,9 +69,7 @@ def verify_mock(runtime, *, connector: Path | None = None, codex: Path | None = 
         "--connection",
         str(connection),
     ]
-    parameters = StdioServerParameters(
-        command=command, args=arguments, env={"LAB_CONTROL_AGENT_TOKEN": token}
-    )
+    parameters = StdioServerParameters(command=command, args=arguments)
 
     async def flow():
         async with Client(parameters, mode="legacy", read_timeout_seconds=20) as remote:
@@ -96,7 +96,10 @@ def verify_mock(runtime, *, connector: Path | None = None, codex: Path | None = 
                     await asyncio.sleep(0.05)
                 raise TimeoutError("Mock task did not settle")
 
-            assert (await call("get_server_info"))["simulation"]
+            info = await call("get_server_info")
+            assert info["simulation"]
+            full = next(g for g in info["grants"] if g["id"] == full_grant)
+            assert full["full_device_access"] and full["expires_at"] is None
             assert len(await call("list_devices", grant_id=grant)) == 1
             scope = {"grant_id": grant, "device_id": device}
             await settled(await call("connect_device", **scope, request_id="sdk-connect"))
@@ -134,14 +137,33 @@ def verify_mock(runtime, *, connector: Path | None = None, codex: Path | None = 
             artifacts = await call("list_artifacts", grant_id=grant, task_id=recording["id"])
             artifact = next(item for item in artifacts if item["name"].endswith(".csv"))
             await call("get_artifact", grant_id=grant, artifact_id=artifact["id"])
+            capture = await settled(
+                await call(
+                    "acquire_once",
+                    **scope,
+                    request={"kind": "waveform", "points": 32},
+                    request_id="sdk-metric-capture",
+                )
+            )
+            processed = await settled(
+                await call(
+                    "start_processing",
+                    **scope,
+                    recording_id=capture["recording_id"],
+                    profile_id="voltage.waveform_statistics",
+                    request_id="sdk-metric-process",
+                )
+            )
+            result = await call("get_processing_result", grant_id=grant, result_id=processed["result_id"])
+            assert result["profile_version"] == "2"
+            assert result["metrics"]["ch1.std"]["quality"] == "simulated"
+            assert result["metrics"]["ch1.rms"]["unit"] == "V"
             return artifact
 
     artifact = asyncio.run(flow())
-    environment = {**os.environ, "LAB_CONTROL_AGENT_TOKEN": token}
     output = runtime.repository.root / "downloaded.csv"
     downloaded = subprocess.run(
         [command, *arguments, "--download", artifact["id"], "--grant", grant, "--output", str(output)],
-        env=environment,
         capture_output=True,
         timeout=30,
     )
@@ -149,21 +171,25 @@ def verify_mock(runtime, *, connector: Path | None = None, codex: Path | None = 
     assert output.stat().st_size == artifact["size"]
     called = subprocess.run(
         [command, *arguments, "--call", "get_processing_capabilities", "--arguments-file", "-"],
-        env=environment,
         input=json.dumps({"grant_id": grant, "device_id": device}).encode("utf-8"),
         capture_output=True,
         timeout=30,
     )
     assert called.returncode == 0, called.stderr.decode(errors="replace")
-    assert json.loads(called.stdout)["data"] == {"supported": False, "profiles": []}
+    capabilities = json.loads(called.stdout)["data"]
+    assert capabilities["supported"]
+    (profile,) = capabilities["profiles"]
+    assert (profile["id"], profile["version"]) == ("voltage.waveform_statistics", "2")
     result = {
         "passed": True,
         "hardware_accessed": False,
         "stdio": True,
         "tls": True,
         "legacy_protocol": True,
+        "tokenless": True,
         "tools": 26,
         "single_call_json": True,
+        "waveform_metrics": True,
         "download_bytes": artifact["size"],
     }
     if codex:
@@ -180,7 +206,6 @@ def verify_mock(runtime, *, connector: Path | None = None, codex: Path | None = 
         overrides = [
             "mcp_servers.lab_control.command=" + json.dumps(command),
             "mcp_servers.lab_control.args=" + json.dumps(arguments),
-            'mcp_servers.lab_control.env_vars=["LAB_CONTROL_AGENT_TOKEN"]',
             "mcp_servers.lab_control.startup_timeout_sec=30",
             "mcp_servers.lab_control.tool_timeout_sec=60",
             # Only this disposable Mock service is preapproved by the explicit
@@ -205,7 +230,7 @@ def verify_mock(runtime, *, connector: Path | None = None, codex: Path | None = 
         argv.append(prompt)
         log = runtime.repository.root / "codex-events.jsonl"
         with log.open("wb") as stream, log.with_suffix(".stderr").open("wb") as errors:
-            run = subprocess.run(argv, env=environment, stdout=stream, stderr=errors, timeout=300)
+            run = subprocess.run(argv, stdout=stream, stderr=errors, timeout=300)
         tasks = [t for t in service.ledger.tasks() if t["request_id"].startswith(task_prefix)]
         result["codex"] = {
             "returncode": run.returncode,

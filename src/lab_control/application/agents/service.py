@@ -13,7 +13,8 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from lab_control.application.agents.policy import AgentPolicy, fail
+from lab_control.application.agents.command_processing import LOCAL_COMMAND_PROFILE
+from lab_control.application.agents.policy import COMMAND_CLIENT, AgentPolicy, fail
 from lab_control.domain.instruments import (
     AcquisitionRequest,
     DeviceCommand,
@@ -43,7 +44,7 @@ class AgentService:
         self.closing = False
         self.server: Any = None
         self.wake = threading.Event()
-        self.thread = threading.Thread(target=self._watch, name="agent-expiry", daemon=True)
+        self.thread = threading.Thread(target=self._watch, name="agent-tracking", daemon=True)
         self.thread.start()
 
     def identity(self, device_id: str) -> dict:
@@ -81,7 +82,7 @@ class AgentService:
 
     def get_server_info(self, client: str) -> dict:
         self.policy.require_client(client)
-        grants = [g for g in self.policy.snapshot()["grants"] if g["client_id"] == client]
+        grants = [g for g in self.policy.snapshot()["grants"] if g["client_id"] == client and g["enabled"]]
         return {
             "name": "TF LabControl",
             "api_version": 1,
@@ -90,8 +91,42 @@ class AgentService:
             "output_on_stop": "unchanged_or_unknown",
         }
 
-    def get_processing_capabilities(self, client, grant_id, device_id):
-        return self.metrics.capabilities(client, grant_id, device_id)
+    def grant_all_devices(self, template: dict | None = None) -> tuple[str, int, int]:
+        """Sign one shared grant using the current verified asset identities."""
+        from lab_control.instruments.registry import DEVICE_DEFINITIONS
+
+        if self.closing or self.runtime.closed:
+            fail("软件正在退出", "runtime_closing")
+        expected = template["devices"] if template is not None else None
+        with self.runtime.sessions.lock, self.runtime.inventory.lock:
+            records = self.runtime.inventory.all()
+            identities = {}
+            for record in records:
+                device = record["id"]
+                if record.get("adapterId") not in DEVICE_DEFINITIONS or (
+                    expected is not None and device not in expected
+                ):
+                    continue
+                try:
+                    identity = self.identity(device)
+                except DeviceError as exc:
+                    if exc.code != "identity_conflict":
+                        raise
+                    continue
+                if (
+                    not identity["manufacturer"].strip()
+                    or not identity["model"].strip()
+                    or identity["serial"].strip().upper() in {"", "0", "N/A", "UNKNOWN"}
+                    or (expected is not None and identity != expected[device])
+                ):
+                    continue
+                identities[device] = identity
+            grant_id = self.policy.create_full_grant(identities)
+        total = len(records) if expected is None else len(expected)
+        return grant_id, len(identities), total - len(identities)
+
+    def get_processing_capabilities(self, client, grant_id, device_id, *, local_commands=False):
+        return self.metrics.capabilities(client, grant_id, device_id, local_commands=local_commands)
 
     def list_recordings(self, client, grant_id, device_id=""):
         return self.metrics.list_recordings(client, grant_id, device_id)
@@ -121,8 +156,29 @@ class AgentService:
         )
 
     def start_experiment(
-        self, client, grant_id, device_id, request_id, profile_id, capture_parameters=None, parameters=None
+        self,
+        client,
+        grant_id,
+        device_id,
+        request_id,
+        profile_id,
+        capture_parameters=None,
+        parameters=None,
+        recording_ids=None,
+        command=None,
+        *,
+        local_commands=False,
     ):
+        if profile_id == LOCAL_COMMAND_PROFILE:
+            if not local_commands:
+                fail("请在服务端桌面启用临时命令处理", "local_command_disabled")
+            if command is None or recording_ids is None:
+                raise ValidationError("local.command 需要 command 和 recording_ids")
+            client, grant_id = COMMAND_CLIENT, ""
+        elif command is not None:
+            raise ValidationError("command 仅用于 local.command")
+        if recording_ids is not None and capture_parameters is not None:
+            raise ValidationError("recording_ids 与 capture_parameters 只能选一种")
         return self.metrics.start(
             client,
             grant_id,
@@ -130,14 +186,16 @@ class AgentService:
             request_id,
             profile_id,
             parameters or {},
-            capture_parameters=capture_parameters or {},
+            capture_parameters=(capture_parameters or {}) if recording_ids is None else None,
+            recording_ids=recording_ids,
+            command=command,
         )
 
     def list_processing_results(self, client, grant_id, device_id="", recording_id="", profile_id=""):
         return self.metrics.list_results(client, grant_id, device_id, recording_id, profile_id)
 
-    def get_processing_result(self, client, grant_id, result_id):
-        return self.metrics.get_result(client, grant_id, result_id)
+    def get_processing_result(self, client, grant_id, result_id, *, local_commands=False):
+        return self.metrics.get_result(client, grant_id, result_id, local_commands=local_commands)
 
     def list_devices(self, client: str, grant_id: str) -> list[dict]:
         grant = self.policy.grants.get(grant_id, {})
@@ -287,11 +345,16 @@ class AgentService:
                 fail("活动任务已达上限", "task_busy")
             request = payload.get("request", payload)
             channels = request.get("channels", [1]) if action in {"acquire", "monitor", "record"} else []
+            require_full_scope = False
             if action == "apply":
                 channels = [self.previews.get(payload["preview_id"], {}).get("channel", 1)]
             if action == "stop":
-                channels = self._lookup_task(payload["task_id"]).get("channels", [])
-            self._check(client, grant, device, action, channels=tuple(channels))
+                target = self._lookup_task(payload["task_id"])
+                channels = target.get("channels", [])
+                require_full_scope = target.get("require_full_scope", False)
+            self._check(
+                client, grant, device, action, channels=tuple(channels), require_full_scope=require_full_scope
+            )
             task = {
                 "id": uuid4().hex,
                 "client_id": client,
@@ -307,6 +370,8 @@ class AgentService:
                 "code": "",
                 "channels": channels,
             }
+            if require_full_scope:
+                task["require_full_scope"] = True
             audit = self.repository.audit_sink.try_record if action == "stop" else self.repository.audit
             audit(
                 "agent_request_accepted",
@@ -652,9 +717,30 @@ class AgentService:
             ],
         }
 
-    def get_task_status(self, client, grant_id, task_id):
+    def _check_task_view(self, client, grant_id, task):
+        self._check(
+            client,
+            grant_id,
+            task["device_id"],
+            "view",
+            channels=tuple(task.get("channels", [])),
+            require_full_scope=task.get("require_full_scope", False),
+        )
+
+    @staticmethod
+    def _task_client(client, grant_id, task, local_commands):
+        if (
+            local_commands
+            and not grant_id
+            and (task.get("client_id") == COMMAND_CLIENT or task.get("profile_id") == LOCAL_COMMAND_PROFILE)
+        ):
+            return COMMAND_CLIENT
+        return client
+
+    def get_task_status(self, client, grant_id, task_id, *, local_commands=False):
         task = self._lookup_task(task_id)
-        self._check(client, grant_id, task["device_id"], "view", channels=tuple(task.get("channels", [])))
+        client = self._task_client(client, grant_id, task, local_commands)
+        self._check_task_view(client, grant_id, task)
         with self.lock:
             ctx = self.active.get(task_id)
             if ctx and ctx.get("monitor") and ctx["monitor"].recorder:
@@ -672,9 +758,7 @@ class AgentService:
         allowed = []
         for task in tasks:
             try:
-                self._check(
-                    client, grant_id, task["device_id"], "view", channels=tuple(task.get("channels", []))
-                )
+                self._check_task_view(client, grant_id, task)
             except DeviceError:
                 continue
             allowed.append(task)
@@ -707,8 +791,9 @@ class AgentService:
             fail("本地任务已结束或被替换", "task_not_found")
         return self.ledger.get(task_id)
 
-    def stop_task(self, client, grant_id, task_id, request_id):
+    def stop_task(self, client, grant_id, task_id, request_id, *, local_commands=False):
         target = self._lookup_task(task_id)
+        client = self._task_client(client, grant_id, target, local_commands)
         device = target["device_id"]
 
         def start(ctx):
@@ -947,7 +1032,7 @@ class AgentService:
         }
 
     def stop_local(self, task_id):
-        """Local operator can always request cleanup, even after grant expiry."""
+        """Local operator can always request cleanup, even after revocation."""
         with self.lock:
             ctx = self.active.get(task_id)
             if ctx:

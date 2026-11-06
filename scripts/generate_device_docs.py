@@ -76,6 +76,10 @@ def render(definitions=None) -> dict[Path, str]:
             "source": profile.source if profile else definition.model.source,
             "revision": profile.revision if profile else definition.model.revision,
             "acquisition": profile.acquisition if profile else definition.model.acquisition,
+            "metric_profiles": [
+                {"id": metric.id, "version": metric.version, "automatic_capture": metric.capture is not None}
+                for metric in definition.metric_profiles
+            ],
             "channel_limits": profile.channel_limits if profile else {},
             "hardware_passed": False,
             "operations": [],
@@ -176,6 +180,21 @@ def render(definitions=None) -> dict[Path, str]:
         lines.append(
             f"| {record['model']} | `{record['adapter_id']}` | {len(record['operations'])} | {record['acquisition'] or '外部仪器测量输出'} | [型号卡片](../devices/{meta[1]}.md) |"
         )
+    lines += [
+        "",
+        "## MCP 指标处理",
+        "",
+        "型号按实际输出的数据契约引用共享指标。输入和参数见[远程指标处理规范](../architecture/remote-metrics.md)。",
+        "",
+        "| 设备类型 | 注册 ID | 指标及版本 |",
+        "| --- | --- | --- |",
+    ]
+    for record in sorted(rows, key=lambda row: (row["category"], row["adapter_id"])):
+        if record["metric_profiles"]:
+            metrics = "、".join(
+                f"`{metric['id']}` v{metric['version']}" for metric in record["metric_profiles"]
+            )
+            lines.append(f"| {CATEGORY_LABELS[record['category']]} | `{record['adapter_id']}` | {metrics} |")
     lines += [
         "",
         "## 未实现 / 待补项",

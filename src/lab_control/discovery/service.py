@@ -287,6 +287,12 @@ class DiscoveryService:
                         admission_basis = "owned_resource_or_asset"
                     elif (
                         definition is not None
+                        and definition.manual_connection_only
+                        and candidate.config.transport != "mock"
+                    ):
+                        reason = "manual_connection_required"
+                    elif (
+                        definition is not None
                         and candidate.config.transport in definition.discovery_connection_only_transports
                     ):
                         reason = "sdk_identity_requires_explicit_connection"

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import sys
-import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -13,13 +12,11 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
     QDialogButtonBox,
-    QDoubleSpinBox,
     QFileDialog,
     QFormLayout,
     QGridLayout,
     QHBoxLayout,
     QHeaderView,
-    QInputDialog,
     QLabel,
     QLineEdit,
     QPushButton,
@@ -30,6 +27,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from lab_control.agent.server import saved_settings
+from lab_control.application.agents.policy import COMMAND_CLIENT, INTERNAL_CLIENT
 from lab_control.application.config import config_from_record
 from lab_control.application.controls import OPERATION_LABELS
 from lab_control.instruments.registry import describe
@@ -65,9 +64,9 @@ STATE_LABELS = {
 
 
 class GrantDialog(QDialog):
-    def __init__(self, service, client_id, parent=None, template=None):
+    def __init__(self, service, parent=None, template=None):
         super().__init__(parent)
-        self.service, self.client_id = service, client_id
+        self.service = service
         self.grant_id = ""
         self.setWindowTitle("实验范围授权")
         self.resize(860, 680)
@@ -81,11 +80,6 @@ class GrantDialog(QDialog):
         form.addRow("设备", self.device)
         self.channels = QLineEdit("1")
         form.addRow("允许通道（逗号分隔）", self.channels)
-        self.hours = QDoubleSpinBox()
-        self.hours.setRange(0.02, 168)
-        self.hours.setValue(2)
-        self.hours.setSuffix(" 小时")
-        form.addRow("有效期", self.hours)
         layout.addLayout(form)
         grid = QGridLayout()
         self.action_checks = {}
@@ -107,7 +101,7 @@ class GrantDialog(QDialog):
         layout.addWidget(self.parameters, 1)
         self.asset = QCheckBox("已在本机核对设备铭牌与连接映射（无可读序列号时必选）")
         layout.addWidget(self.asset)
-        output_note = QLabel("授权到期会停止本授权的采集并完成保存；设备输出不会自动关闭或恢复。")
+        output_note = QLabel("授权无时间限制。撤销授权会停止对应采集并完成保存；设备输出须另行控制。")
         output_note.setWordWrap(True)
         layout.addWidget(output_note)
         self.error = QLabel()
@@ -219,13 +213,12 @@ class GrantDialog(QDialog):
                         raise ValueError("自定义范围请同时填写上下限；也可同时留空沿用型号范围")
                     limits.setdefault(operation, {})[parameter] = [float(low), float(high)]
             self.grant_id = self.service.policy.create_grant(
-                self.client_id,
+                INTERNAL_CLIENT,
                 [self.device.currentData()],
                 [key for key, check in self.action_checks.items() if check.isChecked()],
                 channels=[int(value.strip()) for value in self.channels.text().replace("，", ",").split(",")],
                 operations=sorted(operations),
                 limits=limits,
-                hours=self.hours.value(),
                 asset_confirmed=self.asset.isChecked(),
             )
             self.accept()
@@ -246,13 +239,11 @@ class AgentCollaborationPanel(QWidget):
         heading = QLabel("Agent 协作实验")
         heading.setObjectName("panelTitle")
         layout.addWidget(heading)
-        description = QLabel(
-            "让本机或实验网内的 Agent 共用当前设备连接。多人操作按设备串行执行，实验范围由本机授权。"
-        )
+        description = QLabel("内部 Agent 免令牌接入，共用桌面签发的实验授权。设备操作按会话串行执行。")
         description.setObjectName("pageDescription")
         description.setWordWrap(True)
         layout.addWidget(description)
-        saved = runtime.repository.load_workspace("agent/server", {})
+        saved = saved_settings(runtime.repository)
         row = QHBoxLayout()
         self.enabled = QCheckBox("启用 Agent 接入")
         self.enabled.setChecked(saved.get("enabled", False))
@@ -268,7 +259,7 @@ class AgentCollaborationPanel(QWidget):
         row.addWidget(apply)
         layout.addLayout(row)
         row = QHBoxLayout()
-        self.lan_enabled = QCheckBox("同时开放实验网 HTTPS")
+        self.lan_enabled = QCheckBox("开放可信实验网 HTTPS（共享授权）")
         self.lan_enabled.setChecked(saved.get("lan_enabled", False))
         row.addWidget(self.lan_enabled)
         self.lan_address = QLineEdit(saved.get("lan_address", ""))
@@ -279,21 +270,17 @@ class AgentCollaborationPanel(QWidget):
         self.lan_port.setValue(saved.get("lan_port", 8766))
         row.addWidget(self.lan_port)
         layout.addLayout(row)
+        self.local_commands = QCheckBox("启用临时命令处理（本机及实验网，退出后关闭）")
+        self.local_commands.setToolTip("允许所有可访问 MCP 的客户端运行处理命令，无需实验授权。")
+        layout.addWidget(self.local_commands)
         self.network_status = QLabel()
         self.network_status.setWordWrap(True)
         layout.addWidget(self.network_status)
-        row = QHBoxLayout()
-        self.clients = WorkspaceComboBox()
-        self.clients.setPlaceholderText("选择客户端")
-        self.clients.setMinimumWidth(160)
-        row.addWidget(self.clients, 1)
-        layout.addLayout(row)
         buttons = QGridLayout()
         for index, (label, callback) in enumerate(
             (
-                ("创建客户端凭据", self.add_client),
                 ("授予实验范围", self.add_grant),
-                ("撤销客户端", self.revoke_client),
+                ("一键全部授权", self.add_full_grant),
                 ("导出连接配置", self.export_connection),
                 ("导出 Codex 配置", self.export_codex),
             )
@@ -317,7 +304,7 @@ class AgentCollaborationPanel(QWidget):
         row.addWidget(firewall)
         layout.addLayout(row)
         self.tasks = QTableWidget(0, 5)
-        self.tasks.setHorizontalHeaderLabels(["时间", "协作者", "设备", "操作", "状态 / 结果"])
+        self.tasks.setHorizontalHeaderLabels(["时间", "来源", "设备", "操作", "状态 / 结果"])
         self.tasks.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.tasks.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.tasks.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
@@ -327,7 +314,8 @@ class AgentCollaborationPanel(QWidget):
         stop = QPushButton("停止所选 Agent 任务并完成保存")
         stop.clicked.connect(self.stop_selected)
         layout.addWidget(stop)
-        self.status = QLabel("接入默认关闭。凭据只在创建时显示；输出与触发需单独授权。")
+        self.status = QLabel("能访问接口的程序可使用共享授权。一键全部授权包含参数写入、输出和触发。")
+        self.status.setWordWrap(True)
         self.status.setWordWrap(True)
         layout.addWidget(self.status)
         self.completed.connect(self._completed)
@@ -376,57 +364,36 @@ class AgentCollaborationPanel(QWidget):
             "lan_enabled": self.lan_enabled.isChecked(),
             "lan_address": self.lan_address.text().strip(),
             "lan_port": self.lan_port.value(),
+            "local_commands": self.local_commands.isChecked(),
         }
         self._run("应用接入设置", lambda: self._server().configure(settings))
 
-    def add_client(self):
-        name, accepted = QInputDialog.getText(self, "创建客户端", "协作者或 Agent 名称")
-        if not accepted:
-            return
-        try:
-            _client, token = self.service.policy.create_client(name)
-            dialog = QDialog(self)
-            dialog.setWindowTitle("保存客户端凭据")
-            layout = QVBoxLayout(dialog)
-            label = QLabel("仅本次显示。请在运行 Agent 的电脑中设置环境变量 LAB_CONTROL_AGENT_TOKEN。")
-            label.setWordWrap(True)
-            layout.addWidget(label)
-            value = QLineEdit(token)
-            value.setReadOnly(True)
-            value.setMinimumWidth(560)
-            layout.addWidget(value)
-            close = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-            close.rejected.connect(dialog.reject)
-            layout.addWidget(close)
-            dialog.exec()
-            dialog.deleteLater()
-            self.refresh()
-        except Exception as exc:
-            self.status.setText(str(exc))
-
     def add_grant(self):
-        if not self.clients.currentData():
-            self.status.setText("请先创建并选择客户端")
-            return
-        dialog = GrantDialog(self.service, self.clients.currentData(), self)
+        dialog = GrantDialog(self.service, self)
         dialog.exec()
         dialog.deleteLater()
         self.refresh()
 
-    def revoke_client(self):
-        if self.clients.currentData():
-            try:
-                self.service.policy.revoke_client(self.clients.currentData())
-            except Exception as exc:
-                self.status.setText("已在本次运行中撤销；持久保存失败：" + str(exc))
-            finally:
-                self.service.wake.set()
-                self.refresh()
+    def add_full_grant(self, *, template=None):
+        try:
+            grant_id, granted, skipped = self.service.grant_all_devices(template)
+        except Exception as exc:
+            self.status.setText(str(exc))
+            return
+        self.refresh()
+        self.grants.setCurrentIndex(self.grants.findData(grant_id))
+        message = f"已全部授权 {granted} 台设备，有效至手动撤销或软件退出"
+        if skipped:
+            message += f"。跳过 {skipped} 台身份待核对、已变化或型号不受支持的设备"
+        self.status.setText(message)
 
     def renew_grant(self):
         template = self.service.policy.grants.get(self.grants.currentData())
         if template:
-            dialog = GrantDialog(self.service, template["client_id"], self, template=template)
+            if template.get("full_device_access"):
+                self.add_full_grant(template=template)
+                return
+            dialog = GrantDialog(self.service, self, template=template)
             dialog.exec()
             dialog.deleteLater()
             self.refresh()
@@ -443,7 +410,7 @@ class AgentCollaborationPanel(QWidget):
 
     def export_connection(self):
         path, _ = QFileDialog.getSaveFileName(
-            self, "保存连接配置（不含凭据）", "lab-control-connection.json", "JSON (*.json)"
+            self, "保存连接配置", "lab-control-connection.json", "JSON (*.json)"
         )
         if path:
             try:
@@ -475,7 +442,6 @@ class AgentCollaborationPanel(QWidget):
             + "args = "
             + json.dumps(args)
             + "\n"
-            + 'env_vars = ["LAB_CONTROL_AGENT_TOKEN"]\n'
             + "startup_timeout_sec = 30\ntool_timeout_sec = 90\n"
         )
         try:
@@ -525,38 +491,33 @@ class AgentCollaborationPanel(QWidget):
                     if settings.get("lan_enabled")
                     else ""
                 )
+                + (" · 临时命令处理已启用" if server.get("local_commands") else "")
             )
             if server["running"]
             else "接入未运行" + ("：" + server["error"] if server.get("error") else "")
         )
-        clients = [c for c in snapshot["clients"] if c["enabled"]]
         grants = snapshot["grants"]
-        signature = repr((clients, [(g["id"], g["enabled"], g["expires_at"] > time.time()) for g in grants]))
+        signature = tuple((g["id"], g["enabled"], g.get("full_device_access", False)) for g in grants)
         if signature != self._signature:
-            selected_client, selected_grant = self.clients.currentData(), self.grants.currentData()
-            self.clients.clear()
-            for client in clients:
-                self.clients.addItem(client["name"], client["id"])
-            self.clients.setCurrentIndex(max(0, self.clients.findData(selected_client)))
+            selected_grant = self.grants.currentData()
             self.grants.clear()
-            names = {c["id"]: c["name"] for c in snapshot["clients"]}
-            for grant in grants:
-                active = grant["enabled"] and grant["expires_at"] > time.time()
-                label = f"{names.get(grant['client_id'], '')} · {'有效' if active else '已失效'} · {grant['id'][:8]}"
-                self.grants.addItem(label, grant["id"])
+            for grant_id, active, full in signature:
+                scope = "全部设备授权" if full else "范围授权"
+                state = "有效" if active else "已失效"
+                self.grants.addItem(f"{scope} · {state} · {grant_id[:8]}", grant_id)
             self.grants.setCurrentIndex(max(0, self.grants.findData(selected_grant)))
             self._signature = signature
         selected = self.tasks.item(self.tasks.currentRow(), 0)
         selected_id = selected.data(Qt.ItemDataRole.UserRole) if selected else ""
         tasks = snapshot["tasks"][:32]
-        names = {c["id"]: c["name"] for c in snapshot["clients"]}
         records = {r["id"]: r for r in self.runtime.inventory.all()}
+        sources = {INTERNAL_CLIENT: "内部 MCP", COMMAND_CLIENT: "MCP 临时命令"}
         self.tasks.setRowCount(len(tasks))
         for row, task in enumerate(tasks):
             record = records.get(task["device_id"], {})
             values = (
                 task.get("created_at", ""),
-                names.get(task["client_id"], ""),
+                sources.get(task["client_id"], task["client_id"][:8]),
                 record.get("displayName") or record.get("identity", {}).get("model", task["device_id"][:8]),
                 ACTION_LABELS.get(task["action"], task["action"]),
                 STATE_LABELS.get(task["state"], task["state"])

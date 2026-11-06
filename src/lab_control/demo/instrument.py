@@ -42,26 +42,19 @@ SIMULATED_CATEGORIES: dict[str, dict[str, tuple[str, float, float]]] = {
 
 class SimulatedInstrument:
     def __init__(self, config: ConnectionConfig) -> None:
-        from lab_control.instruments.registry import PROFILES, SDK_ADAPTERS, describe
+        from lab_control.instruments.registry import DEVICE_DEFINITIONS, PROFILES, describe
 
         self.config, self.adapter_id = config, config.adapter
         self.closed = False
         self.sample_index = 0
         self.values: dict[str, Any] = {}
         profile = PROFILES.get(config.adapter)
-        if profile or config.adapter in SDK_ADAPTERS:
-            maker, model = (
-                (profile.manufacturer[0], profile.models[0])
-                if profile
-                else {
-                    "thorlabs.pm100d": ("Thorlabs", "PM100D"),
-                    "pico.6404e": ("Pico Technology", "6404E"),
-                    "microchip.53100a": ("Microchip", "53100A"),
-                }[config.adapter]
-            )
+        definition = DEVICE_DEFINITIONS.get(config.adapter)
+        model = profile or (definition.model if definition else None)
+        if model:
             self.identity = DeviceIdentity(
-                maker,
-                model,
+                model.manufacturer[0],
+                model.models[0],
                 config.expected_serial or config.resource,
                 "SIMULATED",
                 confidence="simulated",

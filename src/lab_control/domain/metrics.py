@@ -4,12 +4,18 @@ from __future__ import annotations
 
 import math
 import re
-from dataclasses import dataclass
-from typing import Any, Callable, Iterator, Literal
+from dataclasses import dataclass, replace
+from typing import Annotated, Any, Callable, Iterator, Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from lab_control.domain.instruments import AcquisitionRequest, ValidationError
+
+MAX_EXPERIMENT_RECORDINGS = 4096
+ExperimentRecordingIds = Annotated[
+    list[Annotated[str, Field(pattern=r"^[a-f0-9]{32}$")]],
+    Field(min_length=1, max_length=MAX_EXPERIMENT_RECORDINGS),
+]
 
 
 class MetricParameters(BaseModel):
@@ -47,6 +53,10 @@ class MetricDefinition:
     description: str
 
 
+def channel_metric_name(channel: int, name: str) -> str:
+    return f"ch{channel}.{name}"
+
+
 @dataclass(frozen=True)
 class MetricValue:
     value: float | int | None
@@ -63,6 +73,7 @@ class MetricInput:
     frames: Callable[[], Iterator[dict[str, Any]]]
     check_cancel: Callable[[], None]
     progress: Callable[[int, int], None]
+    recording_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -76,6 +87,22 @@ class MetricProfile:
     capture_parameters: type[MetricParameters] | None = None
     capture: Callable[[Any], CapturePlan] | None = None
     supports_partial: bool = False
+    per_channel_metrics: bool = False
+    supports_multiple_recordings: bool = False
+
+    def result_metrics(self, channels: list[int]) -> tuple[MetricDefinition, ...]:
+        if not self.per_channel_metrics:
+            return self.metrics
+        if not 1 <= len(channels) * len(self.metrics) <= 128:
+            raise ValidationError("所选通道的结果指标数量必须在 1 至 128 之间")
+        definitions = tuple(
+            replace(metric, name=channel_metric_name(channel, metric.name))
+            for channel in channels
+            for metric in self.metrics
+        )
+        if any(len(metric.name) > 64 for metric in definitions):
+            raise ValidationError("展开通道后的指标名称不能超过 64 个字符")
+        return definitions
 
     def __post_init__(self) -> None:
         names = [m.name for m in self.metrics]

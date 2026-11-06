@@ -36,7 +36,8 @@ def test_declared_capabilities_units_ranges_and_wire_templates(definition):
     )
     if profile is None:
         assert before["profile"] is None and definition.adapter_type is None
-        assert definition.factory is not None and definition.capability_schema is not None
+        assert definition.factory is not None or definition.transport_adapter is not None
+        assert definition.capability_schema is not None
         return
     assert jsonable({key: getattr(profile, key) for key in before["profile"]}) == before["profile"]
     actual = {

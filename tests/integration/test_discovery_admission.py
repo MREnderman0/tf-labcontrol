@@ -71,11 +71,16 @@ MODEL_ROUTES = [
 @pytest.mark.parametrize(("adapter", "transport"), MODEL_ROUTES)
 def test_registered_routes_respect_independent_sessions_and_model_policy(lab, adapter, transport):
     connect(lab, configured("TCPIP0::192.0.2.10::inst0::INSTR", "rigol.m300"))
-    target = configured("TCPIP0::192.0.2.20::5025::SOCKET", adapter, transport=transport)
+    definition = DEVICE_DEFINITIONS[adapter]
+    resource = "ASRL99::INSTR" if definition.manual_connection_only else "TCPIP0::192.0.2.20::5025::SOCKET"
+    target = configured(resource, adapter, transport=transport)
     calls = []
     scan = lab.scanner([target], lambda c: (calls.append(c), identified(c))[1])
     result = scan.scan().result(5)["items"][0]
-    if transport in DEVICE_DEFINITIONS[adapter].discovery_connection_only_transports:
+    if definition.manual_connection_only:
+        assert result["reason"] == "manual_connection_required"
+        assert calls == []
+    elif transport in definition.discovery_connection_only_transports:
         assert result["reason"] == "sdk_identity_requires_explicit_connection"
         assert calls == []
     else:

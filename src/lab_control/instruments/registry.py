@@ -34,6 +34,13 @@ PROFILES = collect_profiles(
     (*(definition.profile for definition in DEVICE_DEFINITIONS.values() if definition.profile is not None),)
 )
 SDK_ADAPTERS = {d.adapter_id: d.category for d in DEVICE_DEFINITIONS.values() if d.profile is None}
+
+
+def requires_manual_connection(adapter: str) -> bool:
+    definition = DEVICE_DEFINITIONS.get(adapter)
+    return bool(definition and definition.manual_connection_only)
+
+
 PENDING = {
     "PSW160": "Manufacturer and complete suffix required",
     "DS1202Z": "Confirm exact suffix; DS1202Z-E adapter is deliberately not an alias",
@@ -41,7 +48,6 @@ PENDING = {
     "multi-channel optical power meter": "Model and protocol required",
     "temperature_controller": "Model and protocol required",
     "electronic_load": "Model and protocol required",
-    "pump_driver": "Model, protocol and interlocks required",
     "other optical_spectrometers": "Exact model and protocol required; Ceyear 6362D has an independent module",
 }
 
@@ -162,11 +168,13 @@ def create_adapter(config: ConnectionConfig, runtime: VisaRuntime) -> Instrument
         raise Unsupported(f"Unsupported transport for {config.adapter}: {config.transport}")
     if definition.factory:
         return definition.factory(config)
-    if config.adapter not in PROFILES:
+    if config.adapter not in PROFILES and definition.transport_adapter is None:
         raise Unsupported(f"设备适配器不可用或已移除：{config.adapter}")
     transport = transport_for(config, runtime)
     try:
         transport.open()
+        if definition.transport_adapter is not None:
+            return definition.transport_adapter(config, transport)
         return build_scpi_adapter(config, transport)
     except Exception as exc:
         try:

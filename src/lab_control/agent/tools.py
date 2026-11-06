@@ -1,20 +1,20 @@
-"""Versioned MCP tool inputs. Authentication identity never comes from arguments."""
+"""Versioned MCP tool inputs for the shared internal endpoint."""
 
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 from concurrent.futures import Future
-from contextvars import ContextVar
 from typing import Annotated, Any, Literal
 
 import mcp.types as types
 from mcp.server.lowlevel import Server
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from lab_control.application.agents.policy import INTERNAL_CLIENT
 from lab_control.domain.instruments import DeviceError, jsonable
-
-principal: ContextVar[str] = ContextVar("agent_principal", default="")
+from lab_control.domain.metrics import ExperimentRecordingIds
 
 
 class Empty(BaseModel):
@@ -23,6 +23,10 @@ class Empty(BaseModel):
 
 class Grant(Empty):
     grant_id: str = Field(min_length=1, max_length=128)
+
+
+class CommandGrant(Empty):
+    grant_id: str | None = Field(default=None, min_length=1, max_length=128)
 
 
 class Device(Grant):
@@ -87,7 +91,7 @@ class Monitor(Capture):
     interval: float = Field(default=0.5, ge=0.05, le=60)
 
 
-class Task(Grant):
+class Task(CommandGrant):
     task_id: str
 
 
@@ -121,10 +125,14 @@ class Process(Request):
     force: bool = False
 
 
-class Experiment(Request):
+class Experiment(CommandGrant):
+    device_id: str = Field(min_length=1, max_length=128)
+    request_id: str = Field(min_length=1, max_length=128)
     profile_id: str = Field(min_length=1, max_length=64)
     capture_parameters: dict[str, Any] = Field(default_factory=dict)
     parameters: dict[str, Any] = Field(default_factory=dict)
+    recording_ids: ExperimentRecordingIds | None = None
+    command: str | None = Field(default=None, min_length=1, max_length=4096)
 
 
 class ProcessingResults(Recordings):
@@ -132,14 +140,18 @@ class ProcessingResults(Recordings):
     profile_id: str = ""
 
 
-class ProcessingResult(Grant):
+class ProcessingCapabilities(CommandGrant):
+    device_id: str = Field(min_length=1, max_length=128)
+
+
+class ProcessingResult(CommandGrant):
     result_id: str = Field(min_length=1, max_length=128)
 
 
 # name, input, description, cached/read-only. Device reads are conservatively
 # marked as operations; annotations describe behavior, never enforce authority.
 TOOLS = (
-    ("get_server_info", Empty, "查看服务信息与本客户端的实验授权；先调用此工具。", True),
+    ("get_server_info", Empty, "查看服务信息与本机签发的共享实验授权；先调用此工具。", True),
     ("list_devices", Grant, "列出实验授权内的设备和缓存状态；不扫描仪器。", True),
     ("list_slots", Slots, "列出已授权设备绑定的功能槽位及缓存状态；不连接或访问仪器。", True),
     ("resolve_slot", Slot, "解析槽位当前绑定及指纹；结果是快照，不锁定设备或扩大授权。", True),
@@ -158,21 +170,20 @@ TOOLS = (
     ("get_latest_measurement", Latest, "读取最近有效测量摘要及真实时间，不额外访问设备。", True),
     ("stop_task", Stop, "请求停止指定任务并排空记录；已接受命令不能撤回，输出不自动改变。", False),
     ("list_artifacts", Artifacts, "列出授权范围内的实验文件引用；无任意目录浏览能力。", True),
-    ("get_artifact", Artifact, "获取产物元数据与带鉴权的下载路径；下载仍需本客户端凭据。", True),
-    ("get_processing_capabilities", Device, "查看型号指标与自动采集声明；默认不支持，不连接硬件。", True),
+    ("get_artifact", Artifact, "获取产物元数据与下载路径；下载时再次检查实验授权。", True),
+    ("get_processing_capabilities", ProcessingCapabilities, "查看型号指标与临时命令处理能力。", True),
     ("list_recordings", Recordings, "列出授权范围内的规范记录 ID、实际通道及可用性。", True),
     ("start_processing", Process, "提交离线指标任务；同输入默认复用结果，force 显式重新计算。", False),
-    ("start_experiment", Experiment, "按型号声明有限采数后计算；先校验权限，返回 task_id。", False),
+    ("start_experiment", Experiment, "从 recording_ids 指定的记录计算，或按型号声明有限采数后计算。", False),
     ("list_processing_results", ProcessingResults, "列出已保存的指标结果引用；不重新计算。", True),
     ("get_processing_result", ProcessingResult, "读取持久指标结果、单位、质量及来源；不连接或计算。", True),
 )
 
 
-def create_mcp_server(service) -> Server:
+def create_mcp_server(service, *, local_commands=None) -> Server:
     schemas = {name: model for name, model, _description, _read in TOOLS}
 
     async def list_tools(_context, _params):
-        service.policy.require_client(principal.get())
         return types.ListToolsResult(
             tools=[
                 types.Tool(
@@ -191,18 +202,23 @@ def create_mcp_server(service) -> Server:
         )
 
     async def call_tool(_context, params):
-        client = principal.get()
+        client = INTERNAL_CLIENT
         try:
-            if params.name not in schemas:
+            model = schemas.get(params.name)
+            if model is None:
                 raise DeviceError("工具不存在", "unsupported")
-            arguments = (
-                schemas[params.name].model_validate(params.arguments or {}).model_dump(exclude_unset=True)
-            )
-            service.policy.require_client(client)
-            result = await asyncio.to_thread(getattr(service, params.name), client, **arguments)
+            arguments = model.model_validate(params.arguments or {}).model_dump(exclude_unset=True)
+            options = {}
+            if issubclass(model, CommandGrant):
+                arguments["grant_id"] = arguments.get("grant_id") or ""
+                options["local_commands"] = local_commands() if local_commands is not None else False
+            result = await asyncio.to_thread(getattr(service, params.name), client, **arguments, **options)
             if isinstance(result, Future):
                 result = await asyncio.shield(asyncio.wrap_future(result))
             payload = {"ok": True, "data": jsonable(result)}
+            command = arguments.pop("command", None)
+            if command is not None:
+                arguments["command_sha256"] = hashlib.sha256(command.encode()).hexdigest()
             service.repository.audit_sink.try_record(
                 "agent_tool_completed", client_id=client, tool=params.name, arguments=arguments
             )

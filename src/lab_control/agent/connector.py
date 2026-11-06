@@ -1,11 +1,10 @@
-"""Stdio/HTTPS bridge and authenticated artifact download; never opens hardware."""
+"""Stdio/HTTPS bridge and grant-scoped artifact download; never opens hardware."""
 
 from __future__ import annotations
 
 import argparse
 import asyncio
 import json
-import os
 import re
 import ssl
 import sys
@@ -20,7 +19,7 @@ from mcp.server.lowlevel import Server
 from mcp.server.stdio import stdio_server
 
 
-def connection(path: Path) -> tuple[dict, ssl.SSLContext | bool, str]:
+def connection(path: Path) -> tuple[dict, ssl.SSLContext | bool]:
     config = json.loads(path.read_text(encoding="utf-8-sig"))
     url = urlsplit(config["url"])
     if config.get("schema_version") != 1 or url.path != "/mcp" or url.query or url.fragment or url.username:
@@ -34,24 +33,15 @@ def connection(path: Path) -> tuple[dict, ssl.SSLContext | bool, str]:
         verify = True
     else:
         raise ValueError("Remote connections require HTTPS with the exported server certificate")
-    variable = config.get("token_env", "LAB_CONTROL_AGENT_TOKEN")
-    if not re.fullmatch(r"[A-Z][A-Z0-9_]{0,100}", variable):
-        raise ValueError("Invalid token environment variable")
-    token = os.environ.get(variable, "")
-    if not token:
-        raise ValueError(f"Set the credential environment variable {variable}")
-    if not re.fullmatch(r"[A-Za-z0-9_-]{43}", token):
-        raise ValueError("Invalid credential format; copy the issued token without whitespace")
-    return config, verify, token
+    return config, verify
 
 
 @asynccontextmanager
-async def remote_client(config, verify, token):
+async def remote_client(config, verify):
     async with httpx2.AsyncClient(
         verify=verify,
         trust_env=False,
         follow_redirects=False,
-        headers={"Authorization": "Bearer " + token},
         timeout=70,
     ) as http:
 
@@ -64,8 +54,8 @@ async def remote_client(config, verify, token):
             yield client
 
 
-async def bridge(config, verify, token, *, check=False):
-    async with remote_client(config, verify, token) as client:
+async def bridge(config, verify, *, check=False):
+    async with remote_client(config, verify) as client:
         if check:
             result = await client.call_tool("get_server_info", {})
             print(result.model_dump_json(by_alias=True))
@@ -87,8 +77,8 @@ async def bridge(config, verify, token, *, check=False):
     return 0
 
 
-async def call_once(config, verify, token, name, arguments):
-    async with remote_client(config, verify, token) as client:
+async def call_once(config, verify, name, arguments):
+    async with remote_client(config, verify) as client:
         result = await client.call_tool(name, arguments)
         payload = result.structured_content
         if payload is None:
@@ -97,7 +87,7 @@ async def call_once(config, verify, token, name, arguments):
         return 1 if result.is_error else 0
 
 
-def download(config, verify, token, artifact: str, grant: str, output: Path):
+def download(config, verify, artifact: str, grant: str, output: Path):
     if not re.fullmatch(r"[a-f0-9]{32}", artifact) or not re.fullmatch(r"[a-f0-9]{32}", grant):
         raise ValueError("Invalid artifact or grant ID")
     url = config["url"].removesuffix("/mcp") + f"/artifacts/{artifact}?" + urlencode({"grant_id": grant})
@@ -110,7 +100,6 @@ def download(config, verify, token, artifact: str, grant: str, output: Path):
         verify=verify,
         trust_env=False,
         follow_redirects=False,
-        headers={"Authorization": "Bearer " + token},
         timeout=70,
     ) as client:
         with client.stream("GET", url) as response:
@@ -146,7 +135,7 @@ def main(argv=None) -> int:
         # which need not match the UTF-8 JSON expected by the SSH caller.
         sys.stdout.reconfigure(encoding="utf-8")
     try:
-        config, verify, token = connection(args.connection)
+        config, verify = connection(args.connection)
         if args.arguments_file and not args.call:
             raise ValueError("--arguments-file requires --call")
         if args.call:
@@ -163,18 +152,18 @@ def main(argv=None) -> int:
                 arguments = json.loads(content.decode("utf-8-sig"))
                 if not isinstance(arguments, dict):
                     raise ValueError("Tool arguments must be a JSON object")
-            return asyncio.run(call_once(config, verify, token, args.call, arguments))
+            return asyncio.run(call_once(config, verify, args.call, arguments))
         if args.download:
             if not args.grant or not args.output:
                 parser.error("--download requires --grant and --output")
             print(
                 json.dumps(
-                    download(config, verify, token, args.download, args.grant, args.output),
+                    download(config, verify, args.download, args.grant, args.output),
                     ensure_ascii=False,
                 )
             )
             return 0
-        return asyncio.run(bridge(config, verify, token, check=args.check))
+        return asyncio.run(bridge(config, verify, check=args.check))
     except Exception as exc:
         if args.call:
             print(

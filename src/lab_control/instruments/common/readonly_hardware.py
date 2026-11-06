@@ -21,7 +21,7 @@ import pyvisa
 from lab_control.application.config import ConnectionConfig, load_config
 from lab_control.application.runtime import ApplicationRuntime
 from lab_control.discovery.service import ConfiguredDiscoveryProvider
-from lab_control.domain.instruments import DeviceError, jsonable, utc_now
+from lab_control.domain.instruments import DeviceError, DeviceIdentity, jsonable, utc_now
 from lab_control.instruments.base import ScpiAdapter
 from lab_control.instruments.devices.definition import DeviceDefinition
 from lab_control.instruments.registry import create_adapter
@@ -68,7 +68,12 @@ class QueryOnlyTransport:
 
 
 def verify(
-    definition: DeviceDefinition, config: ConnectionConfig, folder: Path, extra_queries: tuple[str, ...] = ()
+    definition: DeviceDefinition,
+    config: ConnectionConfig,
+    folder: Path,
+    extra_queries: tuple[str, ...] = (),
+    *,
+    expected_model: str = "",
 ) -> dict[str, Any]:
     profile = definition.profile
     if profile is None or definition.adapter_type is None:
@@ -91,6 +96,7 @@ def verify(
         "started_at": utc_now(),
         "adapter_id": config.adapter,
         "resource": config.resource,
+        "transport": config.transport,
         "expected_serial": config.expected_serial,
         "setting_writes": 0,
         "stages": {
@@ -113,8 +119,19 @@ def verify(
             if "tests" not in path.parts
         },
         "reconnections": [],
-        "scope": "Read-only refactor verification; output state and error queue are not changed",
+        "scope": "Read-only verification; output state and error queue are not changed",
     }
+    if expected_model:
+        report["expected_model"] = expected_model
+
+    def check_identity(identity: DeviceIdentity | None) -> None:
+        if identity is None:
+            return
+        if config.expected_serial and identity.serial != config.expected_serial:
+            raise DeviceError("Configured serial does not match", "identity_conflict")
+        if expected_model and identity.model.upper() != expected_model.upper():
+            raise DeviceError("Configured model does not match", "identity_conflict")
+
     app: ApplicationRuntime | None = None
     stage = "scan"
     try:
@@ -135,8 +152,7 @@ def verify(
             adapter = factory(candidate.config)
             try:
                 identity = adapter.identify()
-                if identity.serial != config.expected_serial:
-                    raise DeviceError("Configured serial does not match", "identity_conflict")
+                check_identity(identity)
                 return identity, config.adapter
             finally:
                 adapter.close()
@@ -151,7 +167,9 @@ def verify(
         report["stages"]["scan"] = "passed"
         stage = "connection"
         device_id = app.add(config)
-        identity = app.connect(device_id, configure_acquisition=False).result(timeout=90)
+        identity = app.connect(device_id, configure_acquisition=False, admission=check_identity).result(
+            timeout=90
+        )
         report["identity"] = jsonable(identity)
         report["stages"].update(identity="passed", connection="passed")
         if config.transport == "visa":
@@ -179,7 +197,9 @@ def verify(
         stage = "reconnection"
         for attempt in range(3):
             app.sessions.disconnect(device_id)
-            reconnect_identity = app.connect(device_id, configure_acquisition=False).result(timeout=90)
+            reconnect_identity = app.connect(
+                device_id, configure_acquisition=False, admission=check_identity
+            ).result(timeout=90)
             actual = snapshot()
             report["reconnections"].append(
                 {
@@ -197,10 +217,11 @@ def verify(
                 )
         report["stages"][stage] = "passed"
         report["output_state_unchanged"] = True
-    except Exception as exc:
-        report["error"] = str(exc)
+    except (Exception, KeyboardInterrupt) as exc:
+        report["error"] = str(exc) or type(exc).__name__
         report["error_code"] = getattr(exc, "code", type(exc).__name__)
         blocked = report["error_code"] in {
+            "KeyboardInterrupt",
             "resource_busy",
             "timeout",
             "disconnected",
@@ -227,7 +248,7 @@ def verify(
                 )
         rows = "\n".join(f"| {name} | {value} |" for name, value in report["stages"].items())
         (folder / "record.md").write_text(
-            f"# {profile.models[0]} / {config.expected_serial} — 模块迁移后只读复核\n\n"
+            f"# {expected_model or profile.models[0]} / {config.expected_serial} — 只读核验\n\n"
             f"时间：{report['started_at']} 至 {report['finished_at']}；资源：`{config.resource}`。\n\n"
             f"| 项目 | 结果 |\n| --- | --- |\n{rows}\n\n"
             f"错误：{report.get('error', '无')}。会话释放：{report.get('session_released', False)}。\n\n"

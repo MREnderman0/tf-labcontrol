@@ -15,7 +15,7 @@ import numpy as np
 from pydantic import Field
 
 from lab_control.domain.instruments import DeviceError
-from lab_control.domain.metrics import MetricParameters
+from lab_control.domain.metrics import ExperimentRecordingIds, MetricParameters
 from lab_control.domain.processing import RecordedDevice
 from lab_control.storage.layout import atomic_json, raw_folder
 from lab_control.storage.processing import check_cancel, fingerprints, iter_source_frames, source_paths
@@ -35,6 +35,7 @@ class _ResultDocument(MetricParameters):
     schema_version: Literal[1]
     id: str = Field(pattern=r"^[a-f0-9]{32}$")
     recording_id: str = Field(pattern=r"^[a-f0-9]{32}$")
+    recording_ids: ExperimentRecordingIds | None = None
     device_id: str = Field(min_length=1)
     identity: dict[str, str]
     channels: list[Annotated[int, Field(ge=1)]] = Field(min_length=1)
@@ -57,6 +58,11 @@ def validate_result(result: Any) -> None:
             raise ValueError("Result completion time must have a timezone")
         if len(saved.channels) != len(set(saved.channels)):
             raise ValueError("Duplicate result channels")
+        if saved.recording_ids is not None and (
+            saved.recording_ids[0] != saved.recording_id
+            or len(saved.recording_ids) != len(set(saved.recording_ids))
+        ):
+            raise ValueError("Invalid result recording IDs")
         for name, metric in saved.metrics.items():
             if not re.fullmatch(r"[a-z][a-z0-9_.-]{0,63}", name):
                 raise ValueError("Invalid metric name")
@@ -125,12 +131,18 @@ class MetricStore:
         return records, conflicts
 
     def resolve(self, recording_id: str) -> MetricRecord:
+        return self.resolve_many((recording_id,))[0]
+
+    def resolve_many(self, recording_ids: tuple[str, ...]) -> tuple[MetricRecord, ...]:
         records, conflicts = self.records()
-        if recording_id in conflicts:
-            raise DeviceError("记录 ID 对应多个目录，请在本机核对副本", "recording_conflict")
-        if recording_id not in records:
-            raise DeviceError("规范记录不存在或缺少可核验身份", "recording_unavailable")
-        return records[recording_id]
+        resolved = []
+        for recording_id in recording_ids:
+            if recording_id in conflicts:
+                raise DeviceError("记录 ID 对应多个目录，请在本机核对副本", "recording_conflict")
+            if recording_id not in records:
+                raise DeviceError("规范记录不存在或缺少可核验身份", "recording_unavailable")
+            resolved.append(records[recording_id])
+        return tuple(resolved)
 
     @staticmethod
     def stamp(record: MetricRecord) -> list[tuple[str, int, int]]:

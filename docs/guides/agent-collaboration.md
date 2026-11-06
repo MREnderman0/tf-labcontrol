@@ -6,15 +6,18 @@
 
 1. 按[控制与监测](control-and-monitoring.md)完成设备发现及资产核对。确认完整型号、序列号与稳定资产 ID；不能读取序列号时，本机核对铭牌与地址映射。
 2. 启用 Agent 接入并应用设置。本机默认 `http://127.0.0.1:8765/mcp`。实验网选择已配置在本机物理网卡上的 IPv4 地址，启用 HTTPS，默认端口 8766。不会绑定所有网卡或自动修改网卡地址。
-3. 为每个协作者创建独立客户端凭据，保存创建时唯一一次显示的值。服务器只保存校验值；凭据不写入连接文件、配置示例或审计日志。
-4. 选择客户端，授予实验范围：设备、通道、操作、允许修改的参数能力、数值范围和有效期（默认两小时）。输出/触发和采集格式初始化单独勾选。同一参数能力的字段一起授权，留空数值边界时仍执行型号自身的范围校验。
-5. 导出连接 JSON 和 Codex TOML 配置片段。局域网 JSON 内包含服务器公共证书，不含私钥。复制连接器所在的完整发行目录到 Agent 电脑，调整 TOML 中的本机路径；不要只复制单个 EXE。
-6. 在启动 Agent 的进程环境中设置 `LAB_CONTROL_AGENT_TOKEN` 为该客户端凭据。配置片段只引用变量名。先运行连接检查，再把片段合入 Agent 的 MCP 配置。
+3. 点击“授予实验范围”，选择设备、通道、操作和允许修改的参数能力，可进一步限制数值范围。输出、触发和采集格式初始化在范围授权中单独勾选。需要共享完整设备操作权限时，点击“一键全部授权”。
+4. 本机客户端直接连接 MCP 地址。实验网可导出连接 JSON 和 Codex TOML 配置片段。局域网 JSON 内包含服务器公共证书。复制连接器所在的完整发行目录到 Agent 电脑，调整 TOML 中的本机路径。先运行连接检查，再把片段合入客户端的 MCP 配置。
+
+内部接入免令牌。能访问监听地址的程序共享当前有效的实验授权，调用设备或读取结果时仍须传 `grant_id`。旧配置中的令牌环境变量和 Bearer 设置可删除。升级后，旧版实验网监听须在桌面重新启用，旧授权可用作重新授权的模板。
+
+“一键全部授权”签发一条共享授权，覆盖点击时已核对完整型号和序列号的受支持设备。授权包含全部 MCP 设备操作，包括参数写入、输出、触发、采集初始化、采集、指标任务和结果读取。设备和通道能力、数值范围以及参数写入的预览和读回继续按型号和会话校验。界面会提示跳过的设备数量。新增设备需要重新签发授权。点击“按所选范围重新授权”会复核原有设备的身份。
+
+客户端用 `get_server_info` 取得授权。两种授权的 `expires_at` 均为 `null`，直到手动撤销或软件退出。全部授权带有 `full_device_access: true`，其中空的 `channels` 和 `operations` 表示授权范围采用型号支持的全部通道和参数能力，具体能力用 `get_capabilities` 查询。
 
 发行连接器与 GUI 共用 `launcher.main`，但在导入 Qt、创建 Runtime 或加载硬件前进入连接器分支。`TF-LabControl.exe` 保持无控制台；`TF-LabControl-Agent.exe` 提供标准输入输出。GUI 仍由唯一 `run.bat` 或正式安装入口启动。
 
 ```powershell
-# 已设置当前进程的 LAB_CONTROL_AGENT_TOKEN；下列文件名不包含凭据
 .\TF-LabControl-Agent.exe --agent-connector --connection .\lab-control-connection.json --check
 # 源码开发环境中的同一分发入口
 .venv-dev\Scripts\python.exe -m lab_control --agent-connector --connection .\lab-control-connection.json --check
@@ -25,29 +28,28 @@
 ```toml
 [mcp_servers.lab_control]
 url = "http://127.0.0.1:8765/mcp"
-bearer_token_env_var = "LAB_CONTROL_AGENT_TOKEN"
 ```
 
 局域网优先使用导出的 stdio 连接器配置。连接器只信任 JSON 中的服务器证书，并校验目的 IP/服务器名称，禁用代理和重定向；不会修改系统证书信任。证书或 IP 更新后，重新导出并分发连接 JSON。证书有效期一年，剩余不足七天时下次启动重新生成；正在运行时不静默更换。
 
-Codex 的工具审批独立于软件内的实验授权。默认导出保留客户端原有审批策略；若要按本机已授予的实验范围连续调用，可仅在该 MCP 服务配置中设置 `default_tools_approval_mode = "approve"`。服务器仍逐次执行范围、有效期、输出权限和版本冲突校验。选项依据 [Codex 配置参考](https://learn.chatgpt.com/docs/config-file/config-reference)。
+Codex 的工具审批独立于软件内的实验授权。默认导出保留客户端原有审批策略；若要按本机已授予的实验范围连续调用，可仅在该 MCP 服务配置中设置 `default_tools_approval_mode = "approve"`。服务器仍逐次校验授权状态、范围、输出权限和配置版本。选项依据 [Codex 配置参考](https://learn.chatgpt.com/docs/config-file/config-reference)。
 
-服务器同时校验 Bearer、Host、Origin，单请求上限 1 MiB，每个监听最多 32 个在途 HTTP 请求。这里是预先分发凭据的私有实验服务，不提供 OAuth 登录或公开互联网发现。
+服务器校验 Host 和 Origin，单请求上限 1 MiB，每个监听最多 32 个在途 HTTP 请求。实验网 HTTPS 只应在所有可达主机均受信任的网段启用。HTTPS 校验服务器身份并加密传输。
 
 ## 一次协作实验
 
 建议让 Agent 执行以下流程，并明确本次实验的设备、范围与结束条件：
 
-1. `get_server_info` 获取自己的授权；`list_devices` 选定稳定资产 ID。
+1. `get_server_info` 获取当前有效的共享授权；`list_devices` 选定稳定资产 ID。
 2. `connect_device` 连接或复用会话。默认不进行改变采集格式的初始化；需要时显式请求 `configure_acquisition` 并具备相应授权。已存在的只读会话需明确断开后重新连接才能升级初始化权限。
 3. `get_capabilities` 获取型号能力、通道、单位、范围、数据源及采集默认动作；`get_device_state` 获取缓存状态；`read_parameters` 读回需要的设置。型号声明需要确认的采集同样要求输出/触发权限，不能用 `initiate=false` 绕过。
 4. `preview_change` 生成五分钟有效的单项修改预览，然后 `apply_change` 执行。预览绑定会话和配置版本；GUI 或其他协作者改变配置后，返回 `configuration_conflict`，重新读取与规划。
 5. `acquire_once` 单次采集并保存，或 `start_monitoring` / `start_recording` 交由软件持续调度。`get_latest_measurement` 返回质量、真实时间、帧序号、配置版本、年龄和有限摘要；大数组保存在数据目录。
 6. `list_tasks` / `get_task_status` 跟踪实际结果。指定 `stop_task` 停止后等待二进制排空与 CSV 转换；`list_artifacts` / `get_artifact` 获取结果引用。
 
-所有有副作用的请求须携带客户端范围内唯一的 `request_id`。同 ID 同参数返回原任务；同 ID 不同参数拒绝。超时、部分完成或状态未知时，查询原任务，不能换一个 ID 自动重发。网络请求取消不等于撤回设备命令；已接受 I/O 持续跟踪到结果。
+所有有副作用的请求须携带在本台服务的内部接入中唯一的 `request_id`，客户端可生成 UUID。相同 ID 和参数返回原任务，相同 ID 配不同参数会被拒绝。超时、部分完成或状态未知时，按原 ID 查询任务。已接受的设备操作在网络请求取消后仍会执行并记录结果。
 
-设备 worker 对 GUI 与多个客户端串行执行。设备已有监测/记录时，新启动返回 `task_conflict`，可通过任务列表找到当前任务（本地界面任务 ID 以 `gui-` 开头）。任何具备该设备和通道停止授权的协作者都可明确停止它；创建者只用于追溯。需要改变数据源或从监测转为记录时，明确停止原任务、等待收尾，再启动新任务。
+设备 worker 对 GUI 与多个客户端串行执行。设备已有监测/记录时，新启动返回 `task_conflict`，可通过任务列表找到当前任务（本地界面任务 ID 以 `gui-` 开头）。使用具备该设备和通道停止权限的授权即可停止任务。需要改变数据源或从监测转为记录时，明确停止原任务、等待收尾，再启动新任务。
 
 状态包括 `accepted`、`running`、`stopping`、`binary_saved`、`converting`、`completed`、`partial`、`failed` 与重启后的 `interrupted`。`phase_history` 保存观察到的阶段。短暂阶段可能在相邻查询间完成，不能据此认为没有保存。记录参数锁直到二进制收尾才释放；CSV 转换不占用仪器。沿用公共[采集和记录规则](../architecture/live-acquisition.md)，无效帧不保存，慢磁盘满缓冲明确暂停并排空。
 
@@ -62,7 +64,7 @@ Codex 的工具审批独立于软件内的实验授权。默认导出保留客�
 
 每个快照含 `slot_id`、`label`、`category`、`workspace`、`device_id`、`identity`、`state`、`cached=true` 和 `binding_fingerprint`。类别 ID 沿用 [工作区定义](../../src/lab_control/domain/workspace.py)；工作区支持 `general` 及兼容工作区 `electronic`、`optical`。`state` 是缓存会话状态，未连接时可为空，不表示远端仪器响应成功。查询不扫描、不连接、不读写硬件。
 
-列表仅包含授权设备的有效绑定，不展示其他设备信息；无匹配项返回空列表。无效、过期、撤销或其他客户端的授权报错。解析未绑定、已删除或无权访问的槽位统一返回 `slot_unavailable`；已授权设备的身份冲突仍明确拒绝，不自动跟随新资产。
+列表仅包含授权设备的有效绑定，无匹配项返回空列表。无效或撤销的授权沿用错误码 `grant_expired`。解析未绑定、已删除或无权访问的槽位统一返回 `slot_unavailable`。已授权设备的身份发生冲突时，须在本机重新核对资产。
 
 持久化使用工作区和槽位 ID，名称只用于显示。同名删除重建是新槽位。绑定指纹依据工作区、槽位 ID、设备 ID 与设备身份计算，用于检测换绑，不是占用锁，也不是授权凭据。一次查询取得一致快照；返回后绑定仍可能变化。
 
@@ -72,7 +74,7 @@ OFC 自动化外壳目前先接入连接配置与待配置条目，实际 SSH �
 
 ## SSH 命令与指标任务
 
-另一台电脑可以通过 SSH 在采数电脑执行现有连接器命令，使用 UTF-8 JSON 收发；采数电脑的桌面软件须已运行并启用 Agent。SSH 的远端进程须取得自己的 `LAB_CONTROL_AGENT_TOKEN` 环境变量；不能假定它继承桌面进程环境，也不要把凭据写入命令参数。连接 JSON 使用导出的本机地址配置。
+另一台电脑可以通过 SSH 在采数电脑执行现有连接器命令，使用 UTF-8 JSON 收发。采数电脑的桌面软件须已运行并启用 Agent。连接 JSON 使用导出的本机地址配置，SSH 登录沿用系统配置。
 
 以下是 SSH **远端执行**的命令；先将工作目录设为项目目录，发行版可替换为完整发行目录内的 `TF-LabControl-Agent.exe`：
 
@@ -83,13 +85,28 @@ OFC 自动化外壳目前先接入连接配置与待配置条目，实际 SSH �
 
 `request.json` 是工具参数对象，例如 `{"grant_id":"授权ID","device_id":"设备ID"}`。也可使用 `--arguments-file -`，由远端程序把 UTF-8 JSON 写入 SSH 标准输入；SSH 不分配交互终端（`-T`），标准输出是一条 JSON 响应。退出码 0 表示工具调用成功（异步任务可能仍在运行），1 表示工具拒绝，2 表示连接器配置/传输失败。查询成功返回 failed 任务时仍是调用成功，须读取任务 state。传输失败不自动重发写入，保留 request_id 并查询任务。
 
-先查询 `get_processing_capabilities`，生产型号默认 `supported=false`；本机授权中另行勾选“计算指标及运行采数处理流程”。分步流程先用原有采集工具，等待 get_task_status 完成并取得 recording_id，也可用 list_recordings 选择桌面已有规范记录；然后 start_processing，轮询原有任务接口，完成后用 get_processing_result 读取 result_id。一次提交采数与处理使用 start_experiment，型号必须声明有限采集方案。
+先用 `get_processing_capabilities` 确认该设备支持的处理项及参数。使用全部授权，或在范围授权中勾选“计算指标及运行采数处理流程”。等待采集任务完成并取得 `recording_id`，也可用 `list_recordings` 选择已有规范记录。将记录 ID 放进 `recording_ids` 提交给 `start_experiment`。支持多份记录的处理项可使用同一设备的多次单帧采集。用 `get_task_status` 等计算完成，再将任务的 `result_id` 传给 `get_processing_result`。单份记录也可通过 `start_processing` 提交。
+
+例如，示波器已保存一帧电压波形时，给 `start_experiment` 发送以下参数。读回结果后从 `data.metrics["ch1.rms"]` 和 `data.metrics["ch1.std"]` 取 CH1 的数值、单位及质量。
+
+```json
+{
+  "grant_id": "<授权 ID>",
+  "device_id": "<示波器 ID>",
+  "request_id": "<本次请求 ID>",
+  "recording_ids": ["<波形记录 ID>"],
+  "profile_id": "voltage.waveform_statistics",
+  "parameters": {}
+}
+```
 
 已算结果可通过 list_processing_results 查找，再直接 get_processing_result，不会再次计算；重新提交相同输入默认复用，force 明确重新计算并保留旧结果。返回的每项指标有数值、单位及质量，原始记录不完整、模拟结果和 unavailable 都不能当作合格判据。完整参数、型号契约及失败语义见[远程指标处理规范](../architecture/remote-metrics.md)。不在此流程自动配置 SSH、修改防火墙或启动无人值守服务。
 
+临时测试 Python 或 MATLAB 程序时，在桌面启用[临时命令处理](../architecture/remote-metrics.md#临时命令处理)，用 `start_experiment` 传 `profile_id: "local.command"`、`command` 字符串、`recording_ids` 和算法参数。命令任务的提交、查询、取消和读回可省略 `grant_id`。
+
 ## 文件下载
 
-`get_artifact` 返回受鉴权的下载路径，仍须同一客户端凭据和当前有效的设备/通道结果授权。文件 ID 是登记引用，不接受服务器文件路径。可用连接器独立下载：
+`get_artifact` 返回下载路径。下载请求按 `grant_id` 再次校验设备和通道结果授权。文件以已登记的产物 ID 引用。可用连接器独立下载：
 
 ```powershell
 .\TF-LabControl-Agent.exe --agent-connector --connection .\lab-control-connection.json --download <产物ID> --grant <当前授权ID> --output .\experiment.csv
@@ -99,11 +116,11 @@ OFC 自动化外壳目前先接入连接配置与待配置条目，实际 SSH �
 
 ## 撤销、退出和留档
 
-客户端断线时实验继续；关闭接入仅停止网络访问，已接受任务继续到完成或授权到期。授权到期/撤销或客户端撤销会停止相应任务，完成在途读取和记录收尾，不停止其他独立任务。重启保留客户端与授权模板，但执行授权一律失效；本机可“按所选范围重新授权”。重启不恢复任务、不重放命令，未确认结果保留为中断状态。
+客户端断线时实验继续。关闭接入仅停止网络访问，已接受任务仍由桌面端运行。撤销授权会停止相应任务，并完成在途读取和记录收尾。重启保留授权模板，须在本机“按所选范围重新授权”。重启时未确认结果保留为中断状态。
 
 关闭软件先停止接入和任务，再等待保存、释放会话与进程锁。停止、撤销和退出均沿用现有输出行为，不自动关闭或恢复设备输出；未知状态不能解释为关闭。驱动内部阻塞仍受现有 I/O 超时和驱动退出能力约束。
 
-运行目录中的数据库保存任务去重、授权模板和产物索引；现有审计记录调用方、授权、请求、设备身份、修改前状态、读回与最终结果。必要审计失败时拒绝新写入，停止/清理仍可执行；审计或索引失败会保留错误，不能解释成完整成功。实际地址、序列号、证书私钥、凭据和原始通信记录均不提交源码。
+运行目录中的数据库保存任务去重、授权模板和产物索引。审计将远程请求归为内部 MCP，记录授权、请求、设备身份、修改前状态、读回与最终结果。必要审计失败时拒绝新写入，停止和清理仍可执行。审计或索引失败会保留错误。实际地址、序列号、证书私钥和原始通信记录均不提交源码。
 
 ## 实验网防火墙
 

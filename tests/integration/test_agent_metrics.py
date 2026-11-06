@@ -1,4 +1,4 @@
-"""Test-only model capabilities; no production algorithm or physical I/O."""
+"""Verify remote processing with registered and test-only profiles, without physical I/O."""
 
 import asyncio
 import json
@@ -15,6 +15,7 @@ from uuid import uuid4
 import numpy as np
 import pytest
 
+from lab_control.application.agents.policy import INTERNAL_CLIENT
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.runtime import ApplicationRuntime
 from lab_control.domain.instruments import AcquisitionRequest, DeviceError
@@ -25,8 +26,16 @@ from lab_control.domain.metrics import (
     MetricProfile,
     MetricValue,
 )
+from lab_control.domain.optical_power_metrics import (
+    OPTICAL_POWER_FLUCTUATION_PROFILE,
+    OPTICAL_POWER_REFERENCE_DEVIATION_PROFILE,
+)
+from lab_control.domain.phase_noise_metrics import PHASE_NOISE_AT_OFFSET_PROFILE
+from lab_control.domain.spectrum_metrics import SPECTRUM_PEAK_AND_SNR_PROFILE
+from lab_control.domain.voltage_waveform_metrics import VOLTAGE_WAVEFORM_STATISTICS_PROFILE
 from lab_control.instruments.registry import DEVICE_DEFINITIONS
 from lab_control.storage.agent_ledger import ACTIVE
+from lab_control.storage.processing import iter_source_frames
 
 
 class Parameters(MetricParameters):
@@ -37,10 +46,10 @@ class CaptureParameters(MetricParameters):
     frames: int = 1
 
 
-def settle(service, client, grant, task, timeout=12):
+def settle(service, client, grant, task, timeout=12, *, local_commands=False):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
-        value = service.get_task_status(client, grant, task["id"])
+        value = service.get_task_status(client, grant, task["id"], local_commands=local_commands)
         if value["state"] not in ACTIVE:
             return value
         time.sleep(0.02)
@@ -53,7 +62,7 @@ def metrics(tmp_path, monkeypatch):
     device = runtime.add(ConnectionConfig("mock://metrics/scope", "rs.rtm3004", "mock"))
     runtime.connect(device).result()
     service = runtime.agent
-    client, token = service.policy.create_client("metrics")
+    client = INTERNAL_CLIENT
     grant = service.policy.create_grant(
         client,
         [device],
@@ -93,7 +102,7 @@ def metrics(tmp_path, monkeypatch):
     )
     definition = DEVICE_DEFINITIONS["rs.rtm3004"]
     monkeypatch.setitem(DEVICE_DEFINITIONS, "rs.rtm3004", replace(definition, metric_profiles=(profile,)))
-    yield runtime, service, client, grant, device, profile, calls, token
+    yield runtime, service, client, grant, device, profile, calls
     runtime.close()
 
 
@@ -114,12 +123,174 @@ def process_record(env, recording_id, **kwargs):
     )
 
 
-def test_production_defaults_are_disabled():
-    assert all(not definition.metric_profiles for definition in DEVICE_DEFINITIONS.values())
+def test_unrelated_device_models_do_not_publish_metrics():
+    for adapter in ("siglent.sdg6032xe", "ceyear.6362d", "rigol.m300"):
+        assert not DEVICE_DEFINITIONS[adapter].metric_profiles
+
+
+@pytest.mark.parametrize(("adapter", "channels"), [("thorlabs.pm100d", [1]), ("joinwit.jw8105", [1, 9])])
+def test_per_channel_metrics_use_saved_optical_power_channels(metrics, adapter, channels):
+    runtime, service, client, *_ = metrics
+    device = runtime.add(ConnectionConfig("mock://metrics/power", adapter, "mock"))
+    runtime.connect(device).result()
+    grant = service.policy.create_grant(
+        client,
+        [device],
+        ["view", "acquire", "results", "process"],
+        channels=channels,
+        operations=[],
+        limits={},
+    )
+    profiles = service.get_processing_capabilities(client, grant, device)["profiles"]
+    assert {profile["id"] for profile in profiles} == {
+        OPTICAL_POWER_FLUCTUATION_PROFILE.id,
+        OPTICAL_POWER_REFERENCE_DEVIATION_PROFILE.id,
+    }
+    assert all(profile["per_channel_metrics"] for profile in profiles)
+    acquired = settle(
+        service,
+        client,
+        grant,
+        service.acquire_once(
+            client, grant, device, {"kind": "scalar", "channels": channels}, "power-capture"
+        ),
+    )
+    assert acquired["state"] == "completed", acquired
+
+    processed = settle(
+        service,
+        client,
+        grant,
+        service.start_processing(
+            client,
+            grant,
+            device,
+            "power-deviation",
+            acquired["recording_id"],
+            OPTICAL_POWER_REFERENCE_DEVIATION_PROFILE.id,
+            parameters={"reference_power_w": {str(channel): 0.001 for channel in channels}},
+        ),
+    )
+    assert processed["state"] == "completed", processed
+    result = service.get_processing_result(client, grant, processed["result_id"])
+    assert result["channels"] == channels
+    assert set(result["metrics"]) == {
+        f"ch{channel}.{name}"
+        for channel in channels
+        for name in ("min_deviation_percent", "max_deviation_percent")
+    }
+    for channel in channels:
+        assert (
+            result["metrics"][f"ch{channel}.min_deviation_percent"]
+            == result["metrics"][f"ch{channel}.max_deviation_percent"]
+        )
+        assert result["metrics"][f"ch{channel}.min_deviation_percent"]["unit"] == "%"
+        assert result["metrics"][f"ch{channel}.min_deviation_percent"]["quality"] == "simulated"
+
+
+@pytest.mark.parametrize(
+    "adapter",
+    [
+        "rs.rtm3004",
+        "rigol.dho924",
+        "rs.rto64",
+        "rigol.ds1202ze",
+        "lecroy.9254",
+        "lecroy.9404m",
+        "pico.6404e",
+    ],
+)
+def test_voltage_metrics_use_full_saved_waveform(tmp_path, adapter):
+    with ApplicationRuntime(root=tmp_path, hardware=False) as runtime:
+        device = runtime.add(ConnectionConfig("mock://metrics/voltage", adapter, "mock"))
+        runtime.connect(device).result()
+        service, client = runtime.agent, INTERNAL_CLIENT
+        grant = service.policy.create_grant(
+            client,
+            [device],
+            ["view", "acquire", "results", "process", "output_trigger"],
+            channels=[1, 2],
+            operations=[],
+            limits={},
+        )
+        record_id = capture_record((runtime, service, client, grant, device), (1, 2))
+        task = service.start_processing(
+            client, grant, device, "voltage-statistics", record_id, VOLTAGE_WAVEFORM_STATISTICS_PROFILE.id
+        )
+        done = settle(service, client, grant, task)
+        assert done["state"] == "completed", done
+        result = service.get_processing_result(client, grant, done["result_id"])
+        record = service.metrics.store.resolve(record_id)
+        frame = next(iter_source_frames(record.device))
+        assert result["channels"] == [1, 2]
+        assert result["profile_version"] == "2"
+        for measurement in frame["measurements"]:
+            channel = measurement["channel"]
+            values = measurement["values"].astype(np.float64)
+            assert len(values) == 32
+            for name, expected in {
+                "mean": np.mean(values),
+                "peak_to_peak": np.ptp(values),
+                "rms": np.sqrt(np.mean(np.square(values))),
+                "std": np.std(values, ddof=0),
+            }.items():
+                assert result["metrics"][f"ch{channel}.{name}"] == {
+                    "value": pytest.approx(expected),
+                    "unit": "V",
+                    "quality": "simulated",
+                }
+
+
+@pytest.mark.parametrize(
+    ("adapter", "source_key", "profile", "parameters", "metric", "unit"),
+    [
+        ("rs.fph", "spectrum", SPECTRUM_PEAK_AND_SNR_PROFILE, {}, "peak_power", "dBm"),
+        ("rigol.dsa815", "spectrum", SPECTRUM_PEAK_AND_SNR_PROFILE, {}, "peak_power", "dBm"),
+        (
+            "microchip.53100a",
+            "phase_noise",
+            PHASE_NOISE_AT_OFFSET_PROFILE,
+            {"offset_hz": 10.0},
+            "phase_noise",
+            "dBc/Hz",
+        ),
+    ],
+)
+def test_registered_trace_metrics(metrics, adapter, source_key, profile, parameters, metric, unit):
+    runtime, service, client, *_ = metrics
+    device = runtime.add(ConnectionConfig("mock://metrics/trace", adapter, "mock"))
+    runtime.connect(device).result()
+    grant = service.policy.create_grant(
+        client, [device], ["view", "acquire", "results", "process"], channels=[1], operations=[], limits={}
+    )
+    sources = service.get_capabilities(client, grant, device)["data_sources"]
+    source = next(item for item in sources if item["key"] == source_key)
+    acquired = settle(
+        service,
+        client,
+        grant,
+        service.acquire_once(
+            client,
+            grant,
+            device,
+            {"kind": source["kind"], "quantity": source["quantity"], "points": 64},
+            "trace-capture",
+        ),
+    )
+    assert acquired["state"] == "completed", acquired
+    task = service.start_processing(
+        client, grant, device, "trace-metrics", acquired["recording_id"], profile.id, parameters=parameters
+    )
+    done = settle(service, client, grant, task)
+    assert done["state"] == "completed", done
+    result = service.get_processing_result(client, grant, done["result_id"])
+    assert result["metrics"][metric]["value"] is not None
+    assert result["metrics"][metric]["unit"] == unit
+    assert result["metrics"][metric]["quality"] == "simulated"
 
 
 def test_steps_cache_force_versions_and_no_duplicate_arrays(metrics, monkeypatch):
-    runtime, service, client, grant, device, profile, calls, _ = metrics
+    runtime, service, client, grant, device, profile, calls = metrics
     record_id = capture_record(metrics)
     record = service.metrics.store.resolve(record_id)
     raw = record.device.folder / "_raw"
@@ -158,7 +329,7 @@ def test_steps_cache_force_versions_and_no_duplicate_arrays(metrics, monkeypatch
 
 @pytest.mark.parametrize("frames", [1, 3])
 def test_automatic_and_offline_discovery(metrics, frames):
-    runtime, service, client, grant, device, _, calls, _ = metrics
+    runtime, service, client, grant, device, _, calls = metrics
     task = service.start_experiment(
         client, grant, device, uuid4().hex, "test.mean", capture_parameters={"frames": frames}
     )
@@ -173,8 +344,68 @@ def test_automatic_and_offline_discovery(metrics, frames):
     assert service.get_processing_result(client, grant, done["result_id"])["complete"]
 
 
+def test_saved_experiment_preserves_record_order_and_rechecks_all_sources(metrics, monkeypatch):
+    runtime, service, client, grant, device, profile, calls = metrics
+    adapter = "rs.rtm3004"
+    profile = replace(profile, supports_multiple_recordings=True)
+    definition = replace(DEVICE_DEFINITIONS[adapter], metric_profiles=(profile,))
+    monkeypatch.setitem(DEVICE_DEFINITIONS, adapter, definition)
+    older = capture_record(metrics)
+    newer = capture_record(metrics)
+    ids = [newer, older]
+
+    def process(request_id):
+        task = service.start_experiment(client, grant, device, request_id, profile.id, recording_ids=ids)
+        done = settle(service, client, grant, task)
+        assert done["state"] == "completed", done
+        assert done["recording_ids"] == ids
+        return done
+
+    first = process("saved-series")
+    result = service.get_processing_result(client, grant, first["result_id"])
+    assert result["recording_id"] == newer
+    assert result["recording_ids"] == ids
+    reused = process("saved-series-retry")
+    assert reused["result"]["reused"] and reused["result_id"] == first["result_id"]
+
+    path = service.metrics.store.resolve(older).device.folder / "_raw" / "samples.npz"
+    with np.load(path, allow_pickle=False) as arrays:
+        changed = {name: arrays[name] for name in arrays.files}
+    changed["values_0"] = changed["values_0"] + 2.0
+    np.savez_compressed(path, **changed)
+    second = process("saved-series-changed")
+    updated = service.get_processing_result(client, grant, second["result_id"])
+    assert second["result_id"] != first["result_id"] and calls == [newer, newer]
+    assert updated["metrics"]["mean"]["value"] == pytest.approx(result["metrics"]["mean"]["value"] + 1.0)
+    assert not runtime.repository.record_access.held
+
+
+def test_saved_experiment_checks_each_record_channel_before_processing(metrics, monkeypatch):
+    runtime, service, client, grant, device, profile, calls = metrics
+    adapter = "rs.rtm3004"
+    profile = replace(profile, supports_multiple_recordings=True)
+    definition = replace(DEVICE_DEFINITIONS[adapter], metric_profiles=(profile,))
+    monkeypatch.setitem(DEVICE_DEFINITIONS, adapter, definition)
+    ids = [capture_record(metrics, (1,)), capture_record(metrics, (2,))]
+    with pytest.raises(DeviceError, match="无重复"):
+        service.start_experiment(
+            client, grant, device, "duplicate-record", profile.id, recording_ids=ids[:1] * 2
+        )
+    with pytest.raises(DeviceError, match="只能选一种"):
+        service.start_experiment(
+            client, grant, device, "two-input-modes", profile.id, capture_parameters={}, recording_ids=ids
+        )
+    limited = service.policy.create_grant(
+        client, [device], ["view", "results", "process"], channels=[1], operations=[], limits={}
+    )
+    task = service.start_experiment(client, limited, device, "denied-series", profile.id, recording_ids=ids)
+    denied = settle(service, client, limited, task)
+    assert denied["state"] == "failed" and denied["code"] == "permission_denied"
+    assert calls == [] and not runtime.repository.record_access.held
+
+
 def test_channels_grant_and_parameter_rejection_before_capture(metrics):
-    runtime, service, client, grant, device, _, calls, _ = metrics
+    runtime, service, client, grant, device, _, calls = metrics
     record_id = capture_record(metrics, (1, 2))
     limited = service.policy.create_grant(
         client, [device], ["view", "results", "process"], channels=[1], operations=[], limits={}
@@ -198,7 +429,7 @@ def test_channels_grant_and_parameter_rejection_before_capture(metrics):
 
 
 def test_automatic_capture_respects_existing_acquisition(metrics):
-    runtime, service, client, grant, device, _, calls, _ = metrics
+    runtime, service, client, grant, device, _, calls = metrics
     existing = runtime.sessions.start_acquisition(
         device, AcquisitionRequest("waveform", points=32), count=100, interval=0.05
     )
@@ -215,7 +446,7 @@ def test_automatic_capture_respects_existing_acquisition(metrics):
 
 
 def test_request_conflict_and_source_change(metrics):
-    _, service, client, grant, _, _, calls, _ = metrics
+    _, service, client, grant, _, _, calls = metrics
     record_id = capture_record(metrics)
     done = settle(service, client, grant, process_record(metrics, record_id, request_id="same"))
     with pytest.raises(DeviceError, match="request_id"):
@@ -225,7 +456,7 @@ def test_request_conflict_and_source_change(metrics):
 
 
 def test_cancel_join_queue_and_file_reservation(metrics, monkeypatch):
-    runtime, service, client, grant, _, profile, _, _ = metrics
+    runtime, service, client, grant, _, profile, _ = metrics
     record_id = capture_record(metrics)
     entered = threading.Event()
     release = threading.Event()
@@ -262,7 +493,7 @@ def test_cancel_join_queue_and_file_reservation(metrics, monkeypatch):
 
 
 def test_revocation_cancels_processing_and_does_not_publish(metrics, monkeypatch):
-    _, service, client, grant, _, profile, _, _ = metrics
+    _, service, client, grant, _, profile, _ = metrics
     record_id = capture_record(metrics)
     entered = threading.Event()
 
@@ -288,7 +519,7 @@ def test_revocation_cancels_processing_and_does_not_publish(metrics, monkeypatch
 
 
 def test_move_duplicate_ids_and_result_tampering(metrics):
-    runtime, service, client, grant, _, _, calls, _ = metrics
+    runtime, service, client, grant, _, _, calls = metrics
     record_id = capture_record(metrics)
     done = settle(service, client, grant, process_record(metrics, record_id))
     entry = runtime.processing.catalog.scan()[0]
@@ -306,7 +537,7 @@ def test_move_duplicate_ids_and_result_tampering(metrics):
 
 @pytest.mark.parametrize("failure", ["algorithm", "nan", "source", "index", "journal"])
 def test_failures_never_publish_success(metrics, monkeypatch, failure):
-    _, service, client, grant, _, profile, _, _ = metrics
+    _, service, client, grant, _, profile, _ = metrics
     record_id = capture_record(metrics)
     record = service.metrics.store.resolve(record_id)
 
@@ -344,7 +575,7 @@ def test_failures_never_publish_success(metrics, monkeypatch, failure):
 
 @pytest.mark.parametrize("damage", ["not_object", "missing", "nan", "channels"])
 def test_malformed_imported_result_is_unavailable(metrics, damage):
-    runtime, service, client, grant, _, _, _, _ = metrics
+    runtime, service, client, grant, _, _, _ = metrics
     record_id = capture_record(metrics)
     done = settle(service, client, grant, process_record(metrics, record_id))
     record = service.metrics.store.resolve(record_id)
@@ -368,7 +599,7 @@ def test_malformed_imported_result_is_unavailable(metrics, damage):
 
 
 def test_changed_raw_values_do_not_reuse_result(metrics):
-    _, service, client, grant, _, _, calls, _ = metrics
+    _, service, client, grant, _, _, calls = metrics
     record_id = capture_record(metrics)
     done = settle(service, client, grant, process_record(metrics, record_id))
     record = service.metrics.store.resolve(record_id)
@@ -386,7 +617,7 @@ def test_changed_raw_values_do_not_reuse_result(metrics):
 
 
 def test_invalid_record_metadata_does_not_break_listing(metrics):
-    _, service, client, grant, _, _, _, _ = metrics
+    _, service, client, grant, _, _, _ = metrics
     record_id = capture_record(metrics)
     record = service.metrics.store.resolve(record_id)
     path = record.device.folder / "_raw" / "recording.json"
@@ -401,7 +632,7 @@ def test_invalid_record_metadata_does_not_break_listing(metrics):
 
 
 def test_saved_result_after_restart_without_algorithm(metrics, monkeypatch):
-    runtime, service, client, grant, device, _, _, _ = metrics
+    runtime, service, client, grant, device, _, _ = metrics
     record_id = capture_record(metrics)
     done = settle(service, client, grant, process_record(metrics, record_id))
     original = service.get_processing_result(client, grant, done["result_id"])
@@ -431,7 +662,7 @@ def test_saved_result_after_restart_without_algorithm(metrics, monkeypatch):
 
 
 def test_model_finite_capture_and_output_authority(metrics, monkeypatch):
-    runtime, service, client, grant, device, profile, calls, _ = metrics
+    runtime, service, client, grant, device, profile, calls = metrics
     session = runtime.sessions.sessions[device]
     batch = runtime.sessions.submit(device, "acquire", AcquisitionRequest("waveform", points=32)).result()
 
@@ -462,7 +693,7 @@ def test_model_finite_capture_and_output_authority(metrics, monkeypatch):
 
 
 def test_partial_requires_both_declaration_and_request(metrics, monkeypatch):
-    _, service, client, grant, _, profile, calls, _ = metrics
+    _, service, client, grant, _, profile, calls = metrics
     record_id = capture_record(metrics)
     record = service.metrics.store.resolve(record_id)
     path = record.device.folder / "_raw" / "summary.json"
@@ -487,7 +718,7 @@ def test_partial_requires_both_declaration_and_request(metrics, monkeypatch):
 
 
 def test_cancel_automatic_capture_does_not_compute(metrics):
-    runtime, service, client, grant, device, _, calls, _ = metrics
+    runtime, service, client, grant, device, _, calls = metrics
     task = service.start_experiment(
         client, grant, device, "long-capture", "test.mean", capture_parameters={"frames": 100}
     )
@@ -507,7 +738,7 @@ def test_cancel_automatic_capture_does_not_compute(metrics):
 
 
 def test_capture_guard_rejection_does_not_degrade_connected_device(metrics):
-    runtime, _, _, _, device, _, _, _ = metrics
+    runtime, _, _, _, device, _, _ = metrics
     checks = []
 
     def guard(session):
@@ -535,7 +766,7 @@ def test_capture_guard_rejection_does_not_degrade_connected_device(metrics):
 
 
 def test_tampered_result_is_not_returned(metrics):
-    _, service, client, grant, _, _, _, _ = metrics
+    _, service, client, grant, _, _, _ = metrics
     record_id = capture_record(metrics)
     done = settle(service, client, grant, process_record(metrics, record_id))
     record = service.metrics.store.resolve(record_id)
@@ -547,8 +778,10 @@ def test_tampered_result_is_not_returned(metrics):
         service.get_processing_result(client, grant, done["result_id"])
 
 
-def test_validation_is_background_and_queued_cancellation_skips_algorithm(metrics, monkeypatch):
-    _, service, client, grant, _, _, calls, _ = metrics
+@pytest.mark.parametrize("full_scope", [False, True])
+def test_validation_is_background_and_queued_cancellation_skips_algorithm(metrics, monkeypatch, full_scope):
+    _, service, client, limited, device, _, calls = metrics
+    grant = service.grant_all_devices()[0] if full_scope else limited
     first_record = capture_record(metrics)
     second_record = capture_record(metrics)
     original = service.metrics.store.inspect
@@ -561,15 +794,22 @@ def test_validation_is_background_and_queued_cancellation_skips_algorithm(metric
         return original(record, cancel)
 
     monkeypatch.setattr(service.metrics.store, "inspect", blocked)
-    first = process_record(metrics, first_record)
+    first = service.start_processing(client, grant, device, "process-first", first_record, "test.mean")
     try:
         assert entered.wait(2)
-        queued = process_record(metrics, second_record)
+        queued = service.start_processing(client, grant, device, "process-queued", second_record, "test.mean")
         assert service.get_task_status(client, grant, queued["id"])["phase"] == "queued"
+        if full_scope:
+            with pytest.raises(DeviceError, match="通道"):
+                service.get_task_status(client, limited, queued["id"])
+            assert queued["id"] not in {t["id"] for t in service.list_tasks(client, limited)}
+            with pytest.raises(DeviceError, match="通道"):
+                service.stop_task(client, limited, queued["id"], "stop-with-limited-grant")
         stopped = service.stop_task(client, grant, queued["id"], "cancel-queued")
     finally:
         release.set()
     assert settle(service, client, grant, first)["state"] == "completed"
+    assert service.get_task_status(client, limited, first["id"])["state"] == "completed"
     assert settle(service, client, grant, stopped)["state"] == "completed"
     assert settle(service, client, grant, queued)["state"] == "cancelled"
     assert calls == [first_record]
@@ -579,7 +819,7 @@ def test_mcp_new_tools_flow(metrics):
     from lab_control.agent.connector import remote_client
     from lab_control.agent.server import AgentServer
 
-    runtime, service, owner, grant, device, _, _, token = metrics
+    runtime, service, owner, grant, device, _, _ = metrics
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]
@@ -588,7 +828,7 @@ def test_mcp_new_tools_flow(metrics):
     config = {"url": f"http://127.0.0.1:{port}/mcp"}
 
     async def flow():
-        async with remote_client(config, True, token) as client:
+        async with remote_client(config, True) as client:
             tools = (await client.list_tools()).tools
             assert len(tools) == 26
             scope = {"grant_id": grant, "device_id": device}
@@ -601,17 +841,30 @@ def test_mcp_new_tools_flow(metrics):
             task = result.structured_content["data"]
         # Accepted work survives transport disconnection.
         done = await asyncio.to_thread(settle, service, owner, grant, task)
-        async with remote_client(config, True, token) as client:
+        async with remote_client(config, True) as client:
             result = await client.call_tool(
                 "get_processing_result", {"grant_id": grant, "result_id": done["result_id"]}
             )
             assert result.structured_content["data"]["metrics"]["mean"]["unit"] == "V"
+            result = await client.call_tool(
+                "start_experiment",
+                {
+                    **scope,
+                    "request_id": "sdk-saved-metrics",
+                    "profile_id": "test.mean",
+                    "recording_ids": [done["recording_id"]],
+                },
+            )
+            assert not result.is_error, result
+            saved_task = result.structured_content["data"]
+        saved = await asyncio.to_thread(settle, service, owner, grant, saved_task)
+        assert saved["result"]["reused"] and saved["result_id"] == done["result_id"]
 
     asyncio.run(flow())
     connection = runtime.repository.root / "connector.json"
     service.server.export_connection(connection)
     command = [sys.executable, "-m", "lab_control", "--agent-connector", "--connection", str(connection)]
-    environment = {**os.environ, "LAB_CONTROL_AGENT_TOKEN": token, "PYTHONIOENCODING": "ascii"}
+    environment = {**os.environ, "PYTHONIOENCODING": "ascii"}
     arguments = json.dumps({"grant_id": grant, "device_id": device}).encode("utf-8")
     called = subprocess.run(
         [*command, "--call", "get_processing_capabilities", "--arguments-file", "-"],
@@ -632,3 +885,139 @@ def test_mcp_new_tools_flow(metrics):
         timeout=20,
     )
     assert rejected.returncode == 2 and not json.loads(rejected.stdout)["ok"]
+
+
+def test_command_string_experiment_through_local_and_lab_mcp(metrics, tmp_path):
+    from lab_control.agent.connector import connection, remote_client
+    from lab_control.agent.server import AgentServer
+
+    runtime, service, owner, grant, device, *_ = metrics
+    first = capture_record(metrics)
+    second = capture_record(metrics)
+    ordinary = settle(service, owner, grant, process_record(metrics, first))
+    assert ordinary["state"] == "completed", ordinary
+    script = tmp_path / "process with spaces.py"
+    script.write_text(
+        """
+import json
+import sys
+
+request = json.load(sys.stdin)
+source = request["source"]
+assert source["complete"]
+assert source["recording_ids"] == request["parameters"]["expected"]
+assert source["metadata"]["adapter_id"] == "rs.rtm3004"
+assert sys.argv[1] == "argument with spaces"
+if len(sys.argv) > 2:
+    print("not JSON")
+else:
+    points = sum(len(frame["measurements"][0]["values"]) for frame in source["frames"])
+    print(json.dumps({"metrics": {"points": {"value": points, "unit": "samples", "quality": "good"}}}))
+""",
+        encoding="utf-8",
+    )
+    command = subprocess.list2cmdline([sys.executable, str(script), "argument with spaces"])
+    arguments = {
+        "device_id": device,
+        "request_id": "command-test",
+        "profile_id": "local.command",
+        "command": command,
+        "recording_ids": [second, first],
+        "parameters": {"expected": [second, first]},
+    }
+    with socket.socket() as local, socket.socket() as tls:
+        local.bind(("127.0.0.1", 0))
+        tls.bind(("127.0.0.1", 0))
+        local_port, tls_port = local.getsockname()[1], tls.getsockname()[1]
+    server = service.server = AgentServer(service)
+    server.configure({"enabled": True, "local_port": local_port, "local_commands": True})
+    assert "local_commands" not in service.repository.load_workspace("agent/server")
+    server.close()
+    assert not server.local_commands
+    server.settings.update(lan_enabled=True, lan_address="127.0.0.1", lan_port=tls_port)
+    server.start()
+    exported = tmp_path / "command-https.json"
+    server.export_connection(exported, lan=True)
+    lan_config, lan_verify = connection(exported)
+    local_config = {"url": f"http://127.0.0.1:{local_port}/mcp"}
+
+    async def flow():
+        async with remote_client(local_config, True) as local, remote_client(lan_config, lan_verify) as lan:
+            denied = await lan.call_tool("start_experiment", arguments)
+            assert denied.is_error and denied.structured_content["code"] == "local_command_disabled"
+            server.local_commands = True
+            capabilities = await lan.call_tool("get_processing_capabilities", {"device_id": device})
+            (profile,) = capabilities.structured_content["data"]["profiles"]
+            assert profile["id"] == "local.command" and profile["requires_command"]
+            for tool, query in (
+                ("get_task_status", {"task_id": ordinary["id"]}),
+                ("get_processing_result", {"result_id": ordinary["result_id"]}),
+                ("stop_task", {"task_id": ordinary["id"], "request_id": "stop-ordinary"}),
+                (
+                    "start_experiment",
+                    {
+                        "device_id": device,
+                        "profile_id": "test.mean",
+                        "recording_ids": [first],
+                        "request_id": "ordinary-without-grant",
+                    },
+                ),
+            ):
+                denied = await lan.call_tool(tool, query)
+                assert denied.is_error and denied.structured_content["code"] == "grant_expired"
+            submitted = await lan.call_tool("start_experiment", arguments)
+            assert not submitted.is_error, submitted
+            task = submitted.structured_content["data"]
+            duplicate = await local.call_tool("start_experiment", arguments | {"grant_id": grant})
+            assert duplicate.structured_content["data"]["id"] == task["id"]
+            done = await asyncio.to_thread(settle, service, owner, "", task, local_commands=True)
+            assert done["state"] == "completed", done
+            status = await lan.call_tool("get_task_status", {"task_id": task["id"]})
+            assert status.structured_content["data"]["result_id"] == done["result_id"]
+            result = await lan.call_tool("get_processing_result", {"result_id": done["result_id"]})
+            assert result.structured_content["data"]["metrics"] == {
+                "points": {"value": 64, "unit": "samples", "quality": "simulated"}
+            }
+            repeated = await local.call_tool("start_experiment", arguments | {"request_id": "command-again"})
+            repeated_task = repeated.structured_content["data"]
+            again = await asyncio.to_thread(settle, service, owner, "", repeated_task, local_commands=True)
+            assert again["state"] == "completed" and again["result_id"] != done["result_id"]
+            malformed = await local.call_tool(
+                "start_experiment",
+                arguments | {"request_id": "command-malformed", "command": command + " malformed"},
+            )
+            failure = await asyncio.to_thread(
+                settle, service, owner, "", malformed.structured_content["data"], local_commands=True
+            )
+            assert failure["state"] == "failed" and failure["code"] == "command_invalid_output"
+
+    asyncio.run(flow())
+
+
+def test_stop_waiting_command(metrics, tmp_path):
+    _, service, client, grant, device, *_ = metrics
+    record = capture_record(metrics)
+    ready = tmp_path / "command-ready"
+    program = (
+        "import json, sys, time; from pathlib import Path; json.load(sys.stdin); "
+        "Path(sys.argv[1]).touch(); time.sleep(60)"
+    )
+    command = subprocess.list2cmdline([sys.executable, "-c", program, str(ready)])
+    task = service.start_experiment(
+        client,
+        "",
+        device,
+        "wait-command",
+        "local.command",
+        recording_ids=[record],
+        command=command,
+        local_commands=True,
+    )
+    deadline = time.monotonic() + 8
+    while not ready.is_file() and time.monotonic() < deadline:
+        time.sleep(0.02)
+    assert ready.is_file()
+    stopped = service.stop_task(client, "", task["id"], "stop-command", local_commands=True)
+    assert settle(service, client, "", stopped, local_commands=True)["state"] == "completed"
+    assert settle(service, client, "", task, local_commands=True)["state"] == "cancelled"
+    assert service.list_processing_results(client, grant, profile_id="local.command") == []

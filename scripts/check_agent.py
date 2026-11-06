@@ -14,7 +14,7 @@ def main():
     parser.add_argument("--connector", type=Path, help="Optional built console connector EXE")
     parser.add_argument("--codex", type=Path, help="Optional installed Codex CLI for actual Agent acceptance")
     args = parser.parse_args()
-    root = Path(__file__).resolve().parents[1] / ".tools/agent-checks" / uuid4().hex
+    root = Path(__file__).resolve().parents[1] / ".temp/agent-checks" / uuid4().hex
     with ApplicationRuntime(root=root, hardware=False) as runtime:
         result = verify_mock(runtime, connector=args.connector, codex=args.codex)
     path = root / "report.json"

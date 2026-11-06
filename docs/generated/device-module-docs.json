@@ -11,6 +11,7 @@
   "docs/devices/signal-sources/sdg6032xe.md": "acdf069041bc2e338ee515ec169130bf5b2bf2dc1a04b1ba42fe530f38ae34cd",
   "docs/devices/power-supplies/keithley-2231a.md": "587e4a90fd9852e160665db23adce67e891193f9e3f46d9a2c9e77dc0be003ad",
   "docs/devices/power-supplies/spd4306x.md": "7e3d170b3dd16b3cb1be37cd5b81ef2c69038096aed39bcf3b60e3d4867647e2",
+  "docs/devices/power-supplies/sps5000x.md": "15817b16fad4bc7e29be26a175fd172696894a102d00c40b5be608d4f1aedce6",
   "docs/devices/power-supplies/it6322.md": "0b032231cc3d56d7c9a935d99cf916ac1a67f0d8d6504f8be578a5c1507285fa",
   "docs/devices/signal-sources/dg5504-pro.md": "a2c4a3323a8d66d1fbbb435267bf7426caa1edca57a932c00bb9c8c0cb5fc56e",
   "docs/devices/signal-sources/afg31252.md": "7c39c9c165e02e4386e13ebecb67792ce5c34fa1ddbff8f2badbeb8ab159f6d4",
@@ -27,5 +28,6 @@
   "docs/devices/power-supplies/coremorrow-xmt.md": "77737b6de4c308e685492c1438482975978552878532d2c9ae7d0f125e2f2e49",
   "docs/devices/measurement-analyzers/rigol-m300.md": "0df8b21dbeff2ab38394e65a3422ed4831c1502ff5686563c714fa247083c901",
   "docs/devices/measurement-analyzers/kplusk-fxe.md": "2b905d1b0813ea0df510a14165b2e8fb7fab51d8c8a2d5325e8d3a4523b448bd",
-  "docs/devices/measurement-analyzers/keysight-53220a.md": "54bbdbe53260b1b97a61112e0e3c0144c8f69a3bf24d5752296f29901109107f"
+  "docs/devices/measurement-analyzers/keysight-53220a.md": "54bbdbe53260b1b97a61112e0e3c0144c8f69a3bf24d5752296f29901109107f",
+  "docs/devices/temperature-load-drivers/pump-driver.md": "4c7d7eeebbdb4b54fcaa5a5d47c17439b2e7f141fd6ec4b459461952115227a9"
 }

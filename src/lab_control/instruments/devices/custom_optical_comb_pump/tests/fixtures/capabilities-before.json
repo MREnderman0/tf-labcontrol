@@ -1,0 +1,175 @@
+{
+  "profile": null,
+  "capabilities": {
+    "category": "pump_driver",
+    "channels": [
+      1
+    ],
+    "operations": [
+      {
+        "name": "pump_output_off",
+        "parameters": {},
+        "readable": false,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": true,
+        "source": "泵浦激光驱动设备通信说明",
+        "section": "3.5, 5.1",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "current",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "A",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "泵浦激光驱动设备通信说明",
+        "section": "5.1",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "temperature",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "°C",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "泵浦激光驱动设备通信说明",
+        "section": "5.1",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "output",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "泵浦激光驱动设备通信说明",
+        "section": "5.1",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "thermistor_beta",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "泵浦激光驱动设备通信说明",
+        "section": "5.1",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "pump_lowpass",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "泵浦激光驱动设备通信说明",
+        "section": "5.1",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "pump_current_limit",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "A",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "泵浦激光驱动设备通信说明",
+        "section": "5.1",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      }
+    ]
+  }
+}

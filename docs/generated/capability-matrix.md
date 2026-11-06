@@ -22,6 +22,7 @@ JSON 的 control_page 表示型号所在页面，不保证每项底层能力都�
 | Siglent SDG6032X-E | `siglent.sdg6032xe` | 13 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/sdg6032xe.md) |
 | Keithley 2231A-30-3 | `keithley.2231a` | 15 | power | [型号卡片](../devices/power-supplies/keithley-2231a.md) |
 | Siglent SPD4306X | `siglent.spd4306x` | 22 | power | [型号卡片](../devices/power-supplies/spd4306x.md) |
+| SIGLENT SPS5000X 系列 | `siglent.sps5000x` | 6 | power | [型号卡片](../devices/power-supplies/sps5000x.md) |
 | ITECH IT6322 | `itech.it6322` | 8 | power | [型号卡片](../devices/power-supplies/it6322.md) |
 | RIGOL DG5504 Pro | `rigol.dg5504pro` | 41 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/dg5504-pro.md) |
 | Tektronix AFG31252 | `tek.afg31252` | 37 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/afg31252.md) |
@@ -39,6 +40,26 @@ JSON 的 control_page 表示型号所在页面，不保证每项底层能力都�
 | RIGOL M300 | `rigol.m300` | 20 | scalar | [型号卡片](../devices/measurement-analyzers/rigol-m300.md) |
 | K+K FXE / FXE2 | `kplusk.fxe` | 3 | scalar:frequency | [型号卡片](../devices/measurement-analyzers/kplusk-fxe.md) |
 | Keysight / Agilent 53220A | `keysight.53220a` | 15 | scalar:frequency | [型号卡片](../devices/measurement-analyzers/keysight-53220a.md) |
+| 光梳地检泵浦驱动 | `custom.optical_comb_pump` | 7 | scalar | [型号卡片](../devices/temperature-load-drivers/pump-driver.md) |
+
+## MCP 指标处理
+
+型号按实际输出的数据契约引用共享指标。输入和参数见[远程指标处理规范](../architecture/remote-metrics.md)。
+
+| 设备类型 | 注册 ID | 指标及版本 |
+| --- | --- | --- |
+| 光功率计 | `joinwit.jw8105` | `optical_power.fluctuation` v1、`optical_power.reference_deviation` v1 |
+| 光功率计 | `thorlabs.pm100d` | `optical_power.fluctuation` v1、`optical_power.reference_deviation` v1 |
+| 示波器 | `lecroy.9254` | `voltage.waveform_statistics` v2 |
+| 示波器 | `lecroy.9404m` | `voltage.waveform_statistics` v2 |
+| 示波器 | `pico.6404e` | `voltage.waveform_statistics` v2 |
+| 示波器 | `rigol.dho924` | `voltage.waveform_statistics` v2 |
+| 示波器 | `rigol.ds1202ze` | `voltage.waveform_statistics` v2 |
+| 示波器 | `rs.rtm3004` | `voltage.waveform_statistics` v2 |
+| 示波器 | `rs.rto64` | `voltage.waveform_statistics` v2 |
+| 相噪仪 | `microchip.53100a` | `phase_noise.at_offset` v1 |
+| 频谱仪 | `rigol.dsa815` | `spectrum.peak_and_snr` v1 |
+| 频谱仪 | `rs.fph` | `spectrum.peak_and_snr` v1 |
 
 ## 未实现 / 待补项
 
@@ -60,5 +81,4 @@ JSON 的 control_page 表示型号所在页面，不保证每项底层能力都�
 | multi-channel optical power meter | 待补信息：Model and protocol required |
 | temperature_controller | 待补信息：Model and protocol required |
 | electronic_load | 待补信息：Model and protocol required |
-| pump_driver | 待补信息：Model, protocol and interlocks required |
 | other optical_spectrometers | 待补信息：Exact model and protocol required; Ceyear 6362D has an independent module |

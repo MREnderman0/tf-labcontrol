@@ -85,6 +85,8 @@ class DeviceDefinition:
     metric_profiles: tuple[MetricProfile, ...] = ()
     # Replace this generated candidate name with the documentation title once identified.
     pending_display_name: str = ""
+    manual_connection_only: bool = False
+    transport_adapter: Callable[[ConnectionConfig, Any], InstrumentAdapter] | None = None
 
     def __post_init__(self) -> None:
         if len({p.id for p in self.metric_profiles}) != len(self.metric_profiles):
@@ -92,8 +94,11 @@ class DeviceDefinition:
         if self.acquisition_channel_selection not in {"single", "multiple"}:
             raise ValueError("Invalid acquisition channel selection")
         if self.profile is None:
-            if self.model is None or self.factory is None or self.capability_schema is None:
-                raise ValueError("SDK definitions require model metadata, factory and capability_schema")
+            has_factory = self.factory is not None or (
+                self.transport_factory is not None and self.transport_adapter is not None
+            )
+            if self.model is None or not has_factory or self.capability_schema is None:
+                raise ValueError("Non-SCPI definitions require model metadata, factory and capability_schema")
             if self.adapter_type is not None:
                 raise ValueError("SDK definitions must not declare a SCPI adapter type")
         elif self.adapter_type is None:

@@ -10,6 +10,7 @@ import pytest
 
 from lab_control.agent.connector import remote_client
 from lab_control.agent.server import AgentServer
+from lab_control.application.agents.policy import INTERNAL_CLIENT
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.runtime import ApplicationRuntime
 from lab_control.domain.instruments import DeviceError
@@ -32,7 +33,7 @@ def experiment(tmp_path):
         device = runtime.add(config)
         runtime.connect(device).result()
         service = runtime.agent
-        client, token = service.policy.create_client("test client")
+        client = INTERNAL_CLIENT
         grant = service.policy.create_grant(
             client,
             [device],
@@ -52,12 +53,11 @@ def experiment(tmp_path):
             operations=["timebase"],
             limits={"timebase": {"value": [0.0001, 0.01]}},
         )
-        yield runtime, service, client, token, grant, device
+        yield runtime, service, client, grant, device
 
 
 def test_agent_changes_share_session_deduplicate_and_reject_stale_preview(experiment):
-    runtime, service, client, token, grant, device = experiment
-    assert service.policy.authenticate(token) == client
+    runtime, service, client, grant, device = experiment
     session = runtime.sessions.sessions[device]
     preview = service.preview_change(client, grant, device, "timebase", {"value": 0.002})
     task = service.apply_change(client, grant, device, preview["id"], "write-1")
@@ -74,7 +74,7 @@ def test_agent_changes_share_session_deduplicate_and_reject_stale_preview(experi
 
 
 def test_guard_rechecks_grant_inside_device_worker(experiment):
-    runtime, service, client, _token, grant, device = experiment
+    runtime, service, client, grant, device = experiment
     session = runtime.sessions.sessions[device]
     release = threading.Event()
     blocker = session.worker.submit(release.wait, 3)
@@ -92,7 +92,7 @@ def test_guard_rechecks_grant_inside_device_worker(experiment):
 
 
 def test_shared_monitor_recording_stop_and_artifacts(experiment):
-    runtime, service, client, _token, grant, device = experiment
+    runtime, service, client, grant, device = experiment
     task = service.start_recording(
         client, grant, device, {"kind": "waveform", "points": 32}, "record-1", 0.05
     )
@@ -113,8 +113,8 @@ def test_shared_monitor_recording_stop_and_artifacts(experiment):
     assert not runtime.sessions.sessions[device].controls_locked
 
 
-def test_sdk_http_auth_origin_and_full_mock_flow(experiment):
-    runtime, service, client, token, grant, device = experiment
+def test_sdk_http_without_token_enforces_origin_and_grants(experiment):
+    runtime, service, client, grant, device = experiment
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]
@@ -122,16 +122,10 @@ def test_sdk_http_auth_origin_and_full_mock_flow(experiment):
     service.server.configure({"enabled": True, "local_port": port})
     url = f"http://127.0.0.1:{port}/mcp"
     with httpx2.Client(trust_env=False) as http:
-        assert http.post(url, json={}).status_code == 401
-        assert (
-            http.post(
-                url, json={}, headers={"Authorization": "Bearer " + token, "Origin": "http://evil.test"}
-            ).status_code
-            == 403
-        )
+        assert http.post(url, json={}, headers={"Origin": "http://evil.test"}).status_code == 403
 
     async def run():
-        async with remote_client({"url": url}, True, token) as remote:
+        async with remote_client({"url": url}, True) as remote:
             listed = await remote.list_tools()
             assert len(listed.tools) == 26
             runtime.bind_slot(device, "oscilloscope:1", "general")
@@ -145,6 +139,10 @@ def test_sdk_http_auth_origin_and_full_mock_flow(experiment):
             assert bad.is_error
             info = await remote.call_tool("get_server_info", {})
             assert not info.is_error, info
+            assert [item["id"] for item in info.structured_content["data"]["grants"]] == [grant]
+            assert info.structured_content["data"]["grants"][0]["expires_at"] is None
+            denied = await remote.call_tool("list_devices", {"grant_id": "unknown"})
+            assert denied.is_error and denied.structured_content["code"] == "grant_expired"
             params = {"grant_id": grant, "device_id": device}
             result = await remote.call_tool(
                 "preview_change", {**params, "operation": "timebase", "parameters": {"value": 0.003}}
@@ -170,7 +168,7 @@ def test_sdk_http_auth_origin_and_full_mock_flow(experiment):
             monitor_id = monitor.structured_content["data"]["id"]
         # Transport disconnect does not own the lifetime of accepted work.
         await asyncio.sleep(0.15)
-        async with remote_client({"url": url}, True, token) as reconnected:
+        async with remote_client({"url": url}, True) as reconnected:
             result = await reconnected.call_tool(
                 "get_task_status", {"grant_id": grant, "task_id": monitor_id}
             )
@@ -185,48 +183,49 @@ def test_sdk_http_auth_origin_and_full_mock_flow(experiment):
 
 
 def test_request_conflict_channels_and_result_authority(experiment):
-    _runtime, service, client, _token, grant, device = experiment
+    _runtime, service, client, grant, device = experiment
     task = service.acquire_once(client, grant, device, {"kind": "waveform", "points": 16}, "once")
     assert wait_task(service, client, grant, task)["state"] == "completed"
     with pytest.raises(DeviceError, match="request_id"):
         service.acquire_once(client, grant, device, {"kind": "waveform", "points": 32}, "once")
     with pytest.raises(DeviceError, match="通道"):
         service.acquire_once(client, grant, device, {"channels": [2]}, "other-channel")
-    other, _ = service.policy.create_client("channel two")
     other_grant = service.policy.create_grant(
-        other, [device], ["view", "results", "stop"], channels=[2], operations=[], limits={}
+        client, [device], ["view", "results", "stop"], channels=[2], operations=[], limits={}
     )
     artifact = service.list_artifacts(client, grant, task["id"])[0]
-    assert not service.list_artifacts(other, other_grant, task["id"])
-    assert not service.list_tasks(other, other_grant)
+    assert not service.list_artifacts(client, other_grant, task["id"])
+    assert not service.list_tasks(client, other_grant)
     with pytest.raises(DeviceError, match="通道"):
-        service.get_artifact(other, other_grant, artifact["id"])
+        service.get_artifact(client, other_grant, artifact["id"])
     with pytest.raises(DeviceError, match="通道"):
-        service.stop_task(other, other_grant, task["id"], "stop-other-channel")
+        service.stop_task(client, other_grant, task["id"], "stop-other-channel")
     with pytest.raises(DeviceError):
         service.artifact_path(client, grant, "../../secret")
 
 
-def test_expiration_and_cross_client_stop(experiment):
-    runtime, service, client, _token, grant, device = experiment
-    other, _ = service.policy.create_client("collaborator")
+def test_revocation_and_stop_with_separate_grant(experiment):
+    runtime, service, client, grant, device = experiment
     other_grant = service.policy.create_grant(
-        other, [device], ["view", "stop"], channels=[1], operations=[], limits={}
+        client, [device], ["view", "stop"], channels=[1], operations=[], limits={}
     )
     task = service.start_monitoring(client, grant, device, {"kind": "waveform", "points": 16}, "monitor")
-    assert any(t["id"] == task["id"] for t in service.list_tasks(other, other_grant))
-    stop = service.stop_task(other, other_grant, task["id"], "shared-stop")
-    assert wait_task(service, other, other_grant, stop)["state"] == "completed"
-    task = service.start_recording(client, grant, device, {"kind": "waveform", "points": 16}, "expires")
-    service.policy.grants[grant]["expires_at"] = time.time() - 1
+    assert any(t["id"] == task["id"] for t in service.list_tasks(client, other_grant))
+    stop = service.stop_task(client, other_grant, task["id"], "shared-stop")
+    assert wait_task(service, client, other_grant, stop)["state"] == "completed"
+    task = service.start_recording(client, grant, device, {"kind": "waveform", "points": 16}, "revoke")
+    # A legacy timestamp does not expire a grant while the application is running.
+    service.policy.grants[grant]["expires_at"] = 1
+    assert service.get_task_status(client, grant, task["id"])["state"] == "running"
+    service.policy.revoke_grant(grant)
     service.wake.set()
-    assert wait_task(service, other, other_grant, task)["state"] in {"completed", "failed"}
+    assert wait_task(service, client, other_grant, task)["state"] in {"completed", "failed"}
     assert not runtime.sessions.sessions[device].controls_locked
     assert not runtime.monitoring.tasks[device].running
 
 
 def test_audit_failure_blocks_writes_but_allows_stop(experiment, monkeypatch):
-    runtime, service, client, _token, grant, device = experiment
+    runtime, service, client, grant, device = experiment
     task = service.start_monitoring(client, grant, device, {"kind": "waveform"}, "monitor-audit")
     preview = service.preview_change(client, grant, device, "timebase", {"value": 0.002})
 
@@ -244,7 +243,7 @@ def test_audit_failure_blocks_writes_but_allows_stop(experiment, monkeypatch):
 def test_gui_task_explicit_stop_and_monitor_guard(experiment):
     from lab_control.domain.instruments import AcquisitionRequest
 
-    runtime, service, client, _token, grant, device = experiment
+    runtime, service, client, grant, device = experiment
     runtime.monitoring.start(device, (AcquisitionRequest(kind="waveform", points=16),))
     tasks = service.list_tasks(client, grant)
     gui = next(t for t in tasks if t["id"].startswith("gui-"))
@@ -266,7 +265,7 @@ def test_read_only_connect_and_restart_never_replays(tmp_path):
         device = runtime.add(config)
         runtime.connect(device).result()
         service = runtime.agent
-        client, token = service.policy.create_client("restart")
+        client = INTERNAL_CLIENT
         grant = service.policy.create_grant(
             client, [device], ["view", "connect", "disconnect"], channels=[1], operations=[], limits={}
         )
@@ -280,8 +279,9 @@ def test_read_only_connect_and_restart_never_replays(tmp_path):
         service.ledger.insert(unknown, AgentLedger.fingerprint("unknown"))
     with ApplicationRuntime((config,), root=tmp_path, hardware=False) as runtime:
         service = runtime.agent
-        assert service.policy.authenticate(token) == client
         assert not service.policy.grants[grant]["enabled"]
+        with pytest.raises(DeviceError, match="授权"):
+            service.list_slots(client, grant)
         assert service.ledger.get("lost-command")["state"] == "interrupted"
         assert not runtime.sessions.sessions
 
@@ -290,7 +290,7 @@ def test_stdio_connector_has_only_protocol_stdout(experiment, tmp_path):
     from mcp import Client
     from mcp.client.stdio import StdioServerParameters
 
-    _runtime, service, _client, token, _grant, _device = experiment
+    _runtime, service, _client, _grant, _device = experiment
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]
@@ -298,12 +298,14 @@ def test_stdio_connector_has_only_protocol_stdout(experiment, tmp_path):
     service.server.configure({"enabled": True, "local_port": port})
     path = tmp_path / "connection 中文.json"
     service.server.export_connection(path)
+    exported = json.loads(path.read_text(encoding="utf-8"))
+    assert set(exported) == {"schema_version", "url"}
+    path.write_text(json.dumps({**exported, "token_env": "LEGACY_UNUSED_TOKEN"}), encoding="utf-8")
 
     async def run():
         parameters = StdioServerParameters(
             command=sys.executable,
             args=["-m", "lab_control", "--agent-connector", "--connection", str(path)],
-            env={"LAB_CONTROL_AGENT_TOKEN": token},
         )
         async with Client(parameters, read_timeout_seconds=10) as client:
             assert len((await client.list_tools()).tools) == 26
@@ -313,13 +315,13 @@ def test_stdio_connector_has_only_protocol_stdout(experiment, tmp_path):
     asyncio.run(run())
 
 
-def test_https_certificate_validation_and_download(experiment, tmp_path, monkeypatch):
+def test_https_certificate_validation_and_download(experiment, tmp_path):
     import ssl
 
     from lab_control.agent.certificates import prepare_certificate
     from lab_control.agent.connector import connection, download
 
-    _runtime, service, client, token, grant, device = experiment
+    _runtime, service, client, grant, device = experiment
     ports = []
     for _ in range(2):
         with socket.socket() as sock:
@@ -334,22 +336,10 @@ def test_https_certificate_validation_and_download(experiment, tmp_path, monkeyp
     service.server.start()
     path = tmp_path / "https.json"
     service.server.export_connection(path, lan=True)
-    monkeypatch.setenv("LAB_CONTROL_AGENT_TOKEN", token)
-    config, verify, token = connection(path)
+    config, verify = connection(path)
     with httpx2.Client(verify=verify, trust_env=False) as http:
-        assert http.post(config["url"], json={}).status_code == 401
-        assert (
-            http.post(
-                config["url"], headers={"Authorization": "Bearer " + token, "Host": "evil.test"}, json={}
-            ).status_code
-            == 403
-        )
-        assert (
-            http.post(
-                config["url"], headers={"Authorization": "Bearer " + token}, content=b"x" * (1024 * 1024 + 1)
-            ).status_code
-            == 413
-        )
+        assert http.post(config["url"], headers={"Host": "evil.test"}, json={}).status_code == 403
+        assert http.post(config["url"], content=b"x" * (1024 * 1024 + 1)).status_code == 413
     with httpx2.Client(trust_env=False) as http, pytest.raises(httpx2.ConnectError):
         http.post(config["url"], json={})
     wrong, _ = prepare_certificate(tmp_path / "other", "127.0.0.1")
@@ -363,16 +353,11 @@ def test_https_certificate_validation_and_download(experiment, tmp_path, monkeyp
     assert wait_task(service, client, grant, task)["state"] == "completed"
     artifact = service.list_artifacts(client, grant, task["id"])[0]
     output = tmp_path / "downloaded"
-    assert download(config, verify, token, artifact["id"], grant, output)["bytes"] == artifact["size"]
-    service.policy.revoke_client(client)
+    assert download(config, verify, artifact["id"], grant, output)["bytes"] == artifact["size"]
+    download_path = service.get_artifact(client, grant, artifact["id"])["download_path"]
+    service.policy.revoke_grant(grant)
     with httpx2.Client(verify=verify, trust_env=False) as http:
-        assert (
-            http.get(
-                config["url"].removesuffix("/mcp") + "/artifacts/" + artifact["id"],
-                headers={"Authorization": "Bearer " + token},
-            ).status_code
-            == 401
-        )
+        assert http.get(config["url"].removesuffix("/mcp") + download_path).status_code == 403
 
 
 @pytest.mark.parametrize("adapter", ["keithley.2231a", "rigol.dg5504pro", "rs.rtm3004", "keysight.3458a"])
@@ -382,7 +367,7 @@ def test_cross_model_capabilities_and_output_authority(tmp_path, adapter):
         device = runtime.add(config)
         runtime.connect(device, configure_acquisition=False).result()
         service = runtime.agent
-        client, _ = service.policy.create_client("cross model")
+        client = INTERNAL_CLIENT
         capabilities = runtime.sessions.capability_snapshot(device).channels[1]
         operations = [c.name for c in capabilities.operations if c.writable]
         actions = ["view", "apply", "acquire"]
@@ -431,20 +416,78 @@ def test_local_panel_and_reusable_grant_template(experiment, qtbot, tmp_path):
     from lab_control.app import load_stylesheet
     from lab_control.ui.pages.agent_collaboration import AgentCollaborationPanel, GrantDialog
 
-    runtime, service, client, _token, grant, _device = experiment
+    runtime, service, client, grant, _device = experiment
+    runtime.repository.save_workspace(
+        "agent/server", {"lan_enabled": True, "lan_address": "192.0.2.3", "lan_port": 8777}
+    )
     panel = AgentCollaborationPanel(runtime)
     qtbot.addWidget(panel)
     panel.setStyleSheet(load_stylesheet())
     panel.resize(1180, 520)
     panel.show()
     assert not panel.enabled.isChecked() and not panel.service.server
-    dialog = GrantDialog(service, client, template=service.policy.grants[grant])
+    assert not panel.lan_enabled.isChecked()
+    assert panel.lan_port.value() == 8777
+    assert not AgentServer(service).settings["lan_enabled"]
+    template = {**service.policy.grants[grant], "client_id": "legacy"}
+    dialog = GrantDialog(service, template=template)
     qtbot.addWidget(dialog)
-    assert dialog.channels.text() == "1" and dialog.hours.value() == 2
+    assert dialog.channels.text() == "1"
     dialog.save()
     assert dialog.grant_id and dialog.grant_id != grant
+    assert service.policy.grants[dialog.grant_id]["client_id"] == INTERNAL_CLIENT
+    assert service.policy.grants[dialog.grant_id]["expires_at"] is None
     assert service.policy.grants[dialog.grant_id]["limits"]["timebase"]["value"] == [0.0001, 0.01]
     assert panel.grab().save(str(tmp_path / "agent-panel.png"))
+    panel.timer.stop()
+    panel.shutdown()
+
+
+def test_one_click_grants_all_verified_devices_without_io(experiment, qtbot, monkeypatch):
+    from PySide6.QtWidgets import QPushButton
+
+    from lab_control.application.agents.policy import ACTIONS
+    from lab_control.ui.pages.agent_collaboration import AgentCollaborationPanel
+
+    runtime, service, client, limited, scope = experiment
+    source = runtime.add(ConnectionConfig("mock://agent/full-source", "rigol.dg5504pro", "mock"))
+    runtime.connect(source).result()
+    pending = runtime.add(ConnectionConfig("mock://agent/not-yet-identified", "rs.rtm3004", "mock"))
+    panel = AgentCollaborationPanel(runtime)
+    qtbot.addWidget(panel)
+
+    def no_io(*args, **kwargs):
+        pytest.fail("issuing an experiment grant must not access hardware")
+
+    with monkeypatch.context() as guarded:
+        guarded.setattr(runtime.sessions, "submit", no_io)
+        guarded.setattr(runtime, "connect", no_io)
+        guarded.setattr(runtime.discovery, "scan", no_io)
+        button = next(b for b in panel.findChildren(QPushButton) if b.text() == "一键全部授权")
+        button.click()
+    grant_id = panel.grants.currentData()
+    assert grant_id != limited
+    assert "跳过 1 台" in panel.status.text()
+    grant = service.policy.grants[grant_id]
+    assert grant["full_device_access"] and grant["expires_at"] is None
+    assert set(grant["actions"]) == ACTIONS
+    assert {d["device_id"] for d in service.list_devices(client, grant_id)} == {scope, source}
+
+    preview = service.preview_change(client, grant_id, source, "output", {"value": True}, channel=2)
+    assert preview["requires_output_authority"]
+    task = service.apply_change(client, grant_id, source, preview["id"], "full-grant-output")
+    assert wait_task(service, client, grant_id, task)["state"] == "completed"
+    with pytest.raises(DeviceError):
+        service.preview_change(client, grant_id, source, "output", {"value": "invalid"}, channel=2)
+    with pytest.raises(DeviceError, match="通道"):
+        service.read_parameters(client, limited, scope, ["coupling"], channel=2)
+
+    runtime.connect(pending).result()
+    panel.renew_grant()
+    renewed = service.policy.grants[panel.grants.currentData()]
+    assert renewed["id"] != grant_id and renewed["devices"] == grant["devices"]
+    with pytest.raises(DeviceError, match="设备"):
+        service.get_device_state(client, renewed["id"], pending)
     panel.timer.stop()
     panel.shutdown()
 
@@ -454,7 +497,7 @@ def test_firewall_plan_is_scoped_and_maintenance_never_runs_during_session(exper
 
     from lab_control.agent.firewall import firewall_plan, launch_firewall
 
-    runtime, _service, _client, _token, _grant, _device = experiment
+    runtime, _service, _client, _grant, _device = experiment
     settings = {"lan_enabled": True, "lan_address": "192.0.2.1", "lan_port": 8766}
     plan = firewall_plan(settings, Path(sys.executable))
     assert plan["remote_address"] == "LocalSubnet" and plan["profile"] == "Private,Domain"
@@ -466,7 +509,7 @@ def test_firewall_plan_is_scoped_and_maintenance_never_runs_during_session(exper
 def test_acquisition_setup_denial_does_not_initialize_shared_session(experiment, monkeypatch):
     from lab_control.domain.instruments import AcquisitionRequest
 
-    runtime, _service, _client, _token, _grant, device = experiment
+    runtime, _service, _client, _grant, device = experiment
     session = runtime.sessions.sessions[device]
     prepared = []
     acquire = session.adapter.acquire
@@ -491,7 +534,7 @@ def test_acquisition_setup_denial_does_not_initialize_shared_session(experiment,
 
 
 def test_failed_grant_persistence_does_not_expand_authority(experiment, monkeypatch):
-    _runtime, service, client, _token, grant, device = experiment
+    _runtime, service, client, grant, device = experiment
     before = service.policy.snapshot()
 
     def failed():
@@ -502,8 +545,6 @@ def test_failed_grant_persistence_does_not_expand_authority(experiment, monkeypa
         service.policy.create_grant(
             client, [device], ["output_trigger"], channels=[1], operations=[], limits={}
         )
-    with pytest.raises(OSError, match="database full"):
-        service.policy.create_client("failed client")
     assert service.policy.snapshot() == before
     assert "output_trigger" not in service.policy.grants[grant]["actions"]
 
@@ -511,7 +552,7 @@ def test_failed_grant_persistence_does_not_expand_authority(experiment, monkeypa
 def test_shutdown_releases_resources_after_listener_failure(experiment):
     from types import SimpleNamespace
 
-    runtime, service, _client, _token, _grant, _device = experiment
+    runtime, service, _client, _grant, _device = experiment
 
     def failed():
         raise OSError("listener shutdown failed")
@@ -524,7 +565,7 @@ def test_shutdown_releases_resources_after_listener_failure(experiment):
 
 
 def test_runtime_exit_drains_recording_and_persists_completion(experiment, tmp_path):
-    runtime, service, client, _token, grant, device = experiment
+    runtime, service, client, grant, device = experiment
     task = service.start_recording(
         client, grant, device, {"kind": "waveform", "points": 16}, "close-record", 0.05
     )

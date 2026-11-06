@@ -1,0 +1,211 @@
+{
+  "fixture_origin": "Initial documented capability and wire contract; software evidence only",
+  "adapter": "siglent.sps5000x",
+  "capabilities": {
+    "category": "power_supply",
+    "channels": [
+      1
+    ],
+    "operations": [
+      {
+        "name": "voltage",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "V",
+            "minimum": 0,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": 0.001
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://int.siglent.com/u_file/download/22_06_28/SPS5000X_Usermanual_E02B.pdf",
+        "section": ":SOURCE:VOLTAGE:SET",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "current",
+        "parameters": {
+          "value": {
+            "kind": "number",
+            "unit": "A",
+            "minimum": 0,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": 0.001
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://int.siglent.com/u_file/download/22_06_28/SPS5000X_Usermanual_E02B.pdf",
+        "section": ":SOURCE:CURRENT:SET",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "measured_voltage",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://int.siglent.com/u_file/download/22_06_28/SPS5000X_Usermanual_E02B.pdf",
+        "section": "MEASURE:VOLTAGE? CH{ch}",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "measured_current",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://int.siglent.com/u_file/download/22_06_28/SPS5000X_Usermanual_E02B.pdf",
+        "section": "MEASURE:CURRENT? CH{ch}",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "measured_power",
+        "parameters": {},
+        "readable": true,
+        "writable": false,
+        "requires_confirmation": false,
+        "channel_scoped": true,
+        "source": "https://int.siglent.com/u_file/download/22_06_28/SPS5000X_Usermanual_E02B.pdf",
+        "section": "MEASURE:POWER? CH{ch}",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      },
+      {
+        "name": "all_outputs",
+        "parameters": {
+          "value": {
+            "kind": "boolean",
+            "unit": "",
+            "minimum": null,
+            "maximum": null,
+            "choices": [],
+            "required": true,
+            "range_source": "model",
+            "resolution": null
+          }
+        },
+        "readable": true,
+        "writable": true,
+        "requires_confirmation": true,
+        "channel_scoped": false,
+        "source": "https://int.siglent.com/u_file/download/22_06_28/SPS5000X_Usermanual_E02B.pdf",
+        "section": "OUTPUT",
+        "verification": "documented_pending_hardware",
+        "option": "",
+        "available": true,
+        "reason": ""
+      }
+    ]
+  },
+  "profile": {
+    "manufacturer": [
+      "SIGLENT"
+    ],
+    "models": [
+      "SPS5041X",
+      "SPS5042X",
+      "SPS5043X",
+      "SPS5044X",
+      "SPS5045X",
+      "SPS5051X",
+      "SPS5081X",
+      "SPS5082X",
+      "SPS5083X",
+      "SPS5084X",
+      "SPS5085X",
+      "SPS5161X",
+      "SPS5162X",
+      "SPS5163X",
+      "SPS5164X",
+      "SPS5165X"
+    ],
+    "category": "power_supply",
+    "channels": [
+      1
+    ],
+    "source": "https://int.siglent.com/u_file/download/22_06_28/SPS5000X_Usermanual_E02B.pdf",
+    "revision": "SPS5000X User Manual E02B, Remote Control",
+    "status": [
+      "voltage",
+      "current",
+      "all_outputs"
+    ],
+    "identity_query": "*IDN?",
+    "error_query": "",
+    "acquisition": "power",
+    "channel_limits": {}
+  },
+  "commands": {
+    "voltage": {
+      "writes": [
+        ":SOURCE:VOLTAGE:SET CH{ch},{value}"
+      ],
+      "query": ":SOURCE:VOLTAGE:SET? CH{ch}",
+      "select": [],
+      "compare": true
+    },
+    "current": {
+      "writes": [
+        ":SOURCE:CURRENT:SET CH{ch},{value}"
+      ],
+      "query": ":SOURCE:CURRENT:SET? CH{ch}",
+      "select": [],
+      "compare": true
+    },
+    "measured_voltage": {
+      "writes": [],
+      "query": "MEASURE:VOLTAGE? CH{ch}",
+      "select": [],
+      "compare": false
+    },
+    "measured_current": {
+      "writes": [],
+      "query": "MEASURE:CURRENT? CH{ch}",
+      "select": [],
+      "compare": false
+    },
+    "measured_power": {
+      "writes": [],
+      "query": "MEASURE:POWER? CH{ch}",
+      "select": [],
+      "compare": false
+    },
+    "all_outputs": {
+      "writes": [
+        "OUTPUT {value}"
+      ],
+      "query": "OUTPUT?",
+      "select": [],
+      "compare": true
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "operation": "pump_output_off",
+  "channel": 1,
+  "request_hex": "48 F2 00 00 00 00 01 53",
+  "echo_hex": "48 F2 00 00 00 00 01 53",
+  "readback_request_hex": "48 F1 00 00 00 00 01 53"
+}

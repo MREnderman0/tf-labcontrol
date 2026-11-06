@@ -1,0 +1,19 @@
+{
+  "fixture_origin": "Synthetic exchanges based on the E02B user manual",
+  "adapter": "siglent.sps5000x",
+  "operation": "voltage",
+  "channel": 3,
+  "parameters": {"value": 5.125},
+  "identity_exchanges": [
+    ["*IDN?", "Siglent Technologies,SPS5165X,SYNTHETIC,TEST\n"]
+  ],
+  "exchanges": [
+    ["SYSTEM:DEVICE:ROLE? CH1", "M_INDEPEN\n"],
+    ["SYSTEM:DEVICE:ROLE? CH3", "M_INDEPEN\n"],
+    ["LIST? CH3", "0\n"],
+    [":SOURCE:CTRL:VOLT:MODE? CH3", "LOCAL\n"],
+    [":SOURCE:VOLTAGE:SET CH3,5.125", ""],
+    ["*OPC?", "1\n"],
+    [":SOURCE:VOLTAGE:SET? CH3", "5.125000\n"]
+  ]
+}

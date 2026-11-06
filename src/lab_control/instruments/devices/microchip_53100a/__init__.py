@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from lab_control.domain.phase_noise_metrics import PHASE_NOISE_AT_OFFSET_PROFILE
 from lab_control.instruments.devices.definition import DeviceDefinition, DeviceDocumentation
 
 from .adapter import Microchip53100AAdapter, create
@@ -27,4 +28,5 @@ DEFINITION = DeviceDefinition(
     management_surface=True,
     monitoring_surface=False,
     pending_display_name=PENDING_DISPLAY_NAME,
+    metric_profiles=(PHASE_NOISE_AT_OFFSET_PROFILE,),
 )

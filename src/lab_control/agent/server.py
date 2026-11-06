@@ -1,4 +1,4 @@
-"""Authenticated local/LAN MCP listeners attached to one desktop runtime."""
+"""Internal local/LAN MCP listeners attached to one desktop runtime."""
 
 from __future__ import annotations
 
@@ -19,15 +19,26 @@ from starlette.responses import FileResponse, JSONResponse
 from starlette.routing import Mount, Route
 
 from lab_control.agent.certificates import prepare_certificate
-from lab_control.agent.tools import create_mcp_server, principal
+from lab_control.agent.tools import create_mcp_server
+from lab_control.application.agents.policy import INTERNAL_CLIENT
 from lab_control.domain.instruments import DeviceError
 
 DEFAULTS = {"enabled": False, "local_port": 8765, "lan_enabled": False, "lan_address": "", "lan_port": 8766}
 
 
-class Authentication:
-    def __init__(self, app, service, authority: str, scheme: str):
-        self.app, self.service, self.authority, self.scheme = app, service, authority, scheme
+def saved_settings(repository):
+    saved = repository.load_workspace("agent/server", {})
+    settings = {**DEFAULTS, **saved}
+    settings.pop("local_commands", None)
+    if saved.get("access_mode") != INTERNAL_CLIENT:
+        # The old checkbox allowed token-authenticated LAN access only.
+        settings["lan_enabled"] = False
+    return settings
+
+
+class RequestGuard:
+    def __init__(self, app, authority: str, scheme: str):
+        self.app, self.authority, self.scheme = app, authority, scheme
         self.inflight = 0
 
     async def __call__(self, scope, receive, send):
@@ -41,26 +52,17 @@ class Authentication:
             return await JSONResponse({"error": "invalid_host_or_origin"}, status_code=403)(
                 scope, receive, send
             )
-        credential = request.headers.get("authorization", "")
-        try:
-            if not credential.startswith("Bearer ") or len(credential) > 256:
-                raise DeviceError("Unauthorized", "unauthorized")
-            client = self.service.policy.authenticate(credential[7:])
-        except DeviceError:
-            return await JSONResponse({"error": "unauthorized"}, status_code=401)(scope, receive, send)
         if self.inflight >= 32:
             return await JSONResponse({"error": "server_busy"}, status_code=429)(scope, receive, send)
         self.inflight += 1
-        token = principal.set(client)
         try:
             return await self.app(scope, receive, send)
         finally:
-            principal.reset(token)
             self.inflight -= 1
 
 
-def create_app(service, host: str, port: int, *, tls=False):
-    server = create_mcp_server(service)
+def create_app(service, host: str, port: int, *, tls=False, local_commands=None):
+    server = create_mcp_server(service, local_commands=local_commands)
     authority, scheme = f"{host}:{port}", "https" if tls else "http"
     mcp_app = server.streamable_http_app(
         stateless_http=True,
@@ -79,7 +81,7 @@ def create_app(service, host: str, port: int, *, tls=False):
     async def download(request):
         try:
             value, path = service.artifact_path(
-                principal.get(), request.query_params.get("grant_id", ""), request.path_params["artifact_id"]
+                INTERNAL_CLIENT, request.query_params.get("grant_id", ""), request.path_params["artifact_id"]
             )
             return FileResponse(
                 path, filename=Path(value["name"]).name, headers={"Cache-Control": "no-store"}
@@ -90,13 +92,14 @@ def create_app(service, host: str, port: int, *, tls=False):
     app = Starlette(
         routes=[Route("/artifacts/{artifact_id}", download), Mount("/", app=mcp_app)], lifespan=lifespan
     )
-    return Authentication(RequestBodyLimitMiddleware(app, 1024 * 1024), service, authority, scheme)
+    return RequestGuard(RequestBodyLimitMiddleware(app, 1024 * 1024), authority, scheme)
 
 
 class AgentServer:
     def __init__(self, service):
         self.service = service
-        self.settings = {**DEFAULTS, **service.repository.load_workspace("agent/server", {})}
+        self.settings = saved_settings(service.repository)
+        self.local_commands = False
         self.thread: threading.Thread | None = None
         self.servers: list[Any] = []
         self.sockets: list[socket.socket] = []
@@ -105,7 +108,8 @@ class AgentServer:
         self._ready = threading.Event()
 
     def configure(self, settings):
-        candidate = {**DEFAULTS, **settings}
+        candidate = {**DEFAULTS, **settings, "access_mode": INTERNAL_CLIENT}
+        local_commands = candidate.pop("local_commands", False) is True
         for name in ("local_port", "lan_port"):
             if type(candidate[name]) is not int or not 1024 <= candidate[name] <= 65535:
                 raise ValueError("监听端口须为 1024..65535")
@@ -118,6 +122,7 @@ class AgentServer:
                 raise ValueError("请选择本机实验网卡上已配置的 IPv4 地址")
         self.close()
         self.settings = candidate
+        self.local_commands = local_commands and candidate["enabled"]
         self.service.repository.save_workspace("agent/server", candidate)
         if candidate["enabled"]:
             self.start()
@@ -148,7 +153,13 @@ class AgentServer:
                 sock.listen(64)
                 sock.setblocking(False)
                 config = uvicorn.Config(
-                    create_app(self.service, host, port, tls=cert is not None),
+                    create_app(
+                        self.service,
+                        host,
+                        port,
+                        tls=cert is not None,
+                        local_commands=lambda: self.local_commands,
+                    ),
                     host=host,
                     port=port,
                     access_log=False,
@@ -160,6 +171,7 @@ class AgentServer:
                 )
                 self.servers.append(uvicorn.Server(config))
         except Exception:
+            self.local_commands = False
             for sock in self.sockets:
                 sock.close()
             self.sockets.clear()
@@ -202,6 +214,7 @@ class AgentServer:
                 self.thread and self.thread.is_alive() and self._ready.is_set() and not self.error
             ),
             "settings": dict(self.settings),
+            "local_commands": self.local_commands,
             "error": self.error,
         }
 
@@ -215,7 +228,6 @@ class AgentServer:
                 if lan
                 else f"http://127.0.0.1:{self.settings['local_port']}/mcp"
             ),
-            "token_env": "LAB_CONTROL_AGENT_TOKEN",
         }
         if lan:
             assert self.certificate is not None
@@ -224,6 +236,7 @@ class AgentServer:
             json.dump(value, stream, ensure_ascii=False, indent=2)
 
     def close(self):
+        self.local_commands = False
         for server in self.servers:
             server.should_exit = True
         if self.thread and self.thread.is_alive():

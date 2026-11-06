@@ -167,7 +167,7 @@ class OperationEditor(QFrame):
         self.status.setObjectName("operationStatus")
         actions_row.addWidget(self.status, 1)
         self.read_button = QPushButton("读取", self)
-        self.read_button.setVisible(not self.data_only)
+        self.read_button.setVisible(not self.data_only and (cap.readable or bool(cap.parameters)))
         self.read_button.clicked.connect(self.read)
         self.apply_button = QPushButton("应用" if cap.parameters else "执行", self)
         self.apply_button.setObjectName("primaryButton")
@@ -616,7 +616,11 @@ class ControlForm(QWidget):
             return
         for name in self.groups[self.tabs.currentIndex()]:
             editor = self.editors[name]
-            if editor.cap.available and not editor.data_only:
+            if (
+                editor.cap.available
+                and not editor.data_only
+                and (editor.cap.readable or editor.cap.parameters)
+            ):
                 editor.read()
 
     def showEvent(self, event) -> None:  # noqa: N802

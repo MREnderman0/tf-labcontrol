@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import platform
+import re
 import sys
 import threading
 from concurrent.futures import Future
@@ -29,6 +30,7 @@ from lab_control.instruments.registry import (
     create_adapter,
     match,
     normalize_discovery_config,
+    requires_manual_connection,
     transport_for,
 )
 from lab_control.storage.repository import Repository
@@ -182,6 +184,8 @@ class ApplicationRuntime:
         from lab_control.instruments.registry import DEVICE_DEFINITIONS
 
         config = candidate.config
+        if self.hardware and requires_manual_connection(config.adapter):
+            raise ValidationError("该设备需要手动选择串口，扫描只枚举资源")
         definition = DEVICE_DEFINITIONS.get(config.adapter)
         if config.adapter and (
             not candidate.safe_scpi or (definition is not None and definition.identity_requires_adapter)
@@ -274,6 +278,30 @@ class ApplicationRuntime:
         if self.discovery.connection_batch_active:
             raise DeviceError("正在批量连接，请等待完成或停止连接", "connection_batch_busy")
 
+    def connect_manual_serial(self, adapter: str, port: str) -> tuple[str, Future[DeviceIdentity]]:
+        """Open one operator-selected COM port through the normal locked session."""
+        from lab_control.domain.instruments import DeviceError
+
+        selected_port = re.fullmatch(r"COM([1-9][0-9]*)", port.strip(), re.I)
+        if not self.hardware or not requires_manual_connection(adapter) or selected_port is None:
+            raise ValidationError("请选择受支持的手动串口设备和 Windows COM 口")
+        config = ConnectionConfig(f"ASRL{selected_port[1]}::INSTR", adapter, "visa")
+        with self.discovery.lock:
+            self._check_connection_admission()
+            if self.discovery.future and not self.discovery.future.done():
+                raise DeviceError("正在扫描，请等待扫描完成后连接", "scan_busy")
+            if self.leases.owner(config.resource):
+                raise DeviceError("该串口已有会话，请先断开", "resource_busy")
+            record = self.inventory.by_resource(config.resource)
+            if record and (
+                record.get("identityKey")
+                or record.get("identityConflict")
+                or record.get("adapterId", "") not in {"", adapter}
+            ):
+                raise DeviceError("该串口已登记为其他设备，请核对实际接线", "identity_conflict")
+            device_id = self.add(config)
+            return device_id, self._connect(device_id, configure_acquisition=False, manual=True)
+
     def begin_maintenance(self) -> None:
         """Reserve idle hardware admission before an explicitly opened installer."""
         from lab_control.domain.instruments import DeviceError
@@ -324,8 +352,11 @@ class ApplicationRuntime:
         *,
         configure_acquisition: bool = True,
         admission: Callable[[DeviceIdentity | None], None] | None = None,
-    ):
+        manual: bool = False,
+    ) -> Future[DeviceIdentity]:
         record = next(item for item in self.inventory.all() if item["id"] == device_id)
+        if self.hardware and requires_manual_connection(record["adapterId"]) and not manual:
+            raise ValidationError("请从设备总览手动选择此设备的串口")
         if record["discoveryState"] == "conflict":
             from lab_control.domain.instruments import DeviceError
 

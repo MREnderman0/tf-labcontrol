@@ -23,6 +23,7 @@ DEVICE_MODULES = (
     "lab_control.instruments.devices.siglent_sdg6032xe",
     "lab_control.instruments.devices.keithley_2231a",
     "lab_control.instruments.devices.siglent_spd4306x",
+    "lab_control.instruments.devices.siglent_sps5000x",
     "lab_control.instruments.devices.itech_it6322",
     "lab_control.instruments.devices.rigol_dg5504pro",
     "lab_control.instruments.devices.tek_afg31252",
@@ -40,6 +41,7 @@ DEVICE_MODULES = (
     "lab_control.instruments.devices.rigol_m300",
     "lab_control.instruments.devices.kplusk_fxe",
     "lab_control.instruments.devices.keysight_53220a",
+    "lab_control.instruments.devices.custom_optical_comb_pump",
 )
 
 

@@ -288,6 +288,10 @@ output_format=读数格式
 function_status=当前测量功能
 integration_status=当前积分时间
 temperature=温度
+pump_output_off=关闭 CH 1 泵浦输出
+pump_lowpass=LD 低通滤波器
+pump_current_limit=电流上限读回
+thermistor_beta=热敏电阻 B 值
 sample_count=采样数量
 points=扫描点数
 if_bandwidth=中频带宽
@@ -338,6 +342,7 @@ COMMON = {
     "phase",
     "power",
     "output",
+    "pump_output_off",
     "all_outputs",
     "voltage",
     "current",
@@ -473,6 +478,21 @@ def data_sources(config: ConnectionConfig) -> tuple[DataSource, ...]:
     if category == "optical_spectrometer":
         label = "光谱曲线（模拟）" if config.transport == "mock" else "光谱曲线"
         return (DataSource("spectrum", label, "spectrum"),)
+    if category == "pump_driver" and config.transport != "mock":
+        return (
+            DataSource("reading", "泵浦实测电流", "scalar", measurement="current"),
+            *(
+                DataSource(key, label, "scalar", key, key)
+                for key, label in (
+                    ("pump_ld_voltage", "LD 电压"),
+                    ("pump_ld_temperature_raw", "LD 温度（原始码）"),
+                    ("pump_photodiode_current", "光电二极管电流"),
+                    ("pump_tec_current_raw", "TEC 电流（原始码）"),
+                    ("pump_tec_voltage_raw", "TEC 电压（原始码）"),
+                    ("pump_thermistor_resistance", "热敏电阻阻值"),
+                )
+            ),
+        )
     return (
         DataSource(
             "reading",

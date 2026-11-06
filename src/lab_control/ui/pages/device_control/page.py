@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 
 from lab_control.application.controls import CATEGORY_LABELS, MEASUREMENT_CATEGORIES
+from lab_control.instruments.registry import requires_manual_connection
 from lab_control.ui.controller import WorkspaceController
 from lab_control.ui.pages.device_control.form import ControlForm
 from lab_control.ui.widgets.device_selector import DeviceSelector
@@ -43,7 +44,10 @@ class DeviceControlPage(QWidget):
             text = f"已注册 {len(caps.operations)} 项能力 · {len(caps.channels)} 个通道。"
             if measurement:
                 text += "影响曲线和测量结果的参数统一放在实时监测页。"
-            if self.controller.records[device_id]["adapterId"].startswith("sim."):
+            adapter = self.controller.records[device_id]["adapterId"]
+            if self.controller.runtime.hardware and requires_manual_connection(adapter):
+                text = "人工选择串口 · CH 1 协议读回 · 可读取状态和关闭输出。参数写入与开启输出待核定。"
+            elif adapter.startswith("sim."):
                 text += " 此类别仅为演示，真实型号和协议待补。"
             self.note.setText(text)
         else:

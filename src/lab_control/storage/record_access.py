@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import os
 import threading
+from collections.abc import Iterable
 from pathlib import Path
 
 from lab_control.application.leases import FileLease
@@ -18,13 +19,33 @@ class RecordAccess:
         self.held: dict[Path, FileLease] = {}
 
     def acquire(self, folder: Path) -> Path:
-        path = folder.resolve(strict=True)
+        return self.acquire_many((folder,))[0]
+
+    def acquire_many(self, folders: Iterable[Path]) -> tuple[Path, ...]:
+        paths = tuple(dict.fromkeys(folder.resolve(strict=True) for folder in folders))
+        if not paths:
+            return ()
+        selected = set(paths)
         with self.lock:
-            if any(path == p or path in p.parents or p in path.parents for p in self.held):
+            held_ancestors = {parent for path in self.held for parent in path.parents}
+            if any(
+                path in self.held
+                or path in held_ancestors
+                or any(parent in self.held or parent in selected for parent in path.parents)
+                for path in paths
+            ):
                 raise DeviceError("此采集记录已有处理或文件操作，请等待完成", "recording_busy")
-            digest = hashlib.sha256(os.path.normcase(str(path)).encode("utf-8")).hexdigest()
-            self.held[path] = FileLease(self.root / "processing-locks" / f"{digest}.lock")
-        return path
+            acquired = []
+            try:
+                for path in paths:
+                    digest = hashlib.sha256(os.path.normcase(str(path)).encode("utf-8")).hexdigest()
+                    self.held[path] = FileLease(self.root / "processing-locks" / f"{digest}.lock")
+                    acquired.append(path)
+            except Exception:
+                for path in reversed(acquired):
+                    self.release(path)
+                raise
+        return paths
 
     def release(self, path: Path) -> None:
         with self.lock:

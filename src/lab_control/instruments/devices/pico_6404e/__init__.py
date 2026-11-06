@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from lab_control.domain.voltage_waveform_metrics import VOLTAGE_WAVEFORM_STATISTICS_PROFILE
 from lab_control.instruments.devices.definition import DeviceDefinition, DeviceDocumentation, DeviceModel
 
 from .adapter import SOURCE, PicoAdapter, enumerate_pico
@@ -50,4 +51,5 @@ DEFINITION = DeviceDefinition(
     acquisition_kinds=("waveform", "streaming"),
     acquisition_initiate_default=True,
     acquisition_initiate_editable=False,
+    metric_profiles=(VOLTAGE_WAVEFORM_STATISTICS_PROFILE,),
 )

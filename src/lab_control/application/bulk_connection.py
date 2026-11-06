@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 from lab_control.application.config import config_from_record
 from lab_control.discovery.presence import LIVE_CONNECTIONS, is_current
 from lab_control.domain.instruments import DeviceError, utc_now
-from lab_control.instruments.registry import describe
+from lab_control.instruments.registry import describe, requires_manual_connection
 
 if TYPE_CHECKING:
     from lab_control.application.runtime import ApplicationRuntime
@@ -56,7 +56,12 @@ class BulkConnectionService:
             if runtime.discovery.future and not runtime.discovery.future.done():
                 raise DeviceError("正在扫描并核验设备，请等待扫描完成后连接", "scan_busy")
             states = {s["stableDeviceId"]: s for s in runtime.sessions.snapshots()}
-            records = tuple(r for r in runtime.inventory.all() if is_current(r, states.get(r["id"])))
+            records = tuple(
+                r
+                for r in runtime.inventory.all()
+                if is_current(r, states.get(r["id"]))
+                and not (runtime.hardware and requires_manual_connection(r["adapterId"]))
+            )
             self.cancelled.clear()
             self._progress = {
                 "state": "running",

@@ -18,7 +18,7 @@ from lab_control.application.catalog import instrument_category
 from lab_control.application.config import config_from_record
 from lab_control.application.controls import CATEGORY_LABELS
 from lab_control.domain.instruments import jsonable
-from lab_control.instruments.registry import describe
+from lab_control.instruments.registry import describe, requires_manual_connection
 from lab_control.ui.widgets.slot_picker import choose_slot
 from lab_control.ui.widgets.workspace_combo import choose_item
 
@@ -53,6 +53,9 @@ class WorkspaceActions:
         try:
             if key == "connect":
                 config = config_from_record(window.records[device_id])
+                if requires_manual_connection(config.adapter) and window.runtime.hardware:
+                    window.show_manual_serial(config.adapter)
+                    return
                 # A USB-to-serial bridge identifies the connection, not the
                 # instrument serial. Reuse its saved adapter as bulk connect does.
                 if config.usb_instance_id and config.transport != "serial" and not config.expected_serial:
@@ -66,6 +69,13 @@ class WorkspaceActions:
                     window.runtime.add(replace(config, expected_serial=serial.strip()))
                 window.bridge.watch(window.runtime.connect(device_id), "connect")
             elif key in {"disconnect", "reconnect"}:
+                if (
+                    key == "reconnect"
+                    and window.runtime.hardware
+                    and requires_manual_connection(window.records[device_id]["adapterId"])
+                ):
+                    window._failed("请先断开原会话，再手动选择泵浦串口。")
+                    return
 
                 def change():
                     window.runtime.sessions.disconnect(device_id, drain_reads=True)

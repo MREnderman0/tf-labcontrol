@@ -2,6 +2,10 @@
 
 from pathlib import Path
 
+from lab_control.domain.optical_power_metrics import (
+    OPTICAL_POWER_FLUCTUATION_PROFILE,
+    OPTICAL_POWER_REFERENCE_DEVIATION_PROFILE,
+)
 from lab_control.domain.processing import ProcessingProfile
 from lab_control.instruments.devices.definition import DeviceDefinition, DeviceDocumentation
 
@@ -24,6 +28,7 @@ DEFINITION = DeviceDefinition(
     capability_schema=capability_schema,
     identity_requires_adapter=True,
     offline_processing=ProcessingProfile("scalar", power_units=True),
+    metric_profiles=(OPTICAL_POWER_FLUCTUATION_PROFILE, OPTICAL_POWER_REFERENCE_DEVIATION_PROFILE),
 )
 
 __all__ = ["DEFINITION", "Jw8105Adapter"]
