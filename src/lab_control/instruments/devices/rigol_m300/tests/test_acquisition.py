@@ -12,7 +12,7 @@ def snapshot(
     channels=(428,),
     *,
     unit="C",
-    config="TEMP THER,10000,+1.000000E+00,+3.000000E-07",
+    config="RES +2.000000E+04,+1.000000E-02",
     trigger="IMM",
     count="1",
     format_on=False,
@@ -40,12 +40,12 @@ def input_adapter(exchanges):
     return a, transport
 
 
-def test_temperature_units_and_physical_channel_are_preserved():
+def test_unmapped_resistance_and_physical_channel_are_preserved():
     a, transport = input_adapter(snapshot() + [("READ?", b"25.35")] + snapshot())
     frame = a.acquire(AcquisitionRequest("scalar", (428,), confirmed=True))
     m = frame.measurements[0]
-    assert (m.channel, m.quantity, m.unit, m.values) == (428, "temperature", "°C", (25.35,))
-    assert "curve" in m.metadata["conversion"]
+    assert (m.channel, m.quantity, m.unit, m.values) == (428, "resistance", "ohm", (25.35,))
+    assert "temperature_conversion" not in m.metadata
     assert transport.history.count("READ?") == 1
 
 
@@ -68,7 +68,7 @@ def test_invalid_reply_is_not_retried_or_hidden_as_configuration_change(raw, cod
 
 
 def test_complete_valid_reply_with_changing_units_is_discarded():
-    a, _ = input_adapter(snapshot() + [("READ?", b"25.35")] + snapshot(unit="F"))
+    a, _ = input_adapter(snapshot() + [("READ?", b"25.35")] + snapshot(config="RES +2E5,+1E-1"))
     with pytest.raises(DeviceError) as caught:
         a.acquire(AcquisitionRequest(confirmed=True))
     assert caught.value.code == "configuration_changed"
@@ -157,22 +157,12 @@ def test_uncertain_write_is_never_replayed():
     assert transport.history == ['FUNC "TEMP",(@428)']
 
 
-def test_nineteen_channel_bank_keeps_each_nominal_and_value_in_order():
-    channels = tuple(range(401, 420))
-    replies = snapshot(channels)
-    for i, (query, reply) in enumerate(replies):
-        if query.startswith("CONF?") and int(query[-4:-1]) <= 416:
-            replies[i] = (query, reply.replace(b"10000", b"5000"))
-    values = tuple(20 + index / 10 for index in range(19))
-    raw = ",".join(map(str, values)).encode()
-    a, transport = input_adapter(replies + [("READ?", raw)] + replies)
-    frame = a.acquire(AcquisitionRequest("scalar", channels, confirmed=True))
-    assert tuple(m.channel for m in frame.measurements) == channels
-    assert tuple(m.values[0] for m in frame.measurements) == values
-    assert all(m.unit == "°C" for m in frame.measurements)
-    assert all("THER,5000," in m.metadata["configuration"] for m in frame.measurements[:16])
-    assert all("THER,10000," in m.metadata["configuration"] for m in frame.measurements[16:])
-    assert transport.history.count("READ?") == 1
+def test_native_temperature_is_blocked_before_scan_on_an_unconfigured_computer():
+    a, transport = input_adapter(snapshot(config="TEMP THER,5000,+1E0,+3E-7"))
+    with pytest.raises(DeviceError, match="已停用仪器直读温度"):
+        a.acquire(AcquisitionRequest(confirmed=True))
+    assert "READ?" not in transport.history
+    assert all("?" in command for command in transport.history)
 
 
 def test_one_open_input_rejects_entire_bank_without_replaying_scan():

@@ -15,8 +15,20 @@ from lab_control.storage.recording import read_frames
 from lab_control.ui.pages.monitoring.page import MonitoringPage
 from lab_control.ui.pages.monitoring.scan import ScanReadoutCard, ScanTrendPlot
 from lab_control.ui.real_window import RealWindow
+from lab_control.ui.widgets.device_pool import DeviceDetails
 
 CHANNELS = tuple(range(401, 420))
+
+
+def test_setup_pending_is_a_notice_not_a_connection_error(qtbot):
+    details = DeviceDetails()
+    qtbot.addWidget(details)
+    message = "M300 采集待准备：触发次数需为 1；请停止扫描并重新连接。"
+    details.set_fields("M300", "本次发现", {"connection": "已连接", "error": "无", "notice": message})
+    assert details.problem.isHidden()
+    assert not details.notice.isHidden() and details.notice.text() == message
+    details.set_fields("M300", "本次发现", {"connection": "已连接", "error": "无"})
+    assert details.notice.isHidden()
 
 
 def scan_instrument(config):
@@ -87,7 +99,7 @@ def test_scan_curve_selection_keeps_full_recording_and_snapshot(qtbot, tmp_path,
         assert page.readout_grid.itemAtPosition(0, 1).widget() is page.cards[402]
         assert page.readout_grid.itemAtPosition(9, 0).widget() is page.cards[419]
         assert page.readout_grid.itemAtPosition(9, 1) is None
-        assert all(card.height() == 28 and not hasattr(card, "peak") for card in page.cards.values())
+        assert all(card.height() == 28 and hasattr(card, "peak") for card in page.cards.values())
         assert not hasattr(page, "form")
         assert runtime.monitoring.settings_sync.advanced == ()
 
@@ -101,6 +113,7 @@ def test_scan_curve_selection_keeps_full_recording_and_snapshot(qtbot, tmp_path,
         assert task.requests[0].channels == CHANNELS and task.requests[0].confirmed
         assert len(page.plot.curves) == 19
         assert page.cards[401].unit.text() == "°C"
+        assert page.cards[401].peak.text() == "0"
         assert page.plot.plot.viewRange()[1][0] < -3
 
         page.record()
@@ -129,9 +142,11 @@ def test_scan_curve_selection_keeps_full_recording_and_snapshot(qtbot, tmp_path,
         snapshot = json.loads((folder / "_raw" / "snapshot.json").read_text(encoding="utf-8"))
         assert tuple(m["channel"] for m in snapshot["measurements"]) == CHANNELS
 
+        count_before_hide = runtime.monitoring.temperature_window(device)[0].count
         before_hide = task.sequence
         window.navigate("设备管理")
         qtbot.waitUntil(lambda: task.sequence > before_hide + 1, timeout=8000)
+        assert runtime.monitoring.temperature_window(device)[0].count > count_before_hide
         window.navigate("实时监测", "multimeter", device)
         qtbot.waitUntil(lambda: page.plot.displayed_frame.sequence >= task.sequence, timeout=8000)
         assert all(not check.isChecked() for check in page.channel_checks.values())

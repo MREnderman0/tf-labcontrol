@@ -20,7 +20,7 @@ from lab_control.storage.processing_paths import filesystem_path
 from lab_control.storage.processing_results import ResultReader
 from lab_control.storage.recording_catalog import linked, read_json
 
-FIGURE_VERSION = 3
+FIGURE_VERSION = 4
 LABELS = {
     "power": "Power",
     "frequency": "Frequency",
@@ -194,6 +194,43 @@ def generate_pngs(
                 curves = [(f"CH {s.get('channel', 1)}", *data[s["id"]]) for s in selected]
                 draw(key, curves, series=ids)
                 progress(index, len(groups))
+            stats = info.get("temperature_statistics", {})
+            if stats.get("channels"):
+                from lab_control.ui.widgets.publication_table import export_table
+
+                name = "温度峰峰值.png"
+                path = staging / name
+
+                def number(value):
+                    return "--" if value is None else f"{value:.9g}"
+
+                rows = [
+                    (
+                        f"CH {row['channel']}",
+                        row["unit"],
+                        number(row["minimum"]),
+                        number(row["maximum"]),
+                        number(row["peak_to_peak"]),
+                        str(row["count"]),
+                    )
+                    for row in stats["channels"]
+                ]
+                export_table(
+                    path,
+                    f"Temperature peak-to-peak | final 30 min\nElapsed window: {stats['start_elapsed']:g} - {stats['end_elapsed']:g} s",
+                    ("Channel", "Unit", "Minimum", "Maximum", "Peak-to-peak", "Samples"),
+                    rows,
+                    check_cancel=lambda: check_cancel(cancel),
+                )
+                files.append(
+                    {
+                        "path": name,
+                        "bytes": path.stat().st_size,
+                        "sha256": _digest(path),
+                        "quantity": "temperature",
+                        "statistics": stats,
+                    }
+                )
         else:
             progress(0, info["frames"])
             for sequence in range(1, info["frames"] + 1):

@@ -21,7 +21,7 @@ class ResultReader:
         self.metadata = read_json(folder / "result.json", {})
         if (
             not isinstance(self.metadata, dict)
-            or self.metadata.get("version") not in {1, 2}
+            or self.metadata.get("version") not in {1, 2, 3}
             or self.metadata.get("state") != "complete"
         ):
             raise ValueError("处理结果未完成或版本不支持")
@@ -35,7 +35,17 @@ class ResultReader:
                 {"id": key, **json.loads(document)} for key, document in db.execute("SELECT * FROM series")
             ]
             start, end = db.execute("SELECT min(elapsed),max(elapsed) FROM timeline").fetchone()
-        return {**self.metadata, "series": series, "range": (start or 0, end or 0)}
+            stats = self.metadata.get("temperature_statistics")
+            if stats is None:
+                from lab_control.storage.temperature_statistics import temperature_statistics
+
+                stats = temperature_statistics(db)
+        return {
+            **self.metadata,
+            "series": series,
+            "range": (start or 0, end or 0),
+            "temperature_statistics": stats,
+        }
 
     def frame(self, sequence: int) -> dict[str, Any]:
         with closing(self.connect()) as db:

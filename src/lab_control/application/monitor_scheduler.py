@@ -51,8 +51,8 @@ class MonitorScheduler:
         except DeviceError as exc:
             if record_session and task.recorder:
                 task.recorder.cancel_reservation()
-            if exc.code == "waveform_unavailable":
-                # A model-confirmed empty record is not a transport failure.
+            if exc.code in {"waveform_unavailable", "acquisition_setup_blocked"}:
+                # A known setup constraint or empty record is not a transport failure.
                 # End this read without reconnecting or initiating the instrument.
                 task.running = False
                 task.error = ""
@@ -151,6 +151,7 @@ class MonitorScheduler:
         if request.kind == "scalar":
             task.frame_history.setdefault(key, deque(maxlen=1200)).append(task.frames[key])
             task.power_window.add(task.frames[key])
+            task.temperature_window.add(task.frames[key])
         task.timings.append(
             {
                 "sequence": task.sequence,
@@ -298,6 +299,9 @@ class MonitorScheduler:
                     owner._pause(device_id, str(exc))
             finally:
                 task.power_window.advance(time.perf_counter(), stopped=not task.running and not task.pending)
+                task.temperature_window.advance(
+                    time.perf_counter(), stopped=not task.running and not task.pending
+                )
                 # An error can finish the last in-flight read/write during close.
                 # Release the monitoring flag in this tick, before _loop may exit.
                 if (

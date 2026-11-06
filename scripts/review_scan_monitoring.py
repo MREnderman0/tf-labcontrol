@@ -16,6 +16,7 @@ from lab_control.app import load_stylesheet, load_ui_font
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.monitoring_state import MonitorFrame
 from lab_control.application.runtime import ApplicationRuntime
+from lab_control.application.temperature_window import TemperatureWindow
 from lab_control.demo.instrument import SimulatedInstrument
 from lab_control.domain.instruments import Measurement, MeasurementBatch
 from lab_control.ui.real_window import RealWindow
@@ -23,7 +24,7 @@ from lab_control.ui.real_window import RealWindow
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, default=Path("tmp/reviews/m300-channel-list"))
+    parser.add_argument("--output", type=Path, default=Path(".temp/reviews/m300-channel-list"))
     output = parser.parse_args().output
     output.mkdir(parents=True, exist_ok=True)
     app = QApplication.instance() or QApplication([])
@@ -52,6 +53,7 @@ def main() -> None:
         app.processEvents()
         app.processEvents()
         request = page.request(channels, confirmed=True)
+        temperature_window = TemperatureWindow()
         for index in range(181):
             measurements = tuple(
                 Measurement("temperature", "°C", (23.0 + i * 0.19 + 0.1 * math.sin(index / 20 + i),), ch)
@@ -66,11 +68,14 @@ def main() -> None:
                 session_id="offline-preview",
             )
             page.plot.show_frame(frame, channels)
+            temperature_window.add(frame)
         for measurement in measurements:
             page.cards[measurement.channel].update_measurement(measurement)
         page.trend_label.setText("温度趋势（°C）")
         page.status.setText("离线布局预览 · 模拟温度数据")
         page.channel_checks[408].setChecked(False)
+        for snapshot in temperature_window.snapshot(540, stopped=True):
+            page.cards[snapshot.channel].update_temperature_window(snapshot)
         for name, size in (("1280x760", (1280, 760)), ("1440x900", (1440, 900)), ("900x760", (900, 760))):
             window.resize(*size)
             for _ in range(3):
@@ -81,6 +86,7 @@ def main() -> None:
             assert page.readout_grid.itemAtPosition(9, 0).widget() is page.cards[419]
             for card in page.cards.values():
                 assert card.value.fontMetrics().horizontalAdvance(card.value.text()) <= card.value.width()
+                assert card.peak.fontMetrics().horizontalAdvance(card.peak.text()) <= card.peak.width()
             page.status.setText("离线布局预览 · 模拟温度数据")
             window.grab().save(str(output / f"{name}.png"))
             print(f"{name}: actual={window.width()}x{window.height()}, page={page.width()}x{page.height()}")

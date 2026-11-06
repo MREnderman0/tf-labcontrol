@@ -694,6 +694,7 @@ class WorkspaceOverview:
                     "address_reassigned": "地址已分配给其他设备",
                 }.get(probe, probe or "尚未确认"),
                 "error": str(state.get("lastError") or record.get("lastError") or "无"),
+                "notice": str(state.get("acquisitionPreparation", {}).get("message", "")),
                 "readback": json.dumps(state["lastStatus"], ensure_ascii=False, indent=2)
                 if state.get("lastStatus")
                 else "暂无状态读回",

@@ -11,11 +11,12 @@ import numpy as np
 
 from lab_control.domain.instruments import Quality
 from lab_control.domain.power import power_to_watts
+from lab_control.domain.rolling_extrema import WINDOW_SECONDS, append_extrema, expire_extrema
 
 if TYPE_CHECKING:
     from lab_control.application.monitoring_state import MonitorFrame
 
-POWER_WINDOW_SECONDS = 1800.0
+POWER_WINDOW_SECONDS = WINDOW_SECONDS
 
 
 @dataclass(frozen=True)
@@ -58,21 +59,10 @@ class _Channel:
 
     def append(self, at: float, watts: float) -> None:
         point = PowerPoint(at, watts, self.segment)
-        self.points.append(point)
-        while self.minima and self.minima[-1].watts >= watts:
-            self.minima.pop()
-        while self.maxima and self.maxima[-1].watts <= watts:
-            self.maxima.pop()
-        self.minima.append(point)
-        self.maxima.append(point)
+        append_extrema(self.points, self.minima, self.maxima, point, lambda p: p.watts)
 
     def expire(self, cutoff: float) -> bool:
-        changed = False
-        for queue in (self.points, self.minima, self.maxima):
-            while queue and queue[0].at < cutoff:
-                queue.popleft()
-                changed = True
-        return changed
+        return expire_extrema(self.points, self.minima, self.maxima, cutoff)
 
 
 class PowerWindow:

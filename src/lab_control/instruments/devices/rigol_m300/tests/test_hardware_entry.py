@@ -2,7 +2,7 @@ from concurrent.futures import Future
 from pathlib import Path
 from types import SimpleNamespace
 
-from ..hardware import readonly, verify
+from ..hardware import readonly, software_temperature, verify
 from ..hardware.records import summarize
 
 
@@ -69,52 +69,64 @@ def test_recording_verification_handles_public_segment_path_strings(monkeypatch,
         start=lambda *a, **k: None,
         tasks={"device": SimpleNamespace(recorder=recorder)},
         stop=lambda *a: done(),
+        temperature_window=lambda *a: (),
     )
     app = SimpleNamespace(
         monitoring=monitoring,
         sessions=SimpleNamespace(sessions={"device": SimpleNamespace(controls_locked=False)}),
     )
     report = {"stages": {}}
-    test = verify.ThermistorTest(app, "device", tmp_path, report, 428)
+    test = software_temperature.SoftwareTemperatureTest(app, "device", tmp_path, report, {428: "4813-s02-v1"})
 
     def frames(path):
         assert isinstance(path, Path)
-        return [dict(measurements=[dict(channel=428, unit="°C")])] * 2
+        return [
+            dict(
+                measurements=[
+                    dict(
+                        channel=428,
+                        quantity="temperature",
+                        unit="°C",
+                        values=[24.99994974682602],
+                        metadata={
+                            "temperature_conversion": {"resistance_ohm": 10000, "curve_id": "4813-s02-v1"}
+                        },
+                    )
+                ]
+            )
+        ] * 2
 
-    monkeypatch.setattr(verify, "read_frames", frames)
+    monkeypatch.setattr(software_temperature, "read_frames", frames)
     test.monitor(0)
     assert report["stages"]["recording"]["state"] == "passed"
     assert report["stages"]["stop"]["controls_unlocked"]
 
 
-def test_failed_restoration_is_reported_and_other_fields_still_checked(tmp_path):
-    test = verify.ThermistorTest(None, "device", tmp_path, {"operations": []}, 428)
-    test.initial = {"scan_list": "(@)", "function": "VOLT"}
-    test.latent = {"thermistor_type": 5000, "sensor": "TC", "unit": "C"}
-    values = {
-        "TEMP:TRAN:THER:TYPE? (@428)": "10000",
-        "TEMP:TRAN:TYPE? (@428)": "THER",
-        "UNIT:TEMP? (@428)": "C",
-        "ROUT:SCAN?": "(@428)",
-        "FUNC? (@428)": "TEMP",
-        "SYST:ERR?": "0,No error",
-    }
-    restored = []
+def test_old_native_temperature_hardware_api_cannot_open_runtime(monkeypatch, tmp_path):
+    from lab_control.domain.connections import ConnectionConfig
 
-    def apply(operation, value, channel=1):
-        restored.append(operation)
-        if operation == "thermistor_type":
-            raise RuntimeError("restoration timeout")
-        query = {
-            "temperature_sensor": "TEMP:TRAN:TYPE? (@428)",
-            "scan_list": "ROUT:SCAN?",
-            "function": "FUNC? (@428)",
-        }[operation]
-        values[query] = value
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Retired temperature path must not access instruments")
 
-    test.apply = apply
-    test.q = lambda query: values[query]
-    test.snapshot = lambda: dict(test.initial)
-    result = test.restore()
-    assert result["state"] == "failed" and "timeout" in result["errors"][0]
-    assert restored == ["thermistor_type", "temperature_sensor", "scan_list", "function"]
+    monkeypatch.setattr(verify, "ApplicationRuntime", forbidden)
+    folder = tmp_path / "hardware-tests" / "RIGOL-M300-TEST" / "retired"
+    report = verify.verify(
+        ConnectionConfig("mock://m300", "rigol.m300", "mock", expected_serial="TEST"),
+        folder,
+        root=tmp_path,
+        channel=428,
+    )
+    assert "已停用" in report["error"]
+    assert (folder / "results.json").exists()
+
+
+def test_curve_groups_are_explicit_and_reject_legacy_nominals():
+    import pytest
+
+    from lab_control.domain.instruments import DeviceError
+
+    parse = software_temperature.parse_curve_groups
+    assert len(parse(["401:416=mf501-v1", "417:419=4813-s02-v1"])) == 19
+    for groups in (["401=5000"], ["401=mf501-v1", "401=4813-s02-v1"], ["499=mf501-v1"]):
+        with pytest.raises((ValueError, DeviceError)):
+            parse(groups)

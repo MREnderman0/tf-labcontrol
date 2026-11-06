@@ -73,10 +73,11 @@ class ScanReadoutCard(PowerMeterReadoutCard):
     """A compact list cell; two consecutive channels share each visual row."""
 
     display_unit = ""
-    WIDTH = 190
+    WIDTH = 260
     HEIGHT = 28
-    CHANNEL_WIDTH = 76
-    UNIT_WIDTH = 24
+    CHANNEL_WIDTH = 72
+    UNIT_WIDTH = 22
+    PEAK_WIDTH = 88
 
     def __init__(self, channel: int, parent=None) -> None:
         super().__init__(channel, parent)
@@ -103,6 +104,11 @@ class ScanReadoutCard(PowerMeterReadoutCard):
         self.unit.setFixedWidth(self.UNIT_WIDTH)
         self.unit.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.heading.addWidget(self.unit)
+        self.peak = QLabel("—")
+        self.peak.setObjectName("scanReadoutValue")
+        self.peak.setFixedWidth(self.PEAK_WIDTH)
+        self.peak.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self.heading.addWidget(self.peak)
 
     def display_value(self, value: float, unit: str) -> float | None:
         return value
@@ -115,7 +121,7 @@ class ScanReadoutCard(PowerMeterReadoutCard):
         self.unit.setText(self.display_unit)
         self.value.setAccessibleName(f"CH {self.channel} · {self.value.text()} {self.display_unit}")
         if measurement and measurement.quantity == "temperature":
-            self.meta.setText("仪器温度读数")
+            self.meta.setText("实测电阻按传感器曲线换算温度")
         elif measurement:
             self.meta.setText(
                 {"resistance": "两线电阻", "voltage": "直流电压"}.get(measurement.quantity, "仪器读数")
@@ -124,6 +130,21 @@ class ScanReadoutCard(PowerMeterReadoutCard):
             self.setToolTip(f"{self.toolTip()}\n{self.meta.text()}\n更新时间：{timestamp or '未提供'}")
             self.value.setToolTip(self.toolTip())
         self.unit.setToolTip(self.value.toolTip())
+
+    def update_temperature_window(self, snapshot) -> None:
+        value = snapshot.peak_to_peak if snapshot else None
+        self.peak.setText("—" if value is None else f"{value:.6g}")
+        self.peak.setAccessibleName(f"CH {self.channel} 温度峰峰值 {self.peak.text()}")
+        self.peak.setToolTip(
+            "不足 30 min 使用本轮全部有效样本；超过后仅使用最近 30 min（含边界）。\n"
+            + (
+                f"最小值：{snapshot.minimum:.9g} {snapshot.unit}\n"
+                f"最大值：{snapshot.maximum:.9g} {snapshot.unit}\n"
+                f"峰峰值：{value:.9g} {snapshot.unit} · 样本数：{snapshot.count}"
+                if value is not None
+                else "窗口内无有效温度样本"
+            )
+        )
 
 
 def scan_readout_header(parent=None) -> QWidget:
@@ -146,6 +167,11 @@ def scan_readout_header(parent=None) -> QWidget:
         row.addWidget(channel)
         row.addWidget(value, 1)
         row.addWidget(unit)
+        peak = QLabel("峰峰值 · 30 min")
+        peak.setObjectName("powerReadoutHeading")
+        peak.setFixedWidth(ScanReadoutCard.PEAK_WIDTH)
+        peak.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        row.addWidget(peak)
         grid.addWidget(group, 0, column)
         grid.setColumnStretch(column, 1)
     header.setFixedHeight(26)
@@ -165,7 +191,7 @@ class ScanMonitoringPage(OpticalPowerMonitoringPage):
 
     def __init__(self, controller, add_card, parent=None, *, manage_selection=True):
         super().__init__(controller, add_card, parent, manage_selection=manage_selection)
-        self.notice = QLabel("输入参数沿用仪器设置；温度使用仪器当前曲线，精度须另行核实。")
+        self.notice = QLabel("温度由实测电阻按绑定的传感器曲线换算；峰峰值使用最近 30 min 的有效温度。")
         self.notice.setObjectName("mutedText")
         self.notice.setWordWrap(True)
         self.main_layout.insertWidget(2, self.notice)
@@ -176,7 +202,7 @@ class ScanMonitoringPage(OpticalPowerMonitoringPage):
         readout_panel = self.splitter.widget(1)
         assert readout_panel is not None
         readout_panel.setObjectName("scanReadoutList")
-        readout_panel.setMinimumWidth(420)
+        readout_panel.setMinimumWidth(560)
         panel_layout = readout_panel.layout()
         assert isinstance(panel_layout, QVBoxLayout)
         panel_layout.setContentsMargins(10, 8, 10, 8)
@@ -189,7 +215,7 @@ class ScanMonitoringPage(OpticalPowerMonitoringPage):
         self.readout_grid.setHorizontalSpacing(12)
         self.readout_grid.setVerticalSpacing(0)
         self.splitter.setStretchFactor(1, 0)
-        self.splitter.setSizes([800, 440])
+        self.splitter.setSizes([620, 560])
         self._reflow_readout_cards()
         self.refresh()
 
@@ -245,6 +271,17 @@ class ScanMonitoringPage(OpticalPowerMonitoringPage):
 
     def refresh_frame(self, device_id: str) -> None:
         super().refresh_frame(device_id)
+        if device_id == self.device_id:
+            assert isinstance(self.plot, ScanTrendPlot)
+            snapshots = self.controller.runtime.monitoring.temperature_window(device_id)
+            histories = (
+                {s.channel: s for s in snapshots}
+                if self.plot.measurement_kind and self.plot.measurement_kind[0] == "temperature"
+                else {}
+            )
+            for channel, card in self.cards.items():
+                if isinstance(card, ScanReadoutCard):
+                    card.update_temperature_window(histories.get(channel))
         self.plot.set_channels(self.displayed_channels())
         self.trend_label.setText(
             f"{self.plot.axis_label}趋势（{self.plot.display_unit}）"

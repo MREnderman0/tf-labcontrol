@@ -8,16 +8,38 @@ from typing import TYPE_CHECKING, Any, Callable
 from lab_control.domain.instruments import DeviceCommand, DeviceError, ValidationError, utc_now
 
 from .protocol import boolean, csv_numbers, measurement_kind, scan_channels
+from .thermistor_curves import CURVES
 
 if TYPE_CHECKING:
     from .adapter import M300Adapter
 
 
 KIND = "m300-thermistor-scan"
-NOMINALS = (2252, 3000, 5000, 10000, 30000)
 
 
-def validate_channels(channels: dict[int, int], unit: str) -> None:
+def preflight_issues(before: dict, channels: dict) -> list[str]:
+    """Describe known setup constraints without treating them as transport errors."""
+    settings = before["settings"]
+    issues = []
+    if not set(scan_channels(settings["scan_list"])) <= set(channels):
+        issues.append("扫描列表含未授权通道")
+    if not settings["dmm_state"]:
+        issues.append("DMM 未开启")
+    if settings["monitor_state"]:
+        issues.append("通道监视已开启")
+    if settings["trigger_source"] != "IMM":
+        issues.append(f"触发源为 {settings['trigger_source']}（需 IMM）")
+    if settings["trigger_count"] != 1:
+        issues.append(f"触发次数为 {settings['trigger_count']:g}（需 1）")
+    fields = [key for key, value in settings["format"].items() if value]
+    if fields:
+        issues.append("读数附加字段已开启：" + "/".join(fields))
+    if any(value for values in before["relays"].values() for value in values):
+        issues.append("输入继电器尚未全部打开，可能仍在扫描")
+    return issues
+
+
+def validate_channels(channels: dict, unit: str) -> None:
     if (
         not isinstance(channels, dict)
         or not channels
@@ -26,12 +48,12 @@ def validate_channels(channels: dict[int, int], unit: str) -> None:
             type(ch) is not int
             or ch // 100 not in range(1, 6)
             or ch % 100 not in range(1, 33)
-            or type(nominal) is not int
-            or nominal not in NOMINALS
-            for ch, nominal in channels.items()
+            or not isinstance(curve, str)
+            or curve not in CURVES
+            for ch, curve in channels.items()
         )
     ):
-        raise ValidationError("M300 连接配置需要有效的 MC3132 通道、热敏标称阻值和温度单位")
+        raise ValidationError("M300 连接配置需要有效的 MC3132 通道、换温曲线 ID 和温度单位")
 
 
 class ThermistorConnectionSetup:
@@ -45,8 +67,9 @@ class ThermistorConnectionSetup:
             raise DeviceError("保存的 M300 配置需要完整型号、序列号和固件核验", "identity_required")
         return identity.key
 
-    def _modules(self, channels: dict[int, int]) -> dict[str, str]:
-        self.adapter.refresh_capabilities()
+    def _modules(self, channels: dict, *, refresh: bool = True) -> dict[str, str]:
+        if refresh:
+            self.adapter.refresh_capabilities()
         if not set(channels) <= set(self.adapter.profile.channels):
             raise DeviceError("保存的扫描通道没有对应的 MC3132 模块", "not_configured")
         details = self.adapter.capability_details
@@ -98,7 +121,7 @@ class ThermistorConnectionSetup:
             inputs[str(ch)] = values_
         return dict(settings=globals_, inputs=inputs, relays=relays)
 
-    def remember(self, channels: dict[int, int], *, unit: str, confirmed: bool) -> None:
+    def remember(self, channels: dict, *, unit: str, confirmed: bool) -> None:
         if not confirmed:
             raise DeviceError("需要明确授权保存 M300 自动连接配置", "confirmation_required")
         validate_channels(channels, unit)
@@ -107,7 +130,7 @@ class ThermistorConnectionSetup:
         modules = self._modules(channels)
         self.save(
             dict(
-                schema_version=1,
+                schema_version=2,
                 kind=KIND,
                 enabled=True,
                 identity_key=identity_key,
@@ -131,9 +154,9 @@ class ThermistorConnectionSetup:
         state.update(enabled=False, disabled_at=utc_now())
         self.save(state)
 
-    def _validate(self, state: dict) -> dict[int, int]:
-        if state.get("schema_version") != 1 or state.get("kind") != KIND:
-            raise ValidationError("不支持的 M300 连接配置版本")
+    def _validate(self, state: dict) -> dict:
+        if state.get("schema_version") != 2 or state.get("kind") != KIND:
+            raise ValidationError("旧 M300 仪器直读温度配置已停用，请绑定电阻换温曲线")
         if state.get("identity_key") != self._identity():
             raise DeviceError("保存配置与实际 M300 型号/序列号不符", "identity_conflict")
         assert self.adapter.identity is not None
@@ -148,6 +171,20 @@ class ThermistorConnectionSetup:
             raise ValidationError("保存的 M300 通道配置损坏") from exc
         return dict(sorted(channels.items()))
 
+    def conversion(self) -> dict | None:
+        """Query-free binding check, including read-only acquisition connections."""
+        state = self.load()
+        if state is None or (isinstance(state, dict) and state.get("enabled") is False):
+            return None
+        if not isinstance(state, dict):
+            raise ValidationError("M300 电阻换温配置损坏")
+        channels = self._validate(state)
+        if not state.get("authorized_at") or state.get("enabled") is not True:
+            raise DeviceError("M300 电阻换温配置缺少授权", "not_configured")
+        if self._modules(channels, refresh=False) != state.get("modules"):
+            raise DeviceError("M300 电阻换温配置的模块身份不符", "identity_conflict")
+        return {"channels": {str(ch): curve for ch, curve in channels.items()}, "unit": state["unit"]}
+
     def prepare(self) -> None:
         state = deepcopy(self.load())
         if state is None or (isinstance(state, dict) and state.get("enabled") is False):
@@ -161,7 +198,7 @@ class ThermistorConnectionSetup:
                 "上次 M300 配置恢复未确认，已禁止自动重放；请先核对实机状态并重新授权配置",
                 "acquisition_setup_failed",
             )
-        info: dict[str, Any] = dict(started_at=utc_now(), status="reading", operations=[], latent_before={})
+        info: dict[str, Any] = dict(started_at=utc_now(), status="reading", operations=[])
         self.adapter.acquisition_preparation = info
         state["last_attempt"] = info
 
@@ -191,51 +228,38 @@ class ThermistorConnectionSetup:
             scan = scan_channels(settings["scan_list"])
             if len(scan) != settings["scan_size"]:
                 raise DeviceError("M300 扫描列表与通道数不一致", "parse_error")
-            if (
-                not set(scan) <= set(channels)
-                or not settings["dmm_state"]
-                or settings["monitor_state"]
-                or settings["trigger_source"] != "IMM"
-                or settings["trigger_count"] != 1
-                or any(settings["format"].values())
-                or any(value for values in before["relays"].values() for value in values)
-            ):
-                raise DeviceError("M300 当前状态不满足空闲单轮扫描条件，未修改配置", "not_configured")
+            issues = preflight_issues(before, channels)
+            if issues:
+                info.update(
+                    status="blocked",
+                    issues=issues,
+                    message="M300 采集待准备："
+                    + "；".join(issues)
+                    + "。请停止仪器扫描并调整上述设置，再重新连接。当前未修改仪器配置。",
+                    finished_at=utc_now(),
+                )
+                # Identity and transport are valid. Keep the connection available,
+                # but neither initialize nor acquire until an explicit reconnect.
+                checkpoint()
+                return
             checkpoint()
-            for ch, nominal in channels.items():
+            for ch in channels:
                 original = before["inputs"][str(ch)]
-                if original["function"] != "TEMP":
-                    write("function", "TEMP", ch)
-                # Some latent temperature settings are only readable in TEMP/THER mode.
-                latent = {
-                    key: self.adapter.read(op, ch)
-                    for key, op in (("sensor", "temperature_sensor"), ("unit", "temperature_unit"))
-                }
-                info["latent_before"][str(ch)] = latent
-                checkpoint()
-                if latent["sensor"] != "THER":
-                    write("temperature_sensor", "THER", ch)
-                latent["nominal"] = self.adapter.read("thermistor_type", ch)
-                checkpoint()
-                if latent["nominal"] != nominal:
-                    write("thermistor_type", nominal, ch)
-                if latent["unit"] != state["unit"]:
-                    write("temperature_unit", state["unit"], ch)
+                if original["function"] != "RES":
+                    write("function", "RES", ch)
             if scan != tuple(channels):
                 write("scan_list", "(@" + ",".join(map(str, channels)) + ")")
             after = self.snapshot()
             info["after"] = after
-            for ch, nominal in channels.items():
+            for ch in channels:
                 actual = after["inputs"][str(ch)]
-                if (actual.get("sensor"), actual.get("nominal"), actual.get("unit")) != (
-                    "THER",
-                    nominal,
-                    state["unit"],
+                if actual["function"] != "RES" or measurement_kind(actual["configuration"]) != (
+                    "resistance",
+                    "ohm",
                 ):
-                    raise DeviceError(f"M300 CH{ch} 温度配置读回不一致", "readback_mismatch")
-                if not actual["configuration"].startswith(f"TEMP THER,{nominal},"):
-                    raise DeviceError(f"M300 CH{ch} 配置摘要与热敏档位不一致", "readback_mismatch")
-                measurement_kind(actual["configuration"], actual["unit"])
+                    raise DeviceError(f"M300 CH{ch} 电阻配置读回不一致", "readback_mismatch")
+                if before["inputs"][str(ch)]["function"] == "RES" and actual != before["inputs"][str(ch)]:
+                    raise DeviceError(f"M300 CH{ch} 原电阻设置发生变化", "readback_mismatch")
             if (
                 scan_channels(after["settings"]["scan_list"]) != tuple(channels)
                 or after["settings"]["scan_size"] != len(channels)

@@ -172,6 +172,7 @@ class RecordedAcquisitionRunner:
                 "recording_paused",
                 "signal_missing",
                 "waveform_unavailable",
+                "acquisition_setup_blocked",
             }:
                 # A confirmed missing input ends this run without breaking its connection.
                 # If the model could not stop safely, it must raise cleanup_failed instead.

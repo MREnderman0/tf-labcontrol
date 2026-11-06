@@ -68,6 +68,11 @@ class ProcessingViewer(QWidget):
         tools.addWidget(fit)
         tools.addStretch()
         layout.addLayout(tools)
+        self.temperature_note = QLabel("温度峰峰值：记录末尾 30 min；不足 30 min 使用全部有效数据。")
+        self.temperature_note.setObjectName("mutedText")
+        self.temperature_note.setWordWrap(True)
+        self.temperature_note.hide()
+        layout.addWidget(self.temperature_note)
         split = QSplitter()
         self.channels = QListWidget()
         self.channels.setMaximumWidth(220)
@@ -126,6 +131,7 @@ class ProcessingViewer(QWidget):
         self._scope_signature = ()
         self.scope_view.hide()
         self.channels.clear()
+        self.temperature_note.hide()
         self.group.clear()
         self.timeline_row.hide()
         self.status.setText(text)
@@ -141,6 +147,9 @@ class ProcessingViewer(QWidget):
         self.channels.blockSignals(True)
         self.channels.clear()
         group = self.group.currentData()
+        self.temperature_note.setVisible(bool(group and group[0] == "temperature"))
+        stats = self.info.get("temperature_statistics", {})
+        by_series = {row["series_id"]: row for row in stats.get("channels", [])}
         self.watts.blockSignals(True)
         self.watts.setChecked(bool(group and group[1] == "W"))
         self.watts.blockSignals(False)
@@ -148,6 +157,18 @@ class ProcessingViewer(QWidget):
             if (series["quantity"], series.get("unit", ""), series.get("axis_unit", "")) != group:
                 continue
             item = QListWidgetItem(f"CH {series.get('channel', 1)}")
+            if series["id"] in by_series:
+                row = by_series[series["id"]]
+                peak = row["peak_to_peak"]
+                item.setText(
+                    f"CH {series.get('channel', 1)} · 峰峰值 "
+                    + ("—" if peak is None else f"{peak:.6g} {row['unit']}")
+                )
+                item.setToolTip(
+                    f"统计区间：{stats['start_elapsed']:g}–{stats['end_elapsed']:g} s（记录末尾 30 min）\n"
+                    f"样本数：{row['count']}\n最小值：{row['minimum']} {row['unit']}\n"
+                    f"最大值：{row['maximum']} {row['unit']}\n峰峰值：{peak} {row['unit']}"
+                )
             item.setData(Qt.ItemDataRole.UserRole, series)
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             item.setCheckState(Qt.CheckState.Checked)

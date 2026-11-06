@@ -346,6 +346,13 @@ class DeviceDetails(QFrame):
         self.problem.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         self.problem.hide()
         layout.addWidget(self.problem)
+        self.notice = QLabel()
+        self.notice.setObjectName("poolCaption")
+        self.notice.setTextFormat(Qt.TextFormat.PlainText)
+        self.notice.setWordWrap(True)
+        self.notice.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self.notice.hide()
+        layout.addWidget(self.notice)
         self.values: dict[str, QLabel] = {}
         self.groups: list[QFrame] = []
         for title, fields in (
@@ -443,9 +450,15 @@ class DeviceDetails(QFrame):
             self.problem.setText(problem)
         self.problem.setToolTip(error if problem else "")
         self.problem.setVisible(bool(problem))
+        notice = fields.get("notice", "")
+        self.notice.setText(notice)
+        self.notice.setToolTip(notice)
+        self.notice.setVisible(bool(notice) and not problem)
         for group in self.groups:
             group.setVisible(bool(fields))
         for key, value in fields.items():
+            if key == "notice":
+                continue
             text = str(value)
             if self.values[key].text() != text:
                 self.values[key].setText(text)

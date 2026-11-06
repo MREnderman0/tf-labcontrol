@@ -96,18 +96,11 @@ def function(raw: bytes) -> str:
     )
 
 
-def measurement_kind(config: str, unit: str = "") -> tuple[str, str]:
+def measurement_kind(config: str) -> tuple[str, str]:
     """Validate a complete single-channel CONF? before interpreting READ?."""
     match = re.fullmatch(r"(VOLT|RES) ([^,]+),([^,]+)", config)
     if match:
         number(match[2])
         number(match[3])
         return ("voltage", "V") if match[1] == "VOLT" else ("resistance", "ohm")
-    match = re.fullmatch(r"TEMP THER,(2252|3000|5000|10000|30000),([^,]+),([^,]+)", config)
-    if match:
-        number(match[2])
-        number(match[3])
-        if unit not in {"C", "F", "K"}:
-            raise DeviceError("Invalid M300 temperature unit", "parse_error")
-        return "temperature", {"C": "°C", "F": "°F", "K": "K"}[unit]
     raise DeviceError("Unsupported or malformed M300 channel configuration: " + config, "parse_error")

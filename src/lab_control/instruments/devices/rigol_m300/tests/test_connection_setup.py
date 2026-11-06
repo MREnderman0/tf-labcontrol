@@ -2,6 +2,7 @@
 
 import re
 import threading
+import time
 from copy import deepcopy
 from dataclasses import replace
 
@@ -15,8 +16,9 @@ from lab_control.instruments.registry import build_scpi_adapter
 from lab_control.transport.base import MockTransport
 
 from ..protocol import scan_channels
+from ..thermistor_curves import MF501, S02
 
-CHANNELS = {ch: 5000 if ch <= 416 else 10000 for ch in range(401, 420)}
+CHANNELS = {ch: MF501 if ch <= 416 else S02 for ch in range(401, 420)}
 
 
 class DeviceState:
@@ -27,6 +29,8 @@ class DeviceState:
         self.scan = ()
         self.monitor = "0"
         self.trigger = "IMM"
+        self.trigger_count = "1"
+        self.format_fields = dict.fromkeys(("UNIT", "TIME", "CHAN", "ALAR"), "0")
         self.closed_relays = 0
         self.functions = {ch: "VOLT" for ch in range(401, 433)}
         self.sensors = {ch: "TC" for ch in range(401, 433)}
@@ -56,13 +60,13 @@ class M300Transport(MockTransport):
             "INST:DMM:INST?": "1",
             "INST:DMM?": "1",
             "TRIG:SOUR?": s.trigger,
-            "TRIG:COUN?": "1",
+            "TRIG:COUN?": s.trigger_count,
             "TRIG:TIM?": "10",
             "ROUT:MON:STAT?": s.monitor,
             "ROUT:SCAN?": "(@" + ",".join(map(str, s.scan)) + ")",
             "ROUT:SCAN:SIZE?": str(len(s.scan)),
             "SYST:ERR?": '0,"No error"',
-            "READ?": ",".join(str(20 + (ch - 400) / 10) for ch in s.scan),
+            "READ?": ",".join(str((5000 if ch <= 416 else 10000) + ch / 100) for ch in s.scan),
         }
         if payload in fixed:
             return fixed[payload].encode()
@@ -72,7 +76,7 @@ class M300Transport(MockTransport):
             serial = s.module_serial if slot == 400 else "TEST-DMM" if slot == 500 else "0"
             return f"RIGOL TECHNOLOGIES,{model},{serial},1.0".encode()
         if payload.startswith("FORM:READ:"):
-            return b"0"
+            return s.format_fields[payload.removeprefix("FORM:READ:").removesuffix("?")].encode()
         if payload.startswith("ROUT:CLOS?"):
             return ",".join([str(s.closed_relays)] + ["0"] * 31).encode()
         match = re.fullmatch(r"(\S+)\? \(@(\d+)\)", payload)
@@ -127,23 +131,22 @@ def bound_adapter(state=None, saved=None, save=None):
 
 def test_remember_is_query_only_and_connection_restores_full_bank_once():
     adapter, transport, storage = bound_adapter()
-    adapter.remember_thermistor_setup(CHANNELS, confirmed=True)
+    adapter.remember_resistance_temperature_setup(CHANNELS, confirmed=True)
     assert storage["value"]["identity_key"].endswith("|TEST-M300")
     assert not transport.state.writes and "READ?" not in transport.history
     original = deepcopy(transport.state.functions)
     adapter.prepare_acquisition()
     state = transport.state
     assert state.scan == tuple(CHANNELS)
-    assert all(state.functions[ch] == "TEMP" and state.sensors[ch] == "THER" for ch in CHANNELS)
-    assert all(state.nominals[ch] == nominal and state.units[ch] == "C" for ch, nominal in CHANNELS.items())
+    assert all(state.functions[ch] == "RES" for ch in CHANNELS)
+    assert not any("TEMP" in command for command in state.writes)
     assert all(state.functions[ch] == original[ch] for ch in range(420, 433))
     assert state.writes[-1].startswith("ROUT:SCAN ")
-    assert len(state.writes) == 19 + 19 + 16 + 1
+    assert len(state.writes) == 19 + 1
     assert "READ?" not in transport.history
     attempt = storage["value"]["last_attempt"]
     assert attempt["before"]["settings"]["scan_list"] == "(@)"
     assert attempt["before"]["inputs"]["401"]["function"] == "VOLT"
-    assert attempt["latent_before"]["401"] == {"sensor": "TC", "unit": "C", "nominal": 10000}
     assert attempt["status"] == "ready" and attempt["after"]["settings"]["scan_size"] == 19
     state.writes.clear()
     adapter.prepare_acquisition()
@@ -156,17 +159,19 @@ def test_no_saved_or_disabled_profile_never_initializes_device():
     adapter, transport, storage = bound_adapter()
     adapter.prepare_acquisition()
     assert transport.history == ["*IDN?"]
-    adapter.remember_thermistor_setup(CHANNELS, confirmed=True)
+    adapter.remember_resistance_temperature_setup(CHANNELS, confirmed=True)
     adapter.disable_thermistor_setup(confirmed=True)
     history = list(transport.history)
     adapter.prepare_acquisition()
     assert transport.history == history and storage["value"]["enabled"] is False
 
 
-@pytest.mark.parametrize("change", ["identity", "firmware", "module", "monitor", "trigger", "relays", "scan"])
+@pytest.mark.parametrize(
+    "change", ["identity", "firmware", "module", "monitor", "trigger", "relays", "scan", "count", "format"]
+)
 def test_incompatible_identity_or_active_state_is_blocked_before_writes(change):
     adapter, transport, storage = bound_adapter()
-    adapter.remember_thermistor_setup(CHANNELS, confirmed=True)
+    adapter.remember_resistance_temperature_setup(CHANNELS, confirmed=True)
     state = transport.state
     if change == "identity":
         adapter.identity = replace(adapter.identity, serial="ANOTHER-M300")
@@ -180,31 +185,44 @@ def test_incompatible_identity_or_active_state_is_blocked_before_writes(change):
         state.trigger = "EXT"
     elif change == "relays":
         state.closed_relays = 1
+    elif change == "count":
+        state.trigger_count = "9.900002E+37"
+    elif change == "format":
+        state.format_fields["UNIT"] = "1"
     else:
         state.scan = (432,)
-    with pytest.raises(DeviceError):
+    if change in {"identity", "firmware", "module"}:
+        with pytest.raises(DeviceError):
+            adapter.prepare_acquisition()
+    else:
         adapter.prepare_acquisition()
+        attempt = storage["value"]["last_attempt"]
+        assert attempt["status"] == "blocked" and attempt["issues"]
+        assert "重新连接" in attempt["message"]
+        with pytest.raises(DeviceError) as blocked:
+            adapter.acquire(AcquisitionRequest("scalar", tuple(CHANNELS), confirmed=True))
+        assert blocked.value.code == "acquisition_setup_blocked"
     assert not state.writes and "READ?" not in transport.history
 
 
 def test_uncertain_write_is_journaled_and_blocked_across_reconnect():
     adapter, transport, storage = bound_adapter()
-    adapter.remember_thermistor_setup(CHANNELS, confirmed=True)
-    transport.state.fail_write = 'FUNC "TEMP",(@401)'
+    adapter.remember_resistance_temperature_setup(CHANNELS, confirmed=True)
+    transport.state.fail_write = 'FUNC "RES",(@401)'
     with pytest.raises(DeviceError, match="未自动重试"):
         adapter.prepare_acquisition()
-    assert transport.state.writes == ['FUNC "TEMP",(@401)']
+    assert transport.state.writes == ['FUNC "RES",(@401)']
     assert storage["value"]["last_attempt"]["status"] == "failed"
     again, again_transport, _ = bound_adapter(transport.state, storage["value"])
     with pytest.raises(DeviceError, match="禁止自动重放"):
         again.prepare_acquisition()
     assert again_transport.history == ["*IDN?"]
-    assert transport.state.writes == ['FUNC "TEMP",(@401)']
+    assert transport.state.writes == ['FUNC "RES",(@401)']
 
 
 def test_storage_failure_blocks_first_setting_write():
     adapter, transport, storage = bound_adapter()
-    adapter.remember_thermistor_setup(CHANNELS, confirmed=True)
+    adapter.remember_resistance_temperature_setup(CHANNELS, confirmed=True)
 
     def fail(_value):
         raise OSError("disk full")
@@ -221,9 +239,9 @@ def test_storage_failure_blocks_first_setting_write():
 def test_invalid_or_unconfirmed_profiles_never_write(channels, unit):
     adapter, transport, storage = bound_adapter()
     with pytest.raises(DeviceError):
-        adapter.remember_thermistor_setup(channels, unit=unit, confirmed=True)
+        adapter.remember_resistance_temperature_setup(channels, unit=unit, confirmed=True)
     with pytest.raises(DeviceError, match="授权"):
-        adapter.remember_thermistor_setup(CHANNELS)
+        adapter.remember_resistance_temperature_setup(CHANNELS)
     assert not transport.state.writes and storage["value"] is None
 
 
@@ -236,7 +254,62 @@ def attach_factory(runtime, state, transports):
     runtime.sessions.factory = factory
 
 
-def test_restart_new_address_retains_asset_setup_and_readonly_connection_skips_it(tmp_path):
+def test_continuous_scan_keeps_connection_and_pauses_reads_until_explicit_reconnect(tmp_path):
+    config = ConnectionConfig("mock://active-scan", "rigol.m300", "mock", expected_serial="TEST-M300")
+    state, transports = DeviceState(), []
+    with ApplicationRuntime(root=tmp_path, hardware=False) as app:
+        attach_factory(app, state, transports)
+        device = app.add(config)
+        app.connect(device, configure_acquisition=False).result(5)
+        session = app.sessions.sessions[device]
+        session.worker.submit(
+            lambda: session.adapter.remember_resistance_temperature_setup(CHANNELS, confirmed=True)
+        ).result(5)
+        app.sessions.disconnect(device)
+        state.scan = tuple(CHANNELS)
+        state.functions.update(dict.fromkeys(CHANNELS, "RES"))
+        state.trigger_count = "9.900002E+37"
+        state.closed_relays = 1
+        state.format_fields = dict.fromkeys(state.format_fields, "1")
+        app.connect(device).result(5)
+        session = app.sessions.sessions[device]
+        assert session.state == "connected" and not session.last_error
+        attempt = session.acquisition_preparation
+        assert attempt["status"] == "blocked" and len(attempt["issues"]) == 3
+        assert "UNIT/TIME/CHAN/ALAR" in attempt["message"]
+        request = AcquisitionRequest("scalar", tuple(CHANNELS), confirmed=True)
+        with pytest.raises(DeviceError) as blocked:
+            app.sessions.submit(device, "acquire", request).result(5)
+        assert blocked.value.code == "acquisition_setup_blocked"
+        assert session.state == "connected" and not session.last_error
+        app.monitoring.start(device, (request,), interval=0.05, recording=True)
+        deadline = time.monotonic() + 5
+        while app.monitoring.snapshots()[device]["running"] and time.monotonic() < deadline:
+            time.sleep(0.01)
+        snapshot = app.monitoring.snapshots()[device]
+        assert not snapshot["running"] and not snapshot["error"]
+        assert "采集待准备" in snapshot["notice"]
+        app.monitoring.stop(device).result(5)
+        assert not app.monitoring.latest(device, "scalar")
+        assert not state.writes and all("READ?" not in t.history for t in transports)
+        assert len(transports) == 2  # No automatic reconnect or setup replay.
+        assert session.state == "connected" and not session.last_error
+        # An explicit correction followed by reconnect retries only the read-only preflight.
+        state.trigger_count = "1"
+        state.closed_relays = 0
+        state.format_fields = dict.fromkeys(state.format_fields, "0")
+        app.sessions.disconnect(device)
+        app.connect(device).result(5)
+        assert app.sessions.sessions[device].acquisition_preparation["status"] == "ready"
+        batch = app.sessions.submit(device, "acquire", request).result(5)
+        assert len(batch.measurements) == 19 and all(m.quantity == "temperature" for m in batch.measurements)
+        assert not state.writes
+
+
+@pytest.mark.parametrize(
+    "new_resource", ["TCPIP0::192.0.2.88::inst0::INSTR", "USB0::0x1AB1::0x0C96::TEST-M300::INSTR"]
+)
+def test_restart_new_address_retains_asset_setup_and_readonly_connection_skips_it(tmp_path, new_resource):
     config = ConnectionConfig(
         "TCPIP0::192.0.2.10::inst0::INSTR", "rigol.m300", "mock", expected_serial="TEST-M300"
     )
@@ -248,7 +321,7 @@ def test_restart_new_address_retains_asset_setup_and_readonly_connection_skips_i
         app.connect(device, configure_acquisition=False).result(5)
         session = app.sessions.sessions[device]
         session.worker.submit(
-            lambda: session.adapter.remember_thermistor_setup(CHANNELS, confirmed=True)
+            lambda: session.adapter.remember_resistance_temperature_setup(CHANNELS, confirmed=True)
         ).result(5)
         saved = app.repository.load_workspace(f"device-control-state/{device}")
         assert saved["channels"] == {str(ch): value for ch, value in CHANNELS.items()}
@@ -260,16 +333,21 @@ def test_restart_new_address_retains_asset_setup_and_readonly_connection_skips_i
     app = ApplicationRuntime(root=tmp_path, hardware=False)
     attach_factory(app, state, transports)
     try:
-        changed = replace(config, resource="TCPIP0::192.0.2.88::inst0::INSTR")
+        changed = replace(config, resource=new_resource)
         identity = DeviceIdentity("RIGOL TECHNOLOGIES", "M300", state.serial, state.firmware)
         record = app.inventory.merge(
-            DiscoveryCandidate(changed, "lan", safe_scpi=True),
+            DiscoveryCandidate(changed, "usb" if new_resource.startswith("USB") else "lan", safe_scpi=True),
             "new-address",
             identity,
             "rigol.m300",
             reason="identified",
         )
-        assert record["id"] == device and record["config"]["resource"] == changed.resource
+        assert record["id"] == device
+        if new_resource.startswith("USB"):
+            # Choosing a different interface is explicit; LAN address following must not switch it.
+            app.inventory.select_resource(device, new_resource, follow_address=False)
+        else:
+            assert record["config"]["resource"] == changed.resource
         assert not state.writes
         app.connect(device, configure_acquisition=False).result(5)
         assert (
@@ -309,7 +387,7 @@ def test_wrong_serial_at_saved_address_never_receives_remembered_settings(tmp_pa
         app.connect(device, configure_acquisition=False).result(5)
         session = app.sessions.sessions[device]
         session.worker.submit(
-            lambda: session.adapter.remember_thermistor_setup(CHANNELS, confirmed=True)
+            lambda: session.adapter.remember_resistance_temperature_setup(CHANNELS, confirmed=True)
         ).result(5)
         app.sessions.disconnect(device)
         state.serial = "OTHER-M300"
@@ -322,7 +400,7 @@ def test_wrong_serial_at_saved_address_never_receives_remembered_settings(tmp_pa
 
 def test_crash_journal_prevents_replaying_accepted_write_after_storage_failure():
     adapter, transport, storage = bound_adapter()
-    adapter.remember_thermistor_setup(CHANNELS, confirmed=True)
+    adapter.remember_resistance_temperature_setup(CHANNELS, confirmed=True)
     original_save = adapter.connection_setup.save
 
     def fail_after_write(value):
@@ -351,7 +429,7 @@ def test_monitor_recovery_restores_authorized_profile_after_simulated_reboot(tmp
         app.connect(device, configure_acquisition=False).result(5)
         session = app.sessions.sessions[device]
         session.worker.submit(
-            lambda: session.adapter.remember_thermistor_setup(CHANNELS, confirmed=True)
+            lambda: session.adapter.remember_resistance_temperature_setup(CHANNELS, confirmed=True)
         ).result(5)
         app.sessions.disconnect(device)
         app.connect(device).result(5)
@@ -375,7 +453,7 @@ def test_monitor_recovery_restores_authorized_profile_after_simulated_reboot(tmp
         assert len(recovered) == 1 and len(recovered[0].batch.measurements) == 19
         assert all(m.unit == "°C" for m in recovered[0].batch.measurements)
         assert state.scan == tuple(CHANNELS)
-        assert len(state.writes) == 20  # Lost functions and scan list; retained thermistor settings.
+        assert len(state.writes) == 20  # Lost resistance functions and scan list.
         assert len(transports) == 3  # Read-only registration, formal connection, automatic recovery.
     finally:
         app.close()

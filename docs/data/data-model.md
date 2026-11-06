@@ -172,13 +172,16 @@ NPZ 使用 NumPy 数据数组，不保存 pickle 对象。CSV 使用 UTF-8 BOM �
 `export_analysis(source, destination)` 将旧／新原始记录离线导出到独立新目录，输出目录不得存在或与来源嵌套。导出只读取来源；输出说明注明原始数据所在位置，不复制原始曲线。CLI：`lab-control-cli export-analysis <来源目录> --output <新的分析目录>`。默认新记录自动生成分析 CSV，无需手动调用此接口。
 
 <a id="离线处理缓存-v1"></a>
-## 离线处理缓存 v2
+<a id="离线处理缓存-v2"></a>
+## 离线处理缓存 v3
 
 五类设备的历史工作台在整次采集下创建 `.processing-cache/<槽位或型号>_<记录标识摘要>/result-<代际>`，单设备和批量均按设备分开存储。内部缓存目录在 Windows 下设为隐藏，`current.json` 原子指向最新完整代际；临时 `.processing-*` 不进入历史列表。可见的 `数据处理/<槽位或型号>_<记录标识摘要>` 只展示 PNG 及必要的通道、帧序列子目录。原始录制与原来的独立 `export_analysis` 保持兼容。
 
 `result.json` 包含 `version/state/created_at/software_version`、完整记录元数据、帧数/数值数、实际 `scalar/frames` 形态、原记录警告，以及输入文件的相对路径、大小、mtime_ns、SHA256。`source` 相对于该设备结果容器（`current.json` 所在目录），输入清单相对于原始设备记录目录。文件夹整体移动不会使来源引用失效。已收尾的 WAL 计入指纹，在临时副本中合并读取；原文件和旁路文件不修改。
 
-`result.json` 的处理版本为 2，SQLite 的 `user_version` 仍为 1。`data.sqlite3` 的 `configs/frames/samples` 保存配置、设置时间、完整帧文档及原 dtype/shape/BLOB 数组；`timeline(seq,stamp,elapsed)` 提供随机帧定位和时间；`series` 保存通道/物理量/单位组合；`scalar` 保存按配置分段的显示索引。分段时排除型号 `ProcessingProfile.volatile_configuration_fields` 声明的逐帧信息，K+K 声明 `device_ms/report_log`；完整配置仍原样保存，真实设置、会话版本与采集缺口仍分段。原精度以 `samples` 为准，显示索引采用 SQLite REAL。不同单位不会强行合并，通道缺失及配置变化保留曲线断点。相对秒数优先来自原始 monotonic 记录，缺失时由带时区的原始时间差生成，不推断仪器同步。旧 v1 结果仍可读，重新处理会重建显示索引。
+`result.json` 的处理版本为 3，SQLite 的 `user_version` 仍为 1。`data.sqlite3` 的 `configs/frames/samples` 保存配置、设置时间、完整帧文档及原 dtype/shape/BLOB 数组；`timeline(seq,stamp,elapsed)` 提供随机帧定位和时间；`series` 保存通道/物理量/单位组合；`scalar` 保存按配置分段的显示索引。分段时排除型号 `ProcessingProfile.volatile_configuration_fields` 声明的逐帧信息，K+K 声明 `device_ms/report_log`；完整配置仍原样保存，真实设置、会话版本与采集缺口仍分段。原精度以 `samples` 为准，显示索引采用 SQLite REAL。不同单位不会强行合并，通道缺失及配置变化保留曲线断点。相对秒数优先来自原始 monotonic 记录，缺失时由带时区的原始时间差生成，不推断仪器同步。旧 v1/v2 结果仍可读，重新处理会升级缓存；读取旧温度结果时只计算统计，不修改原温度值。
+
+`temperature_statistics` 保存版本 3 的温度窗口统计：`window_seconds=1800`、`start_elapsed/end_elapsed` 及逐 series 的 `channel/unit/count/minimum/maximum/peak_to_peak`。终点为全记录 `max(timeline.elapsed)`，起点取记录起点与终点减 1800 s 的较大者，边界包含；由完整 scalar 数据精确聚合，未抽样，无样本为 null，单样本峰峰值为 0。温度原始帧的 `metadata.temperature_conversion` 保留实测 `resistance_ohm`、`curve_id/version`、文档来源与 SHA256；历史直接温度没有这些字段，不反推电阻。
 
 处理 CSV 使用已有统一测量表结构，不按 UI 精度舍入；每文件最多 100 万数据行，列结构变化开启新文件。这里的文件分片独立于原有分析导出的 100 MiB 上限。`帧索引.csv` 对标量/数组均保存帧号、带时区的原始时间、相对秒数、数据文件、起止逻辑行和配置引用；配置与每通道时间来源保留在 SQLite 帧文档。长记录绘图只读取有界极值包络，整帧按需读 BLOB，不重复扫描 CSV。空记录须由摘要确认为零帧，其他缺失/损坏情况报错。
 

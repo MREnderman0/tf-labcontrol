@@ -624,6 +624,18 @@ class MonitoringService:
                 stopped=not task.running and not task.pending,
             )
 
+    def temperature_window(self, device_id: str):
+        """Exact temperature statistics, independent of the scalar replay cache."""
+        with self.lock:
+            task = self.tasks.get(device_id)
+            return (
+                ()
+                if task is None
+                else task.temperature_window.snapshot(
+                    time.perf_counter(), stopped=not task.running and not task.pending
+                )
+            )
+
     def snapshots(self) -> dict[str, dict[str, Any]]:
         with self.lock:
             return {

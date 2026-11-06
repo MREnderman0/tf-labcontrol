@@ -24,7 +24,7 @@ from lab_control.storage.runtime import hardware_lock_home
 from ..adapter import M300Adapter
 from ..connection_setup import validate_channels
 from .records import publish_report
-from .thermistor_bank import ThermistorBankTest, parse_groups
+from .software_temperature import SoftwareTemperatureTest, parse_curve_groups
 from .validate_control import RecordingTransport, save_json
 
 
@@ -153,17 +153,10 @@ def commission(config, folder, *, root, channels=None, unit="C", duration=8.0, d
             report["stages"]["profile_registration"] = dict(state="passed", enabled=False)
             report["final_state"] = before
         else:
-            test = ThermistorBankTest(app, device, folder, report, channels)
-            points = int(float(test.q("DATA:POIN?")))
-            report["memory_backup"] = dict(
-                points=points,
-                raw=test.q("FETC?") if points else "",
-                restoration="READ? replaces instrument reading memory; original values backed up but cannot be restored",
-            )
-            save_json(folder / "progress.json", report)
+            test = SoftwareTemperatureTest(app, device, folder, report, channels)
             stage = "profile_registration"
             session.worker.submit(
-                adapter.remember_thermistor_setup, channels, unit=unit, confirmed=True
+                adapter.remember_resistance_temperature_setup, channels, unit=unit, confirmed=True
             ).result()
             report["stages"][stage] = dict(
                 state="passed", enabled=True, follow_verified_address=follow_address
@@ -176,9 +169,17 @@ def commission(config, folder, *, root, channels=None, unit="C", duration=8.0, d
             assert isinstance(adapter, M300Adapter)
             report["setup_result"] = jsonable(session.acquisition_preparation)
             report["operations"] = report["setup_result"].get("operations", [])
+            if report["setup_result"].get("status") == "blocked":
+                raise DeviceError(report["setup_result"]["message"], "acquisition_setup_blocked")
             report["stages"][stage] = dict(state="passed", writes=len(report["operations"]))
             configured = session.worker.submit(adapter.connection_setup.snapshot).result()
             report["configured_snapshot"] = configured
+            points = int(float(test.q("DATA:POIN?")))
+            report["memory_backup"] = dict(
+                points=points,
+                raw=test.q("FETC?") if points else "",
+                restoration="READ? replaces instrument reading memory; original values backed up but cannot be restored",
+            )
             save_json(folder / "progress.json", report)
             stage = "monitoring"
             test.monitor(duration)
@@ -205,12 +206,21 @@ def commission(config, folder, *, root, channels=None, unit="C", duration=8.0, d
             )
     except (Exception, KeyboardInterrupt) as exc:
         report["error"], report["traceback"] = str(exc), traceback.format_exc()
+        saved = app.repository.load_workspace(state_key) if app and state_key else None
+        attempt = (saved or {}).get("last_attempt") or {}
+        preflight_blocked = attempt.get("status") == "blocked" and not attempt.get("operations")
         report["stages"][stage] = dict(
             state="blocked"
-            if getattr(exc, "code", "") in {"process_busy", "resource_busy", "driver_missing"}
+            if preflight_blocked
+            or getattr(exc, "code", "") in {"process_busy", "resource_busy", "driver_missing"}
             else "failed",
             reason=str(exc),
         )
+        if preflight_blocked:
+            report["last_verified_snapshot"] = attempt.get("before")
+            report["stages"]["recovery"] = dict(
+                state="not_tested", reason="Preflight blocked; no parameter writes to restore"
+            )
         report["final_state_warning"] = (
             "No automatic retry or rollback; consult saved setup attempt for last confirmed state"
         )
@@ -259,12 +269,14 @@ def main(argv=None):
     parser.add_argument("--expected-serial", required=True)
     parser.add_argument("--home", type=Path, default=application_home())
     selection = parser.add_mutually_exclusive_group(required=True)
-    selection.add_argument("--group", action="append", help="Authorized MC3132 range=nominal ohms")
+    selection.add_argument(
+        "--group", action="append", help="Authorized MC3132 range=curve ID, e.g. 401:416=mf501-v1"
+    )
     selection.add_argument("--disable", action="store_true")
     parser.add_argument("--duration", type=float, default=8)
     args = parser.parse_args(argv)
     try:
-        channels = parse_groups(args.group) if args.group else None
+        channels = parse_curve_groups(args.group) if args.group else None
     except (ValueError, DeviceError) as exc:
         parser.error(str(exc))
     folder = (

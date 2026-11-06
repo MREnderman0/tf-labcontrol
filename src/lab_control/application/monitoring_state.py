@@ -11,6 +11,7 @@ from uuid import uuid4
 
 from lab_control.application.acquisition_recovery import Recovery
 from lab_control.application.power_window import PowerWindow
+from lab_control.application.temperature_window import TemperatureWindow
 from lab_control.domain.instruments import (
     AcquisitionRequest,
     MeasurementBatch,
@@ -65,6 +66,7 @@ class MonitorTask:
     # acquisition or recording.
     frame_history: dict[tuple[str, str], deque[MonitorFrame]] = field(default_factory=dict)
     power_window: PowerWindow = field(default_factory=PowerWindow)
+    temperature_window: TemperatureWindow = field(default_factory=TemperatureWindow)
     error: str = ""
     last_path: str = ""
     stop_future: Future[Any] | None = None

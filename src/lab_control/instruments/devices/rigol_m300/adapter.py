@@ -26,7 +26,7 @@ from .protocol import boolean, csv_numbers, measurement_kind, scan_channels
 class M300Adapter(ScpiAdapter):
     supports_live_acquisition = True
     supports_stream_acquisition = False
-    acquisition_revision = "m300-channel-scalar-v2"
+    acquisition_revision = "m300-channel-scalar-v3"
     capability_revision = 0
 
     def bind_control_state(self, load, save) -> None:
@@ -34,16 +34,18 @@ class M300Adapter(ScpiAdapter):
 
         self.connection_setup = ThermistorConnectionSetup(self, load, save)
 
-    def remember_thermistor_setup(self, channels: dict[int, int], *, unit="C", confirmed=False) -> None:
-        """Explicitly authorize a persistent setup for this verified asset, without writing it."""
-        if not hasattr(self, "connection_setup"):
-            raise DeviceError("需要正式会话保存 M300 连接配置", "storage_required")
-        self.connection_setup.remember(channels, unit=unit, confirmed=confirmed)
-
     def disable_thermistor_setup(self, *, confirmed=False) -> None:
         if not hasattr(self, "connection_setup"):
             raise DeviceError("需要正式会话保存 M300 连接配置", "storage_required")
         self.connection_setup.disable(confirmed=confirmed)
+
+    def remember_resistance_temperature_setup(
+        self, channels: dict[int, str], *, unit="C", confirmed=False
+    ) -> None:
+        """Save explicit curve IDs for this asset; applying still requires idle preflight."""
+        if not hasattr(self, "connection_setup"):
+            raise DeviceError("需要正式会话保存 M300 连接配置", "storage_required")
+        self.connection_setup.remember(channels, unit=unit, confirmed=confirmed)
 
     def prepare_acquisition(self) -> None:
         """Apply an explicitly remembered asset setup; discovery/read-only connections skip this."""
@@ -161,13 +163,23 @@ class M300Adapter(ScpiAdapter):
         for channel in channels:
             self._input(channel)
             value = self.read("configuration", channel)
-            unit = self.read("temperature_unit", channel) if value.startswith("TEMP ") else ""
-            quantity, display_unit = measurement_kind(value, unit)
+            if value.startswith("TEMP "):
+                raise DeviceError(
+                    "M300 已停用仪器直读温度；请配置电阻换温曲线并使用 RES 扫描", "not_configured"
+                )
+            quantity, display_unit = measurement_kind(value)
             config[str(channel)] = dict(configuration=value, quantity=quantity, unit=display_unit)
+        conversion = self.connection_setup.conversion() if hasattr(self, "connection_setup") else None
+        if conversion and (
+            set(map(str, channels)) != set(conversion["channels"])
+            or any(item["quantity"] != "resistance" for item in config.values())
+        ):
+            raise DeviceError("M300 电阻换温扫描列表或测量功能不匹配", "not_configured")
         return dict(
             scan_list=scan,
             channels=channels,
             configuration=config,
+            temperature_conversion=conversion,
             trigger_source=self.read("trigger_source"),
             trigger_count=self.read("trigger_count"),
             dmm_state=self.read("dmm_state"),
@@ -189,6 +201,9 @@ class M300Adapter(ScpiAdapter):
             )
         if self.identity is None:
             raise DeviceError("Identify before acquisition", "identity_required")
+        preparation = getattr(self, "acquisition_preparation", {})
+        if preparation.get("status") == "blocked":
+            raise DeviceError(preparation["message"], "acquisition_setup_blocked")
         before = self._scan_snapshot()
         channels = before["channels"]
         if not channels:
@@ -216,13 +231,16 @@ class M300Adapter(ScpiAdapter):
         for channel, value in zip(channels, values, strict=True):
             config = before["configuration"][str(channel)]
             metadata = {"configuration": config["configuration"]}
-            if config["quantity"] == "temperature":
-                metadata["conversion"] = (
-                    "M300 built-in thermistor curve; sensor curve must be verified independently"
-                )
-            measurements.append(
-                Measurement(config["quantity"], config["unit"], (value,), channel, metadata=metadata)
-            )
+            quantity, unit = config["quantity"], config["unit"]
+            if before["temperature_conversion"]:
+                from .thermistor_curves import UNITS, provenance, temperature
+
+                conversion = before["temperature_conversion"]
+                curve = conversion["channels"][str(channel)]
+                metadata["temperature_conversion"] = provenance(value, curve)
+                value = temperature(value, curve, conversion["unit"])
+                quantity, unit = "temperature", UNITS[conversion["unit"]]
+            measurements.append(Measurement(quantity, unit, (value,), channel, metadata=metadata))
         return MeasurementBatch(
             self.identity,
             tuple(measurements),

@@ -27,7 +27,7 @@ from lab_control.storage.processing_paths import filesystem_path, public_path, r
 from lab_control.storage.recording import read_frames
 from lab_control.storage.recording_catalog import PROCESSING_FOLDER, linked, read_json
 
-PROCESSING_VERSION = 2
+PROCESSING_VERSION = 3
 
 
 class ProcessingCancelled(Exception):
@@ -467,6 +467,13 @@ def process_device(
             **stats,
             "warning": device.summary.get("error") or device.summary.get("paused") or "",
         }
+        from lab_control.storage.temperature_statistics import temperature_statistics
+
+        db = sqlite3.connect(staging / "data.sqlite3")
+        try:
+            metadata["temperature_statistics"] = temperature_statistics(db)
+        finally:
+            db.close()
         atomic_json(staging / "result.json", metadata)
         if finalize is not None:
             finalize(staging)
