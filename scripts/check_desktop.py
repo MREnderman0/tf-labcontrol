@@ -1,4 +1,4 @@
-"""Copy a built app outside the checkout and run real frozen workers and GUI selftest."""
+"""Check an isolated bundle under .temp with real frozen workers and a Mock GUI."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bundle", type=Path, default=ROOT / "dist/TF-LabControl")
-    parser.add_argument("--report", type=Path, default=ROOT / ".tools/deployment/frozen-smoke.json")
+    parser.add_argument("--report", type=Path, default=ROOT / ".temp/deployment/frozen-smoke.json")
     parser.add_argument(
         "--check-agent-default",
         action="store_true",
@@ -26,10 +26,11 @@ def main() -> int:
     args = parser.parse_args()
     args.report = args.report.resolve()
     args.report.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="labcontrol-frozen-中文 ") as temporary:
+    scratch = ROOT / ".temp"
+    scratch.mkdir(exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="frozen-中文 ", dir=scratch) as temporary:
         outside = Path(temporary).resolve()
-        assert outside.parent == Path(tempfile.gettempdir()).resolve()
-        assert not outside.is_relative_to(ROOT)
+        assert outside.parent == scratch.resolve()
         target = outside / "应用 程序"
         shutil.copytree(args.bundle.resolve(), target)
         executable = target / "TF-LabControl.exe"
@@ -83,7 +84,8 @@ def main() -> int:
         assert not list(outside.rglob("hardware.lock"))
         report = json.loads(args.report.read_text(encoding="utf-8"))
         report.update(
-            outside_source=True,
+            outside_source=False,
+            isolated_bundle=True,
             path_sanitized=True,
             corrupt_worker_preserved_input=True,
             connector_without_arguments_requires_connection=args.check_agent_default,

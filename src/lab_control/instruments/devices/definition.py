@@ -8,6 +8,7 @@ from typing import Any, Callable
 
 from lab_control.domain.connections import ConnectionConfig
 from lab_control.domain.instruments import CapabilitySet, DeviceIdentity, InstrumentAdapter
+from lab_control.domain.metrics import MetricProfile
 from lab_control.domain.processing import ProcessingProfile
 from lab_control.instruments.base import Profile, ScpiAdapter
 
@@ -56,9 +57,9 @@ class DeviceDefinition:
     # Rebuild only the protocol/resource for a verified asset's current DHCP IP.
     # The caller supplies a fresh config without serial, limits, aliases or options.
     discovery_lan_config: Callable[[ConnectionConfig, str], ConnectionConfig] | None = None
-    # Optional workspace placement for power-supply model packages.  Existing
-    # power supplies remain monitoring-only by default; a package can opt into
-    # the dedicated management surface without changing its protocol profile.
+    # Power supplies opt into their management surface. Other categories retain
+    # existing routing unless monitoring_surface=False explicitly places a
+    # finite-capture model on its management surface only.
     management_surface: bool = False
     monitoring_surface: bool = True
     # Models that expose monitoring/recording without a parameter-control page.
@@ -81,8 +82,13 @@ class DeviceDefinition:
     # Shared workspaces must respect instruments which measure one input at a time.
     acquisition_channel_selection: str = "multiple"
     offline_processing: ProcessingProfile | None = None
+    metric_profiles: tuple[MetricProfile, ...] = ()
+    # Replace this generated candidate name with the documentation title once identified.
+    pending_display_name: str = ""
 
     def __post_init__(self) -> None:
+        if len({p.id for p in self.metric_profiles}) != len(self.metric_profiles):
+            raise ValueError("Duplicate metric profile ID")
         if self.acquisition_channel_selection not in {"single", "multiple"}:
             raise ValueError("Invalid acquisition channel selection")
         if self.profile is None:

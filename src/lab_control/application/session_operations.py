@@ -72,7 +72,7 @@ class SessionOperations:
             except Exception as exc:
                 manager.audit.try_record(
                     "acquisition_transition_timing"
-                    if getattr(exc, "code", "") == "configuration_changed"
+                    if getattr(exc, "code", "") in {"configuration_changed", "waveform_unavailable"}
                     else "acquisition_io_failed",
                     device_id=session.device_id,
                     performance=capture.summary(),
@@ -289,11 +289,12 @@ class SessionOperations:
         except Exception as exc:
             manager._invalidate_acquisition(session, "error")
             code = getattr(exc, "code", "device_error")
-            if operation == "acquire" and code == "configuration_changed":
+            if operation == "acquire" and code in {"configuration_changed", "waveform_unavailable"}:
                 # A complete reply with changing axis/settings is an invalid frame,
                 # not a broken transport. Never publish it or replay any control.
-                with manager.lock:
-                    session.configuration_version += 1
+                if code == "configuration_changed":
+                    with manager.lock:
+                        session.configuration_version += 1
                 manager.audit.try_record(
                     "acquisition_discarded", device_id=device_id, code=code, error=str(exc)
                 )

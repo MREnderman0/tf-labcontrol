@@ -3,6 +3,8 @@
 from lab_control.domain.connections import ConnectionConfig
 from lab_control.instruments.common.windows_usb import enumerate_usb
 
+PENDING_DISPLAY_NAME = "Microchip 53100A（身份待核验）"
+
 
 def enumerate_devices():
     return enumerate_usb("16D0", "05B8")
@@ -31,7 +33,7 @@ class UsbDiscoveryProvider:
                     self.name,
                     {
                         **row,
-                        "display_name": "Microchip 53100A（身份待核验）",
+                        "display_name": PENDING_DISPLAY_NAME,
                         "identity_evidence": "USB descriptor only; serial not verified",
                     },
                     error_code="driver_missing" if problem == 28 else "driver_error" if problem else "",

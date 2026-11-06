@@ -3,7 +3,7 @@ import pytest
 from lab_control.application.config import ConnectionConfig
 from lab_control.application.runtime import ApplicationRuntime
 from lab_control.instruments.devices.microchip_53100a.tests.simulation import PhaseSimulation
-from lab_control.ui.pages.monitoring.phase_noise import PhaseNoiseMonitoringPage
+from lab_control.ui.pages.device_control.phase_noise import PhaseNoisePage, load_results
 from lab_control.ui.real_window import RealWindow
 
 
@@ -20,7 +20,7 @@ def workspace(qtbot, tmp_path):
     window.show()
     window.navigate("设备管理", "phase_noise_analyzer", key)
     page = window.stack.currentWidget()
-    assert isinstance(page, PhaseNoiseMonitoringPage)
+    assert isinstance(page, PhaseNoisePage)
     runtime.monitoring.enable_settings_sync(False)
     try:
         yield page, runtime, key, window
@@ -31,125 +31,155 @@ def workspace(qtbot, tmp_path):
         runtime.close()
 
 
-def test_phase_workspace_has_only_requested_controls_and_no_start_on_navigation(workspace):
-    page, runtime, key, _ = workspace
-    assert [page.rate.itemData(i) for i in range(page.rate.count())] == [1, 10, 100, 1000]
-    assert page.duration.value() == 60
-    assert len(page.editors) == 2
-    assert not runtime.sessions.sessions[key].adapter.started
+def test_fixed_capture_is_management_only_and_navigation_never_writes(workspace, qtbot, monkeypatch):
+    from PySide6.QtWidgets import QSpinBox
+
+    from lab_control.application.catalog import surface_applicable
+
+    page, runtime, key, window = workspace
+    writes = []
+    monkeypatch.setattr(runtime.sessions.sessions[key].adapter, "apply", writes.append)
+    runtime.repository.save_workspace(
+        f"phase-acquisition/{window.controller.mode}/{key}", {"sample_rate": 1, "duration": 999}
+    )
+    assert window.current_module == "设备管理"
+    assert "phase_noise_analyzer" in window._submenu_categories("设备管理")
+    assert "phase_noise_analyzer" not in window._submenu_categories("实时监测")
+    assert not surface_applicable(window.controller.records[key], "monitoring")
+    window.dashboard.refresh()
+    assert key not in window.dashboard.cards
+    assert not page.findChildren(QSpinBox) and not hasattr(page, "editors")
+    window.navigate("实时监测", "phase_noise_analyzer", key)
+    assert window.current_module == "设备管理" and window.stack.currentWidget() is page
+    qtbot.wait(50)
+    assert not writes and not runtime.sessions.sessions[key].adapter.started
     assert not page.stop_button.isEnabled()
 
 
-def test_acquisition_preferences_survive_restarts_and_device_switches(qtbot, tmp_path, monkeypatch):
-    expected = {}
-    for launch in range(2):
-        with ApplicationRuntime(root=tmp_path, hardware=False) as runtime:
-            runtime.sessions.factory = PhaseSimulation
-            keys = []
-            writes = []
-            for index in range(2):
-                key = runtime.add(
-                    ConnectionConfig(
-                        f"mock://phase-preferences/{index}",
-                        "microchip.53100a",
-                        "mock",
-                        usb_instance_id=f"TEST-PREFERENCES-{index}",
-                    )
-                )
-                runtime.connect(key).result(3)
-                monkeypatch.setattr(runtime.sessions.sessions[key].adapter, "apply", writes.append)
-                keys.append(key)
-            window = RealWindow(runtime)
-            qtbot.addWidget(window)
-            window.controller.timer.stop()
-            runtime.monitoring.enable_settings_sync(False)
-            try:
-                for index, key in enumerate(keys):
-                    window.navigate("实时监测", "phase_noise_analyzer", key)
-                    page = window.stack.currentWidget()
-                    assert (page.rate.currentData(), page.duration.value()) == expected.get(key, (100, 60))
-                    if launch == 0:
-                        rate, duration = (10, 20) if index == 0 else (1000, 40)
-                        page.rate.setCurrentIndex(page.rate.findData(rate))
-                        page.duration.setValue(duration)
-                        expected[key] = rate, duration
-                    assert runtime.repository.load_workspace(page.acquisition_key) == dict(
-                        sample_rate=expected[key][0], duration=expected[key][1]
-                    )
-                page.select_device(keys[0])
-                assert (page.rate.currentData(), page.duration.value()) == expected[keys[0]]
-                assert not writes and not runtime.monitoring.tasks
-                assert all(not session.adapter.started for session in runtime.sessions.sessions.values())
-            finally:
-                window.controller.close()
-                window.closing = True
-                window.bridge.worker.shutdown()
+def test_missing_signal_shows_reason_and_allows_explicit_retry(workspace, qtbot, monkeypatch):
+    from lab_control.domain.instruments import DeviceError
 
-
-@pytest.mark.parametrize(
-    "saved", [None, {"sample_rate": 123, "duration": 1}, {"sample_rate": [], "duration": "bad"}]
-)
-def test_invalid_acquisition_preferences_use_supported_defaults(workspace, saved):
     page, runtime, key, _ = workspace
-    pref = page.acquisition_key
-    runtime.repository.save_workspace(pref, saved)
-    page.select_device("")
-    page.select_device(key)
-    assert (page.rate.currentData(), page.duration.value()) == (100, 60)
-    assert runtime.repository.load_workspace(pref) == saved
-    assert not runtime.sessions.sessions[key].adapter.started
+    adapter = runtime.sessions.sessions[key].adapter
+    original = adapter.run_acquisition
+    requests = []
 
+    def missing_signal(request, stop):
+        requests.append(request)
+        raise DeviceError(
+            "未检测到 DUT 或参考输入信号；请检查接线与信号源，接好后重新采集。", "signal_missing"
+        )
+        yield  # Return a generator like the real model's finite acquisition.
 
-def test_auto_frequency_readback_uses_shared_idle_sync_without_starting_measurement(workspace, qtbot):
-    page, runtime, key, _ = workspace
-    runtime.monitoring.enable_settings_sync(True)
-    page.focus_settings()
-    qtbot.waitUntil(lambda: all("当前：自动" == c.readback.text() for c in page.editors), timeout=5000)
-    assert not runtime.sessions.sessions[key].adapter.started
-
-
-def test_finite_ui_run_keeps_results_and_enables_controls_after_binary_completion(workspace, qtbot):
-    page, runtime, key, window = workspace
-    page.duration.setValue(10)
-    qtbot.waitUntil(lambda: page.start_button.isEnabled())
-    page.start()
-    qtbot.waitUntil(lambda: runtime.sessions.sessions[key].adapter.started)
-    window.controller.poll()
-    assert not page.rate.isEnabled() and page.stop_button.isEnabled()
-    qtbot.waitUntil(lambda: page.outcomes.get(key, "").startswith("采集完成"), timeout=15000)
+    monkeypatch.setattr(adapter, "run_acquisition", missing_signal)
+    qtbot.waitUntil(page.start_button.isEnabled)
+    page.start_button.click()
+    qtbot.waitUntil(lambda: "未检测到" in page.status.text())
+    qtbot.waitUntil(page.start_button.isEnabled)
+    assert len(requests) == 1 and "自动重连" not in page.status.text()
+    assert page.progress.value() == 0 and not page.stop_button.isEnabled()
+    assert runtime.sessions.sessions[key].state == "connected"
+    assert runtime.sessions.sessions[key].direct_recording.committed == 0
+    assert key not in page.results
+    monkeypatch.setattr(adapter, "run_acquisition", original)
+    page.start_button.click()
+    qtbot.waitUntil(lambda: key in page.results, timeout=15000)
     assert page.progress.value() == 1000
-    assert all(page.curves[q].xData is not None for q in ("phase_noise", "adev", "mdev"))
-    assert page.rate.isEnabled() and page.folder.isEnabled()
-    window.navigate("实时监测", "")
-    window.navigate("实时监测", "phase_noise_analyzer", key)
-    assert page.curves["mdev"].xData is not None
 
 
-def test_manual_frequency_requires_application_before_start_and_auto_omits_value(workspace, qtbot):
-    page, runtime, key, _ = workspace
-    control = page.editors[0]
-    control.auto.setChecked(False)
-    page.refresh()
-    assert control.value.isEnabled() and not page.start_button.isEnabled()
-    control.apply()
-    qtbot.waitUntil(lambda: not control.busy)
-    assert runtime.sessions.sessions[key].adapter.values["1.input_frequency"]["value"] == 10e6
-    control.auto.setChecked(True)
-    control.apply()
-    qtbot.waitUntil(lambda: not control.busy)
-    assert runtime.sessions.sessions[key].adapter.values["1.input_frequency"] == {"automatic": True}
+def test_fixed_capture_saves_full_phase_and_statistics_then_displays_hidden_page(workspace, qtbot):
+    import json
+    from pathlib import Path
+
+    import numpy as np
+
+    from lab_control.storage.recording import read_frames
+
+    page, runtime, key, window = workspace
+    requests = []
+    adapter = runtime.sessions.sessions[key].adapter
+    original = adapter.run_acquisition
+
+    def capture(request, stop):
+        requests.append(request)
+        yield from original(request, stop)
+
+    adapter.run_acquisition = capture
+    qtbot.waitUntil(page.start_button.isEnabled)
+    page.start_button.click()
+    window.navigate("设备管理", "")
+    qtbot.waitUntil(lambda: key in page.results, timeout=15000)
+    assert requests[0].sample_rate == 1000 and requests[0].duration == 60
+    folder = Path(page.paths[key])
+    assert folder.parent.parent.name == "单设备采集"
+    frames = [
+        frame for path in sorted((folder / "_raw").glob("segment-*.sqlite3")) for frame in read_frames(path)
+    ]
+    phase = [m for f in frames for m in f["measurements"] if m["quantity"] == "phase_difference"]
+    saved_x = np.concatenate([m["axis"] for m in phase])
+    assert saved_x.size == 60001 and saved_x[-1] - saved_x[0] == pytest.approx(60)
+    quantities = {m["quantity"] for f in frames for m in f["measurements"]}
+    assert {"phase_difference", "phase_noise", "adev", "mdev"} <= quantities
+    assert frames[-1]["configuration"]["complete"]
+    window.navigate("设备管理", "phase_noise_analyzer", key)
+    assert page.progress.value() == 1000
+    np.testing.assert_array_equal(page.curves["phase_difference"].xData, saved_x)
+    assert all(page.curves[q].xData is not None for q in ("adev", "mdev", "phase_noise"))
+    assert page.start_button.isEnabled() and page.folder.isEnabled()
+    recorder = runtime.sessions.sessions[key].direct_recording
+    qtbot.waitUntil(recorder.finished.done, timeout=15000)
+    assert recorder.finished.exception() is None
+    metadata = json.loads((folder / "_raw" / "recording.json").read_text(encoding="utf-8"))
+    assert metadata["scope"] == "single_device"
+    csv = list(folder.glob("*.csv"))
+    assert csv
+    headers = "\n".join(p.read_text(encoding="utf-8-sig").splitlines()[0] for p in csv)
+    assert "ADEV_平均时间(s)" in headers and "MDEV_平均时间(s)" in headers
 
 
-def test_early_stop_is_partial_and_old_csv_callback_cannot_replace_new_status(workspace, qtbot):
+def test_early_stop_and_stale_callbacks_preserve_partial_result(workspace, qtbot):
     page, runtime, key, _ = workspace
     page.start()
-    qtbot.waitUntil(lambda: runtime.sessions.sessions[key].adapter.started)
     qtbot.waitUntil(lambda: page.controller.recorded_frame(key) is not None)
     page.stop()
-    qtbot.waitUntil(lambda: page.outcomes.get(key, "").startswith("已提前停止"), timeout=15000)
+    qtbot.waitUntil(lambda: key in page.results, timeout=15000)
+    assert page.outcomes[key].startswith("已提前停止")
+    assert len(page.results[key]["phase_difference"][0]) < 60001
     previous = page.outcomes[key]
+    result = page.results[key]
     page.failed(key, RuntimeError("old conversion error"), token=-1)
-    assert page.outcomes[key] == previous
+    page.results_loaded(key, {}, token=-1)
+    assert page.outcomes[key] == previous and page.results[key] is result
+
+
+def test_saved_phase_gaps_are_not_drawn_as_continuous(tmp_path):
+    import numpy as np
+
+    from lab_control.domain.instruments import DeviceIdentity, Measurement, MeasurementBatch
+    from lab_control.storage.recording import SegmentWriter
+
+    writer = SegmentWriter(tmp_path / "_raw")
+    for sequence, epoch in enumerate((0, 0, 1), 1):
+        writer.append(
+            sequence,
+            MeasurementBatch(
+                DeviceIdentity("Microchip", "53100A", "TEST"),
+                (
+                    Measurement(
+                        "phase_difference",
+                        "s",
+                        np.array([1.0, 2.0]),
+                        axis=np.array([0.0, 0.001]),
+                        axis_unit="s",
+                    ),
+                ),
+                {"acquisition_epoch": epoch},
+                validation="full",
+            ),
+        )
+    writer.close()
+    x, y = load_results(tmp_path / "_raw")["phase_difference"]
+    assert len(x) == 7 and np.isnan(x[4]) and np.isnan(y[4])
 
 
 def test_phase_start_stays_disabled_during_binary_drain_but_not_csv(workspace, qtbot, monkeypatch):

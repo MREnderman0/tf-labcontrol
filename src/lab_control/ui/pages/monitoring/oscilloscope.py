@@ -334,6 +334,7 @@ class OscilloscopeMonitoringPage(QWidget):
         self.timing.refresh(task)
         self.actual.setText(self.timing.actual.text())
         old = self.plot.displayed_frame
+        frozen = old is not None and old.batch.performance.get("instrument_running") is False
         waiting = old is not None and (
             old.session_id != state.get("sessionId")
             or old.configuration_version != state.get("configurationVersion")
@@ -352,8 +353,12 @@ class OscilloscopeMonitoringPage(QWidget):
                 if waiting
                 else "记录收尾中 · 正在排空已接收数据"
                 if recording_phase(task) == "draining"
+                else "记录中 · 仪器已停止，保存的是冻结波形"
+                if task.get("recording") and frozen
                 else "记录中 · 逐帧保存"
                 if task.get("recording")
+                else "监测中 · 仪器已停止，当前为冻结波形；可在触发设置中选择 AUTO"
+                if task.get("running") and frozen
                 else "监测中"
                 if task.get("running")
                 else "监测已暂停"

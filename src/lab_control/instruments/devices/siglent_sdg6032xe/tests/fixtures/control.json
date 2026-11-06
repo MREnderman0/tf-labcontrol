@@ -1,0 +1,43 @@
+{
+  "fixture_origin": "Authored protocol fixture using EN06A and sanitized response structure; not a raw hardware recording",
+  "adapter": "siglent.sdg6032xe",
+  "operation": "frequency",
+  "channel": 2,
+  "parameters": {
+    "value": 2000
+  },
+  "exchanges": [
+    [
+      "COUP?",
+      "COUP TRACE,OFF,FCOUP,OFF,PCOUP,OFF,ACOUP,OFF"
+    ],
+    [
+      "C2:MDWV?",
+      "C2:MDWV STATE,OFF"
+    ],
+    [
+      "C2:SWWV?",
+      "C2:SWWV STATE,OFF"
+    ],
+    [
+      "C2:BTWV?",
+      "C2:BTWV STATE,OFF"
+    ],
+    [
+      "C2:OUTP?",
+      "C2:OUTP OFF,LOAD,HZ,POWERON_STATE,OFF,PLRT,NOR"
+    ],
+    [
+      "C2:BSWV?",
+      "C2:BSWV WVTP,SINE,FRQ,1000HZ,AMP,4V,OFST,0V,PHSE,0"
+    ],
+    [
+      "C2:BSWV FRQ,2000",
+      ""
+    ],
+    [
+      "C2:BSWV?",
+      "C2:BSWV WVTP,SINE,FRQ,2000HZ,AMP,4V,OFST,0V,PHSE,0"
+    ]
+  ]
+}

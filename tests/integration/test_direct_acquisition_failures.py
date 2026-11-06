@@ -14,6 +14,7 @@ from lab_control.storage.repository import Repository
     ("code", "expected_state", "expected_version"),
     [
         ("configuration_changed", "connected", 1),
+        ("waveform_unavailable", "connected", 0),
         ("identity_conflict", "degraded", 0),
         ("configuration_uncertain", "degraded", 0),
     ],
@@ -56,7 +57,7 @@ def test_direct_failure_classification_and_device_isolation(
         assert peer.result(3).identity == sessions.sessions["other"].identity
         assert sessions.sessions["other"].configuration_version == 0
         assert sessions.sessions["other"].state == "connected"
-        if code == "configuration_changed":
+        if code in {"configuration_changed", "waveform_unavailable"}:
             sessions.submit("target", "status").result(3)
         else:
             with pytest.raises(DeviceError) as rejected:

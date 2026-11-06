@@ -26,6 +26,7 @@ ACTIONS = frozenset(
         "record",
         "stop",
         "results",
+        "process",
         "acquisition_setup",
         "output_trigger",
     }

@@ -12,7 +12,7 @@ import threading
 from contextlib import closing, contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import TemporaryDirectory, mkdtemp
 from typing import Any, Callable, Iterator
 from uuid import uuid4
 
@@ -23,6 +23,7 @@ from lab_control.domain.processing import RecordedDevice
 from lab_control.storage.analysis import _snapshot, _table, _text, _zone
 from lab_control.storage.layout import atomic_json, raw_folder
 from lab_control.storage.paths import filename_part
+from lab_control.storage.processing_paths import filesystem_path, public_path, readonly_uri
 from lab_control.storage.recording import read_frames
 from lab_control.storage.recording_catalog import PROCESSING_FOLDER, linked, read_json
 
@@ -141,6 +142,7 @@ def image_home(entry_folder: Path, device: RecordedDevice) -> Path:
 
 
 def current_result(home: Path, *, legacy: bool = True) -> Path | None:
+    home = filesystem_path(home)
     if linked(home.parent) or linked(home):
         return None
     # Existing captures remain viewable before their first processing with the
@@ -160,7 +162,11 @@ def current_result(home: Path, *, legacy: bool = True) -> Path | None:
     metadata = read_json(result / "result.json", {})
     if not isinstance(metadata, dict):
         raise ValueError("处理结果说明格式损坏")
-    return result if metadata.get("state") == "complete" and (result / "data.sqlite3").is_file() else None
+    return (
+        public_path(result)
+        if metadata.get("state") == "complete" and (result / "data.sqlite3").is_file()
+        else None
+    )
 
 
 def _json(value: Any) -> str:
@@ -169,10 +175,9 @@ def _json(value: Any) -> str:
 
 def reusable_result(folder: Path, metadata: dict[str, Any]) -> bool:
     """A damaged cache or missing CSV is rebuilt, even with unchanged source data."""
+    folder = filesystem_path(folder)
     try:
-        with closing(
-            sqlite3.connect((folder / "data.sqlite3").as_uri() + "?mode=ro&immutable=1", uri=True)
-        ) as db:
+        with closing(sqlite3.connect(readonly_uri(folder / "data.sqlite3"), uri=True)) as db:
             if db.execute("PRAGMA quick_check").fetchone()[0] != "ok":
                 return False
             frames = db.execute(
@@ -400,7 +405,7 @@ def process_device(
     if profile is None:
         raise ValueError(f"{device.label} 暂不支持离线处理")
     source = fingerprints(device, cancel)
-    home = result_home(entry, device)
+    home = filesystem_path(result_home(entry, device))
     if linked(home.parent) or linked(home):
         raise ValueError("处理目录不能是符号链接或目录联接")
     try:
@@ -408,6 +413,7 @@ def process_device(
     except (OSError, ValueError, TypeError):
         previous = None  # Rebuild a damaged pointer without removing prior generations.
     if previous:
+        previous = filesystem_path(previous)
         saved = read_json(previous / "result.json", {})
         if (
             saved.get("version") == PROCESSING_VERSION
@@ -416,7 +422,7 @@ def process_device(
         ):
             if finalize is not None:
                 finalize(previous)
-            return previous
+            return public_path(previous)
     home.mkdir(parents=True, exist_ok=True)
     if os.name == "nt":
         import ctypes
@@ -424,8 +430,9 @@ def process_device(
         attributes = home.parent.stat().st_file_attributes
         if not ctypes.windll.kernel32.SetFileAttributesW(str(home.parent), attributes | 0x02):
             raise ctypes.WinError()
-    staging = home / f".processing-{uuid4().hex}"
-    staging.mkdir()
+    # Nested capture paths need short temporary names on Windows. Creation stays
+    # exclusive and on the same filesystem for the final atomic rename.
+    staging = Path(mkdtemp(prefix=".processing-", dir=home))
     writer = None
     try:
         writer = ProcessedWriter(
@@ -453,7 +460,7 @@ def process_device(
             "state": "complete",
             "created_at": datetime.now(timezone.utc).isoformat(),
             "software_version": "0.3.0",
-            "source": os.path.relpath(device.folder, home),
+            "source": os.path.relpath(public_path(device.folder), public_path(home)),
             "inputs": source,
             "recording": device.metadata,
             "power_units": profile.power_units,
@@ -483,7 +490,7 @@ def process_device(
         staging.rename(generation)
         atomic_json(home / "current.json", {"generation": generation.name})
         progress(stats["frames"], stats["frames"])
-        return generation
+        return public_path(generation)
     finally:
         if writer is not None:
             writer.close()

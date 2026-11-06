@@ -5,7 +5,7 @@ from pathlib import Path
 from lab_control.instruments.devices.definition import DeviceDefinition, DeviceDocumentation
 
 from .adapter import Microchip53100AAdapter, create
-from .discovery import UsbDiscoveryProvider
+from .discovery import PENDING_DISPLAY_NAME, UsbDiscoveryProvider
 from .profile import capability_schema, profile
 
 DEFINITION = DeviceDefinition(
@@ -24,4 +24,7 @@ DEFINITION = DeviceDefinition(
     discovery_factory=UsbDiscoveryProvider,
     discovery_connection_only_transports=("tserve",),
     acquisition_initiate_editable=False,
+    management_surface=True,
+    monitoring_surface=False,
+    pending_display_name=PENDING_DISPLAY_NAME,
 )

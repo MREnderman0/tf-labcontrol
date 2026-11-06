@@ -201,3 +201,26 @@ def test_empty_batch_stays_indexed_without_link_to_missing_result(tmp_path):
     assert "2026-01-01-empty" in index
     assert "results.json" not in index
     assert "待核对" in index
+
+
+def test_current_batch_and_stage_selection_compare_time_zones_without_changing_evidence(tmp_path):
+    originals = {}
+    for name, started, status in (
+        ("2026-local", "2026-11-06T11:38:15+08:00", "failed"),
+        ("2026-utc", "2026-11-06T04:47:14Z", "passed"),
+        ("2026-unknown", "", "blocked"),
+    ):
+        folder = make_batch(tmp_path, "Scope", "TEST-TIME", name, stages={"restoration": status})
+        raw = json.loads((folder / "results.json").read_text(encoding="utf-8"))
+        raw["started_at"] = started
+        (folder / "results.json").write_text(json.dumps(raw), encoding="utf-8")
+        publish(folder, normalize(raw, adapter_id="fixture", model="Scope", stage_names={}))
+        originals.update({p: p.read_bytes() for p in folder.iterdir()})
+    update_documents(tmp_path)
+    current = (folder.parent / "connection-status.md").read_text(encoding="utf-8")
+    recent = next(line for line in current.splitlines() if line.startswith("| 最近批次 |"))
+    assert "2026-utc" in recent
+    restoration = next(line for line in current.splitlines() if line.startswith("| LAN | restoration |"))
+    assert "| passed |" in restoration and "2026-utc" in restoration
+    assert "restoration=failed" in current and "restoration=blocked" in current
+    assert all(path.read_bytes() == data for path, data in originals.items())

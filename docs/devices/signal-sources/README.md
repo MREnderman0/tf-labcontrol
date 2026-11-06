@@ -5,6 +5,7 @@
 | 型号 | 接入路线 | 文档 |
 | --- | --- | --- |
 | Siglent SDG6032X | USB / LAN VXI-11 / 已配置 TCP Socket | [型号说明](sdg6032x.md) |
+| Siglent SDG6032X-E | USB / LAN VXI-11 / explicitly configured VISA SOCKET | [型号说明](sdg6032xe.md) |
 | RIGOL DG5504 Pro | LAN / USB；优先 PyVISA | [型号说明](dg5504-pro.md) |
 | Tektronix AFG31252 | USB Device / LAN / GPIB（核对实际接口） | [型号说明](afg31252.md) |
 | Siglent SDG2082X | USB USBTMC / LAN VXI-11，经 PyVISA 接入 | [型号说明](sdg2082x.md) |

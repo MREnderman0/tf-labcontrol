@@ -256,7 +256,7 @@ class ProcessingViewer(QWidget):
                 y = sample["values"].reshape(-1)
                 x = np.arange(y.size) if sample["axis"] is None else sample["axis"].reshape(-1)
                 display = sample.get("metadata", {}).get("scope_display")
-                if display and series["quantity"] == "waveform" and series.get("axis_unit") == "s":
+                if display and series.get("axis_unit") == "s":
                     spec = ScopeDisplay.parse(display)
                     if spec.unit != series["unit"]:
                         raise ValueError("波形单位与采集时示波器刻度不一致")

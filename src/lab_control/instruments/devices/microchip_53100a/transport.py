@@ -5,7 +5,11 @@ import time
 from collections.abc import Callable
 
 from lab_control.domain.instruments import DeviceError
+from lab_control.transport.read_wait import read_timeout
 from lab_control.transport.streams import TcpSocketTransport
+
+PROMPT = re.compile(rb"=[^\r\n>]+ > ")
+MAX_REPLY = 4 * 1024 * 1024
 
 
 class TserveTransport(TcpSocketTransport):
@@ -52,36 +56,53 @@ class TserveTransport(TcpSocketTransport):
 
     def read(self) -> bytes:
         data = bytearray()
-        from lab_control.transport.read_wait import read_timeout
-
+        line_start = 0
+        escape = False
+        negotiation = 0
         deadline = time.monotonic() + read_timeout(self.timeout)
         previous = self.sock.gettimeout() if self.sock is not None else None
         try:
-            while len(data) < 4 * 1024 * 1024:
+            while True:
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
                     raise DeviceError("TSERVE prompt timeout", "timeout")
                 if self.sock is not None:
                     self.sock.settimeout(remaining)
-                char = self.reader.exact(1)
-                if char == b"\xff":
-                    verb = self.reader.exact(1)[0]
-                    if verb in (251, 252, 253, 254):
-                        option = self.reader.exact(1)
-                        if verb in (251, 253):
-                            self._send(bytes([255, 254 if verb == 251 else 252]) + option)
-                    elif verb == 255:
-                        data.extend(char)
-                    else:
-                        raise DeviceError("Unsupported TSERVE Telnet negotiation", "parse_error")
-                    continue
-                data.extend(char)
-                # The trailing space belongs to the documented TSERVE prompt.
-                # Leaving it pending breaks the next command's empty reply and
-                # can reset TCP on close while unread bytes remain.
-                if char == b" " and re.search(rb"(?:^|[\r\n])=[^\r\n>]+ > $", data):
-                    return bytes(data[: data.rfind(b"=")]).strip()
-            raise DeviceError("Excessive TSERVE response", "parse_error")
+                if self.reader.buffer:
+                    chunk = bytes(self.reader.buffer)
+                    self.reader.buffer.clear()
+                else:
+                    chunk = self._receive(65536)
+                if not chunk:
+                    raise DeviceError("Connection closed during TSERVE response", "disconnected")
+                for index, byte in enumerate(chunk):
+                    # A Telnet escape or option can span TCP reads.
+                    if negotiation:
+                        if negotiation in (251, 253):
+                            self._send(bytes((255, 254 if negotiation == 251 else 252, byte)))
+                        negotiation = 0
+                        continue
+                    if escape:
+                        escape = False
+                        if byte in (251, 252, 253, 254):
+                            negotiation = byte
+                            continue
+                        if byte != 255:
+                            raise DeviceError("Unsupported TSERVE Telnet negotiation", "parse_error")
+                    elif byte == 255:
+                        escape = True
+                        continue
+
+                    data.append(byte)
+                    if byte in (13, 10):
+                        line_start = len(data)
+                    # Check only a possible prompt line and consume its trailing space.
+                    elif byte == 32 and data[line_start] == 61 and data.endswith(b" > "):
+                        if PROMPT.fullmatch(data, line_start):
+                            self.reader.buffer.extend(chunk[index + 1 :])
+                            return bytes(data[:line_start]).strip()
+                    if len(data) >= MAX_REPLY:
+                        raise DeviceError("Excessive TSERVE response", "parse_error")
         finally:
             if self.sock is not None:
                 self.sock.settimeout(previous)

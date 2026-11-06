@@ -513,7 +513,7 @@
         4
       ],
       "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
-      "revision": "1335.9090 revision 12",
+      "revision": "1335.9090 revision 12: 17.4, 17.9.1; REAL32 qualified on FW 01.400",
       "acquisition": "rtm",
       "channel_limits": {},
       "hardware_passed": false,
@@ -563,8 +563,8 @@
             "value": {
               "kind": "number",
               "unit": "V/div",
-              "minimum": 0.001,
-              "maximum": 10,
+              "minimum": 1e-09,
+              "maximum": 1000000000.0,
               "choices": [],
               "required": true,
               "range_source": "model",
@@ -602,8 +602,8 @@
             "value": {
               "kind": "number",
               "unit": "V",
-              "minimum": -10,
-              "maximum": 10,
+              "minimum": -1000000000.0,
+              "maximum": 1000000000.0,
               "choices": [],
               "required": true,
               "range_source": "model",
@@ -685,8 +685,8 @@
             "value": {
               "kind": "number",
               "unit": "ratio",
-              "minimum": 0.1,
-              "maximum": 10000,
+              "minimum": 0.001,
+              "maximum": 1000000,
               "choices": [],
               "required": true,
               "range_source": "model",
@@ -724,8 +724,8 @@
             "value": {
               "kind": "number",
               "unit": "V",
-              "minimum": -10,
-              "maximum": 10,
+              "minimum": -1000000000.0,
+              "maximum": 1000000000.0,
               "choices": [],
               "required": true,
               "range_source": "model",
@@ -763,8 +763,8 @@
             "value": {
               "kind": "number",
               "unit": "s/div",
-              "minimum": 1e-10,
-              "maximum": 50,
+              "minimum": 1e-12,
+              "maximum": 500,
               "choices": [],
               "required": true,
               "range_source": "model",
@@ -802,8 +802,8 @@
             "value": {
               "kind": "number",
               "unit": "s",
-              "minimum": -100,
-              "maximum": 100,
+              "minimum": -1000000000.0,
+              "maximum": 1000000000.0,
               "choices": [],
               "required": true,
               "range_source": "model",
@@ -832,6 +832,45 @@
               "TIM:POS {value}"
             ],
             "query": "TIM:POS?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "record_length",
+          "parameters": {
+            "value": {
+              "kind": "integer",
+              "unit": "",
+              "minimum": 1,
+              "maximum": 80000000,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+          "section": "ACQ:POIN",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "当前固件的存储深度设置未通过读回验证；暂仅显示实测点数",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "记录长度",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "ACQ:POIN {value}"
+            ],
+            "query": "ACQ:POIN?",
             "custom_encoder": false
           }
         },
@@ -881,6 +920,49 @@
           }
         },
         {
+          "name": "trigger_slope",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "POS",
+                "NEG",
+                "EITH"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+          "section": "TRIG:A:EDGE:SLOP",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "触发沿",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "TRIG:A:EDGE:SLOP {value}"
+            ],
+            "query": "TRIG:A:EDGE:SLOP?",
+            "custom_encoder": false
+          }
+        },
+        {
           "name": "trigger_mode",
           "parameters": {
             "value": {
@@ -890,7 +972,9 @@
               "maximum": null,
               "choices": [
                 "AUTO",
-                "NORM"
+                "NORM",
+                "STOP",
+                "SINGLE"
               ],
               "required": true,
               "range_source": "model",
@@ -923,13 +1007,56 @@
           }
         },
         {
-          "name": "record_length",
+          "name": "acquisition_mode",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "REFR",
+                "AVER",
+                "ENV"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+          "section": "ACQ:TYPE",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "采集模式",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "ACQ:TYPE {value}"
+            ],
+            "query": "ACQ:TYPE?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "averages",
           "parameters": {
             "value": {
               "kind": "integer",
               "unit": "",
-              "minimum": 1000,
-              "maximum": 10000000,
+              "minimum": 2,
+              "maximum": 1024,
               "choices": [],
               "required": true,
               "range_source": "model",
@@ -941,7 +1068,7 @@
           "requires_confirmation": false,
           "channel_scoped": false,
           "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
-          "section": "ACQ:POIN",
+          "section": "ACQ:AVER:COUN",
           "verification": "documented_pending_hardware",
           "option": "",
           "available": true,
@@ -950,14 +1077,14 @@
           "schema_tested": true,
           "protocol_fixture_tested": false,
           "hardware_passed": false,
-          "ui_label": "记录长度",
+          "ui_label": "平均次数",
           "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
-              "ACQ:POIN {value}"
+              "ACQ:AVER:COUN {value}"
             ],
-            "query": "ACQ:POIN?",
+            "query": "ACQ:AVER:COUN?",
             "custom_encoder": false
           }
         },
@@ -997,6 +1124,403 @@
               "ACQ:NSIN:COUN {value}"
             ],
             "query": "ACQ:NSIN:COUN?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "decimation",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "SAMP",
+                "PDET",
+                "HRES"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+          "section": "CHAN:TYPE",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "抽取 / 高分辨率",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "CHAN:TYPE {value}"
+            ],
+            "query": "CHAN:TYPE?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "bandwidth_limit",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "FULL",
+                "B20"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+          "section": "CHAN{ch}:BAND",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "带宽限制",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "CHAN{ch}:BAND {value}"
+            ],
+            "query": "CHAN{ch}:BAND?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "vertical_position",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+          "section": "CHAN{ch}:POS?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "垂直显示位置",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "CHAN{ch}:POS?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "polarity",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+          "section": "CHAN{ch}:POL?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "通道极性",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "CHAN{ch}:POL?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "sample_rate",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+          "section": "ACQ:SRAT?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "实际采样率",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "ACQ:SRAT?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "record_length_auto",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+          "section": "ACQ:POIN:AUT?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "自动采集点数",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "ACQ:POIN:AUT?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "time_reference",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+          "section": "TIM:REF?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "水平参考位置",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "TIM:REF?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "horizontal_divisions",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+          "section": "TIM:DIV?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "水平格数",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "TIM:DIV?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "trigger_type",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+          "section": "TRIG:A:TYPE?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "触发类型",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "TRIG:A:TYPE?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "trigger_sweep",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+          "section": "TRIG:A:MODE?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "触发运行方式",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "TRIG:A:MODE?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "acquisition_state",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+          "section": "ACQ:STAT?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "采集状态",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "ACQ:STAT?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "transfer_format",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+          "section": "FORM?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "轨迹传输格式",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "FORM?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "byte_order",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+          "section": "FORM:BORD?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "传输字节序",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "FORM:BORD?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "waveform_header",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
+          "section": "CHAN{ch}:DATA:HEAD?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "波形头信息",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "CHAN{ch}:DATA:HEAD?",
             "custom_encoder": false
           }
         },
@@ -1085,55 +1609,14 @@
           }
         },
         {
-          "name": "waveform_header",
+          "name": "auto_setup",
           "parameters": {},
-          "readable": true,
-          "writable": false,
-          "requires_confirmation": false,
-          "channel_scoped": true,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
-          "section": "CHAN{ch}:DATA:HEAD?",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "波形头信息",
-          "ui_location": "",
-          "wire_templates": {
-            "select": [],
-            "writes": [],
-            "query": "CHAN{ch}:DATA:HEAD?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "acquisition_mode",
-          "parameters": {
-            "value": {
-              "kind": "enum",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [
-                "REFR",
-                "AVER",
-                "ENV"
-              ],
-              "required": true,
-              "range_source": "model",
-              "resolution": null
-            }
-          },
-          "readable": true,
+          "readable": false,
           "writable": true,
-          "requires_confirmation": false,
+          "requires_confirmation": true,
           "channel_scoped": false,
           "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
-          "section": "ACQ:TYPE",
+          "section": "AUT",
           "verification": "documented_pending_hardware",
           "option": "",
           "available": true,
@@ -1142,138 +1625,14 @@
           "schema_tested": true,
           "protocol_fixture_tested": false,
           "hardware_passed": false,
-          "ui_label": "采集模式",
+          "ui_label": "自动设置",
           "ui_location": "",
           "wire_templates": {
             "select": [],
             "writes": [
-              "ACQ:TYPE {value}"
+              "AUT"
             ],
-            "query": "ACQ:TYPE?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "averages",
-          "parameters": {
-            "value": {
-              "kind": "integer",
-              "unit": "",
-              "minimum": 2,
-              "maximum": 1024,
-              "choices": [],
-              "required": true,
-              "range_source": "model",
-              "resolution": null
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
-          "section": "ACQ:AVER:COUN",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "平均次数",
-          "ui_location": "",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "ACQ:AVER:COUN {value}"
-            ],
-            "query": "ACQ:AVER:COUN?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "decimation",
-          "parameters": {
-            "value": {
-              "kind": "enum",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [
-                "SAMP",
-                "PDET",
-                "HRES"
-              ],
-              "required": true,
-              "range_source": "model",
-              "resolution": null
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": false,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
-          "section": "CHAN:TYPE",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "抽取 / 高分辨率",
-          "ui_location": "",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "CHAN:TYPE {value}"
-            ],
-            "query": "CHAN:TYPE?",
-            "custom_encoder": false
-          }
-        },
-        {
-          "name": "bandwidth_limit",
-          "parameters": {
-            "value": {
-              "kind": "enum",
-              "unit": "",
-              "minimum": null,
-              "maximum": null,
-              "choices": [
-                "FULL",
-                "B20"
-              ],
-              "required": true,
-              "range_source": "model",
-              "resolution": null
-            }
-          },
-          "readable": true,
-          "writable": true,
-          "requires_confirmation": false,
-          "channel_scoped": true,
-          "source": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/pdm/cl_manuals/user_manual/1335_9090_01/RTM3000_UserManual_en_12.pdf",
-          "section": "CHAN{ch}:BAND",
-          "verification": "documented_pending_hardware",
-          "option": "",
-          "available": true,
-          "reason": "",
-          "implementation": "implemented",
-          "schema_tested": true,
-          "protocol_fixture_tested": false,
-          "hardware_passed": false,
-          "ui_label": "带宽限制",
-          "ui_location": "",
-          "wire_templates": {
-            "select": [],
-            "writes": [
-              "CHAN{ch}:BAND {value}"
-            ],
-            "query": "CHAN{ch}:BAND?",
+            "query": "",
             "custom_encoder": false
           }
         },
@@ -5909,6 +6268,444 @@
             "writes": [],
             "query": "",
             "custom_encoder": true
+          }
+        }
+      ]
+    },
+    {
+      "adapter_id": "siglent.sdg6032xe",
+      "model": "Siglent SDG6032X-E",
+      "category": "signal_generator",
+      "control_page": "设备管理 / 信号源",
+      "channels": [
+        1,
+        2
+      ],
+      "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2025/12/SDG6000X_ProgrammingGuide_EN06A.pdf",
+      "revision": "EN06A §§3.1–3.4, 3.15, 3.22–3.23; CN06A pp.8–11",
+      "acquisition": "",
+      "channel_limits": {},
+      "hardware_passed": false,
+      "operations": [
+        {
+          "name": "waveform",
+          "parameters": {
+            "value": {
+              "kind": "enum",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [
+                "SINE",
+                "SQUARE",
+                "RAMP",
+                "DC"
+              ],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2025/12/SDG6000X_ProgrammingGuide_EN06A.pdf",
+          "section": "C{ch}:BSWV WVTP,{value}",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "波形",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "C{ch}:BSWV WVTP,{value}"
+            ],
+            "query": "C{ch}:BSWV?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "frequency",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Hz",
+              "minimum": 1e-06,
+              "maximum": 350000000.0,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2025/12/SDG6000X_ProgrammingGuide_EN06A.pdf",
+          "section": "C{ch}:BSWV FRQ,{value}",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": true,
+          "hardware_passed": false,
+          "ui_label": "频率",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "C{ch}:BSWV FRQ,{value}"
+            ],
+            "query": "C{ch}:BSWV?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "amplitude",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "Vpp",
+              "minimum": 0.001,
+              "maximum": 20,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2025/12/SDG6000X_ProgrammingGuide_EN06A.pdf",
+          "section": "C{ch}:BSWV AMP,{value}",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "幅度",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "C{ch}:BSWV AMP,{value}"
+            ],
+            "query": "C{ch}:BSWV?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "offset",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "V",
+              "minimum": -10,
+              "maximum": 10,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2025/12/SDG6000X_ProgrammingGuide_EN06A.pdf",
+          "section": "C{ch}:BSWV OFST,{value}",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "偏移",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "C{ch}:BSWV OFST,{value}"
+            ],
+            "query": "C{ch}:BSWV?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "phase",
+          "parameters": {
+            "value": {
+              "kind": "number",
+              "unit": "deg",
+              "minimum": 0,
+              "maximum": 360,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2025/12/SDG6000X_ProgrammingGuide_EN06A.pdf",
+          "section": "C{ch}:BSWV PHSE,{value}",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "相位",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "C{ch}:BSWV PHSE,{value}"
+            ],
+            "query": "C{ch}:BSWV?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "output",
+          "parameters": {
+            "value": {
+              "kind": "boolean",
+              "unit": "",
+              "minimum": null,
+              "maximum": null,
+              "choices": [],
+              "required": true,
+              "range_source": "model",
+              "resolution": null
+            }
+          },
+          "readable": true,
+          "writable": true,
+          "requires_confirmation": true,
+          "channel_scoped": true,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2025/12/SDG6000X_ProgrammingGuide_EN06A.pdf",
+          "section": "C{ch}:OUTP",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "通道输出",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [
+              "C{ch}:OUTP {value}"
+            ],
+            "query": "C{ch}:OUTP?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "load",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2025/12/SDG6000X_ProgrammingGuide_EN06A.pdf",
+          "section": "C{ch}:OUTP?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "输出负载",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "C{ch}:OUTP?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "modulation",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2025/12/SDG6000X_ProgrammingGuide_EN06A.pdf",
+          "section": "C{ch}:MDWV?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "调制开关",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "C{ch}:MDWV?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "sweep",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2025/12/SDG6000X_ProgrammingGuide_EN06A.pdf",
+          "section": "C{ch}:SWWV?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "扫频状态",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "C{ch}:SWWV?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "burst",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": true,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2025/12/SDG6000X_ProgrammingGuide_EN06A.pdf",
+          "section": "C{ch}:BTWV?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "突发输出",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "C{ch}:BTWV?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "coupling",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2025/12/SDG6000X_ProgrammingGuide_EN06A.pdf",
+          "section": "COUP?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "耦合方式",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "COUP?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "phase_mode",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2025/12/SDG6000X_ProgrammingGuide_EN06A.pdf",
+          "section": "MODE?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "相位模式",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "MODE?",
+            "custom_encoder": false
+          }
+        },
+        {
+          "name": "reference_clock",
+          "parameters": {},
+          "readable": true,
+          "writable": false,
+          "requires_confirmation": false,
+          "channel_scoped": false,
+          "source": "https://siglentna.com/wp-content/uploads/dlm_uploads/2025/12/SDG6000X_ProgrammingGuide_EN06A.pdf",
+          "section": "ROSC?",
+          "verification": "documented_pending_hardware",
+          "option": "",
+          "available": true,
+          "reason": "",
+          "implementation": "implemented",
+          "schema_tested": true,
+          "protocol_fixture_tested": false,
+          "hardware_passed": false,
+          "ui_label": "参考时钟",
+          "ui_location": "",
+          "wire_templates": {
+            "select": [],
+            "writes": [],
+            "query": "ROSC?",
+            "custom_encoder": false
           }
         }
       ]

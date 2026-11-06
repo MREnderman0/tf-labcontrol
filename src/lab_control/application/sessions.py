@@ -732,6 +732,7 @@ class SessionManager:
         cadence: str | None = None,
         record_interval: float | None = None,
         csv_interval: float = 5,
+        before_io: Callable[[Any], None] | None = None,
     ) -> Future[Any]:
         request.validate()
         if request.waveform_extent == "memory":
@@ -799,6 +800,7 @@ class SessionManager:
                 cadence=cadence,
                 record_interval=record_interval,
                 run_factory=run_factory,
+                before_io=before_io,
             )
             result: Future[Any] = Future()
             # Publication cancellation cannot undo already submitted instrument I/O.

@@ -87,7 +87,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("wheel", type=Path)
     args = parser.parse_args()
-    with tempfile.TemporaryDirectory(prefix="lab-device-wheel-") as temporary:
+    scratch = Path(__file__).resolve().parents[1] / ".temp"
+    scratch.mkdir(exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="device-wheel-", dir=scratch) as temporary:
         root = Path(temporary).resolve()
         with zipfile.ZipFile(args.wheel) as archive:
             for name in archive.namelist():
@@ -104,7 +106,7 @@ def main() -> int:
             match = package_root / baseline["modules"][adapter_id]
             module = "lab_control.instruments.devices." + match.name
             catalog.write_text(source.replace(f'    "{module}",\n', ""), encoding="utf-8")
-            assert module not in catalog.read_text(encoding="utf-8")
+            assert f'"{module}"' not in catalog.read_text(encoding="utf-8")
             parked = root / (match.name + "-unregistered")
             assert match.resolve().is_relative_to(root) and parked.resolve().is_relative_to(root)
             shutil.move(str(match), str(parked))

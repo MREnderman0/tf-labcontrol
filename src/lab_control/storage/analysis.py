@@ -42,6 +42,8 @@ LABELS = {
     "am_noise": "幅度噪声",
     "noise_floor": "噪声底",
     "stability": "稳定度",
+    "adev": "ADEV",
+    "mdev": "MDEV",
     "phase_difference": "相位差",
     "frequency": "频率",
     "s_parameters": "复数参数",
@@ -151,7 +153,7 @@ def _table(
         if axis is not None:
             axis_unit = sample.get("axis_unit", "")
             axis_name = "时间" if axis_unit == "s" else "频率" if axis_unit == "Hz" else "横轴"
-            if quantity == "stability":
+            if quantity in {"stability", "adev", "mdev"}:
                 axis_name = "平均时间"
             elif quantity in {"phase_noise", "am_noise", "noise_floor"} and axis_unit == "Hz":
                 axis_name = "偏移频率"
@@ -529,13 +531,33 @@ def _snapshot(raw: Path) -> dict[str, Any]:
                 document = json.loads(str(arrays["metadata_json"].item()))
             if document is None:
                 raise ValueError("Snapshot metadata is required to interpret these arrays")
+            version = document.get("snapshot_format_version", 1)
+            if version not in (1, 2):
+                raise ValueError("Unsupported snapshot format version")
+            if version == 2 and (
+                "metadata_json" not in arrays or json.loads(str(arrays["metadata_json"].item())) != document
+            ):
+                raise ValueError("Snapshot metadata disagrees with the array archive")
             for index, sample in enumerate(document["measurements"]):
+                if version == 2:
+                    if sample.get("values_ref") != f"values_{index}" or sample.get("axis_ref") not in {
+                        None,
+                        f"axis_{index}",
+                    }:
+                        raise ValueError("Invalid snapshot array reference")
+                    sample["values"] = arrays[sample["values_ref"]].copy()
+                    sample["axis"] = None if sample["axis_ref"] is None else arrays[sample["axis_ref"]].copy()
+                    if sample["axis"] is not None and sample["axis"].size != sample["values"].size:
+                        raise ValueError("Snapshot axis/data length mismatch")
+                    continue
                 sample["values"] = arrays[f"values_{index}"].copy()
                 # Legacy NPZ always included a synthetic index. Do not promote
                 # that index to an instrument axis when the JSON says absent.
                 if sample.get("axis") is not None or ("axis" not in sample and sample.get("axis_unit")):
                     sample["axis"] = arrays[f"axis_{index}"].copy()
     elif document is not None:
+        if document.get("snapshot_format_version", 1) != 1:
+            raise ValueError("Snapshot archive is missing; metadata contains no numeric payload")
         for sample in document["measurements"]:
 
             def decode(value: Any) -> Any:

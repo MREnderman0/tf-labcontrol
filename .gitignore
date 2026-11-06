@@ -29,6 +29,7 @@ build/
 *.suo
 .DS_Store
 .tools/
+.temp/
 .local/
 tmp/
 deployment/packages/**

@@ -124,7 +124,7 @@ def main() -> int:
     selected = args.only or GROUPS
     plan = commands(python)
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
-    output = ROOT / ".tools/checks" / run_id
+    output = ROOT / ".temp/checks" / run_id
     if args.desktop:
         plan["desktop"] = desktop_commands(python, output / "desktop")
         selected = (*selected, "desktop")

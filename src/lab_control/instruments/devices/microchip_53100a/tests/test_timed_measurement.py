@@ -26,7 +26,15 @@ def instrument(monkeypatch):
     )
     adapter.identity = DeviceIdentity("Microchip", "53100A", "TEST123")
     adapter.server = SimpleNamespace(data_port=1234)
-    state = {"rate": 100, "running": False, "serial": "TEST123", "stop_fail": False}
+    state = {
+        "rate": 100,
+        "running": False,
+        "serial": "TEST123",
+        "stop_fail": False,
+        "inputfreq": "Auto",
+        "referencefreq": "Auto",
+        "frequency_fail": False,
+    }
     history = []
 
     def query(command):
@@ -36,7 +44,12 @@ def instrument(monkeypatch):
         if command == "show phaserate":
             return f"Network port phase output rate: {state['rate']} samples/sec"
         if command in ("show inputfreq", "show referencefreq"):
-            return "Auto"
+            return state[command.split()[-1]]
+        if command.startswith(("set inputfreq ", "set referencefreq ")):
+            if state["frequency_fail"]:
+                raise DeviceError("Uncertain frequency write", "timeout")
+            state[command.split()[1]] = "Auto"
+            return ""
         if command.startswith("set phaserate "):
             state["rate"] = int(command.split()[-1])
             return ""
@@ -93,6 +106,33 @@ def test_complete_run_saves_exact_span_both_statistics_and_stops_once(instrument
     assert len(spectra) == history.count("show spectrum")
     assert all(m.metadata["queried_at"] for m in spectra)
     assert frames[-1].measurements[0].metadata == spectra[-1].metadata
+
+
+def test_minute_capture_sets_both_frequencies_auto_before_start(instrument):
+    adapter, state, history, _ = instrument
+    state.update(inputfreq="10 MHz", referencefreq="20 MHz")
+    frames = list(adapter.run_acquisition(replace(REQUEST, sample_rate=1000, duration=60), threading.Event()))
+    phase = [m for frame in frames for m in frame.measurements if m.quantity == "phase_difference"]
+    times = np.concatenate([m.axis for m in phase])
+    assert times.size == 60001 and times[-1] - times[0] == pytest.approx(60)
+    for name in ("inputfreq", "referencefreq"):
+        assert history.count(f"set {name} auto") == 1
+        assert history.index(f"set {name} auto") < history.index("start")
+        assert state[name] == "Auto"
+    assert state["rate"] == 1000 and not state["running"]
+    assert frames[-1].configuration["original_settings"]["reference_frequency"]["value"] == 20e6
+    assert all(value["automatic"] for value in frames[-1].configuration["settings"].values())
+    assert {m.quantity for m in frames[-1].measurements} >= {"adev", "mdev"}
+
+
+def test_uncertain_auto_write_prevents_acquisition_and_replay(instrument):
+    adapter, state, history, _ = instrument
+    state.update(inputfreq="10 MHz", referencefreq="20 MHz", frequency_fail=True)
+    with pytest.raises(DeviceError) as failure:
+        list(adapter.run_acquisition(REQUEST, threading.Event()))
+    assert failure.value.code == "configuration_uncertain"
+    assert history.count("set inputfreq auto") == 1
+    assert "set referencefreq auto" not in history and "start" not in history
 
 
 def test_stop_retains_partial_valid_data_and_labels_partial(instrument):
@@ -195,6 +235,49 @@ def test_public_recording_runner_resumes_finite_phase_stream(instrument, tmp_pat
         assert not state["running"]
 
 
+@pytest.mark.parametrize("stop_fails", [False, True])
+def test_missing_signal_ends_run_without_reconnect_and_verifies_stop(
+    instrument, tmp_path, monkeypatch, stop_fails
+):
+    from lab_control.application.runtime import ApplicationRuntime
+
+    adapter, state, history, stream = instrument
+    identity = adapter.identity
+    adapter.identify = lambda: identity
+    adapter.close = lambda: None
+    state["stop_fail"] = stop_fails
+    original_read = stream.read
+
+    def missing_signal(*args):
+        raise DeviceError("未检测到 DUT 或参考输入信号", "signal_missing")
+
+    def unexpected_reconnect():
+        pytest.fail("Missing signal must not reopen the connection")
+
+    monkeypatch.setattr(stream, "read", missing_signal)
+    adapter.reopen_acquisition = unexpected_reconnect
+    with ApplicationRuntime(root=tmp_path, hardware=False) as runtime:
+        runtime.sessions.factory = lambda _c: adapter
+        device = runtime.add(adapter.config)
+        runtime.connect(device, configure_acquisition=False).result(3)
+        with pytest.raises(DeviceError) as failure:
+            runtime.sessions.start_acquisition(device, REQUEST).result(5)
+        assert failure.value.code == ("cleanup_failed" if stop_fails else "signal_missing")
+        session = runtime.sessions.sessions[device]
+        assert session.state == ("degraded" if stop_fails else "connected")
+        assert not session.recovery and not session.active_task
+        assert session.direct_recording.binary_done and session.direct_recording.committed == 0
+        assert history.count("start") == history.count("stop") == 1
+        assert stream.closed and state["running"] == stop_fails
+        if stop_fails:
+            assert "unknown" in str(failure.value)
+        else:
+            # A later explicit click can succeed on the same session after inputs are connected.
+            monkeypatch.setattr(stream, "read", original_read)
+            paths = runtime.sessions.start_acquisition(device, REQUEST).result(5)
+            assert paths and history.count("start") == history.count("stop") == 2
+
+
 @pytest.mark.parametrize(
     "changes",
     [{"sample_rate": 2}, {"duration": 9}, {"duration": 86400, "sample_rate": 1000}, {"confirmed": False}],
@@ -230,8 +313,32 @@ def test_stream_rejects_notifications_invalid_format_and_nan(monkeypatch, raw):
     stream = measurement.PhaseStream(1234, 10, 1)
     try:
         b.sendall(raw)
-        with pytest.raises(DeviceError):
+        with pytest.raises(DeviceError) as failure:
             stream.read(threading.Event(), 1)
+        assert failure.value.code == "parse_error"
+    finally:
+        stream.close()
+        b.close()
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        b"      No signal found in one or more channels\r\n",
+        b"No signals detected at front-panel input jacks.  Check source connections\r\n",
+    ],
+)
+def test_known_missing_signal_notification_is_not_a_transport_failure(monkeypatch, raw):
+    from lab_control.application.acquisition_recovery import recoverable
+
+    a, b = socket.socketpair()
+    monkeypatch.setattr(measurement.socket, "create_connection", lambda *_: a)
+    stream = measurement.PhaseStream(1234, 1000, 1)
+    try:
+        b.sendall(raw)
+        with pytest.raises(DeviceError, match="未检测到 DUT 或参考输入信号") as failure:
+            stream.read(threading.Event(), 1)
+        assert failure.value.code == "signal_missing" and not recoverable(failure.value)
     finally:
         stream.close()
         b.close()

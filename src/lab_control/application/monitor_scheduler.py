@@ -51,6 +51,16 @@ class MonitorScheduler:
         except DeviceError as exc:
             if record_session and task.recorder:
                 task.recorder.cancel_reservation()
+            if exc.code == "waveform_unavailable":
+                # A model-confirmed empty record is not a transport failure.
+                # End this read without reconnecting or initiating the instrument.
+                task.running = False
+                task.error = ""
+                task.notice = "读取已暂停 · " + str(exc)
+                task.frames.clear()
+                task.frame_interval, task.last_frame_at = None, 0
+                task.configuration_wait_deadline = 0
+                return
             if exc.code != "configuration_changed":
                 raise
             task.configuration_changes += 1

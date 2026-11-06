@@ -22,6 +22,10 @@ class AgentLedger:
             repository.db.execute(
                 "CREATE TABLE IF NOT EXISTS agent_artifacts (id TEXT PRIMARY KEY, document TEXT NOT NULL)"
             )
+            repository.db.execute(
+                "CREATE TABLE IF NOT EXISTS agent_request_aliases "
+                "(client TEXT, request TEXT, fingerprint TEXT, task_id TEXT, PRIMARY KEY(client, request))"
+            )
         # A new process cannot know whether a previously accepted command reached
         # the instrument. Keep its idempotency key and evidence, never replay it.
         for task in self.tasks(active_only=True):
@@ -42,10 +46,25 @@ class AgentLedger:
                 (client, request),
             ).fetchone()
         if row is None:
-            return None
+            with self.repository.lock:
+                alias = self.repository.db.execute(
+                    "SELECT fingerprint, task_id FROM agent_request_aliases WHERE client=? AND request=?",
+                    (client, request),
+                ).fetchone()
+            if alias is None:
+                return None
+            if alias[0] != fingerprint:
+                raise DeviceError("request_id 已用于不同请求", "request_conflict")
+            return self.get(alias[1])
         if row[0] != fingerprint:
             raise DeviceError("request_id 已用于不同请求", "request_conflict")
         return json.loads(row[1])
+
+    def alias(self, client: str, request: str, fingerprint: str, task_id: str) -> None:
+        with self.repository.lock, self.repository.db:
+            self.repository.db.execute(
+                "INSERT INTO agent_request_aliases VALUES (?,?,?,?)", (client, request, fingerprint, task_id)
+            )
 
     def insert(self, task: dict, fingerprint: str) -> None:
         with self.repository.lock, self.repository.db:

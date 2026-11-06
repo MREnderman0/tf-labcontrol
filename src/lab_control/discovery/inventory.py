@@ -12,7 +12,22 @@ from lab_control.discovery.types import DiscoveryCandidate
 from lab_control.domain.connections import ConnectionConfig, canonical_resource
 from lab_control.domain.instruments import DeviceError, DeviceIdentity, jsonable, utc_now
 from lab_control.domain.workspace import GENERAL, WORKSPACE_MODES
+from lab_control.instruments.registry import DEVICE_DEFINITIONS
 from lab_control.storage.repository import Repository
+
+
+def _promote_display_name(record: dict[str, Any]) -> bool:
+    if not record.get("identityKey") or record.get("discoveryState") == "conflict":
+        return False
+    definition = DEVICE_DEFINITIONS.get(record.get("adapterId", ""))
+    if (
+        definition is None
+        or not definition.pending_display_name
+        or record.get("displayName") != definition.pending_display_name
+    ):
+        return False
+    record["displayName"] = definition.documentation.title
+    return True
 
 
 class Inventory:
@@ -20,8 +35,11 @@ class Inventory:
         self.repository = repository
         self.lock = threading.RLock()
         self.records = {item["id"]: item for item in repository.records()}
+        renamed = tuple(record for record in self.records.values() if _promote_display_name(record))
+        if renamed:
+            repository.save_many(renamed)
         # Persisted evidence describes a previous process, not currently attached hardware.
-        # Do not rewrite the user's inventory just for starting the application.
+        # Reset presence in memory only.
         for record in self.records.values():
             for candidate in record["candidates"].values():
                 candidate["presenceState"] = "unknown"
@@ -365,6 +383,7 @@ class Inventory:
             )
             if conflict:
                 record["identityConflict"] = jsonable(identity)
+            _promote_display_name(record)
             update_record_presence(record)
             self.records[record["id"]] = record
             self.repository.save(record)

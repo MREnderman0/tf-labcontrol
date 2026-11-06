@@ -37,6 +37,9 @@ class AgentService:
         self.active: dict[str, dict] = {}
         self.unjournaled: dict[str, dict] = {}
         self.worker = ThreadPoolExecutor(max_workers=4, thread_name_prefix="agent-task")
+        from lab_control.application.agents.metrics import MetricTasks
+
+        self.metrics = MetricTasks(self)
         self.closing = False
         self.server: Any = None
         self.wake = threading.Event()
@@ -86,6 +89,55 @@ class AgentService:
             "grants": grants,
             "output_on_stop": "unchanged_or_unknown",
         }
+
+    def get_processing_capabilities(self, client, grant_id, device_id):
+        return self.metrics.capabilities(client, grant_id, device_id)
+
+    def list_recordings(self, client, grant_id, device_id=""):
+        return self.metrics.list_recordings(client, grant_id, device_id)
+
+    def start_processing(
+        self,
+        client,
+        grant_id,
+        device_id,
+        request_id,
+        recording_id,
+        profile_id,
+        parameters=None,
+        allow_partial=False,
+        force=False,
+    ):
+        return self.metrics.start(
+            client,
+            grant_id,
+            device_id,
+            request_id,
+            profile_id,
+            parameters or {},
+            recording_id=recording_id,
+            allow_partial=allow_partial,
+            force=force,
+        )
+
+    def start_experiment(
+        self, client, grant_id, device_id, request_id, profile_id, capture_parameters=None, parameters=None
+    ):
+        return self.metrics.start(
+            client,
+            grant_id,
+            device_id,
+            request_id,
+            profile_id,
+            parameters or {},
+            capture_parameters=capture_parameters or {},
+        )
+
+    def list_processing_results(self, client, grant_id, device_id="", recording_id="", profile_id=""):
+        return self.metrics.list_results(client, grant_id, device_id, recording_id, profile_id)
+
+    def get_processing_result(self, client, grant_id, result_id):
+        return self.metrics.get_result(client, grant_id, result_id)
 
     def list_devices(self, client: str, grant_id: str) -> list[dict]:
         grant = self.policy.grants.get(grant_id, {})
@@ -222,12 +274,15 @@ class AgentService:
                 return previous
             if action != "stop" and (
                 len(self.active) >= 128
-                or sum(
-                    ctx["task"]["device_id"] == device
-                    and ctx["task"]["action"] not in {"monitor", "record", "stop"}
-                    for ctx in self.active.values()
+                or (
+                    action != "process"
+                    and sum(
+                        ctx["task"]["device_id"] == device
+                        and ctx["task"]["action"] not in {"monitor", "record", "stop", "process"}
+                        for ctx in self.active.values()
+                    )
+                    >= 4
                 )
-                >= 4
             ):
                 fail("活动任务已达上限", "task_busy")
             request = payload.get("request", payload)
@@ -682,6 +737,18 @@ class AgentService:
         task = ctx["task"]
         if task["state"] == "stopping":
             return
+        if "cancel" in ctx:
+            ctx["cancel"].set()
+            with self.runtime.sessions.lock:
+                session = self.runtime.sessions.sessions.get(task["device_id"])
+                recorder = ctx.get("direct_recording")
+                if (
+                    recorder is not None
+                    and not recorder.binary_done
+                    and session is not None
+                    and session.direct_recording is recorder
+                ):
+                    self.runtime.sessions.stop_acquisition(task["device_id"])
         monitor = ctx.get("monitor")
         if monitor is not None:
             with self.runtime.monitoring.lock:
@@ -710,6 +777,10 @@ class AgentService:
         task = ctx["task"]
         if exc is not None:
             task.update(state="failed", error=str(exc), code=getattr(exc, "code", "operation_failed"))
+            from lab_control.storage.processing import ProcessingCancelled
+
+            if isinstance(exc, ProcessingCancelled):
+                task.update(state="cancelled", code="cancelled")
             if hasattr(exc, "outcome"):
                 task.update(state="partial", result=jsonable(exc.outcome))
         else:
@@ -727,8 +798,16 @@ class AgentService:
                 error=getattr(result, "error", ""),
                 code="" if state == "completed" else outcome,
             )
+            if task["action"] == "process" and isinstance(result, dict) and result.get("complete") is False:
+                task.update(state="partial", code="incomplete_recording")
         if ctx.get("folder"):
             try:
+                from lab_control.storage.layout import manifest
+                from lab_control.storage.metric_results import digest
+
+                metadata = manifest(Path(ctx["folder"]))
+                if metadata.get("run_id") and metadata.get("device_id") == task["device_id"]:
+                    task["recording_id"] = digest([task["device_id"], metadata["run_id"]])[:32]
                 self._register_artifacts(task, Path(ctx["folder"]))
             except Exception as artifact_error:
                 task.update(state="partial", code="artifact_registration_failed", error=str(artifact_error))
@@ -892,6 +971,7 @@ class AgentService:
                 except Exception as exc:
                     errors.append(exc)
         self.worker.shutdown(wait=True)
+        self.metrics.close()
         if errors:
             for secondary in errors[1:]:
                 errors[0].add_note(str(secondary))

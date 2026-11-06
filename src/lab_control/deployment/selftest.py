@@ -38,7 +38,9 @@ def run(destination: Path) -> int:
         from lab_control.domain.instruments import DeviceIdentity, Measurement, MeasurementBatch
         from lab_control.storage.recording import Recording, read_frames
 
-        with tempfile.TemporaryDirectory(prefix="labcontrol-中文 smoke-") as directory:
+        destination = destination.resolve()
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="smoke-中文-", dir=destination.parent) as directory:
             root = Path(directory)
             os.environ["LAB_CONTROL_HOME"] = str(root)
             os.environ["LOCALAPPDATA"] = str(root / "local")

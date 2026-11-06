@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
 )
 
 from lab_control.application.bulk_connection import device_label
-from lab_control.application.catalog import instrument_category, mode_applicable
+from lab_control.application.catalog import instrument_category, mode_applicable, surface_applicable
 from lab_control.application.config import config_from_record
 from lab_control.application.controls import CATEGORY_LABELS, data_sources
 from lab_control.domain.instruments import AcquisitionRequest, DeviceError
@@ -448,6 +448,8 @@ class MonitoringDashboard(QWidget):
         return saved
 
     def _spec_for(self, record: dict[str, Any]) -> dict[str, Any] | None:
+        if not surface_applicable(record, "monitoring"):
+            return None
         device_id = record["id"]
         try:
             sources = self._recording_sources(record)

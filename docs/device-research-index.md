@@ -47,6 +47,7 @@
 | R&S ZNB3004 | `rs.znb3004` | LAN / USB VISA | [卡片](devices/measurement-analyzers/rs-znb3004.md) |
 | Keysight / Agilent / HP 3458A | `keysight.3458a` | GPIB + USB-GPIB/LAN-GPIB 控制器 | [卡片](devices/measurement-analyzers/keysight-3458a.md) |
 | Siglent SDG6032X | `siglent.sdg6032x` | USB / LAN VXI-11 / 已配置 TCP Socket | [卡片](devices/signal-sources/sdg6032x.md) |
+| Siglent SDG6032X-E | `siglent.sdg6032xe` | USB / LAN VXI-11 / explicitly configured VISA SOCKET | [卡片](devices/signal-sources/sdg6032xe.md) |
 | Keithley 2231A-30-3 | `keithley.2231a` | 2231A-001 USB 适配器 / 虚拟串口 | [卡片](devices/power-supplies/keithley-2231a.md) |
 | Siglent SPD4306X | `siglent.spd4306x` | USB / LAN VISA / 已配置 TCP Socket | [卡片](devices/power-supplies/spd4306x.md) |
 | ITECH IT6322 | `itech.it6322` | RS-232 / 已安装 USB 或 GPIB 接口 | [卡片](devices/power-supplies/it6322.md) |

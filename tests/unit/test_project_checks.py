@@ -10,6 +10,28 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def test_temporary_batches_follow_checkout_without_overwriting_existing_runs(tmp_path):
+    entry = runpy.run_path(str(ROOT / "conftest.py"))
+    checkout = tmp_path / "different-checkout"
+    checkout.mkdir()
+    configure = entry["pytest_configure"]
+    configure.__globals__["__file__"] = str(checkout / "conftest.py")
+    first = SimpleNamespace(option=SimpleNamespace(basetemp=None, collectonly=False))
+    configure(first)
+    original = Path(first.option.basetemp)
+    marker = original / "keep.txt"
+    marker.write_text("previous results", encoding="utf-8")
+    second = SimpleNamespace(option=SimpleNamespace(basetemp=None, collectonly=False))
+    configure(second)
+    assert original.parent == checkout / ".temp"
+    assert Path(second.option.basetemp).parent == original.parent
+    assert second.option.basetemp != first.option.basetemp
+    assert marker.read_text(encoding="utf-8") == "previous results"
+    explicit = SimpleNamespace(option=SimpleNamespace(basetemp=str(original), collectonly=False))
+    configure(explicit)
+    assert explicit.option.basetemp == str(original) and marker.exists()
+
+
 def test_legacy_hardware_environment_cannot_enable_retired_test(monkeypatch):
     monkeypatch.setenv("LAB_CONTROL_HARDWARE_CONFIG", "must-not-be-opened.toml")
     monkeypatch.setenv("LAB_CONTROL_HARDWARE_RESOURCE", "must-not-be-contacted")

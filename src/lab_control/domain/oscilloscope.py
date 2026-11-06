@@ -24,7 +24,7 @@ CONTROL_NAMES = (
 
 @dataclass(frozen=True)
 class ScopeDisplay:
-    """Eight vertical and ten horizontal divisions. Values remain in physical units."""
+    """Eight vertical divisions and an instrument-supplied horizontal grid."""
 
     units_per_div: float
     reference_value: float
@@ -34,20 +34,31 @@ class ScopeDisplay:
     version: int = 1
     vertical_offset_sign: int | None = None
     horizontal_position_sign: int | None = None
+    horizontal_divisions: int = 10
+    vertical_position_divisions: float = 0.0
 
     def __post_init__(self) -> None:
-        numbers = (self.units_per_div, self.reference_value, self.seconds_per_div, self.time_center)
+        numbers = (
+            self.units_per_div,
+            self.reference_value,
+            self.seconds_per_div,
+            self.time_center,
+            self.vertical_position_divisions,
+        )
         if (
             self.version != 1
+            or type(self.horizontal_divisions) is not int
+            or not 2 <= self.horizontal_divisions <= 32
             or self.vertical_offset_sign not in {None, -1, 1}
             or self.horizontal_position_sign not in {None, -1, 1}
             or not self.unit
             or not all(math.isfinite(v) for v in numbers)
             or self.units_per_div <= 0
             or self.seconds_per_div <= 0
-            or not math.isfinite(self.time_center + 5 * self.seconds_per_div)
-            or not math.isfinite(self.time_center - 5 * self.seconds_per_div)
-            or self.time_center + 5 * self.seconds_per_div <= self.time_center - 5 * self.seconds_per_div
+            or not math.isfinite(self.time_center + self.horizontal_divisions / 2 * self.seconds_per_div)
+            or not math.isfinite(self.time_center - self.horizontal_divisions / 2 * self.seconds_per_div)
+            or self.time_center + self.horizontal_divisions / 2 * self.seconds_per_div
+            <= self.time_center - self.horizontal_divisions / 2 * self.seconds_per_div
         ):
             raise ValueError("Invalid oscilloscope display coordinates")
 

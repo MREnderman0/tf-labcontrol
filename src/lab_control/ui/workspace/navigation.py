@@ -15,6 +15,7 @@ from lab_control.discovery.presence import LIVE_CONNECTIONS
 from lab_control.ui.pages.data_processing import DataProcessingPage
 from lab_control.ui.pages.device_control.coremorrow_e00 import CoreMorrowE00Page
 from lab_control.ui.pages.device_control.page import DeviceControlPage
+from lab_control.ui.pages.device_control.phase_noise import PhaseNoisePage
 from lab_control.ui.pages.device_control.power_supply import PowerSupplyPage
 from lab_control.ui.pages.device_control.signal_source import SignalSourcePage
 from lab_control.ui.pages.monitoring.frequency_counter import FrequencyCounterMonitoringPage
@@ -22,7 +23,6 @@ from lab_control.ui.pages.monitoring.optical_power import OpticalPowerMonitoring
 from lab_control.ui.pages.monitoring.optical_spectrum import OpticalSpectrumMonitoringPage
 from lab_control.ui.pages.monitoring.oscilloscope import OscilloscopeMonitoringPage
 from lab_control.ui.pages.monitoring.page import MonitoringPage
-from lab_control.ui.pages.monitoring.phase_noise import PhaseNoiseMonitoringPage
 from lab_control.ui.pages.monitoring.power import PowerMonitoringPage
 from lab_control.ui.pages.monitoring.spectrum import SpectrumMonitoringPage
 
@@ -83,7 +83,6 @@ class WorkspaceNavigation:
         monitoring_only = {
             "spectrum_analyzer",
             "oscilloscope",
-            "phase_noise_analyzer",
             "optical_power_meter",
             "optical_spectrometer",
             "frequency_counter",
@@ -167,6 +166,9 @@ class WorkspaceNavigation:
     def navigate(self, module: str, category: str = "", device_id: str = "") -> None:
         window = self.window
         requested = window.controller.records.get(device_id)
+        if module == "实时监测" and category == "phase_noise_analyzer":
+            # Retain old navigation targets while keeping this finite capture in management.
+            module = "设备管理"
         if module == "设备管理" and requested and not surface_applicable(requested, "management"):
             module = "实时监测"
         if (
@@ -181,7 +183,6 @@ class WorkspaceNavigation:
         if module == "设备管理" and category in {
             "spectrum_analyzer",
             "oscilloscope",
-            "phase_noise_analyzer",
             "optical_power_meter",
             "optical_spectrometer",
             "frequency_counter",
@@ -245,6 +246,8 @@ class WorkspaceNavigation:
                         if category == "signal_generator"
                         else CoreMorrowE00Page(window.controller)
                         if category == "power_supply"
+                        else PhaseNoisePage(window.controller)
+                        if category == "phase_noise_analyzer"
                         else DeviceControlPage(window.controller, category)
                     )
                 elif module == "实时监测":
@@ -259,8 +262,6 @@ class WorkspaceNavigation:
                         if category == "optical_power_meter"
                         else OpticalSpectrumMonitoringPage(window.controller, window.dashboard.add)
                         if category == "optical_spectrometer"
-                        else PhaseNoiseMonitoringPage(window.controller)
-                        if category == "phase_noise_analyzer"
                         else FrequencyCounterMonitoringPage(window.controller, window.dashboard.add)
                         if category == "frequency_counter"
                         else MonitoringPage(window.controller, category, window.dashboard.add)
@@ -292,7 +293,7 @@ class WorkspaceNavigation:
                 PowerMonitoringPage,
                 OpticalPowerMonitoringPage,
                 OpticalSpectrumMonitoringPage,
-                PhaseNoiseMonitoringPage,
+                PhaseNoisePage,
                 FrequencyCounterMonitoringPage,
                 SignalSourcePage,
                 PowerSupplyPage,

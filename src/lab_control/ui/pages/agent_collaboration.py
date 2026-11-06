@@ -46,6 +46,7 @@ ACTION_LABELS = {
     "record": "连续记录",
     "stop": "停止共享任务",
     "results": "获取实验文件",
+    "process": "计算指标及运行采数处理流程",
     "acquisition_setup": "允许采集格式初始化",
     "output_trigger": "允许输出、触发及深存储动作",
 }
@@ -58,6 +59,7 @@ STATE_LABELS = {
     "completed": "完成",
     "partial": "部分完成",
     "failed": "失败",
+    "cancelled": "已取消",
     "interrupted": "中断，需核对",
 }
 

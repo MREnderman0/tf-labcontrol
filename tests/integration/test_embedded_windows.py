@@ -72,7 +72,7 @@ def add_pair(runtime, adapter):
         ("实时监测", "power_supply", "gwinstek.gpd4303s"),
         ("实时监测", "signal_generator", "rs.sma100b"),
         ("实时监测", "frequency_counter", "kplusk.fxe"),
-        ("实时监测", "phase_noise_analyzer", "microchip.53100a"),
+        ("设备管理", "phase_noise_analyzer", "microchip.53100a"),
         ("实时监测", "multimeter", "keysight.3458a"),
         ("实时监测", "network_analyzer", "rs.znb3004"),
         ("设备管理", "signal_generator", "rs.sma100b"),

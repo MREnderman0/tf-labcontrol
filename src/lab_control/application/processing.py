@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Any, Callable
 from uuid import uuid4
 
-from lab_control.application.leases import FileLease
 from lab_control.domain.processing import RecordingEntry
 from lab_control.storage.layout import atomic_json, raw_folder
 from lab_control.storage.processing import ProcessingCancelled, image_home, process_device
@@ -76,6 +75,7 @@ class ProcessingService:
             ):
                 raise ValueError("此采集记录已有任务，请等待完成或取消处理")
             self.check_idle(entry, allow_corrupt=action == "process")
+            reservation = self.repository.record_access.acquire(entry.folder)
             cancel = threading.Event()
             self.cancel_events[entry.key] = cancel
             self.jobs[entry.key] = {
@@ -89,10 +89,7 @@ class ProcessingService:
             }
 
         def run():
-            lease = None
             try:
-                digest = hashlib.sha256(os.path.normcase(entry.key).encode("utf-8")).hexdigest()
-                lease = FileLease(self.repository.root / "processing-locks" / f"{digest}.lock")
                 self.check_idle(entry, allow_corrupt=action == "process")
                 self._update(entry.key, state="running")
                 value = operation(cancel)
@@ -112,10 +109,14 @@ class ProcessingService:
                 self.repository.audit("history_" + action + "_failed", source=entry.key, error=str(exc))
                 raise
             finally:
-                if lease:
-                    lease.close()
+                self.repository.record_access.release(reservation)
 
-        return self.worker.submit(run)
+        try:
+            return self.worker.submit(run)
+        except Exception:
+            self.repository.record_access.release(reservation)
+            self._update(entry.key, state="failed", error="无法提交后台任务")
+            raise
 
     def process(self, entry: RecordingEntry) -> Future:
         from lab_control.application.processing_figures import generate_pngs, publish_pngs

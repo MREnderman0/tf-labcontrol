@@ -15,6 +15,8 @@
 - [源码仓库瘦身与首次准备验收（2026-10-19）](repository-slimming-review.md)
 
 - [相噪仪定时采集与 ADEV/MDEV 工作区（2026-09-29）](phase-workspace-review.md)
+- [相噪仪设备管理固定一分钟采集（2026-11-05）](phase-capture-review.md)
+- [相噪仪缺信号与临时目录修复（2026-11-06）](phase-missing-signal-review.md)
 - [光功率计全通道实时监测验收](optical-power-monitoring-review.md)
 - [53100A USB 接入与服务配置验证（2026-09-28）](53100a-usb-review.md)
 - [电源实时监测与控制整合（2026-09-28）](power-monitoring-review.md)

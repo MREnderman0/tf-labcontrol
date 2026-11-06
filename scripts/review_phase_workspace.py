@@ -22,7 +22,7 @@ def main():
     app.setStyle("Fusion")
     app.setFont(QFont(load_ui_font(), 10))
     app.setStyleSheet(load_stylesheet())
-    folder = Path("design/reviews/phase-workspace")
+    folder = Path("design/reviews/phase-capture")
     folder.mkdir(parents=True, exist_ok=True)
 
     def pump(seconds):
@@ -40,7 +40,7 @@ def main():
         runtime.connect(key).result(3)
         window = RealWindow(runtime)
         window.show()
-        window.navigate("实时监测", "phase_noise_analyzer", key)
+        window.navigate("设备管理", "phase_noise_analyzer", key)
         page = window.stack.currentWidget()
         try:
             pump(0.5)
@@ -51,7 +51,7 @@ def main():
             pump(0.6)
             assert window.grab().save(str(folder / "phase-collecting.png"))
             deadline = time.monotonic() + 20
-            while not page.outcomes.get(key, "").startswith("采集完成") and time.monotonic() < deadline:
+            while key not in page.results and time.monotonic() < deadline:
                 pump(0.05)
             assert page.outcomes[key].startswith("采集完成"), page.outcomes
             for width, height in ((1440, 900), (1280, 760)):

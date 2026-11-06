@@ -73,7 +73,7 @@ def verify_mock(runtime, *, connector: Path | None = None, codex: Path | None = 
 
     async def flow():
         async with Client(parameters, mode="legacy", read_timeout_seconds=20) as remote:
-            assert len((await remote.list_tools()).tools) == 18
+            assert len((await remote.list_tools()).tools) == 26
 
             async def call(name, **kwargs):
                 result = await remote.call_tool(name, kwargs)
@@ -147,13 +147,23 @@ def verify_mock(runtime, *, connector: Path | None = None, codex: Path | None = 
     )
     assert downloaded.returncode == 0, downloaded.stderr.decode(errors="replace")
     assert output.stat().st_size == artifact["size"]
+    called = subprocess.run(
+        [command, *arguments, "--call", "get_processing_capabilities", "--arguments-file", "-"],
+        env=environment,
+        input=json.dumps({"grant_id": grant, "device_id": device}).encode("utf-8"),
+        capture_output=True,
+        timeout=30,
+    )
+    assert called.returncode == 0, called.stderr.decode(errors="replace")
+    assert json.loads(called.stdout)["data"] == {"supported": False, "profiles": []}
     result = {
         "passed": True,
         "hardware_accessed": False,
         "stdio": True,
         "tls": True,
         "legacy_protocol": True,
-        "tools": 18,
+        "tools": 26,
+        "single_call_json": True,
         "download_bytes": artifact["size"],
     }
     if codex:

@@ -8,6 +8,7 @@ import logging
 import os
 import tempfile
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
@@ -76,6 +77,19 @@ def evidence(summary: dict[str, Any]) -> Path:
     return folder
 
 
+def batch_order(summary: dict[str, Any]) -> tuple[int, str, str]:
+    """Compare explicit time zones as instants; never assume a zone for legacy dates."""
+    value = str(summary.get("started_at", ""))
+    try:
+        moment = datetime.fromisoformat(value)
+        if moment.tzinfo is not None:
+            return 1, moment.astimezone(timezone.utc).isoformat(), summary["source_folder"]
+    except ValueError:
+        pass
+    # Undated/naive historical evidence cannot supersede a dated current batch.
+    return 0, value, summary["source_folder"]
+
+
 def collect(root: Path) -> list[dict[str, Any]]:
     """Read summaries only. Model conversion remains with each model's offline converter."""
     rows: dict[str, dict[str, Any]] = {}
@@ -101,7 +115,7 @@ def collect(root: Path) -> list[dict[str, Any]]:
         old = rows.get(item["source_folder"])
         if not old or old.get("evidence", {}).get("sha256") != item.get("evidence", {}).get("sha256"):
             rows[item["source_folder"]] = item
-    return sorted(rows.values(), key=lambda s: (s.get("started_at", ""), s["source_folder"]))
+    return sorted(rows.values(), key=batch_order)
 
 
 def render_asset(rows: list[dict[str, Any]], destination: Path, preference: dict[str, Any]) -> str:

@@ -65,7 +65,11 @@ class OscilloscopePlot(LivePlot):
             for m, spec in zip(wanted, displays, strict=True):
                 if m.axis is None or m.axis_unit != "s" or m.unit != spec.unit:
                     raise DeviceError("Waveform/display units differ", "parse_error")
-                if (spec.seconds_per_div, spec.time_center) != (first.seconds_per_div, first.time_center):
+                if (spec.seconds_per_div, spec.time_center, spec.horizontal_divisions) != (
+                    first.seconds_per_div,
+                    first.time_center,
+                    first.horizontal_divisions,
+                ):
                     raise DeviceError("Waveform horizontal displays differ", "parse_error")
             with np.errstate(over="ignore", invalid="ignore"):
                 coordinates = [
@@ -93,8 +97,8 @@ class OscilloscopePlot(LivePlot):
         self.plot_item.hideButtons()
         self.last_token = token
         bounds = (
-            first.time_center - 5 * first.seconds_per_div,
-            first.time_center + 5 * first.seconds_per_div,
+            first.time_center - first.horizontal_divisions / 2 * first.seconds_per_div,
+            first.time_center + first.horizontal_divisions / 2 * first.seconds_per_div,
         )
         # Establish the microsecond viewport before pyqtgraph computes downsampling.
         if bounds != self.grid_range:
@@ -107,8 +111,13 @@ class OscilloscopePlot(LivePlot):
         self.plot.setMouseEnabled(x=False, y=False)
         self.plot.setMenuEnabled(False)
         self.value.hide()
+        horizontal_lines = first.horizontal_divisions + 1
+        if self.grid_lines and len(self.grid_lines) != horizontal_lines + 9:
+            for line in self.grid_lines:
+                self.plot.removeItem(line)
+            self.grid_lines.clear()
         if not self.grid_lines:
-            for angle, count in ((90, 11), (0, 9)):
+            for angle, count in ((90, horizontal_lines), (0, 9)):
                 for index in range(count):
                     alpha = 110 if index == count // 2 else 78
                     pen = pg.mkPen((165, 185, 189, alpha), width=1, style=Qt.PenStyle.DashLine)
@@ -116,9 +125,11 @@ class OscilloscopePlot(LivePlot):
                     line.setZValue(-10)
                     self.plot.addItem(line, ignoreBounds=True)
                     self.grid_lines.append(line)
-        for line, x in zip(self.grid_lines[:11], np.linspace(*self.grid_range, 11), strict=True):
+        for line, x in zip(
+            self.grid_lines[:horizontal_lines], np.linspace(*self.grid_range, horizontal_lines), strict=True
+        ):
             line.setPos(float(x))
-        for line, grid_y in zip(self.grid_lines[11:], range(-4, 5), strict=True):
+        for line, grid_y in zip(self.grid_lines[horizontal_lines:], range(-4, 5), strict=True):
             line.setPos(grid_y)
         used = set()
         legend = self.plot.plotItem.legend
@@ -210,6 +221,10 @@ class OscilloscopePlot(LivePlot):
             for (ch, operation), (value, _version) in self.preview_targets.items():
                 if operation == "scale" and ch == measurement.channel:
                     values["units_per_div"] = value
+                    values["reference_value"] = (
+                        original.reference_value
+                        + original.vertical_position_divisions * (original.units_per_div - value)
+                    )
                 elif operation == "offset" and ch == measurement.channel and original.vertical_offset_sign:
                     values["reference_value"] = original.vertical_offset_sign * value
                 elif operation == "timebase":
@@ -240,11 +255,14 @@ class OscilloscopePlot(LivePlot):
             return
         first = specs[0][1]
         self.grid_range = (
-            first.time_center - 5 * first.seconds_per_div,
-            first.time_center + 5 * first.seconds_per_div,
+            first.time_center - first.horizontal_divisions / 2 * first.seconds_per_div,
+            first.time_center + first.horizontal_divisions / 2 * first.seconds_per_div,
         )
         self.fit_current()
-        for line, x in zip(self.grid_lines[:11], np.linspace(*self.grid_range, 11), strict=True):
+        horizontal_lines = first.horizontal_divisions + 1
+        for line, x in zip(
+            self.grid_lines[:horizontal_lines], np.linspace(*self.grid_range, horizontal_lines), strict=True
+        ):
             line.setPos(float(x))
         signature = tuple((m.channel, spec.units_per_div, m.unit) for m, spec in specs)
         if signature != self.legend_signature:

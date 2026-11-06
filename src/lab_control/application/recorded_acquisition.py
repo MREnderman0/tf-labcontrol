@@ -42,6 +42,7 @@ class RecordedAcquisitionRunner:
         cadence: str | None,
         record_interval: float | None,
         run_factory: Any,
+        before_io: Any = None,
     ) -> list[str]:
         manager = self.manager
         device_id = session.device_id
@@ -60,6 +61,8 @@ class RecordedAcquisitionRunner:
         last_valid_at = ""
         run_started = time.monotonic()
         try:
+            if before_io:
+                before_io(session)
             manager.repository.audit(
                 "stream_started",
                 device_id=device_id,
@@ -68,10 +71,16 @@ class RecordedAcquisitionRunner:
                 count=count,
                 mode=mode,
             )
+            recording.note_event("acquisition_started", {"requested_count": count})
             run = run_factory(request, session.stop) if run_factory else None
             index = 0
             next_save = 0.0
             while run is not None or (not session.stop.is_set() and (count is None or index < count)):
+                # Revoked authorization/cancellation before the next read is not
+                # a communication failure from an earlier successful frame.
+                io_started = False
+                if before_io:
+                    before_io(session)
                 if recovery and not recovery.ready:
                     if not manager.recovery.wait(session, recovery):
                         break
@@ -158,7 +167,14 @@ class RecordedAcquisitionRunner:
                 manager.audit.try_record(
                     "acquisition_discarded", device_id=device_id, code=code, error=str(exc)
                 )
-            elif io_started and code not in {"recording_failed", "recording_paused"}:
+            elif io_started and code not in {
+                "recording_failed",
+                "recording_paused",
+                "signal_missing",
+                "waveform_unavailable",
+            }:
+                # A confirmed missing input ends this run without breaking its connection.
+                # If the model could not stop safely, it must raise cleanup_failed instead.
                 session.state = "degraded"
             manager.audit.try_record("stream_failed", device_id=device_id, error=str(exc))
             manager.emit("error", device_id, error=str(exc))
@@ -213,6 +229,22 @@ class RecordedAcquisitionRunner:
                         requested_stop=session.stop.is_set(),
                     )
                     manager.emit("task_finished", device_id)
+            try:
+                recording.note_event(
+                    "acquisition_finished",
+                    {
+                        "complete": primary_error is None
+                        and not cleanup_errors
+                        and (count is None or recording.committed == count)
+                        and (run_factory is None or not session.stop.is_set()),
+                        "requested_count": count,
+                        "requested_stop": session.stop.is_set(),
+                        "error": str(primary_error) if primary_error else "",
+                        "cleanup_errors": [str(error) for error in cleanup_errors],
+                    },
+                )
+            except Exception as exc:
+                cleanup_errors.append(exc)
             if cleanup_errors:
                 error = primary_error or cleanup_errors[0]
                 for secondary in cleanup_errors:

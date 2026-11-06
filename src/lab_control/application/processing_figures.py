@@ -7,6 +7,7 @@ import os
 import shutil
 import threading
 from pathlib import Path
+from tempfile import mkdtemp
 from typing import Callable
 from uuid import uuid4
 
@@ -15,6 +16,7 @@ import numpy as np
 from lab_control.storage.layout import atomic_json
 from lab_control.storage.paths import filename_part
 from lab_control.storage.processing import check_cancel
+from lab_control.storage.processing_paths import filesystem_path
 from lab_control.storage.processing_results import ResultReader
 from lab_control.storage.recording_catalog import linked, read_json
 
@@ -101,6 +103,7 @@ def generate_pngs(
     from lab_control.instruments.registry import DEVICE_DEFINITIONS
     from lab_control.ui.widgets.publication_figure import export_figure
 
+    folder = filesystem_path(folder)
     reader = ResultReader(folder)
     info = reader.info()
     definition = DEVICE_DEFINITIONS.get(info.get("recording", {}).get("adapter_id", ""))
@@ -114,8 +117,7 @@ def generate_pngs(
     if linked(images):
         raise ValueError("图片目录不能是目录链接")
     images.mkdir(exist_ok=True)
-    staging = images / f".processing-png-{uuid4().hex}"
-    staging.mkdir()
+    staging = Path(mkdtemp(prefix=".processing-png-", dir=images))
     files = []
     channels = {s.get("channel", 1) for s in info["series"]}
     is_sequence = info["kind"] == "frames" and info["frames"] > 1
@@ -240,6 +242,7 @@ def publish_pngs(folder: Path, destination: Path, cancel: threading.Event) -> No
     Stage the entire tree before renaming. Failure or cancellation during copy
     leaves the previous visible tree intact; a failed rename rolls it back.
     """
+    folder, destination = filesystem_path(folder), filesystem_path(destination)
     check_cancel(cancel)
     manifest = read_json(folder / "png.json")
     if not _complete(folder, ResultReader(folder).info(), cancel):
@@ -261,9 +264,8 @@ def publish_pngs(folder: Path, destination: Path, cancel: threading.Event) -> No
         else:
             return
     destination.parent.mkdir(parents=True, exist_ok=True)
-    staging = folder.parent / f".processing-publish-{uuid4().hex}"
+    staging = Path(mkdtemp(prefix=".processing-publish-", dir=folder.parent))
     backup = folder.parent / f"previous-images-{uuid4().hex}"
-    staging.mkdir()
     try:
         for item in manifest["files"]:
             check_cancel(cancel)

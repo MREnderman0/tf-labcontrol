@@ -70,6 +70,23 @@ Codex 的工具审批独立于软件内的实验授权。默认导出保留客�
 
 OFC 自动化外壳目前先接入连接配置与待配置条目，实际 SSH 联机、参数编辑和仪器执行另行实现。服务接口保持原设备 ID 工具兼容。软件检查结果与尚未完成的实机验收见[槽位查询验证记录](../reviews/slot-query-2026-11-05.md)。
 
+## SSH 命令与指标任务
+
+另一台电脑可以通过 SSH 在采数电脑执行现有连接器命令，使用 UTF-8 JSON 收发；采数电脑的桌面软件须已运行并启用 Agent。SSH 的远端进程须取得自己的 `LAB_CONTROL_AGENT_TOKEN` 环境变量；不能假定它继承桌面进程环境，也不要把凭据写入命令参数。连接 JSON 使用导出的本机地址配置。
+
+以下是 SSH **远端执行**的命令；先将工作目录设为项目目录，发行版可替换为完整发行目录内的 `TF-LabControl-Agent.exe`：
+
+```powershell
+.venv-dev\Scripts\python.exe -m lab_control --agent-connector --connection .\connection.json --call get_server_info
+.venv-dev\Scripts\python.exe -m lab_control --agent-connector --connection .\connection.json --call get_processing_capabilities --arguments-file .\request.json
+```
+
+`request.json` 是工具参数对象，例如 `{"grant_id":"授权ID","device_id":"设备ID"}`。也可使用 `--arguments-file -`，由远端程序把 UTF-8 JSON 写入 SSH 标准输入；SSH 不分配交互终端（`-T`），标准输出是一条 JSON 响应。退出码 0 表示工具调用成功（异步任务可能仍在运行），1 表示工具拒绝，2 表示连接器配置/传输失败。查询成功返回 failed 任务时仍是调用成功，须读取任务 state。传输失败不自动重发写入，保留 request_id 并查询任务。
+
+先查询 `get_processing_capabilities`，生产型号默认 `supported=false`；本机授权中另行勾选“计算指标及运行采数处理流程”。分步流程先用原有采集工具，等待 get_task_status 完成并取得 recording_id，也可用 list_recordings 选择桌面已有规范记录；然后 start_processing，轮询原有任务接口，完成后用 get_processing_result 读取 result_id。一次提交采数与处理使用 start_experiment，型号必须声明有限采集方案。
+
+已算结果可通过 list_processing_results 查找，再直接 get_processing_result，不会再次计算；重新提交相同输入默认复用，force 明确重新计算并保留旧结果。返回的每项指标有数值、单位及质量，原始记录不完整、模拟结果和 unavailable 都不能当作合格判据。完整参数、型号契约及失败语义见[远程指标处理规范](../architecture/remote-metrics.md)。不在此流程自动配置 SSH、修改防火墙或启动无人值守服务。
+
 ## 文件下载
 
 `get_artifact` 返回受鉴权的下载路径，仍须同一客户端凭据和当前有效的设备/通道结果授权。文件 ID 是登记引用，不接受服务器文件路径。可用连接器独立下载：
@@ -101,7 +118,7 @@ OFC 自动化外壳目前先接入连接配置与待配置条目，实际 SSH �
 .venv-dev\Scripts\python.exe scripts/check_agent.py
 # 指定已安装 Codex CLI，进行真实 Agent 工具调用；不更改用户 Codex 配置
 .venv-dev\Scripts\python.exe scripts/check_agent.py --codex <codex.exe路径>
-# 完整非硬件检查、目录构建、源码外冻结 worker 与连接器
+# 完整非硬件检查、目录构建、隔离发行目录冻结 worker 与连接器
 .venv-dev\Scripts\python.exe scripts/check_project.py --desktop
 ```
 

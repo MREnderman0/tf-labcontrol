@@ -1,6 +1,7 @@
 import ast
 import hashlib
 import json
+import re
 import runpy
 from pathlib import Path
 
@@ -174,8 +175,12 @@ def test_removing_model_updates_every_generated_navigation(removed):
         "docs/generated/capability-matrix.md",
         "docs/generated/capability-matrix.json",
     ):
-        assert removed not in files[ROOT / relative]
-        assert definition.documentation.card not in files[ROOT / relative]
+        # A distinct model may share the removed ID/card prefix (X and X-E).
+        assert not re.search(
+            r"(?<![A-Za-z0-9_.-])" + re.escape(removed) + r"(?![A-Za-z0-9_.-])",
+            files[ROOT / relative],
+        )
+        assert definition.documentation.card + ".md" not in files[ROOT / relative]
 
 
 @pytest.mark.parametrize(

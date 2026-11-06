@@ -74,7 +74,7 @@ def service(tmp_path, qapp):
     repo.close()
 
 
-def test_five_model_profiles_are_registered():
+def test_qualified_model_processing_profiles_are_registered():
     profiles = {
         key: definition.offline_processing.kind
         for key, definition in DEVICE_DEFINITIONS.items()
@@ -86,6 +86,7 @@ def test_five_model_profiles_are_registered():
         "kplusk.fxe": "scalar",
         "ceyear.6362d": "frames",
         "rigol.dho924": "frames",
+        "rs.rtm3004": "frames",
     }
 
 
@@ -142,7 +143,11 @@ def test_legacy_scalar_index_is_readable_but_rebuilt_for_new_continuity_rules(tm
 
 @pytest.mark.parametrize(
     "adapter,quantity,unit,axis_unit",
-    [("ceyear.6362d", "spectrum", "dBm", "nm"), ("rigol.dho924", "waveform", "V", "s")],
+    [
+        ("ceyear.6362d", "spectrum", "dBm", "nm"),
+        ("rigol.dho924", "waveform", "V", "s"),
+        ("rs.rtm3004", "voltage", "V", "s"),
+    ],
 )
 def test_random_frames_across_segments_and_channels(tmp_path, adapter, quantity, unit, axis_unit):
     samples = [

@@ -109,6 +109,33 @@ class Artifact(Grant):
     artifact_id: str
 
 
+class Recordings(Grant):
+    device_id: str = ""
+
+
+class Process(Request):
+    recording_id: str = Field(min_length=1, max_length=128)
+    profile_id: str = Field(min_length=1, max_length=64)
+    parameters: dict[str, Any] = Field(default_factory=dict)
+    allow_partial: bool = False
+    force: bool = False
+
+
+class Experiment(Request):
+    profile_id: str = Field(min_length=1, max_length=64)
+    capture_parameters: dict[str, Any] = Field(default_factory=dict)
+    parameters: dict[str, Any] = Field(default_factory=dict)
+
+
+class ProcessingResults(Recordings):
+    recording_id: str = ""
+    profile_id: str = ""
+
+
+class ProcessingResult(Grant):
+    result_id: str = Field(min_length=1, max_length=128)
+
+
 # name, input, description, cached/read-only. Device reads are conservatively
 # marked as operations; annotations describe behavior, never enforce authority.
 TOOLS = (
@@ -132,6 +159,12 @@ TOOLS = (
     ("stop_task", Stop, "请求停止指定任务并排空记录；已接受命令不能撤回，输出不自动改变。", False),
     ("list_artifacts", Artifacts, "列出授权范围内的实验文件引用；无任意目录浏览能力。", True),
     ("get_artifact", Artifact, "获取产物元数据与带鉴权的下载路径；下载仍需本客户端凭据。", True),
+    ("get_processing_capabilities", Device, "查看型号指标与自动采集声明；默认不支持，不连接硬件。", True),
+    ("list_recordings", Recordings, "列出授权范围内的规范记录 ID、实际通道及可用性。", True),
+    ("start_processing", Process, "提交离线指标任务；同输入默认复用结果，force 显式重新计算。", False),
+    ("start_experiment", Experiment, "按型号声明有限采数后计算；先校验权限，返回 task_id。", False),
+    ("list_processing_results", ProcessingResults, "列出已保存的指标结果引用；不重新计算。", True),
+    ("get_processing_result", ProcessingResult, "读取持久指标结果、单位、质量及来源；不连接或计算。", True),
 )
 
 
@@ -181,7 +214,7 @@ def create_mcp_server(service) -> Server:
                 ],
                 structured_content=payload,
             )
-        except (DeviceError, ValidationError, ValueError, KeyError, TypeError) as exc:
+        except (DeviceError, ValidationError, ValueError, KeyError, TypeError, OSError) as exc:
             service.repository.audit_sink.try_record(
                 "agent_tool_rejected",
                 client_id=client,

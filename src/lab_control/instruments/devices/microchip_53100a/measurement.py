@@ -67,7 +67,16 @@ class PhaseStream:
                 raw, _, remaining = self.buffer.partition(b"\n")
                 self.buffer = bytearray(remaining)
                 try:
-                    fields = raw.decode("ascii", errors="strict").split()
+                    line = raw.decode("ascii", errors="strict").strip()
+                    if line in {
+                        "No signal found in one or more channels",
+                        "No signals detected at front-panel input jacks.  Check source connections",
+                    }:
+                        raise DeviceError(
+                            "未检测到 DUT 或参考输入信号；请检查接线与信号源，接好后重新采集。",
+                            "signal_missing",
+                        )
+                    fields = line.split()
                     if len(fields) != 2:
                         raise ValueError("Expected timestamp and phase; possible instrument warning")
                     stamp, phase = map(float, fields)
@@ -154,6 +163,7 @@ def acquire_run(
     if not is_ready(state) and not continuing:
         raise DeviceError("Stop the existing measurement before starting another", "task_busy")
     settings = {r.operation: r.value for r in adapter.read_settings(tuple(FREQUENCIES))}
+    original_settings = settings.copy()
     original_rate = adapter.read_sample_rate()
     rate = request.sample_rate
     if resume_state and (
@@ -165,6 +175,22 @@ def acquire_run(
         if continuing:
             adapter.cancel_acquisition_recovery()
         return
+    if not resume_state and not stop.is_set():
+        # One explicit capture selects Auto for both inputs. Never replay setup
+        # during recovery or after an uncertain write/readback response.
+        try:
+            for operation, value in settings.items():
+                if not value["automatic"]:
+                    applied = adapter.apply(DeviceCommand(operation, {"automatic": True}))
+                    if applied.outcome != "success":
+                        raise DeviceError("Automatic frequency setup failed: " + applied.error)
+            settings = {r.operation: r.value for r in adapter.read_settings(tuple(FREQUENCIES))}
+            if not all(value["automatic"] for value in settings.values()):
+                raise DeviceError("Automatic frequency readback mismatch")
+        except Exception as exc:
+            raise DeviceError(
+                "Frequency setup unconfirmed; no replay: " + str(exc), "configuration_uncertain"
+            ) from exc
     values = np.empty(total, dtype=np.float64)
     acquired = 0
     first_stamp = 0.0
@@ -177,6 +203,9 @@ def acquire_run(
     epoch = int(resume_state.get("epoch", 0)) + 1 if resume_state else 0
     adapter.recorded_run_state = {
         "settings": settings,
+        "original_settings": resume_state.get("original_settings", original_settings)
+        if resume_state
+        else original_settings,
         "sample_rate": rate,
         "remaining_samples": total,
         "epoch": epoch,
@@ -185,6 +214,7 @@ def acquire_run(
         "sample_rate": rate,
         "requested_duration": request.duration,
         "settings": settings,
+        "original_settings": adapter.recorded_run_state["original_settings"],
         "original_sample_rate": original_rate,
         "phase_format": "P",
         "timestamp_format": "s",

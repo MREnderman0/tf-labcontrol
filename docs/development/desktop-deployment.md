@@ -55,12 +55,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-dev.ps1 -Build
 `deployment/labcontrol.spec` 收集 Qt、主题和动态型号模块；不复制开发机厂商驱动。统一启动分发函数先识别 `--csv-worker` / `--deployment-check` / `--cli` 再进入 GUI，这些入口均不显示首次准备页或隐式下载。扫描、连接也不触发下载。
 
 ```powershell
-.venv-dev\Scripts\python.exe scripts/check_desktop.py --bundle dist/online/TF-LabControl --report .tools/deployment/online-smoke.json
-TF-LabControl.exe --deployment-check C:\Temp\labcontrol-smoke.json
-TF-LabControl.exe --cli environment --report C:\Temp\environment.json
+.venv-dev\Scripts\python.exe scripts/check_desktop.py --bundle dist/online/TF-LabControl --report .temp/deployment/online-smoke.json
+TF-LabControl.exe --deployment-check .temp/deployment/labcontrol-smoke.json
+TF-LabControl.exe --cli environment --report .temp/deployment/environment.json
 ```
 
-自检复制产物到源码外中文及空格路径，使用隔离数据和模拟界面，禁止 VISA ResourceManager，运行真实 CSV 子进程。它不证明驱动、网络或设备验收。普通用户数据继续位于 `%LOCALAPPDATA%\TF-LabControl` 或 `LAB_CONTROL_HOME`，升级/卸载保留数据。
+开发自检将产物复制到项目 `.temp` 下独立中文及空格路径，清除源码导入环境并使用隔离数据和模拟界面，禁止 VISA ResourceManager，运行真实 CSV 子进程及连接器。冻结报告明确标记 isolated_bundle，不声称已在源码目录外验收。自检临时数据放在报告所在目录，开发时将报告指向 `.temp`。它不证明驱动、网络或设备验收。普通用户数据继续位于 `%LOCALAPPDATA%\TF-LabControl` 或 `LAB_CONTROL_HOME`，升级/卸载保留数据。
 
 ## 首次部署的环境完整性门禁
 

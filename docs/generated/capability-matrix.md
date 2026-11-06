@@ -12,13 +12,14 @@ JSON 的 control_page 表示型号所在页面，不保证每项底层能力都�
 | --- | --- | --- | --- | --- |
 | PicoScope 6404E | `pico.6404e` | 6 | block/streaming | [型号卡片](../devices/oscilloscopes/picoscope-6404e.md) |
 | Thorlabs PM100D + S154C | `thorlabs.pm100d` | 8 | scalar | [型号卡片](../devices/measurement-analyzers/thorlabs-pm100d-s154c.md) |
-| R&S RTM3004 | `rs.rtm3004` | 21 | rtm | [型号卡片](../devices/oscilloscopes/rtm3004.md) |
+| R&S RTM3004 | `rs.rtm3004` | 34 | rtm | [型号卡片](../devices/oscilloscopes/rtm3004.md) |
 | R&S RTO64 | `rs.rto64` | 16 | rto | [型号卡片](../devices/oscilloscopes/rto64.md) |
 | RIGOL DS1202Z（待确认后缀）/ DS1202Z-E | `rigol.ds1202ze` | 21 | rigol_scope | [型号卡片](../devices/oscilloscopes/rigol-ds1202z.md) |
 | Teledyne LeCroy WaveRunner 9254 | `lecroy.9254` | 14 | lecroy | [型号卡片](../devices/oscilloscopes/waverunner-9254.md) |
 | R&S ZNB3004 | `rs.znb3004` | 14 | vna | [型号卡片](../devices/measurement-analyzers/rs-znb3004.md) |
 | Keysight / Agilent / HP 3458A | `keysight.3458a` | 16 | dmm | [型号卡片](../devices/measurement-analyzers/keysight-3458a.md) |
 | Siglent SDG6032X | `siglent.sdg6032x` | 36 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/sdg6032x.md) |
+| Siglent SDG6032X-E | `siglent.sdg6032xe` | 13 | 外部仪器测量输出 | [型号卡片](../devices/signal-sources/sdg6032xe.md) |
 | Keithley 2231A-30-3 | `keithley.2231a` | 15 | power | [型号卡片](../devices/power-supplies/keithley-2231a.md) |
 | Siglent SPD4306X | `siglent.spd4306x` | 22 | power | [型号卡片](../devices/power-supplies/spd4306x.md) |
 | ITECH IT6322 | `itech.it6322` | 8 | power | [型号卡片](../devices/power-supplies/it6322.md) |

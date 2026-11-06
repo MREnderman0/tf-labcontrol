@@ -86,6 +86,21 @@ def test_offset_and_new_scale_use_own_frame_while_invalid_frame_preserves_grid(p
     assert plot.plot.viewRange()[0] == pytest.approx([-10e-6, 10e-6])
 
 
+def test_instrument_horizontal_divisions_rebuild_grid_without_changing_other_models(plot):
+    sample = frame(channels=(1,))
+    measurement = sample.batch.measurements[0]
+    display = ScopeDisplay.parse(measurement.metadata["scope_display"])
+    wider = replace(
+        measurement, metadata={"scope_display": replace(display, horizontal_divisions=12).metadata()}
+    )
+    plot.show_frame(replace(sample, batch=replace(sample.batch, measurements=(wider,))), SOURCE, (1,))
+    assert len(plot.grid_lines) == 22
+    assert plot.plot.viewRange()[0] == pytest.approx([-6e-6, 6e-6])
+    plot.show_frame(frame(version=2, channels=(1,)), SOURCE, (1,))
+    assert len(plot.grid_lines) == 20
+    assert plot.plot.viewRange()[0] == pytest.approx([-5e-6, 5e-6])
+
+
 def test_stable_jitter_hidden_restore_and_single_point(plot, qtbot):
     first = frame(channels=(1,))
     plot.show_frame(first, SOURCE, (1,))

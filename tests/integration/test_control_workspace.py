@@ -212,7 +212,8 @@ def test_shared_demo_pages_layout_modes_and_live_tasks(qtbot, tmp_path):
                 assert not hasattr(monitor, "form")
             elif category == "phase_noise_analyzer":
                 assert not hasattr(monitor, "form")
-                assert monitor.duration.value() == 60
+                assert window.current_module == "设备管理"
+                assert not hasattr(monitor, "duration")
                 assert not runtime.monitoring.snapshots()
             elif category in MEASUREMENT_CATEGORIES:
                 caps = window.controller.capabilities(monitor.selector.device_id)

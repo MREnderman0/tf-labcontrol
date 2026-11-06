@@ -8,7 +8,7 @@
 - [控制与监测](guides/control-and-monitoring.md)、[输入范围规则](guides/input-ranges.md)
 - [历史采集与数据处理](guides/data-processing.md)：单设备/批量历史、完整曲线、逐帧时间线及论文插图
 - [Agent 协作实验](guides/agent-collaboration.md)：MCP 接入、授权槽位查询、实验授权、Codex、局域网连接器和结果下载
-- [相噪定时采集与 ADEV/MDEV](requirements/realtime-monitoring.md#相噪仪定时采集)：采样率、时长、自动保存及实测边界
+- [相噪定时采集与 ADEV/MDEV](requirements/realtime-monitoring.md#相噪仪定时采集)：设备管理中固定一分钟采集、原始相位与统计结果、自动保存及实测边界
 - [光功率计全通道实时监测](guides/control-and-monitoring.md#光功率计全通道监测)：通道筛选、W 显示与自动连续记录
 - [连接与实机操作](testing/hardware-testing.md)、[实验网发现](architecture/lan-discovery.md)
 - [实验网络部署与换电脑](guides/lab-network-deployment.md)：首次初始化门禁、通用 DHCP 地址池、多地址网卡绑定及设备接入验收

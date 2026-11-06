@@ -40,6 +40,9 @@ class Repository:
         self.db.execute("CREATE TABLE IF NOT EXISTS workspace (id TEXT PRIMARY KEY, document TEXT NOT NULL)")
         self.db.commit()
         self.function_slots = FunctionSlots(self)
+        from lab_control.storage.record_access import RecordAccess
+
+        self.record_access = RecordAccess(self.root)
 
     def load_workspace(self, key: str, default: Any = None) -> Any:
         with self.lock:
@@ -191,17 +194,27 @@ class Repository:
         context.validate(mode, "single_frame")
         folder = context.prepare()
         raw = context.raw_folder
-        (raw / "snapshot.json").write_text(
-            json.dumps(jsonable(batch), ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8"
-        )
+        from lab_control.storage.layout import atomic_json
+
+        summary = {
+            "version": 1,
+            "binary_done": False,
+            "committed": 0,
+            "converted": 0,
+            "analysis_state": "generating",
+        }
+        atomic_json(raw / "summary.json", summary)
         arrays: dict[str, Any] = {}
         for index, measurement in enumerate(batch.measurements):
-            values = np.asarray(measurement.values).reshape(-1)
-            axis = np.asarray(measurement.axis) if measurement.axis is not None else np.arange(values.size)
-            if axis.size != values.size:
+            values = np.asarray(measurement.values)
+            axis = np.asarray(measurement.axis) if measurement.axis is not None else None
+            if values.dtype.hasobject or (axis is not None and axis.dtype.hasobject):
+                raise ValidationError("Object arrays cannot be saved")
+            if axis is not None and axis.size != values.size:
                 raise ValidationError("Axis/data length mismatch")
             arrays[f"values_{index}"] = values
-            arrays[f"axis_{index}"] = axis
+            if axis is not None:
+                arrays[f"axis_{index}"] = axis
         if context.layout_version == 1:
             self._export_legacy_csv(batch, raw)
         # A unicode scalar loads without pickle and travels with the arrays.
@@ -209,11 +222,20 @@ class Repository:
             {f.name: getattr(batch, f.name) for f in fields(batch) if f.name != "measurements"}
         )
         document["measurements"] = [
-            jsonable(
-                {f.name: getattr(sample, f.name) for f in fields(sample) if f.name not in {"values", "axis"}}
-            )
-            for sample in batch.measurements
+            {
+                **jsonable(
+                    {
+                        f.name: getattr(sample, f.name)
+                        for f in fields(sample)
+                        if f.name not in {"values", "axis"}
+                    }
+                ),
+                "values_ref": f"values_{index}",
+                "axis_ref": f"axis_{index}" if sample.axis is not None else None,
+            }
+            for index, sample in enumerate(batch.measurements)
         ]
+        document["snapshot_format_version"] = 2
         arrays["metadata_json"] = np.asarray(json.dumps(document, ensure_ascii=False, allow_nan=False))
         # Publish the archive only after NumPy has closed and flushed it.  A
         # direct write to the final name lets a concurrent UI reader observe
@@ -231,6 +253,9 @@ class Repository:
             except OSError:
                 pass
             raise
+        atomic_json(raw / "snapshot.json", document)
+        summary.update(binary_done=True, committed=1)
+        atomic_json(raw / "summary.json", summary)
         if context.layout_version == 2:
             from lab_control.domain.instruments import DeviceError
             from lab_control.storage.analysis import convert_analysis, write_description
@@ -239,6 +264,8 @@ class Repository:
                 convert_analysis(folder)
                 write_description(folder, "原始数据已保存；分析 CSV 已完成")
             except Exception as exc:
+                summary.update(analysis_state="failed", csv_error=str(exc))
+                atomic_json(raw / "summary.json", summary)
                 try:
                     write_description(folder, "分析 CSV 生成失败", error=str(exc))
                 except OSError:
@@ -246,6 +273,8 @@ class Repository:
                 raise DeviceError(
                     f"原始数据已保存至 {folder}；分析 CSV 生成失败：{exc}", "export_failed"
                 ) from exc
+        summary.update(converted=1, analysis_state="complete")
+        atomic_json(raw / "summary.json", summary)
         return folder
 
     @staticmethod

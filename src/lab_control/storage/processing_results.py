@@ -10,11 +10,13 @@ from typing import Any
 
 import numpy as np
 
+from lab_control.storage.processing_paths import filesystem_path, readonly_uri
 from lab_control.storage.recording_catalog import read_json
 
 
 class ResultReader:
     def __init__(self, folder: Path) -> None:
+        folder = filesystem_path(folder)
         self.folder = folder
         self.metadata = read_json(folder / "result.json", {})
         if (
@@ -25,7 +27,7 @@ class ResultReader:
             raise ValueError("处理结果未完成或版本不支持")
 
     def connect(self) -> sqlite3.Connection:
-        return sqlite3.connect((self.folder / "data.sqlite3").as_uri() + "?mode=ro&immutable=1", uri=True)
+        return sqlite3.connect(readonly_uri(self.folder / "data.sqlite3"), uri=True)
 
     def info(self) -> dict[str, Any]:
         with closing(self.connect()) as db:

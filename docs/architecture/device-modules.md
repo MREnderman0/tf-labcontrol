@@ -20,7 +20,7 @@
 
 非 SCPI 型号可声明可选 `factory`、`capability_schema` 和只读 `discovery_factory`。公共运行时只调用已注册元数据，不写入型号命令或启动型号服务；发现入口只返回候选、观察来源和驱动错误。服务生命周期与身份边界留在型号包，工厂仅在显式连接且公共资源锁取得后运行。连接配置的可选 `usb_instance_id` 也参与资产占用锁；旧配置缺少新增字段时保留原路线。
 
-型号可通过 `monitoring_only=True` 声明只提供监测/记录界面，公共导航及管理设备选择据此过滤，不影响显式兼容层参数 API。扫描列表能力以 `acquisition_channel_selection="scan_list"` 和缓存的 `acquisition_channels` 声明；公共扫描监测页据此显示完整通道，不包含型号命令或输入配置写入。
+型号可通过 `management_surface=True, monitoring_surface=False` 声明仅在设备管理提供有限采集页面；也可通过 `monitoring_only=True` 声明只提供监测/记录界面，公共导航及管理设备选择据此过滤，不影响显式兼容层参数 API。扫描列表能力以 `acquisition_channel_selection="scan_list"` 和缓存的 `acquisition_channels` 声明；公共扫描监测页据此显示完整通道，不包含型号命令或输入配置写入。
 
 `discovery_connection_only_transports` 声明哪些传输在发现阶段只保留候选、必须显式连接后才核验身份；公共发现不会为这些候选构造适配器、加载连接 SDK 或发送设置。它与 `identity_requires_adapter` 分开：后者只选择允许探测时的身份协议，不表示禁止探测。Pico 的 `pico`、PM100D 的 `tlpmx/pm100d`、53100A 的 `tserve` 分别在包内声明；未列出的传输沿用原发现策略，不因此新增支持承诺。CoreMorrow 串口仍在公共租约内执行型号只读身份查询。枚举回调自身的驱动要求仍按型号声明，与连接和身份探测分开。
 
@@ -33,6 +33,8 @@
 型号通过可选 `offline_processing=ProcessingProfile(kind, power_units=False)` 声明已验证的离线查看能力，仍经唯一设备目录注册。`kind` 描述通常的数据形态，公共处理以实际数组/横轴为准；`power_units` 允许显示时切换 W/dBm。公共层只解释统一测量格式，不解析型号原始协议、不连接仪器。首版范围和缓存契约见[数据处理需求](../requirements/data-processing.md)及[数据模型](../data/data-model.md#离线处理缓存-v1)；型号特有的历史转换器仍归各自包维护。
 
 ## 新增与扩展
+
+型号的远程指标计算通过独立 `metric_profiles` 声明，默认空，不由 offline_processing 的绘图能力推断支持。参数模型、算法版本、指标定义、处理函数及可选有限采集方案均留在本型号包；公共层管理任务、授权、原始记录和结果持久化。契约与测试专用示例见[远程指标处理规范](remote-metrics.md)，原始数据须遵循[统一保存规范](../data/data-model.md#原始数据保存契约)。
 
 1. 创建独立包、精确的适配标识和型号匹配，提供有来源的能力与保守边界。
 2. 在唯一目录注册一条模块路径；完成包内文档、协议样本、越界/错误/通道隔离测试。没有专属能力时不得伪装支持。

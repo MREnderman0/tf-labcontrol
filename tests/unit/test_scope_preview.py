@@ -92,3 +92,24 @@ def test_next_gesture_is_not_erased_by_previous_commands_frame(plot, qtbot):
     assert "拖动预览" in plot.meta.text()
     plot.reset()
     assert not plot.preview_targets
+
+
+def test_scale_preview_preserves_instrument_vertical_position_and_twelve_divisions(plot, qtbot):
+    sample = frame(channels=(1,))
+    measured = sample.batch.measurements[0]
+    display = ScopeDisplay(
+        0.1, 0.3 - 2 * 0.1, 1e-6, 0, horizontal_divisions=12, vertical_position_divisions=2
+    )
+    measured = replace(
+        measured, values=np.zeros(len(measured.values)), metadata={"scope_display": display.metadata()}
+    )
+    sample = replace(sample, batch=replace(sample.batch, measurements=(measured,)))
+    plot.show_frame(sample, SOURCE, (1,))
+    saved = plot.displayed_frame
+    plot.preview_parameter(1, "scale", 0.2)
+    plot.preview_parameter(1, "timebase", 2e-6)
+    qtbot.waitUntil(lambda: "估算" in plot.meta.text())
+    mapped = plot.curves[1, "waveform"].transform().map(QPointF(0, -1))
+    assert mapped.y() == pytest.approx(0.5)  # (0 - 0.3) / 0.2 + 2 divisions.
+    assert plot.grid_range == pytest.approx((-12e-6, 12e-6))
+    assert plot.displayed_frame is saved

@@ -1,6 +1,7 @@
 """History navigation, offline viewers and publication figure exports."""
 
 import os
+import sqlite3
 import subprocess
 import sys
 import threading
@@ -23,6 +24,7 @@ from lab_control.domain.oscilloscope import COLORS, ScopeDisplay
 from lab_control.storage.layout import atomic_json
 from lab_control.storage.paths import BatchSaveContext, SaveContext
 from lab_control.storage.processing import current_result, image_home, process_device, result_home
+from lab_control.storage.processing_paths import filesystem_path
 from lab_control.storage.processing_results import ResultReader
 from lab_control.storage.recording import SegmentWriter
 from lab_control.storage.recording_catalog import read_device, read_json, scan_recordings
@@ -33,19 +35,27 @@ from lab_control.ui.real_window import RealWindow
 from lab_control.ui.widgets.publication_figure import export_figure, prepare_publication_font
 
 
-def make_record(root, *, array=False, batch=None, count=5, channels=(1, 2), spectrum=False):
+def make_record(
+    root, *, array=False, batch=None, count=5, channels=(1, 2), spectrum=False, scope_adapter="rigol.dho924"
+):
     array |= spectrum
+    scope_maker, scope_model, scope_quantity = {
+        "rigol.dho924": ("RIGOL", "DHO924", "waveform"),
+        "rs.rtm3004": ("Rohde&Schwarz", "RTM3004", "voltage"),
+    }[scope_adapter]
     identity = (
         DeviceIdentity("Ceyear", "CY6362D", "UI-FIXTURE")
         if spectrum
-        else DeviceIdentity("RIGOL" if array else "Joinwit", "DHO924" if array else "JW8105", "UI-FIXTURE")
+        else DeviceIdentity(
+            scope_maker if array else "Joinwit", scope_model if array else "JW8105", "UI-FIXTURE"
+        )
     )
     context = SaveContext(
         root,
         "general",
         "continuous",
         identity=identity,
-        adapter_id="ceyear.6362d" if spectrum else "rigol.dho924" if array else "joinwit.jw8105",
+        adapter_id="ceyear.6362d" if spectrum else scope_adapter if array else "joinwit.jw8105",
         batch=batch,
         started_at=datetime.fromisoformat("2026-10-31T10:00:00+08:00"),
     )
@@ -55,7 +65,7 @@ def make_record(root, *, array=False, batch=None, count=5, channels=(1, 2), spec
         x = np.linspace(1300, 1600, 1000) if spectrum else np.linspace(0, 1e-5, 1000) if array else None
         samples = [
             Measurement(
-                "spectrum" if spectrum else "waveform" if array else "power",
+                "spectrum" if spectrum else scope_quantity if array else "power",
                 "dBm" if spectrum else "V" if array else "dBm",
                 np.sin(x * 1e6) + i if array else [-10 + i],
                 channel,
@@ -135,6 +145,29 @@ def test_frame_timeline_single_frame_and_random_access(qtbot, service, tmp_path,
     qtbot.waitUntil(lambda: f"帧 {count} / {count}" in viewer.status.text())
     assert viewer.plot_data[0][2][0] == count - 1
     assert not viewer.next.isEnabled()
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows nested processing cache paths")
+def test_nested_windows_cache_png_publication_and_reuse(qtbot, service, tmp_path):
+    root = tmp_path / ("nested-" * 7)
+    context = make_record(root, array=True, count=1, channels=(1, 2), scope_adapter="rs.rtm3004")
+    (entry,) = scan_recordings((root,))
+    original = {p.name: p.read_bytes() for p in context.raw_folder.iterdir() if p.is_file()}
+    (outcome,) = service.process(entry).result(20)
+    assert not outcome["error"]
+    result = current_result(result_home(entry.folder, entry.devices[0]))
+    reader = ResultReader(result)
+    manifest = read_json(filesystem_path(result) / "png.json")
+    assert len(manifest["files"]) == 2
+    nested = result / manifest["directory"] / manifest["files"][0]["path"]
+    assert len(str(nested)) > 260 and filesystem_path(nested).is_file()
+    assert reader.info()["frames"] == 1 and reader.frame(1)["measurements"][0]["unit"] == "V"
+    with reader.connect() as db, pytest.raises(sqlite3.OperationalError, match="readonly"):
+        db.execute("DELETE FROM frames")
+    assert not str(result).startswith("\\\\?\\")
+    assert service.process(entry).result(20)[0]["result"] == str(result)
+    assert original == {p.name: p.read_bytes() for p in context.raw_folder.iterdir() if p.is_file()}
+    assert len(list(image_home(entry.folder, entry.devices[0]).rglob("*.png"))) == 2
 
 
 def test_latest_frame_request_discards_outdated_load(qtbot, service, tmp_path, monkeypatch):
@@ -341,10 +374,11 @@ def test_fit_recovers_microsecond_waveform_after_far_pan_and_channel_toggle(qtbo
     assert viewer.plot.listDataItems()[0].opts["pen"].color().name() == color == COLORS[1]
 
 
+@pytest.mark.parametrize("scope_adapter", ["rigol.dho924", "rs.rtm3004"])
 def test_scope_display_uses_recorded_offsets_but_cursor_and_pngs_stay_physical(
-    qtbot, service, tmp_path, monkeypatch
+    qtbot, service, tmp_path, monkeypatch, scope_adapter
 ):
-    context = make_record(tmp_path / "data", array=True)
+    context = make_record(tmp_path / "data", array=True, scope_adapter=scope_adapter)
     viewer = open_view(qtbot, service, context)
     qtbot.waitUntil(lambda: settled(viewer))
     frame = viewer.reader.frame(1)
