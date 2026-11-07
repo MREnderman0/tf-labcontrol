@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 
 from lab_control.application.config import ConnectionConfig
 from lab_control.domain.instruments import AcquisitionRequest, CapabilitySet
 from lab_control.domain.workspace import CATEGORY_LABELS as CATEGORY_LABELS
 from lab_control.domain.workspace import slot_label as slot_label
 from lab_control.instruments.registry import DEVICE_DEFINITIONS, PROFILES, describe
+from lab_control.instruments.devices.microchip_53100a.profile import (
+    PHASE_NOISE_DURATION,
+    PHASE_NOISE_POINTS,
+    PHASE_NOISE_SAMPLE_RATE,
+)
 
 MEASUREMENT_CATEGORIES = {
     "oscilloscope",
@@ -420,6 +425,7 @@ class DataSource:
     quantity: str = ""
     measurement: str = ""
     view: str = "curve"
+    request_defaults: dict[str, object] = field(default_factory=dict)
 
     def request(
         self,
@@ -428,13 +434,15 @@ class DataSource:
         initiate: bool = False,
         confirmed: bool = False,
     ) -> AcquisitionRequest:
+        defaults = dict(self.request_defaults or {})
         return AcquisitionRequest(
-            self.kind,
-            channels,
-            points if points is not None else (2000 if self.kind not in {"scalar", "status"} else 1),
-            self.quantity,
-            initiate,
-            confirmed,
+            defaults.pop("kind", self.kind),
+            tuple(defaults.pop("channels", channels)),
+            defaults.pop("points", points if points is not None else (2000 if self.kind not in {"scalar", "status"} else 1)),
+            defaults.pop("quantity", self.quantity),
+            defaults.pop("initiate", initiate),
+            defaults.pop("confirmed", confirmed),
+            **defaults,
         )
 
 
@@ -466,10 +474,14 @@ def data_sources(config: ConnectionConfig) -> tuple[DataSource, ...]:
             DataSource("phase", "当前 S 参数相位", "s_parameters", view="phase"),
         )
     if category == "phase_noise_analyzer":
-        result = [
-            DataSource(name, OPERATION_LABELS[name], "scalar", name)
-            for name in ("phase_noise", "am_noise", "stability")
-        ]
+        result = []
+        if any(c.name == "timed_phase" and c.available for c in schema.operations):
+            result.append(DataSource("phase_noise_capture", "相噪曲线（完整采集）", "timed_phase", "", request_defaults={
+                "kind": "timed_phase", "points": PHASE_NOISE_POINTS, "initiate": True, "confirmed": True,
+                "sample_rate": PHASE_NOISE_SAMPLE_RATE, "duration": PHASE_NOISE_DURATION,
+            }))
+        result.extend(DataSource(name, OPERATION_LABELS[name], "scalar", name)
+                      for name in ("phase_noise", "am_noise", "stability"))
         if any(c.name == "data_stream" and c.available for c in schema.operations):
             result.append(DataSource("data_stream", "相位 / 频率流", "streaming"))
         return tuple(result)

@@ -24,9 +24,14 @@ from lab_control.storage.layout import raw_folder
 from lab_control.storage.recording import read_frames
 from lab_control.ui.pages.monitoring.recording_state import update_recording_frame
 from lab_control.ui.widgets.device_selector import DeviceSelector
+from lab_control.instruments.devices.microchip_53100a.profile import (
+    PHASE_NOISE_DURATION,
+    PHASE_NOISE_POINTS,
+    PHASE_NOISE_SAMPLE_RATE,
+)
 
-SAMPLE_RATE = 1000
-DURATION = 60
+SAMPLE_RATE = PHASE_NOISE_SAMPLE_RATE
+DURATION = PHASE_NOISE_DURATION
 
 
 def load_results(folder: Path) -> dict[str, tuple[np.ndarray, np.ndarray]]:
@@ -220,7 +225,7 @@ class PhaseNoisePage(QWidget):
             self.controller.ensure_applicable(key)
             request = AcquisitionRequest(
                 "timed_phase",
-                points=1000,
+                points=PHASE_NOISE_POINTS,
                 initiate=True,
                 confirmed=True,
                 sample_rate=SAMPLE_RATE,

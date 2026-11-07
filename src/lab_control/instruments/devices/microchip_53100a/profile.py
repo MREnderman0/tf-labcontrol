@@ -7,6 +7,11 @@ from lab_control.instruments.base import CommandSpec, Profile
 SOURCE = "https://ww1.microchip.com/downloads/aemDocuments/documents/FTD/ProductDocuments/UserGuides/53100A-Phase-Noise-Analyzer-Users-Guide-DS50002991.pdf"
 RELEASE_NOTES = "https://www.miles.io/timelab/readme.htm"
 FREQUENCIES = {"input_frequency": "inputfreq", "reference_frequency": "referencefreq"}
+# The managed USB path uses the same complete-capture policy in the device page,
+# the capability-advertised MCP source, and the adapter request validation.
+PHASE_NOISE_POINTS = 1000
+PHASE_NOISE_SAMPLE_RATE = 1000
+PHASE_NOISE_DURATION = 60
 
 
 def profile() -> Profile:
