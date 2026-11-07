@@ -39,3 +39,29 @@ def test_outside_measured_offsets_is_unavailable(offset):
 def test_invalid_or_missing_phase_noise_trace(fields):
     with pytest.raises(ValidationError):
         process(1, sample(**fields))
+
+
+@pytest.mark.parametrize("final,complete", [(True, True), (True, False), (False, True)])
+def test_finite_phase_noise_uses_only_the_complete_final_frame(final, complete):
+    frames = [
+        {"configuration": {"final": False}, "measurements": [sample(values=[5, 6])]},
+        {"configuration": {"final": final, "complete": complete}, "measurements": [sample()]},
+    ]
+    source = MetricInput(
+        "run", {"kind": "continuous"}, True, lambda: iter(frames), lambda: None, lambda *_: None
+    )
+    params = PhaseNoiseOffsetParameters(offset_hz=10)
+    if final and complete:
+        assert process_phase_noise_at_offset(source, params)["phase_noise"] == MetricValue(-108)
+    else:
+        with pytest.raises(ValidationError):
+            process_phase_noise_at_offset(source, params)
+
+
+def test_legacy_single_frame_continuous_record_still_works():
+    frame = {"configuration": {}, "measurements": [sample()]}
+    source = MetricInput(
+        "legacy", {"kind": "continuous"}, True, lambda: iter([frame]), lambda: None, lambda *_: None
+    )
+    result = process_phase_noise_at_offset(source, PhaseNoiseOffsetParameters(offset_hz=10))
+    assert result["phase_noise"] == MetricValue(-108)

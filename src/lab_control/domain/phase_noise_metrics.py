@@ -26,8 +26,19 @@ def process_phase_noise_at_offset(
 ) -> dict[str, MetricValue]:
     frames = source.frames()
     frame = next(frames, None)
-    if frame is None or next(frames, None) is not None:
-        raise ValidationError("相位噪声偏频取值每次接收一帧")
+    if frame is None or not source.complete:
+        raise ValidationError("相位噪声偏频取值需要完整记录")
+    if source.metadata.get("kind") == "continuous" and "final" in frame.get("configuration", {}):
+        for following in frames:
+            source.check_cancel()
+            if frame["configuration"].get("final") is True:
+                raise ValidationError("相噪记录在结束帧后仍有数据")
+            frame = following
+        config = frame["configuration"]
+        if config.get("final") is not True or config.get("complete") is not True:
+            raise ValidationError("相噪记录缺少完整的结束帧")
+    elif next(frames, None) is not None:
+        raise ValidationError("单帧相噪记录包含多帧")
     source.check_cancel()
     traces = [sample for sample in frame["measurements"] if sample["quantity"] == "phase_noise"]
     if len(traces) != 1:

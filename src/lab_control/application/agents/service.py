@@ -285,9 +285,17 @@ class AgentService:
             fail("请先连接设备以获取通道与实际范围", "disconnected")
         config = self.runtime.sessions.sessions[device_id].config
         definition = DEVICE_DEFINITIONS[config.adapter]
+        recorded_kinds = getattr(self.runtime.sessions.sessions[device_id].adapter, "recorded_run_kinds", ())
+        sources = [
+            jsonable(source)
+            for source in data_sources(config)
+            if source.request_defaults.get("duration") is None or source.kind in recorded_kinds
+        ]
+        for source in sources:
+            source["request_defaults"].pop("confirmed", None)
         return {
             "snapshot": jsonable(snapshot),
-            "data_sources": jsonable(data_sources(config)),
+            "data_sources": sources,
             "acquisition_defaults": {
                 "initiate": definition.acquisition_initiate_default,
                 "requires_output_authority": definition.acquisition_requires_confirmation,
@@ -595,6 +603,8 @@ class AgentService:
     def acquire_once(self, client, grant_id, device_id, request, request_id):
         def start(ctx):
             acquisition = self._request(client, grant_id, device_id, "acquire", request)
+            if acquisition.duration is not None:
+                raise ValidationError("定时采集请使用 start_recording")
             context = self.repository.new_save_context(
                 GENERAL,
                 "single_frame",
@@ -631,6 +641,11 @@ class AgentService:
 
         def start(ctx):
             acquisition = self._request(client, grant_id, device_id, action, request)
+            if acquisition.duration is not None:
+                if not recording:
+                    raise ValidationError("定时采集请使用 start_recording")
+                self._start_finite_recording(ctx, client, grant_id, device_id, acquisition, request)
+                return
             monitoring = self.runtime.monitoring
             # Atomic with GUI starts. Never merge/replace another experiment implicitly.
             with monitoring.lock:
@@ -676,6 +691,49 @@ class AgentService:
 
     def start_recording(self, client, grant_id, device_id, request, request_id, interval=0.5):
         return self.start_monitoring(client, grant_id, device_id, request, request_id, interval, True)
+
+    def _start_finite_recording(self, ctx, client, grant, device, acquisition, request):
+        from lab_control.storage.recording import read_frames
+
+        sessions = self.runtime.sessions
+        with sessions.lock:
+            session = sessions.sessions.get(device)
+            if session is None or acquisition.kind not in getattr(session.adapter, "recorded_run_kinds", ()):
+                raise DeviceError("型号未提供此定时采集入口", "capture_unsupported")
+
+            def guard(_session):
+                self._request(client, grant, device, "record", request)
+                if acquisition.allow_setup:
+                    self._check(client, grant, device, "acquisition_setup")
+
+            future = sessions.start_acquisition(device, acquisition, before_io=guard)
+            recorder = session.direct_recording
+            ctx.update(cancel=threading.Event(), direct_recording=recorder, folder=str(recorder.folder))
+
+        def finish():
+            paths = future.result()
+            if ctx["cancel"].is_set():
+                from lab_control.storage.processing import ProcessingCancelled
+
+                raise ProcessingCancelled("定时采集已停止")
+            if paths and recorder.committed:
+                tail = list(read_frames(Path(paths[-1]), after=recorder.committed - 1))
+                if len(tail) == 1 and tail[0]["sequence"] == recorder.committed:
+                    config = tail[0]["configuration"]
+                    if config.get("final") is True and config.get("complete") is True:
+                        return {"complete": True, "frames": recorder.committed}
+            raise DeviceError("定时采集缺少完整的结束帧", "incomplete_recording")
+
+        published: Future = Future()
+        ctx["future"] = published
+
+        def completed(_future):
+            try:
+                published.set_result(finish())
+            except Exception as exc:
+                published.set_exception(exc)
+
+        future.add_done_callback(completed)
 
     def get_latest_measurement(self, client, grant_id, device_id, kind="scalar", quantity="", channel=1):
         self._check(client, grant_id, device_id, "view", channels=(channel,))

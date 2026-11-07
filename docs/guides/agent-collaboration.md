@@ -47,6 +47,8 @@ Codex 的工具审批独立于软件内的实验授权。默认导出保留客�
 5. `acquire_once` 单次采集并保存，或 `start_monitoring` / `start_recording` 交由软件持续调度。`get_latest_measurement` 返回质量、真实时间、帧序号、配置版本、年龄和有限摘要；大数组保存在数据目录。
 6. `list_tasks` / `get_task_status` 跟踪实际结果。指定 `stop_task` 停止后等待二进制排空与 CSV 转换；`list_artifacts` / `get_artifact` 获取结果引用。
 
+对于数据源含 `duration` 的完整定时采集，使用 `start_recording` 并授予记录及所需输出/触发权限。服务调用型号的有限采集入口，等待硬件、二进制记录和 CSV 收尾，核实完整结束帧后发布 `recording_id` 和 `result.complete=true`。停止或缺失结束帧时报告取消或失败。客户端用完成记录调用 `start_experiment`。相噪偏频处理支持此类多帧记录，取最后一份完整结束帧中的相噪曲线。采集请求仅使用接口声明的字段，`confirmed` 由服务端根据授权设置。
+
 所有有副作用的请求须携带在本台服务的内部接入中唯一的 `request_id`，客户端可生成 UUID。相同 ID 和参数返回原任务，相同 ID 配不同参数会被拒绝。超时、部分完成或状态未知时，按原 ID 查询任务。已接受的设备操作在网络请求取消后仍会执行并记录结果。
 
 设备 worker 对 GUI 与多个客户端串行执行。设备已有监测/记录时，新启动返回 `task_conflict`，可通过任务列表找到当前任务（本地界面任务 ID 以 `gui-` 开头）。使用具备该设备和通道停止权限的授权即可停止任务。需要改变数据源或从监测转为记录时，明确停止原任务、等待收尾，再启动新任务。
